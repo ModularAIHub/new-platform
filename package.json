@@ -1,0 +1,28 @@
+{
+    "name": "autoverse-hub",
+    "version": "1.0.0",
+    "description": "Autoverse Hub - Central platform for multi-module SaaS",
+    "main": "server/index.js",
+    "scripts": {
+        "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
+        "redis:start": "docker run --rm -p 6379:6379 --name redis-dev redis:latest",
+        "server:dev": "cd server && npm run dev",
+        "client:dev": "cd client && npm run dev",
+        "build": "cd client && npm run build",
+        "start": "cd server && npm start",
+        "install:all": "cd server && npm install && cd ../client && npm install",
+        "db:migrate": "cd server && npm run db:migrate",
+        "db:seed": "cd server && npm run db:seed"
+    },
+    "keywords": [
+        "saas",
+        "autoverse",
+        "hub",
+        "platform"
+    ],
+    "author": "Autoverse Team",
+    "license": "MIT",
+    "devDependencies": {
+        "concurrently": "^8.2.2"
+    }
+}

@@ -1,0 +1,96 @@
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
+import rateLimit from 'express-rate-limit';
+import dotenv from 'dotenv';
+dotenv.config();
+
+import apiRouter from './routes/index.js';
+import { errorHandler } from './middleware/errorHandler.js';
+
+// Initialize Redis and sync worker
+import redisClient from './config/redis.js';
+import syncWorker from './workers/syncWorker.js';
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+// Security middleware
+app.use(helmet());
+
+// Rate limiting - only enable in production
+if (process.env.NODE_ENV !== 'development') {
+    const limiter = rateLimit({
+        windowMs: 15 * 60 * 1000, // 15 minutes
+        max: 100, // production limit
+        message: 'Too many requests from this IP, please try again later.',
+        skipFailedRequests: true,
+        skipSuccessfulRequests: false,
+    });
+    app.use('/api/', limiter);
+}
+
+// CORS configuration for cross-subdomain support
+app.use(cors({
+    origin: [
+        'http://localhost:5173', // Vite dev server
+        'http://localhost:3000',
+        'https://hub.autoverse.com',
+        'https://twitter.autoverse.com',
+        'https://linkedin.autoverse.com',
+        'https://wordpress.autoverse.com'
+    ],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Body parsing middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.status(200).json({
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV
+    });
+});
+
+// API routes
+app.use('/api', apiRouter);
+
+// 404 handler
+app.use('*', (req, res) => {
+    res.status(404).json({
+        error: 'Route not found',
+        path: req.originalUrl
+    });
+});
+
+// Error handling middleware
+app.use(errorHandler);
+
+// Start server
+app.listen(PORT, async () => {
+    console.log(`🚀 Autoverse Hub Server running on port ${PORT}`);
+    console.log(`📊 Environment: ${process.env.NODE_ENV}`);
+    console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+
+    try {
+        // Initialize Redis
+        await redisClient.connect();
+
+        // Start sync worker
+        syncWorker.start();
+
+        console.log('✅ Redis and sync worker initialized');
+    } catch (error) {
+        console.error('❌ Failed to initialize Redis or sync worker:', error);
+    }
+});
+
+export default app;
