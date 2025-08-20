@@ -84,7 +84,15 @@ app.listen(PORT, async () => {
 
     try {
         // Initialize Redis
-        await redisClient.connect();
+
+        // Upstash Redis does not require connect()
+        // Test Upstash Redis connection
+        try {
+            const pong = await redisClient.ping();
+            console.log('Redis ping:', pong);
+        } catch (err) {
+            console.error('Redis ping test failed:', err);
+        }
 
         // Start sync worker
         syncWorker.start();
