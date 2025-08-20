@@ -1,9 +1,14 @@
 import axios from 'axios'
 
+const isProd = import.meta.env.MODE === 'production';
+const baseURL = isProd
+    ? 'https://hub.autoverse.com/api' // production backend URL
+    : 'http://localhost:3000/api';    // local backend URL
+
 const api = axios.create({
-    baseURL: '/api',
-    withCredentials: true,
-    timeout: 10000,
+        baseURL,
+        withCredentials: true,
+        timeout: 10000,
 })
 
 // Request interceptor
