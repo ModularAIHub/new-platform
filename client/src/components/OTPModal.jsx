@@ -3,6 +3,8 @@ import { toast } from 'react-hot-toast'
 import { validateOTPRequest, validateOTPVerification, formatValidationErrors } from '../utils/validation'
 import api from '../utils/api'
 
+
+
 const OTPModal = ({ 
     isOpen, 
     onClose, 
@@ -15,9 +17,11 @@ const OTPModal = ({
     const [email, setEmail] = useState(propEmail)
     const [otp, setOtp] = useState('')
     const [loading, setLoading] = useState(false)
+    const [loadingResend, setLoadingResend] = useState(false)
     const [resendTimer, setResendTimer] = useState(0)
     const [validationErrors, setValidationErrors] = useState({})
     
+
     // Refs for stable input focus
     const emailInputRef = useRef(null)
     const otpInputRef = useRef(null)
@@ -57,6 +61,7 @@ const OTPModal = ({
     // Send OTP to email
     const handleSendOTP = async (e) => {
         e.preventDefault()
+        e.stopPropagation()
         
         // Clear previous validation errors
         setValidationErrors({})
@@ -90,7 +95,9 @@ const OTPModal = ({
 
     // Verify OTP
     const handleVerifyOTP = async (e) => {
+        console.log('Verify OTP clicked');
         e.preventDefault()
+        e.stopPropagation()
         
         if (loading) return // Prevent double submission
         
@@ -143,10 +150,12 @@ const OTPModal = ({
     }
 
     // Resend OTP
-    const handleResendOTP = async () => {
+    const handleResendOTP = async (e) => {
+        console.log('Resend OTP clicked');
+        if (e) e.stopPropagation()
         if (resendTimer > 0) return
         
-        setLoading(true)
+        setLoadingResend(true)
         try {
             const response = await api.post('/auth/send-otp', {
                 email,
@@ -160,7 +169,7 @@ const OTPModal = ({
             toast.error(message)
             console.error('Resend OTP error:', error)
         }
-        setLoading(false)
+        setLoadingResend(false)
     }
 
     // Close modal and reset state
@@ -170,6 +179,7 @@ const OTPModal = ({
         setOtp('')
         setResendTimer(0)
         setLoading(false)
+        setLoadingResend(false)
         onClose?.()
     }
 
@@ -247,63 +257,67 @@ const OTPModal = ({
 
                 {/* Step 2: OTP Input */}
                 {step === 2 && (
-                    <form onSubmit={handleVerifyOTP} className="space-y-6">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Verification Code
-                            </label>
-                            <input
-                                ref={otpInputRef}
-                                type="text"
-                                value={otp}
-                                onChange={handleOTPChange}
-                                placeholder="Enter 6-digit code"
-                                maxLength={6}
-                                pattern="[0-9]{6}"
-                                required
-                                disabled={loading}
-                                className={`w-full px-4 py-3 border ${
-                                    validationErrors.otp ? 'border-red-500' : 'border-gray-300'
-                                } rounded-lg text-center text-2xl tracking-wider focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors disabled:bg-gray-50 disabled:cursor-not-allowed`}
-                            />
-                            {validationErrors.otp && (
-                                <p className="mt-1 text-sm text-red-600">{validationErrors.otp}</p>
-                            )}
-                            <p className="text-sm text-gray-600 mt-2 text-center">
-                                Code sent to: <span className="font-medium">{email}</span>
-                            </p>
-                        </div>
-
-                        <button
-                            type="submit"
-                            disabled={loading || otp.length !== 6}
-                            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition-colors"
-                        >
-                            {loading ? 'Verifying...' : 'Verify OTP'}
-                        </button>
-
-                        <div className="flex justify-between items-center text-sm">
-                            {!propEmail && (
-                                <button
-                                    type="button"
-                                    onClick={handleGoBack}
+                    <>
+                        <form onSubmit={handleVerifyOTP} className="space-y-6">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Verification Code
+                                </label>
+                                <input
+                                    ref={otpInputRef}
+                                    type="text"
+                                    value={otp}
+                                    onChange={handleOTPChange}
+                                    placeholder="Enter 6-digit code"
+                                    maxLength={6}
+                                    pattern="[0-9]{6}"
+                                    required
                                     disabled={loading}
-                                    className="text-blue-600 hover:text-blue-700 disabled:text-gray-400 disabled:cursor-not-allowed"
-                                >
-                                    ← Change Email
-                                </button>
-                            )}
-                            
+                                    className={`w-full px-4 py-3 border ${
+                                        validationErrors.otp ? 'border-red-500' : 'border-gray-300'
+                                    } rounded-lg text-center text-2xl tracking-wider focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors disabled:bg-gray-50 disabled:cursor-not-allowed`}
+                                />
+                                {validationErrors.otp && (
+                                    <p className="mt-1 text-sm text-red-600">{validationErrors.otp}</p>
+                                )}
+                                <p className="text-sm text-gray-600 mt-2 text-center">
+                                    Code sent to: <span className="font-medium">{email}</span>
+                                </p>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={loading || otp.length !== 6}
+                                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition-colors"
+                            >
+                                {loading ? 'Verifying...' : 'Verify OTP'}
+                            </button>
+
+                            <div className="flex justify-between items-center text-sm">
+                                {!propEmail && (
+                                    <button
+                                        type="button"
+                                        onClick={handleGoBack}
+                                        disabled={loading}
+                                        className="text-blue-600 hover:text-blue-700 disabled:text-gray-400 disabled:cursor-not-allowed"
+                                    >
+                                        ← Change Email
+                                    </button>
+                                )}
+                            </div>
+                        </form>
+                        {/* Render Resend OTP button outside the form */}
+                        <div className="flex justify-end items-center text-sm mt-4">
                             <button
                                 type="button"
                                 onClick={handleResendOTP}
                                 disabled={loading || resendTimer > 0}
                                 className="text-blue-600 hover:text-blue-700 disabled:text-gray-400 disabled:cursor-not-allowed ml-auto"
                             >
-                                {loading ? 'Sending...' : resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend OTP'}
+                                {loadingResend ? 'Sending...' : resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend OTP'}
                             </button>
                         </div>
-                    </form>
+                    </>
                 )}
             </div>
         </div>

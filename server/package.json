@@ -12,6 +12,7 @@
         "db:reset": "node scripts/reset.js"
     },
     "dependencies": {
+        "@upstash/redis": "^1.35.3",
         "bcrypt": "^6.0.0",
         "cookie-parser": "^1.4.6",
         "cors": "^2.8.5",

@@ -614,21 +614,29 @@ class AuthController {
                 });
             }
 
+
             const { email, otp, purpose } = validation.sanitized;
 
             // Get OTP from Redis
             const otpKey = `otp:${purpose}:${email}`;
-            console.log(`Looking for OTP with key: ${otpKey}`);
+            console.log('--- OTP DEBUG ---');
+            console.log('Verifying OTP for:');
+            console.log('Email:', email);
+            console.log('Purpose:', purpose);
+            console.log('OTP entered by user:', otp);
+            console.log('Redis key used:', otpKey);
             const storedOTP = await redisClient.get(otpKey);
-            console.log(`Found stored OTP: ${storedOTP}, received OTP: ${otp}`);
+            console.log('OTP fetched from Redis:', storedOTP);
 
             if (!storedOTP) {
+                console.log('OTP not found or expired in Redis.');
                 return res.status(400).json({ 
                     error: 'OTP expired or not found. Please request a new one.' 
                 });
             }
 
-            if (storedOTP !== otp) {
+            if (String(storedOTP).trim() !== String(otp).trim()) {
+                console.log('OTP mismatch. Entered:', otp, 'Stored:', storedOTP);
                 return res.status(400).json({ error: 'Invalid OTP' });
             }
 
