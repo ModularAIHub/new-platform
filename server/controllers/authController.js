@@ -220,7 +220,8 @@ class AuthController {
             console.error('Login error:', error);
             res.status(500).json({
                 error: 'Login failed',
-                code: 'LOGIN_ERROR'
+                code: 'LOGIN_ERROR',
+                details: error?.message || error
             });
         }
     }

@@ -9,7 +9,7 @@ const router = express.Router();
 
 router.use('/auth', authRoutes);
 router.use('/credits', creditRoutes);
-router.use('/user/api-keys', apiKeyRoutes);
+router.use('/api-keys', apiKeyRoutes);
 router.use('/user/plan-limits', planRoutes);
 router.use('/payments', paymentRoutes);
 
