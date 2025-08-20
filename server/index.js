@@ -33,14 +33,16 @@ if (process.env.NODE_ENV !== 'development') {
 
 // CORS configuration for cross-subdomain support
 app.use(cors({
-    origin: [
-        'http://localhost:5173', // Vite dev server
-        'http://localhost:3000',
-        'https://hub.autoverse.com',
-        'https://twitter.autoverse.com',
-        'https://linkedin.autoverse.com',
-        'https://wordpress.autoverse.com'
-    ],
+    origin: process.env.NODE_ENV === 'production'
+        ? [
+            'https://autoverse.com',
+            'https://twitter.autoverse.com',
+            'https://linkedin.autoverse.com',
+        ]
+        : [
+            'http://localhost:5173',
+            'http://localhost:3000'
+        ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -82,7 +84,15 @@ app.listen(PORT, async () => {
 
     try {
         // Initialize Redis
-        await redisClient.connect();
+
+        // Upstash Redis does not require connect()
+        // Test Upstash Redis connection
+        try {
+            const pong = await redisClient.ping();
+            console.log('Redis ping:', pong);
+        } catch (err) {
+            console.error('Redis ping test failed:', err);
+        }
 
         // Start sync worker
         syncWorker.start();
