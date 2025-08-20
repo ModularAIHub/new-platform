@@ -18,10 +18,13 @@ const Layout = ({ children }) => {
     const [sidebarOpen, setSidebarOpen] = useState(false)
 
     const navigation = [
-        { name: 'Dashboard', href: '/dashboard', icon: Home },
-        { name: 'Credits', href: '/credits', icon: CreditCard },
-        { name: 'API Keys', href: '/api-keys', icon: Key },
-        { name: 'Settings', href: '/settings', icon: Settings },
+    { name: 'Dashboard', href: '/dashboard', icon: Home },
+    { name: 'Credits', href: '/credits', icon: CreditCard },
+    { name: 'API Keys', href: '/api-keys', icon: Key },
+    { name: 'Analytics', href: '/analytics', icon: Settings, badge: 'New' },
+    { name: 'Schedule', href: '/schedule', icon: Settings },
+    { name: 'Activity', href: '/activity', icon: Settings },
+    { name: 'Settings', href: '/settings', icon: Settings },
     ]
 
     const isActive = (path) => location.pathname === path
