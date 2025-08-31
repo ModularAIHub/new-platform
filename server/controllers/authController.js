@@ -226,6 +226,85 @@ class AuthController {
         }
     }
 
+    // Login with redirect (for external apps like Tweet Genie)
+    static async loginWithRedirect(req, res) {
+        try {
+            // Validate login data
+            const validation = validateLoginData(req.body);
+            if (!validation.isValid) {
+                return res.status(400).json({
+                    error: 'Validation failed',
+                    details: validation.errors,
+                    code: 'VALIDATION_ERROR'
+                });
+            }
+
+            const { email, password, redirectUrl } = req.body;
+
+            // Find user
+            const result = await query(
+                'SELECT id, email, password_hash, name, plan_type, credits_remaining FROM users WHERE email = $1',
+                [email]
+            );
+
+            if (result.rows.length === 0) {
+                return res.status(401).json({
+                    error: 'Invalid email or password',
+                    code: 'INVALID_CREDENTIALS'
+                });
+            }
+
+            const user = result.rows[0];
+
+            // Verify password
+            const isValidPassword = await comparePassword(password, user.password_hash);
+            if (!isValidPassword) {
+                return res.status(401).json({
+                    error: 'Invalid email or password',
+                    code: 'INVALID_CREDENTIALS'
+                });
+            }
+
+            // Generate tokens
+            const accessToken = jwt.sign(
+                { userId: user.id, email: user.email },
+                process.env.JWT_SECRET,
+                { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
+            );
+
+            const refreshToken = jwt.sign(
+                { userId: user.id },
+                process.env.JWT_REFRESH_SECRET,
+                { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+            );
+
+            // Set cookies for platform
+            AuthController.setAuthCookies(res, accessToken, refreshToken);
+
+            // Return tokens and redirect URL for external apps
+            res.json({
+                message: 'Login successful',
+                accessToken: accessToken, // Include token for external redirect
+                refreshToken: refreshToken, // Include refresh token for external redirect
+                redirectUrl: `${redirectUrl}?token=${accessToken}&refreshToken=${refreshToken}`,
+                user: {
+                    id: user.id,
+                    email: user.email,
+                    name: user.name,
+                    planType: user.plan_type,
+                    creditsRemaining: user.credits_remaining
+                }
+            });
+        } catch (error) {
+            console.error('Login with redirect error:', error);
+            res.status(500).json({
+                error: 'Login failed',
+                code: 'LOGIN_ERROR',
+                details: error?.message || error
+            });
+        }
+    }
+
     // Logout user
     static logout(req, res) {
         AuthController.clearAuthCookies(res);
@@ -690,6 +769,28 @@ class AuthController {
             res.status(500).json({
                 error: 'Token verification failed',
                 code: 'VERIFY_ERROR'
+            });
+        }
+    }
+
+    // Get current user info (for external apps like Tweet Genie)
+    static async getCurrentUser(req, res) {
+        try {
+            res.json({
+                success: true,
+                user: {
+                    id: req.user.id,
+                    email: req.user.email,
+                    name: req.user.name,
+                    planType: req.user.plan_type,
+                    creditsRemaining: req.user.credits_remaining
+                }
+            });
+        } catch (error) {
+            console.error('Get current user error:', error);
+            res.status(500).json({
+                error: 'Failed to get user information',
+                code: 'USER_INFO_ERROR'
             });
         }
     }

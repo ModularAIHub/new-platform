@@ -7,11 +7,17 @@ const router = express.Router();
 // Login user
 router.post('/login', AuthController.login);
 
+// Login for external apps (returns token for redirect)
+router.post('/login-redirect', AuthController.loginWithRedirect);
+
 // Logout user
 router.post('/logout', AuthController.logout);
 
 // Verify token (for modules)
 router.get('/verify-token', authenticateToken, AuthController.verifyToken);
+
+// Get current user info (for external apps)
+router.get('/me', authenticateToken, AuthController.getCurrentUser);
 
 // Refresh token
 router.post('/refresh', AuthController.refreshToken);
