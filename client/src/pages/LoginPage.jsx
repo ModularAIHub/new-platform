@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import ForgotPasswordModal from '../components/ForgotPasswordModal'
 import { validateLoginData, formatValidationErrors } from '../utils/validation'
@@ -11,7 +11,10 @@ const LoginPage = () => {
     const [loading, setLoading] = useState(false)
     const [showForgotPassword, setShowForgotPassword] = useState(false)
     const [validationErrors, setValidationErrors] = useState({})
+    const [searchParams] = useSearchParams()
     const { login } = useAuth()
+
+    const redirectUrl = searchParams.get('redirect')
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -30,7 +33,7 @@ const LoginPage = () => {
 
         setLoading(true)
         try {
-            await login(validation.sanitized.email, validation.sanitized.password)
+            await login(validation.sanitized.email, validation.sanitized.password, redirectUrl)
         } catch (error) {
             console.error('Login error:', error)
         } finally {

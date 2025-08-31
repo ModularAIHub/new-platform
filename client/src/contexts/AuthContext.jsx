@@ -48,12 +48,34 @@ export const AuthProvider = ({ children }) => {
         checkAuth()
     }, []) // Empty dependency array - only run on mount
 
-    const login = async (email, password) => {
+    const login = async (email, password, redirectUrl = null) => {
         try {
-            const response = await api.post('/auth/login', { email, password })
+            let response;
+            
+            if (redirectUrl) {
+                // Use loginWithRedirect endpoint for external redirects
+                response = await api.post('/auth/login-redirect', { email, password, redirectUrl })
+                
+                if (response.data.redirectUrl) {
+                    // External redirect with access token
+                    window.location.href = response.data.redirectUrl;
+                    return response.data;
+                }
+            } else {
+                // Regular login
+                response = await api.post('/auth/login', { email, password })
+            }
+            
             setUser(response.data.user)
             toast.success('Login successful!')
-            navigate('/dashboard')
+            
+            // Internal navigation
+            if (redirectUrl && !response.data.redirectUrl) {
+                navigate(redirectUrl)
+            } else {
+                navigate('/dashboard')
+            }
+            
             return response.data
         } catch (error) {
             let message
