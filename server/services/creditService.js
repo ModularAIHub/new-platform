@@ -2,13 +2,17 @@ import { v4 as uuidv4 } from 'uuid';
 import { query } from '../config/database.js';
 import redisClient from '../config/redis.js';
 
-// Credit costs for different operations
+// Credit costs for different operations (now supports fractional credits)
 const CREDIT_COSTS = {
-    'twitter_post': 1,
+    'twitter_post': 1.0,
+    'twitter_with_media': 1.5,
+    'twitter_thread': 0.5, // per tweet in thread
+    'twitter_ai_generation': 2.0,
+    'twitter_scheduling': 0.0, // free
     'linkedin_post': 1.5,
-    'image_generation': 2,
+    'image_generation': 2.5,
     'content_analysis': 0.5,
-    'scheduling': 0.25
+    'api_call': 0.1
 };
 
 class CreditService {
@@ -42,10 +46,13 @@ class CreditService {
         }
     }
 
-    // Deduct credits with Redis-first approach
+    // Deduct credits with Redis-first approach (supports fractional credits)
     static async deductCredits(userId, operation, description = '', overrideCost = null) {
         try {
-            const cost = overrideCost ? parseFloat(overrideCost) : (CREDIT_COSTS[operation] || 1);
+            const cost = overrideCost ? parseFloat(overrideCost) : (CREDIT_COSTS[operation] || 1.0);
+
+            // Ensure cost is properly rounded to 2 decimal places
+            const roundedCost = Math.round(cost * 100) / 100;
 
             // Check balance in Redis
             const currentCredits = await redisClient.getCredits(userId);
@@ -61,18 +68,18 @@ class CreditService {
                     throw new Error('User not found');
                 }
 
-                const dbCredits = result.rows[0].credits_remaining;
+                const dbCredits = parseFloat(result.rows[0].credits_remaining);
                 await redisClient.setCredits(userId, dbCredits);
 
-                if (dbCredits < cost) {
-                    throw new Error('Insufficient credits');
+                if (dbCredits < roundedCost) {
+                    throw new Error(`Insufficient credits. Required: ${roundedCost}, Available: ${dbCredits}`);
                 }
-            } else if (currentCredits < cost) {
-                throw new Error('Insufficient credits');
+            } else if (parseFloat(currentCredits) < roundedCost) {
+                throw new Error(`Insufficient credits. Required: ${roundedCost}, Available: ${currentCredits}`);
             }
 
             // Deduct from Redis
-            const newBalance = await redisClient.deductCredits(userId, cost);
+            const newBalance = await redisClient.deductCredits(userId, roundedCost);
 
             if (newBalance === null) {
                 throw new Error('Failed to deduct credits from Redis');
@@ -84,15 +91,15 @@ class CreditService {
             // Log transaction in PostgreSQL
             const transactionId = uuidv4();
             await query(
-                `INSERT INTO credit_transactions (id, user_id, type, credits_amount, description, created_at)
-                 VALUES ($1, $2, $3, $4, $5, NOW())`,
-                [transactionId, userId, 'usage', cost, `${operation}: ${description}`]
+                `INSERT INTO credit_transactions (id, user_id, type, credits_amount, description, service_name, created_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
+                [transactionId, userId, 'usage', roundedCost, `${operation}: ${description}`, 'tweet-genie']
             );
 
             return {
                 success: true,
-                creditsDeducted: cost,
-                creditsRemaining: newBalance,
+                creditsDeducted: roundedCost,
+                creditsRemaining: Math.round(parseFloat(newBalance) * 100) / 100,
                 transactionId
             };
         } catch (error) {
