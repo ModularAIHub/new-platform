@@ -1,5 +1,6 @@
 import { query } from '../config/database.js';
 import redisClient from '../config/redis.js';
+import CreditService from '../services/creditService.js';
 
 class SyncWorker {
     constructor() {
