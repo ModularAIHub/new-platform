@@ -1,6 +1,6 @@
-const { query } = require('../config/database');
-const bcrypt = require('bcryptjs');
-const { v4: uuidv4 } = require('uuid');
+import { query } from '../config/database.js';
+import bcrypt from 'bcryptjs';
+import { v4 as uuidv4 } from 'uuid';
 
 async function seedDatabase() {
     try {
@@ -207,7 +207,9 @@ async function seedDatabase() {
 }
 
 // Run seeding if this file is executed directly
-if (require.main === module) {
+
+// ES module entrypoint
+if (import.meta.url === process.argv[1] || import.meta.url === `file://${process.argv[1]}`) {
     seedDatabase().then(() => {
         console.log('✅ Database seeding complete');
         process.exit(0);
@@ -216,5 +218,3 @@ if (require.main === module) {
         process.exit(1);
     });
 }
-
-module.exports = { seedDatabase };
