@@ -38,9 +38,6 @@ if (process.env.NODE_ENV !== 'development') {
 app.use(cors({
     origin: process.env.NODE_ENV === 'production'
         ? [
-            'https://autoverse.com',
-            'https://twitter.autoverse.com',
-            'https://linkedin.autoverse.com',
             'https://kanishksaraswat.me',
             'https://tweet.kanishksaraswat.me'
         ]

@@ -19,43 +19,41 @@ import {
 class AuthController {
     // Helper function to set secure cookies
     static setAuthCookies(res, accessToken, refreshToken) {
-        const isProduction = process.env.NODE_ENV === 'production';
-        const domain = isProduction ? `.${process.env.DOMAIN}` : undefined;
-
         res.cookie('accessToken', accessToken, {
             httpOnly: true,
-            secure: isProduction,
-            sameSite: isProduction ? 'none' : 'lax',
-            domain: domain,
+            secure: true,
+            sameSite: 'none',
+            domain: '.kanishksaraswat.me',
+            path: '/',
             maxAge: 15 * 60 * 1000 // 15 minutes
         });
 
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
-            secure: isProduction,
-            sameSite: isProduction ? 'none' : 'lax',
-            domain: domain,
+            secure: true,
+            sameSite: 'none',
+            domain: '.kanishksaraswat.me',
+            path: '/',
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         });
     }
 
     // Helper function to clear cookies
     static clearAuthCookies(res) {
-        const isProduction = process.env.NODE_ENV === 'production';
-        const domain = isProduction ? `.${process.env.DOMAIN}` : undefined;
-
         res.clearCookie('accessToken', {
             httpOnly: true,
-            secure: isProduction,
-            sameSite: isProduction ? 'none' : 'lax',
-            domain: domain
+            secure: true,
+            sameSite: 'none',
+            domain: '.kanishksaraswat.me',
+            path: '/'
         });
 
         res.clearCookie('refreshToken', {
             httpOnly: true,
-            secure: isProduction,
-            sameSite: isProduction ? 'none' : 'lax',
-            domain: domain
+            secure: true,
+            sameSite: 'none',
+            domain: '.kanishksaraswat.me',
+            path: '/'
         });
     }
 
