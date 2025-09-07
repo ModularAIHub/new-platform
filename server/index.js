@@ -38,6 +38,8 @@ app.use(cors({
             'https://autoverse.com',
             'https://twitter.autoverse.com',
             'https://linkedin.autoverse.com',
+            'https://kanishksaraswat.me',
+            'https://tweet.kanishksaraswat.me'
         ]
         : [
             'http://localhost:5173',
