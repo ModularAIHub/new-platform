@@ -19,43 +19,41 @@ import {
 class AuthController {
     // Helper function to set secure cookies
     static setAuthCookies(res, accessToken, refreshToken) {
-        const isProduction = process.env.NODE_ENV === 'production';
-        const domain = isProduction ? `.${process.env.DOMAIN}` : undefined;
-
         res.cookie('accessToken', accessToken, {
             httpOnly: true,
-            secure: isProduction,
-            sameSite: isProduction ? 'none' : 'lax',
-            domain: domain,
+            secure: true,
+            sameSite: 'none',
+            domain: '.kanishksaraswat.me',
+            path: '/',
             maxAge: 15 * 60 * 1000 // 15 minutes
         });
 
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
-            secure: isProduction,
-            sameSite: isProduction ? 'none' : 'lax',
-            domain: domain,
+            secure: true,
+            sameSite: 'none',
+            domain: '.kanishksaraswat.me',
+            path: '/',
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         });
     }
 
     // Helper function to clear cookies
     static clearAuthCookies(res) {
-        const isProduction = process.env.NODE_ENV === 'production';
-        const domain = isProduction ? `.${process.env.DOMAIN}` : undefined;
-
         res.clearCookie('accessToken', {
             httpOnly: true,
-            secure: isProduction,
-            sameSite: isProduction ? 'none' : 'lax',
-            domain: domain
+            secure: true,
+            sameSite: 'none',
+            domain: '.kanishksaraswat.me',
+            path: '/'
         });
 
         res.clearCookie('refreshToken', {
             httpOnly: true,
-            secure: isProduction,
-            sameSite: isProduction ? 'none' : 'lax',
-            domain: domain
+            secure: true,
+            sameSite: 'none',
+            domain: '.kanishksaraswat.me',
+            path: '/'
         });
             // Debug: About to generate accessToken
             console.log('[LOGIN] About to generate accessToken');
@@ -652,7 +650,7 @@ class AuthController {
             // Increment rate limit counter
             await redisClient.setEx(rateLimitKey, 900, String((parseInt(attempts) || 0) + 1)); // 15 minutes
 
-            // Send OTP email based on purpose
+            // Prepare OTP email based on purpose
             let subject, html;
             switch (purpose) {
                 case 'password-reset':
@@ -683,16 +681,21 @@ class AuthController {
                     `;
             }
 
-            await sendMail({
-                to: email,
-                subject,
-                html
-            });
-
+            // Respond to frontend immediately
             res.json({ 
                 message: 'OTP sent successfully',
                 purpose,
                 expiresIn: 600 // 10 minutes in seconds
+            });
+
+            // Send email asynchronously (do not block response)
+            sendMail({
+                to: email,
+                subject,
+                html
+            }).catch(error => {
+                console.error('📧 Email sending failed:', error.message);
+                // Optionally log/mock email here
             });
 
         } catch (error) {
