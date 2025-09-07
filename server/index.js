@@ -14,6 +14,9 @@ import redisClient from './config/redis.js';
 import syncWorker from './workers/syncWorker.js';
 
 const app = express();
+
+// Trust the first proxy (needed for Railway and other cloud hosts)
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 5000;
 
 // Security middleware
@@ -35,9 +38,6 @@ if (process.env.NODE_ENV !== 'development') {
 app.use(cors({
     origin: process.env.NODE_ENV === 'production'
         ? [
-            'https://autoverse.com',
-            'https://twitter.autoverse.com',
-            'https://linkedin.autoverse.com',
             'https://kanishksaraswat.me',
             'https://tweet.kanishksaraswat.me'
         ]
