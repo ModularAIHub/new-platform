@@ -631,7 +631,7 @@ class AuthController {
             // Increment rate limit counter
             await redisClient.setEx(rateLimitKey, 900, String((parseInt(attempts) || 0) + 1)); // 15 minutes
 
-            // Send OTP email based on purpose
+            // Prepare OTP email based on purpose
             let subject, html;
             switch (purpose) {
                 case 'password-reset':
@@ -662,16 +662,21 @@ class AuthController {
                     `;
             }
 
-            await sendMail({
-                to: email,
-                subject,
-                html
-            });
-
+            // Respond to frontend immediately
             res.json({ 
                 message: 'OTP sent successfully',
                 purpose,
                 expiresIn: 600 // 10 minutes in seconds
+            });
+
+            // Send email asynchronously (do not block response)
+            sendMail({
+                to: email,
+                subject,
+                html
+            }).catch(error => {
+                console.error('📧 Email sending failed:', error.message);
+                // Optionally log/mock email here
             });
 
         } catch (error) {
