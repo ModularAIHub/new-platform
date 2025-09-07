@@ -2,7 +2,6 @@
 import { Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
-import GuestRoute from './components/GuestRoute';
 import Layout from './components/Layout';
 import Navbar from './components/navbar';
 import LoginPage from './pages/LoginPage';
@@ -27,18 +26,8 @@ function App() {
                 <Route path="/plans" element={<PlansPage />} />
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/contact" element={<ContactPage />} />
-                
-                {/* Guest only routes (redirect to dashboard if authenticated) */}
-                <Route path="/login" element={
-                    <GuestRoute>
-                        <LoginPage />
-                    </GuestRoute>
-                } />
-                <Route path="/register" element={
-                    <GuestRoute>
-                        <RegisterPage />
-                    </GuestRoute>
-                } />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
 
                 {/* Protected routes */}
                 <Route path="/dashboard" element={
