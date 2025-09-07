@@ -19,6 +19,8 @@ import {
 class AuthController {
     // Helper function to set secure cookies
     static setAuthCookies(res, accessToken, refreshToken) {
+        // Debug: About to set cookies
+        console.log('[COOKIES] Setting accessToken and refreshToken cookies');
         res.cookie('accessToken', accessToken, {
             httpOnly: true,
             secure: true,
@@ -36,6 +38,7 @@ class AuthController {
             path: '/',
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         });
+        console.log('[COOKIES] Cookies set with domain .kanishksaraswat.me, httpOnly, secure, sameSite=none');
     }
 
     // Helper function to clear cookies
@@ -152,6 +155,7 @@ class AuthController {
     // Login user
     static async login(req, res) {
         try {
+            console.log('[LOGIN] Login attempt for', req.body?.email);
             // Validate login data
             const validation = validateLoginData(req.body);
             if (!validation.isValid) {
@@ -188,24 +192,29 @@ class AuthController {
                 });
             }
 
+
             // Generate tokens
-            const accessToken = jwt.sign(
-                { userId: user.id, email: user.email },
-                process.env.JWT_SECRET,
-                { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
-            );
-
-            const refreshToken = jwt.sign(
-                { userId: user.id },
-                process.env.JWT_REFRESH_SECRET,
-                { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
-            );
-
+            let accessToken, refreshToken;
+            try {
+                accessToken = jwt.sign(
+                    { userId: user.id, email: user.email },
+                    process.env.JWT_SECRET,
+                    { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
+                );
+                refreshToken = jwt.sign(
+                    { userId: user.id },
+                    process.env.JWT_REFRESH_SECRET,
+                    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+                );
+                console.log('[LOGIN] accessToken generated:', !!accessToken);
+                console.log('[LOGIN] refreshToken generated:', !!refreshToken);
+            } catch (tokenErr) {
+                console.error('[LOGIN] Error generating tokens:', tokenErr);
+                return res.status(500).json({ error: 'Token generation failed', code: 'TOKEN_GEN_ERROR' });
+            }
 
             // Debug log before setting cookies
             console.log('[LOGIN] Setting cookies for', user.email);
-            console.log('[LOGIN] Access Token:', accessToken);
-            console.log('[LOGIN] Refresh Token:', refreshToken);
             AuthController.setAuthCookies(res, accessToken, refreshToken);
 
             res.json({
@@ -231,6 +240,7 @@ class AuthController {
     // Login with redirect (for external apps like Tweet Genie)
     static async loginWithRedirect(req, res) {
         try {
+            console.log('[LOGIN REDIRECT] Login attempt for', req.body?.email);
             // Validate login data
             const validation = validateLoginData(req.body);
             if (!validation.isValid) {
@@ -267,20 +277,29 @@ class AuthController {
                 });
             }
 
+
             // Generate tokens
-            const accessToken = jwt.sign(
-                { userId: user.id, email: user.email },
-                process.env.JWT_SECRET,
-                { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
-            );
+            let accessToken, refreshToken;
+            try {
+                accessToken = jwt.sign(
+                    { userId: user.id, email: user.email },
+                    process.env.JWT_SECRET,
+                    { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
+                );
+                refreshToken = jwt.sign(
+                    { userId: user.id },
+                    process.env.JWT_REFRESH_SECRET,
+                    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+                );
+                console.log('[LOGIN REDIRECT] accessToken generated:', !!accessToken);
+                console.log('[LOGIN REDIRECT] refreshToken generated:', !!refreshToken);
+            } catch (tokenErr) {
+                console.error('[LOGIN REDIRECT] Error generating tokens:', tokenErr);
+                return res.status(500).json({ error: 'Token generation failed', code: 'TOKEN_GEN_ERROR' });
+            }
 
-            const refreshToken = jwt.sign(
-                { userId: user.id },
-                process.env.JWT_REFRESH_SECRET,
-                { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
-            );
-
-            // Set cookies for platform
+            // Debug log before setting cookies
+            console.log('[LOGIN REDIRECT] Setting cookies for', user.email);
             AuthController.setAuthCookies(res, accessToken, refreshToken);
 
             // Return tokens and redirect URL for external apps
@@ -832,20 +851,30 @@ class AuthController {
 
             const user = result.rows[0];
 
+
             // Generate new tokens
-            const newAccessToken = jwt.sign(
-                { userId: user.id, email: user.email },
-                process.env.JWT_SECRET,
-                { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
-            );
+            let newAccessToken, newRefreshToken;
+            try {
+                newAccessToken = jwt.sign(
+                    { userId: user.id, email: user.email },
+                    process.env.JWT_SECRET,
+                    { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
+                );
+                newRefreshToken = jwt.sign(
+                    { userId: user.id },
+                    process.env.JWT_REFRESH_SECRET,
+                    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+                );
+                console.log('[REFRESH] newAccessToken generated:', !!newAccessToken);
+                console.log('[REFRESH] newRefreshToken generated:', !!newRefreshToken);
+            } catch (tokenErr) {
+                console.error('[REFRESH] Error generating tokens:', tokenErr);
+                AuthController.clearAuthCookies(res);
+                return res.status(500).json({ error: 'Token generation failed', code: 'TOKEN_GEN_ERROR' });
+            }
 
-            const newRefreshToken = jwt.sign(
-                { userId: user.id },
-                process.env.JWT_REFRESH_SECRET,
-                { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
-            );
-
-            // Set new cookies
+            // Debug log before setting cookies
+            console.log('[REFRESH] Setting new cookies for', user.email);
             AuthController.setAuthCookies(res, newAccessToken, newRefreshToken);
 
             res.json({
