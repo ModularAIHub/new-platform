@@ -201,7 +201,11 @@ class AuthController {
                 { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
             );
 
-            // Set cookies
+
+            // Debug log before setting cookies
+            console.log('[LOGIN] Setting cookies for', user.email);
+            console.log('[LOGIN] Access Token:', accessToken);
+            console.log('[LOGIN] Refresh Token:', refreshToken);
             AuthController.setAuthCookies(res, accessToken, refreshToken);
 
             res.json({
