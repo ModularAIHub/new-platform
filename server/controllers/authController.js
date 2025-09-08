@@ -55,11 +55,17 @@ class AuthController {
             domain: '.kanishksaraswat.me',
             path: '/'
         });
+            // Debug: About to generate accessToken
+            console.log('[LOGIN] About to generate accessToken');
     }
 
     // Helper to generate 6-digit numeric OTP
     static generateOTP() {
         // For testing purposes, use a fixed OTP
+            console.log('[LOGIN] accessToken generated:', !!accessToken);
+
+            // Debug: About to generate refreshToken
+            console.log('[LOGIN] About to generate refreshToken');
         // return '123456';
         return Math.floor(100000 + Math.random() * 900000).toString();
     }
@@ -201,6 +207,10 @@ class AuthController {
                 { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '3d' }
             );
 
+            // Debug: Log tokens after generation
+            console.log('[LOGIN] accessToken:', accessToken);
+            console.log('[LOGIN] refreshToken:', refreshToken);
+
             // Set cookies
             AuthController.setAuthCookies(res, accessToken, refreshToken);
 
@@ -275,6 +285,10 @@ class AuthController {
                 process.env.JWT_REFRESH_SECRET,
                 { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
             );
+
+            // Debug: Log tokens after generation
+            console.log('[LOGIN REDIRECT] accessToken:', accessToken);
+            console.log('[LOGIN REDIRECT] refreshToken:', refreshToken);
 
             // Set cookies for platform
             AuthController.setAuthCookies(res, accessToken, refreshToken);
@@ -602,16 +616,23 @@ class AuthController {
             const { email, purpose } = validation.sanitized;
 
             // Check rate limiting - prevent spam
+                // Debug: About to generate accessToken
+                console.log('[LOGIN REDIRECT] About to generate accessToken');
             const rateLimitKey = `otp_rate_limit:${email}`;
             const attempts = await redisClient.get(rateLimitKey);
             if (attempts && parseInt(attempts) >= 3) {
+                console.log('[LOGIN REDIRECT] accessToken generated:', !!accessToken);
                 return res.status(429).json({ 
                     error: 'Too many OTP requests. Please wait 15 minutes before trying again.' 
+              
+
+                // Debug: About to generate refreshToken
                 });
             }
 
             // For password-reset, check if user exists (but don't reveal if they don't)
             if (purpose === 'password-reset') {
+                console.log('[LOGIN REDIRECT] refreshToken generated:', !!refreshToken);
                 const userResult = await query('SELECT id FROM users WHERE email = $1', [email]);
                 if (userResult.rows.length === 0) {
                     return res.json({ message: 'If this email exists, an OTP has been sent' });
