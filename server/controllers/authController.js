@@ -198,7 +198,7 @@ class AuthController {
             const refreshToken = jwt.sign(
                 { userId: user.id },
                 process.env.JWT_REFRESH_SECRET,
-                { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+                { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '3d' }
             );
 
             // Set cookies
