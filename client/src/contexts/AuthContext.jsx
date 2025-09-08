@@ -67,13 +67,16 @@ export const AuthProvider = ({ children }) => {
             }
             
             setUser(response.data.user)
+            console.log('User set after login:', response.data.user)
             toast.success('Login successful!')
             
             // Internal navigation
             if (redirectUrl && !response.data.redirectUrl) {
+                console.log('Navigating to:', redirectUrl)
                 navigate(redirectUrl)
             } else {
-                navigate('/dashboard')
+                console.log('Navigating to: /test-dashboard')
+                navigate('/test-dashboard')
             }
             
             return response.data
