@@ -65,7 +65,7 @@ const HomePage = () => {
         
         {/* Section Divider */}
         <div className="w-full flex justify-center my-12">
-          <div className="w-32 h-1 rounded-full bg-gradient-to-r from-cyan-400 via-white to-cyan-400 opacity-60"></div>
+          <div className="w-32 h-1 rounded-full bg-gradient-to-r from-blue-400 via-purple-400 to-green-400 opacity-60"></div>
         </div>
 
         {/* Features Card Section */}
@@ -190,7 +190,7 @@ const HomePage = () => {
                   desc: (
                     <>
                       <strong>Coming Soon: Our Own AI Model</strong><br />
-                      We’re excited to announce that soon we’ll be rolling out our own Large Language Model (LLM) purpose-built for content creators.<br /><br />
+                      We're excited to announce that soon we'll be rolling out our own Large Language Model (LLM) purpose-built for content creators.<br /><br />
                       Our LLM will be optimized for:
                       <ul className="list-disc pl-6 mb-2">
                         <li>Twitter content & viral captions</li>
@@ -234,13 +234,13 @@ const HomePage = () => {
             })()}
 
             <div className="text-center mt-16 mb-8">
-              <span className="text-2xl font-bold text-white">
+              <span className="text-2xl font-bold text-gray-800">
                 Stop Juggling Tabs. Start Building Your Brand.
               </span>
-              <p className="text-xl text-white mt-4">
-                Creating content shouldn’t feel like assembling a puzzle.
+              <p className="text-xl text-gray-700 mt-4">
+                Creating content shouldn't feel like assembling a puzzle.
               </p>
-              <p className="text-lg text-gray-200 mt-2">
+              <p className="text-lg text-gray-600 mt-2">
                 Launch the right module for the job. Let us handle the busywork. You stay focused on growth, creativity, and strategy.
               </p>
             </div>
