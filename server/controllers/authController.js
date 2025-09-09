@@ -19,47 +19,52 @@ import {
 class AuthController {
     // Helper function to set secure cookies
     static setAuthCookies(res, accessToken, refreshToken) {
-        // Use localhost domain for local dev, otherwise use production domain
+        // Environment-based cookie configuration
+        const isProduction = process.env.NODE_ENV === 'production';
         const isLocalhost = process.env.DOMAIN === 'localhost' || process.env.CLIENT_URL?.includes('localhost');
-        const cookieDomain = isLocalhost ? 'localhost' : '.kanishksaraswat.me';
-        res.cookie('accessToken', accessToken, {
+        
+        const cookieOptions = {
             httpOnly: true,
-            secure: true,
-            sameSite: 'none',
-            domain: cookieDomain,
+            secure: isProduction,
+            sameSite: isProduction ? 'none' : 'lax',
             path: '/',
             maxAge: 15 * 60 * 1000 // 15 minutes
-        });
+        };
 
-        res.cookie('refreshToken', refreshToken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'none',
-            domain: cookieDomain,
-            path: '/',
+        // Only set domain in production
+        if (isProduction && process.env.DOMAIN && !isLocalhost) {
+            cookieOptions.domain = '.' + process.env.DOMAIN;
+        }
+
+        res.cookie('accessToken', accessToken, cookieOptions);
+
+        const refreshCookieOptions = {
+            ...cookieOptions,
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-        });
+        };
+
+        res.cookie('refreshToken', refreshToken, refreshCookieOptions);
     }
 
     // Helper function to clear cookies
     static clearAuthCookies(res) {
+        const isProduction = process.env.NODE_ENV === 'production';
         const isLocalhost = process.env.DOMAIN === 'localhost' || process.env.CLIENT_URL?.includes('localhost');
-        const cookieDomain = isLocalhost ? 'localhost' : '.kanishksaraswat.me';
-        res.clearCookie('accessToken', {
+        
+        const clearOptions = {
             httpOnly: true,
-            secure: true,
-            sameSite: 'none',
-            domain: cookieDomain,
+            secure: isProduction,
+            sameSite: isProduction ? 'none' : 'lax',
             path: '/'
-        });
+        };
 
-        res.clearCookie('refreshToken', {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'none',
-            domain: cookieDomain,
-            path: '/'
-        });
+        // Only set domain in production
+        if (isProduction && process.env.DOMAIN && !isLocalhost) {
+            clearOptions.domain = '.' + process.env.DOMAIN;
+        }
+
+        res.clearCookie('accessToken', clearOptions);
+        res.clearCookie('refreshToken', clearOptions);
     }
 
     // Helper to generate 6-digit numeric OTP

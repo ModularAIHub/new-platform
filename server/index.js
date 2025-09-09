@@ -66,6 +66,15 @@ app.get('/health', (req, res) => {
     });
 });
 
+app.get('/', (req, res) => {
+    res.status(200).json({
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV,
+        message: "Sab chal rha h theek thaak"
+    });
+});
+
 // API routes
 app.use('/api', apiRouter);
 
