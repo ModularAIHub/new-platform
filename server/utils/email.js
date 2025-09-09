@@ -17,7 +17,7 @@ export async function sendMail({ to, subject, html, text }) {
     console.log('To:', to);
     try {
         const { data, error } = await resend.emails.send({
-            from: 'Autoverse <noreply@kanishksaraswat.me>',
+            from: 'suitegenie <noreply@suitegenie.in>',
             to,
             subject,
             html,
