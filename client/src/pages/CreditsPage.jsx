@@ -3,8 +3,10 @@ import { CreditCard, Plus, History, Loader2, RefreshCw } from 'lucide-react'
 import api from '../utils/api'
 import Loader from '../components/Loader'
 import { loadRazorpayScript } from '../utils/payment'
+import { useAuth } from '../contexts/AuthContext'
 
 const CreditsPage = () => {
+    const { user, loading: authLoading } = useAuth()
     const [balance, setBalance] = useState(0)
     const [transactions, setTransactions] = useState([])
     const [loading, setLoading] = useState(true)
@@ -13,9 +15,15 @@ const CreditsPage = () => {
     const [refreshingHistory, setRefreshingHistory] = useState(false)
 
     useEffect(() => {
-        fetchData()
-        fetchPackages()
-    }, [])
+        // Only fetch data if user is authenticated and auth loading is complete
+        if (!authLoading && user) {
+            fetchData()
+            fetchPackages()
+        } else if (!authLoading && !user) {
+            // User is not authenticated, stop loading
+            setLoading(false)
+        }
+    }, [user, authLoading])
 
     const fetchData = async () => {
         try {
@@ -151,8 +159,14 @@ const CreditsPage = () => {
         }
     }
 
-    if (loading) {
+    if (authLoading || loading) {
         return <Loader className="h-64" size={28} />
+    }
+
+    // If authentication is complete but user is not authenticated, this should be handled by ProtectedRoute
+    // But we can add an additional check here for safety
+    if (!authLoading && !user) {
+        return null // ProtectedRoute should handle the redirect
     }
 
     return (

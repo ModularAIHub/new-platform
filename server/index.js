@@ -17,7 +17,7 @@ const app = express();
 
 // Trust the first proxy (needed for Railway and other cloud hosts)
 app.set('trust proxy', 1);
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 
 // Security middleware
 app.use(helmet());
@@ -38,12 +38,14 @@ if (process.env.NODE_ENV !== 'development') {
 app.use(cors({
     origin: process.env.NODE_ENV === 'production'
         ? [
-            'https://kanishksaraswat.me',
-            'https://tweet.kanishksaraswat.me'
+            'https://suitegenie.in',
+            'https://tweet.suitegenie.in'
         ]
         : [
             'http://localhost:5173',
-            'http://localhost:3000'
+            'http://localhost:3000',
+            'http://localhost:5174',
+            'http://localhost:3002'
         ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],

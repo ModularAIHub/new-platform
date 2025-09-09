@@ -1,7 +1,7 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-const AuthRedirect = ({ children }) => {
+const GuestRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
@@ -21,4 +21,4 @@ const AuthRedirect = ({ children }) => {
   return children;
 };
 
-export default AuthRedirect;
+export default GuestRoute;

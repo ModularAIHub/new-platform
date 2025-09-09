@@ -1,10 +1,9 @@
 import axios from 'axios'
 
-
 const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 // Set timeout: 45s for production, 10s for local/dev
-const isProd = window.location.hostname.includes('kanishksaraswat.me') || import.meta.env.MODE === 'production';
+const isProd = window.location.hostname.includes('suitegenie.in') || import.meta.env.MODE === 'production';
 const timeout = isProd ? 45000 : 10000;
 
 const api = axios.create({
@@ -12,6 +11,22 @@ const api = axios.create({
     withCredentials: true,
     timeout,
 })
+
+// Flag to prevent multiple refresh attempts
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+    failedQueue.forEach(prom => {
+        if (error) {
+            prom.reject(error);
+        } else {
+            prom.resolve(token);
+        }
+    });
+    
+    failedQueue = [];
+};
 
 // Request interceptor
 api.interceptors.request.use(
@@ -24,14 +39,77 @@ api.interceptors.request.use(
     }
 )
 
-// Response interceptor - simplified to not auto-refresh
+// Response interceptor with token refresh logic
 api.interceptors.response.use(
     (response) => {
         return response
     },
     async (error) => {
-        // Simply return the error without trying to refresh
-        return Promise.reject(error)
+        const originalRequest = error.config;
+
+        // Only attempt token refresh for 401 errors on protected routes
+        // Exclude auth endpoints and already retried requests
+        if (error.response?.status === 401 && 
+            !originalRequest._retry && 
+            !originalRequest.url.includes('/auth/login') && 
+            !originalRequest.url.includes('/auth/register') &&
+            !originalRequest.url.includes('/auth/refresh') &&
+            !originalRequest.url.includes('/auth/verify-token')) {
+            
+            // Check if we have tokens to refresh (basic check)
+            const hasTokens = document.cookie.includes('accessToken') || 
+                             document.cookie.includes('refreshToken') ||
+                             localStorage.getItem('accessToken') ||
+                             sessionStorage.getItem('accessToken');
+            
+            if (!hasTokens) {
+                // No tokens available, redirect to login immediately
+                if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+                    window.location.href = '/login';
+                }
+                return Promise.reject(error);
+            }
+
+            if (isRefreshing) {
+                // If already refreshing, queue this request
+                return new Promise((resolve, reject) => {
+                    failedQueue.push({ resolve, reject });
+                }).then(() => {
+                    return api(originalRequest);
+                }).catch(err => {
+                    return Promise.reject(err);
+                });
+            }
+
+            originalRequest._retry = true;
+            isRefreshing = true;
+
+            try {
+                console.log('Attempting token refresh...');
+                // Attempt to refresh the token
+                const response = await api.post('/auth/refresh');
+                console.log('Token refresh successful');
+                
+                processQueue(null);
+                isRefreshing = false;
+                
+                // Retry the original request
+                return api(originalRequest);
+            } catch (refreshError) {
+                console.log('Token refresh failed:', refreshError);
+                processQueue(refreshError);
+                isRefreshing = false;
+                
+                // If refresh fails, redirect to login
+                if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+                    window.location.href = '/login';
+                }
+                
+                return Promise.reject(refreshError);
+            }
+        }
+
+        return Promise.reject(error);
     }
 )
 
