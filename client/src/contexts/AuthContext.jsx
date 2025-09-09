@@ -31,12 +31,28 @@ export const AuthProvider = ({ children }) => {
 
         const checkAuth = async () => {
             try {
+                // First check if we have any indication of existing tokens
+                const hasTokens = document.cookie.includes('accessToken') || 
+                                 document.cookie.includes('refreshToken') ||
+                                 localStorage.getItem('accessToken') ||
+                                 sessionStorage.getItem('accessToken');
+                
+                if (!hasTokens) {
+                    console.log('No tokens found, skipping auth verification')
+                    setLoading(false)
+                    authCheckedRef.current = true
+                    return
+                }
+                
                 const response = await api.get('/auth/verify-token')
                 if (response.data.valid) {
                     setUser(response.data.user)
+                    console.log('User authenticated successfully')
                 }
             } catch (error) {
-                console.log('User not authenticated')
+                console.log('User not authenticated:', error.response?.status)
+                // Clear user state on auth failure
+                setUser(null)
             } finally {
                 setLoading(false)
                 authCheckedRef.current = true
@@ -67,16 +83,13 @@ export const AuthProvider = ({ children }) => {
             }
             
             setUser(response.data.user)
-            console.log('User set after login:', response.data.user)
             toast.success('Login successful!')
             
             // Internal navigation
             if (redirectUrl && !response.data.redirectUrl) {
-                console.log('Navigating to:', redirectUrl)
                 navigate(redirectUrl)
             } else {
-                console.log('Navigating to: /test-dashboard')
-                navigate('/test-dashboard')
+                navigate('/dashboard')
             }
             
             return response.data

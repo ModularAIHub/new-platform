@@ -19,11 +19,14 @@ import {
 class AuthController {
     // Helper function to set secure cookies
     static setAuthCookies(res, accessToken, refreshToken) {
+        // Use localhost domain for local dev, otherwise use production domain
+        const isLocalhost = process.env.DOMAIN === 'localhost' || process.env.CLIENT_URL?.includes('localhost');
+        const cookieDomain = isLocalhost ? 'localhost' : '.kanishksaraswat.me';
         res.cookie('accessToken', accessToken, {
             httpOnly: true,
             secure: true,
             sameSite: 'none',
-            domain: '.kanishksaraswat.me',
+            domain: cookieDomain,
             path: '/',
             maxAge: 15 * 60 * 1000 // 15 minutes
         });
@@ -32,7 +35,7 @@ class AuthController {
             httpOnly: true,
             secure: true,
             sameSite: 'none',
-            domain: '.kanishksaraswat.me',
+            domain: cookieDomain,
             path: '/',
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         });
@@ -40,11 +43,13 @@ class AuthController {
 
     // Helper function to clear cookies
     static clearAuthCookies(res) {
+        const isLocalhost = process.env.DOMAIN === 'localhost' || process.env.CLIENT_URL?.includes('localhost');
+        const cookieDomain = isLocalhost ? 'localhost' : '.kanishksaraswat.me';
         res.clearCookie('accessToken', {
             httpOnly: true,
             secure: true,
             sameSite: 'none',
-            domain: '.kanishksaraswat.me',
+            domain: cookieDomain,
             path: '/'
         });
 
@@ -52,20 +57,14 @@ class AuthController {
             httpOnly: true,
             secure: true,
             sameSite: 'none',
-            domain: '.kanishksaraswat.me',
+            domain: cookieDomain,
             path: '/'
         });
-            // Debug: About to generate accessToken
-            console.log('[LOGIN] About to generate accessToken');
     }
 
     // Helper to generate 6-digit numeric OTP
     static generateOTP() {
         // For testing purposes, use a fixed OTP
-            console.log('[LOGIN] accessToken generated:', !!accessToken);
-
-            // Debug: About to generate refreshToken
-            console.log('[LOGIN] About to generate refreshToken');
         // return '123456';
         return Math.floor(100000 + Math.random() * 900000).toString();
     }

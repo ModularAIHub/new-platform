@@ -53,10 +53,7 @@ const TabbedFeaturesSection = () => {
                   key={activeTab}
                   src={tabImages[activeTab]}
                   alt={`${activeTab} dashboard interface`}
-                  className="w-full h-full object-cover transition-all duration-700 ease-in-out transform"
-                  style={{
-                    animation: 'fadeInScale 0.7s ease-out'
-                  }}
+                  className="w-full h-full object-cover transition-all duration-700 ease-in-out transform animate-fadeInScale"
                 />
               </div>
               
@@ -70,19 +67,6 @@ const TabbedFeaturesSection = () => {
           </div>
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes fadeInScale {
-          0% {
-            opacity: 0;
-            transform: scale(0.95);
-          }
-          100% {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-      `}</style>
     </section>
   );
 };
