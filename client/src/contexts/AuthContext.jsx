@@ -31,32 +31,29 @@ export const AuthProvider = ({ children }) => {
 
         const checkAuth = async () => {
             try {
-                // First check if we have any indication of existing tokens
-                const hasTokens = document.cookie.includes('accessToken') || 
-                                 document.cookie.includes('refreshToken') ||
-                                 localStorage.getItem('accessToken') ||
-                                 sessionStorage.getItem('accessToken');
+                console.log('Checking authentication with /auth/me endpoint...');
                 
-                if (!hasTokens) {
-                    console.log('No tokens found, skipping auth verification')
-                    setLoading(false)
-                    authCheckedRef.current = true
-                    return
-                }
+                // Since we're using httpOnly cookies, just try to call the protected endpoint
+                // The cookies will be sent automatically with the request
+                const response = await api.get('/auth/me')
+                console.log('Auth API response:', response.data);
                 
-                const response = await api.get('/auth/verify-token')
-                if (response.data.valid) {
+                if (response.data.success && response.data.user) {
                     setUser(response.data.user)
-                    console.log('User authenticated successfully')
+                    console.log('User authenticated successfully:', response.data.user)
+                } else {
+                    console.log('Authentication failed - no user data');
+                    setUser(null);
                 }
             } catch (error) {
-                console.log('User not authenticated:', error.response?.status)
+                console.log('Auth check error:', error.response?.status, error.response?.data)
+                console.log('Error details:', error);
                 // Clear user state on auth failure
                 setUser(null)
             } finally {
                 setLoading(false)
                 authCheckedRef.current = true
-                console.log('Auth check completed')
+                console.log('Auth check completed, user set:', !!user)
             }
         }
 

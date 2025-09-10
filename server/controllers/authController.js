@@ -11,6 +11,7 @@ import {
     validateOTPRequest,
     validateOTPVerification,
     validatePasswordChange,
+    validatePasswordReset,
     validateNotificationPreferences,
     validateTwoFactorSettings,
     validatePassword
@@ -70,8 +71,8 @@ class AuthController {
     // Helper to generate 6-digit numeric OTP
     static generateOTP() {
         // For testing purposes, use a fixed OTP
-        // return '123456';
-        return Math.floor(100000 + Math.random() * 900000).toString();
+        return '123456';
+        // return Math.floor(100000 + Math.random() * 900000).toString();
     }
 
     // Register user - single method with email verification
@@ -297,12 +298,28 @@ class AuthController {
             // Set cookies for platform
             AuthController.setAuthCookies(res, accessToken, refreshToken);
 
-            // Return tokens and redirect URL for external apps
+            // For external redirects, use the callback endpoint instead of exposing tokens in URL
+            if (redirectUrl && !redirectUrl.includes('localhost:5173')) {
+                // Extract the base URL and path from redirectUrl
+                const url = new URL(redirectUrl);
+                const isLocalTweetGenie = url.hostname === 'localhost' && url.port === '5174';
+                const isTweetGenieDomain = url.hostname.includes('tweet.suitegenie.in');
+                
+                if (isLocalTweetGenie || isTweetGenieDomain) {
+                    // Use Tweet Genie's secure callback endpoint
+                    const callbackUrl = `${url.protocol}//${url.host}/api/auth/callback?token=${encodeURIComponent(accessToken)}&refreshToken=${encodeURIComponent(refreshToken)}&redirect=${encodeURIComponent(url.pathname)}`;
+                    
+                    console.log('[LOGIN REDIRECT] Using secure callback:', callbackUrl);
+                    return res.redirect(callbackUrl);
+                }
+            }
+
+            // Return tokens and redirect URL for external apps (fallback)
             res.json({
                 message: 'Login successful',
-                accessToken: accessToken, // Include token for external redirect
-                refreshToken: refreshToken, // Include refresh token for external redirect
-                redirectUrl: `${redirectUrl}?token=${accessToken}&refreshToken=${refreshToken}`,
+                accessToken: accessToken,
+                refreshToken: refreshToken,
+                redirectUrl: redirectUrl,
                 user: {
                     id: user.id,
                     email: user.email,
@@ -330,8 +347,8 @@ class AuthController {
     // Reset password (for forgot password flow - no authentication required)
     static async resetPassword(req, res) {
         try {
-            // Validate password change data
-            const validation = validatePasswordChange(req.body);
+            // Validate password reset data
+            const validation = validatePasswordReset(req.body);
             if (!validation.isValid) {
                 return res.status(400).json({
                     error: 'Validation failed',
@@ -340,40 +357,23 @@ class AuthController {
                 });
             }
 
-            const { newPassword, verificationToken } = validation.sanitized;
+            const { newPassword, email, otp } = validation.sanitized;
 
-            // Verify the verification token
-            let decoded;
-            try {
-                decoded = jwt.verify(verificationToken, process.env.JWT_SECRET);
-                
-                // Check if token is for password reset purpose
-                if (decoded.purpose !== 'verification' && decoded.purpose !== 'password-reset') {
-                    return res.status(400).json({
-                        error: 'Invalid verification token purpose',
-                        code: 'INVALID_TOKEN_PURPOSE'
-                    });
-                }
-
-                // Check if token is not expired
-                if (decoded.timestamp && (Date.now() - decoded.timestamp) > 3600000) { // 1 hour
-                    return res.status(400).json({
-                        error: 'Verification token has expired',
-                        code: 'TOKEN_EXPIRED'
-                    });
-                }
-
-            } catch (jwtError) {
+            // Verify OTP from Redis
+            const otpKey = `otp:password-reset:${email}`;
+            const storedOtp = await redisClient.get(otpKey);
+            console.log(`[RESET PASSWORD] OTP Key: ${otpKey}`);
+            console.log(`[RESET PASSWORD] Stored OTP: ${storedOtp}`);
+            console.log(`[RESET PASSWORD] Provided OTP: ${otp}`);
+            if (!storedOtp || storedOtp !== otp) {
                 return res.status(400).json({
-                    error: 'Invalid or expired verification token',
-                    code: 'INVALID_TOKEN'
+                    error: 'Invalid or expired OTP',
+                    code: 'INVALID_OTP'
                 });
             }
 
-            const userEmail = decoded.email;
-
-            // Find user by email from token
-            const userResult = await query('SELECT id FROM users WHERE email = $1', [userEmail]);
+            // Find user by email
+            const userResult = await query('SELECT id FROM users WHERE email = $1', [email]);
             if (userResult.rows.length === 0) {
                 return res.status(404).json({
                     error: 'User not found',
@@ -391,6 +391,9 @@ class AuthController {
                 'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
                 [passwordHash, userId]
             );
+
+            // Delete the OTP after successful password reset to prevent replay attacks
+            await redisClient.del(otpKey);
 
             res.json({
                 message: 'Password reset successfully!'
@@ -625,18 +628,13 @@ class AuthController {
             const rateLimitKey = `otp_rate_limit:${email}`;
             const attempts = await redisClient.get(rateLimitKey);
             if (attempts && parseInt(attempts) >= 3) {
-                console.log('[LOGIN REDIRECT] accessToken generated:', !!accessToken);
                 return res.status(429).json({ 
                     error: 'Too many OTP requests. Please wait 15 minutes before trying again.' 
-              
-
-                // Debug: About to generate refreshToken
                 });
             }
 
             // For password-reset, check if user exists (but don't reveal if they don't)
             if (purpose === 'password-reset') {
-                console.log('[LOGIN REDIRECT] refreshToken generated:', !!refreshToken);
                 const userResult = await query('SELECT id FROM users WHERE email = $1', [email]);
                 if (userResult.rows.length === 0) {
                     return res.json({ message: 'If this email exists, an OTP has been sent' });

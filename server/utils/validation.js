@@ -28,7 +28,8 @@ export const validateEmail = (email) => {
 
     return {
         isValid: errors.length === 0,
-        errors
+        errors,
+        sanitized: email ? email.toLowerCase().trim() : ''
     };
 };
 
@@ -433,6 +434,43 @@ export const validatePasswordChange = (data) => {
     };
 };
 
+// Password reset validation (for forgot password flow with OTP)
+export const validatePasswordReset = (data) => {
+    const { newPassword, email, otp } = data;
+    const errors = {};
+
+    // Validate email
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.isValid) {
+        errors.email = emailValidation.errors;
+    }
+
+    // Validate OTP
+    if (!otp) {
+        errors.otp = ['OTP is required'];
+    } else if (typeof otp !== 'string') {
+        errors.otp = ['OTP must be a string'];
+    } else if (!/^\d{6}$/.test(otp)) {
+        errors.otp = ['OTP must be a 6-digit number'];
+    }
+
+    // Validate new password
+    const passwordValidation = validatePassword(newPassword);
+    if (!passwordValidation.isValid) {
+        errors.newPassword = passwordValidation.errors;
+    }
+
+    return {
+        isValid: Object.keys(errors).length === 0,
+        errors,
+        sanitized: {
+            newPassword,
+            email: emailValidation.sanitized,
+            otp
+        }
+    };
+};
+
 // Notification preferences validation
 export const validateNotificationPreferences = (data) => {
     const { emailEnabled } = data;
@@ -518,6 +556,7 @@ export default {
     validateOTPRequest,
     validateOTPVerification,
     validatePasswordChange,
+    validatePasswordReset,
     validateNotificationPreferences,
     validateTwoFactorSettings,
     sanitizeInput,
