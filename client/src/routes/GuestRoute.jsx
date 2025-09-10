@@ -1,8 +1,9 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const GuestRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -12,12 +13,15 @@ const GuestRoute = ({ children }) => {
     );
   }
 
-  // If user is logged in, redirect to dashboard
-  if (isAuthenticated) {
+  // Check if user is coming from logout
+  const isLogout = new URLSearchParams(location.search).get('logout') === 'true';
+
+  // If user is logged in and NOT coming from logout, redirect to dashboard
+  if (isAuthenticated && !isLogout) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // If not logged in, render the children (login/register forms)
+  // If not logged in OR coming from logout, render the children (login/register forms)
   return children;
 };
 
