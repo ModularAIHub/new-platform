@@ -298,28 +298,8 @@ class AuthController {
             // Set cookies for platform
             AuthController.setAuthCookies(res, accessToken, refreshToken);
 
-            // For external redirects, use the callback endpoint instead of exposing tokens in URL
-            if (redirectUrl && !redirectUrl.includes('localhost:5173')) {
-                // Extract the base URL and path from redirectUrl
-                const url = new URL(redirectUrl);
-                const isLocalTweetGenie = url.hostname === 'localhost' && url.port === '5174';
-                const isTweetGenieDomain = url.hostname.includes('tweet.suitegenie.in');
-                
-                if (isLocalTweetGenie || isTweetGenieDomain) {
-                    // Use Tweet Genie's secure callback endpoint
-                    const callbackUrl = `${url.protocol}//${url.host}/api/auth/callback?token=${encodeURIComponent(accessToken)}&refreshToken=${encodeURIComponent(refreshToken)}&redirect=${encodeURIComponent(url.pathname)}`;
-                    
-                    console.log('[LOGIN REDIRECT] Using secure callback:', callbackUrl);
-                    return res.redirect(callbackUrl);
-                }
-            }
-
-            // Return tokens and redirect URL for external apps (fallback)
             res.json({
                 message: 'Login successful',
-                accessToken: accessToken,
-                refreshToken: refreshToken,
-                redirectUrl: redirectUrl,
                 user: {
                     id: user.id,
                     email: user.email,
@@ -342,6 +322,60 @@ class AuthController {
     static logout(req, res) {
         AuthController.clearAuthCookies(res);
         res.json({ message: 'Logged out successfully' });
+    }
+
+    // Generate secure session for external apps (no tokens in URLs)
+    static async generateSecureSession(req, res) {
+        try {
+            const { redirectUrl } = req.body;
+            const userId = req.user.id;
+            const email = req.user.email;
+            
+            if (!redirectUrl) {
+                return res.status(400).json({
+                    error: 'Redirect URL is required',
+                    code: 'MISSING_REDIRECT_URL'
+                });
+            }
+            
+            // Generate a secure session ID (no sensitive data)
+            const sessionId = require('crypto').randomBytes(32).toString('hex');
+            
+            // Store session data securely in memory/Redis (expires in 5 minutes)
+            const sessionData = {
+                userId: userId,
+                email: email,
+                redirectUrl: redirectUrl,
+                createdAt: Date.now(),
+                expiresAt: Date.now() + (5 * 60 * 1000) // 5 minutes
+            };
+            
+            // Store in memory for now (in production, use Redis)
+            global.secureSessions = global.secureSessions || new Map();
+            global.secureSessions.set(sessionId, sessionData);
+            
+            // Clean up expired sessions
+            setTimeout(() => {
+                global.secureSessions.delete(sessionId);
+            }, 5 * 60 * 1000);
+            
+            // Parse the redirect URL to create secure POST endpoint
+            const url = new URL(redirectUrl);
+            const baseUrl = `${url.protocol}//${url.hostname}${url.port ? ':' + url.port : ''}`;
+            
+            res.json({
+                success: true,
+                sessionId: sessionId,
+                postUrl: `${baseUrl}/api/auth/secure-login`
+            });
+        } catch (error) {
+            console.error('Secure session generation error:', error);
+            res.status(500).json({
+                error: 'Failed to generate secure session',
+                code: 'SECURE_SESSION_ERROR',
+                details: error?.message || error
+            });
+        }
     }
 
     // Reset password (for forgot password flow - no authentication required)
@@ -892,6 +926,59 @@ class AuthController {
         } catch (error) {
             console.error('Logout error:', error);
             res.status(500).json({ error: 'Failed to logout' });
+        }
+    }
+
+    // Verify secure session for external apps
+    static async verifySession(req, res) {
+        try {
+            const { sessionId } = req.body;
+            
+            if (!sessionId) {
+                return res.status(400).json({
+                    error: 'Session ID required',
+                    success: false
+                });
+            }
+            
+            // Check if session exists and is valid
+            const sessions = global.secureSessions || new Map();
+            const sessionData = sessions.get(sessionId);
+            
+            if (!sessionData) {
+                return res.status(401).json({
+                    error: 'Session not found',
+                    success: false
+                });
+            }
+            
+            // Check if session has expired
+            if (Date.now() > sessionData.expiresAt) {
+                sessions.delete(sessionId);
+                return res.status(401).json({
+                    error: 'Session expired',
+                    success: false
+                });
+            }
+            
+            // Session is valid - return user data and consume session (one-time use)
+            sessions.delete(sessionId);
+            
+            res.json({
+                success: true,
+                user: {
+                    userId: sessionData.userId,
+                    email: sessionData.email
+                }
+            });
+            
+        } catch (error) {
+            console.error('Session verification error:', error);
+            res.status(500).json({
+                error: 'Session verification failed',
+                success: false,
+                details: error?.message || error
+            });
         }
     }
 }
