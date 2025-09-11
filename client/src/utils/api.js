@@ -63,9 +63,16 @@ api.interceptors.response.use(
                              sessionStorage.getItem('accessToken');
             
             if (!hasTokens) {
-                // No tokens available, redirect to login immediately
-                if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-                    window.location.href = '/login';
+                // No tokens available, but don't redirect if on guest pages
+                const isGuestPage = window.location.pathname === '/' || 
+                                   window.location.pathname === '/login' || 
+                                   window.location.pathname === '/register' ||
+                                   window.location.pathname === '/about' ||
+                                   window.location.pathname === '/contact' ||
+                                   window.location.pathname === '/plans';
+                                   
+                if (typeof window !== 'undefined' && !isGuestPage) {
+                    window.location.href = '/';
                 }
                 return Promise.reject(error);
             }
@@ -100,9 +107,16 @@ api.interceptors.response.use(
                 processQueue(refreshError);
                 isRefreshing = false;
                 
-                // If refresh fails, redirect to login
-                if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-                    window.location.href = '/login';
+                // If refresh fails, but don't redirect if on guest pages
+                const isGuestPage = window.location.pathname === '/' || 
+                                   window.location.pathname === '/login' || 
+                                   window.location.pathname === '/register' ||
+                                   window.location.pathname === '/about' ||
+                                   window.location.pathname === '/contact' ||
+                                   window.location.pathname === '/plans';
+                                   
+                if (typeof window !== 'undefined' && !isGuestPage) {
+                    window.location.href = '/';
                 }
                 
                 return Promise.reject(refreshError);

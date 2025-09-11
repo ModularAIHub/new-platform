@@ -10,6 +10,12 @@ router.post('/login', AuthController.login);
 // Login for external apps (returns token for redirect)
 router.post('/login-redirect', AuthController.loginWithRedirect);
 
+// Generate secure session for external apps (no tokens in URLs)
+router.post('/generate-secure-session', authenticateToken, AuthController.generateSecureSession);
+
+// Verify secure session for external apps
+router.post('/verify-session', AuthController.verifySession);
+
 // Logout user
 router.post('/logout', AuthController.logout);
 

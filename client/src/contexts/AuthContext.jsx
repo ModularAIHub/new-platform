@@ -63,30 +63,55 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (email, password, redirectUrl = null) => {
         try {
-            let response;
-            
-            if (redirectUrl) {
-                // Use loginWithRedirect endpoint for external redirects
-                response = await api.post('/auth/login-redirect', { email, password, redirectUrl })
-                
-                if (response.data.redirectUrl) {
-                    // External redirect with access token
-                    window.location.href = response.data.redirectUrl;
-                    return response.data;
-                }
-            } else {
-                // Regular login
-                response = await api.post('/auth/login', { email, password })
-            }
+            // Always use regular login
+            const response = await api.post('/auth/login', { email, password });
             
             setUser(response.data.user)
             toast.success('Login successful!')
             
-            // Internal navigation
-            if (redirectUrl && !response.data.redirectUrl) {
-                navigate(redirectUrl)
+            // Handle redirect after successful login
+            if (redirectUrl) {
+                // For external redirects (Tweet Genie), use secure form POST method
+                if (redirectUrl.includes('localhost:5174') || redirectUrl.includes('tweet.suitegenie.in')) {
+                    // Generate secure session and submit via form POST (no tokens in URL)
+                    try {
+                        const secureResponse = await api.post('/auth/generate-secure-session', { 
+                            redirectUrl 
+                        });
+                        
+                        if (secureResponse.data.success) {
+                            // Create and submit a form to POST the session securely
+                            const form = document.createElement('form');
+                            form.method = 'POST';
+                            form.action = secureResponse.data.postUrl;
+                            
+                            const sessionInput = document.createElement('input');
+                            sessionInput.type = 'hidden';
+                            sessionInput.name = 'sessionId';
+                            sessionInput.value = secureResponse.data.sessionId;
+                            form.appendChild(sessionInput);
+                            
+                            const redirectInput = document.createElement('input');
+                            redirectInput.type = 'hidden';
+                            redirectInput.name = 'redirect';
+                            redirectInput.value = new URL(redirectUrl).pathname;
+                            form.appendChild(redirectInput);
+                            
+                            document.body.appendChild(form);
+                            form.submit();
+                            return response.data;
+                        }
+                    } catch (autoLoginError) {
+                        console.error('Secure session generation failed:', autoLoginError);
+                        // Fallback to direct redirect
+                        window.location.href = redirectUrl;
+                    }
+                } else {
+                    // Internal redirect
+                    window.location.href = redirectUrl;
+                }
             } else {
-                navigate('/dashboard')
+                navigate('/dashboard');
             }
             
             return response.data
