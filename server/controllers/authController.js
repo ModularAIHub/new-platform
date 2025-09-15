@@ -71,8 +71,8 @@ class AuthController {
     // Helper to generate 6-digit numeric OTP
     static generateOTP() {
         // For testing purposes, use a fixed OTP
-        return '123456';
-        // return Math.floor(100000 + Math.random() * 900000).toString();
+        // return '123456';
+        return Math.floor(100000 + Math.random() * 900000).toString();
     }
 
     // Register user - single method with email verification
