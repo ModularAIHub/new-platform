@@ -7,7 +7,7 @@ import FeaturesSection from '../components/homepage/FeaturesSection';
 import TabbedFeaturesSection from '../components/homepage/TabbedFeaturesSection';
 import WorkflowSection from '../components/homepage/WorkflowSection';
 import TestimonialsSection from '../components/homepage/TestimonialsSection';
-import PricingSection from '../components/homepage/PricingSection';
+// import PricingSection from '../components/homepage/PricingSection';
 import ComparisonSection from '../components/homepage/ComparisonSection';
 import CTASection from '../components/homepage/CTASection';
 
@@ -31,20 +31,14 @@ const HomePage = () => {
           <TabbedFeaturesSection />
         </FadeInSection>
 
-        {/* Revolutionize Your Workflow */}
-        <FadeInSection>
-          <WorkflowSection />
-        </FadeInSection>
+        {/* Revolutionize Your Workflow section removed to avoid redundancy with TabbedFeaturesSection */}
 
         {/* Trusted by Families and Small Business */}
         {/* <FadeInSection>
           <TestimonialsSection />
         </FadeInSection> */}
 
-        {/* Pricing Section */}
-        <FadeInSection>
-          <PricingSection />
-        </FadeInSection>
+        {/* Pricing Section removed: now only on dedicated page */}
 
         {/* Platform Comparison Section */}
         <FadeInSection>
