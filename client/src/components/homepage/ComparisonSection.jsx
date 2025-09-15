@@ -73,7 +73,7 @@ const ComparisonSection = () => {
   };
 
   return (
-    <section className="py-24 bg-slate-900">
+  <section className="py-24 bg-gradient-to-br from-gray-950 via-slate-900 to-blue-950">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <div className="inline-flex items-center px-6 py-3 bg-blue-500/20 rounded-full text-sm font-semibold text-blue-300 mb-6 border border-blue-400/20">

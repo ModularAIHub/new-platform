@@ -61,13 +61,13 @@ const PricingSection = () => {
   ];
 
   return (
-    <section className="py-24 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  <section className="py-24 bg-gradient-to-br from-gray-900 via-gray-950 to-blue-900">
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-light text-gray-900 mb-6">
+          <h2 className="text-4xl font-light text-white mb-6">
             Choose Your Plan
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-200 max-w-3xl mx-auto">
             Start free and scale as you grow. No hidden fees, cancel anytime.
           </p>
         </div>
@@ -76,10 +76,10 @@ const PricingSection = () => {
           {plans.map((plan, index) => (
             <div
               key={index}
-              className={`relative bg-white rounded-2xl border p-8 ${
+              className={`relative bg-gray-900/80 rounded-2xl border p-8 ${
                 plan.popular 
                   ? 'border-blue-500 shadow-lg scale-105' 
-                  : 'border-gray-200 shadow-sm'
+                  : 'border-gray-800 shadow-sm'
               }`}
             >
               {plan.popular && (
@@ -91,28 +91,28 @@ const PricingSection = () => {
               )}
 
               <div className="text-center">
-                <h3 className="text-2xl font-semibold text-gray-900 mb-2">{plan.name}</h3>
+                <h3 className="text-2xl font-semibold text-white mb-2">{plan.name}</h3>
                 <div className="mb-4">
-                  <span className="text-4xl font-light text-gray-900">{plan.price}</span>
+                  <span className="text-4xl font-light text-white">{plan.price}</span>
                   {plan.period !== "Forever" && (
-                    <span className="text-gray-600 ml-2">{plan.period}</span>
+                    <span className="text-gray-300 ml-2">{plan.period}</span>
                   )}
                 </div>
-                <p className="text-gray-600 mb-6">{plan.description}</p>
+                <p className="text-gray-300 mb-6">{plan.description}</p>
               </div>
 
               <ul className="space-y-4 mb-8">
                 {plan.features.map((feature, featureIndex) => (
                   <li key={featureIndex} className="flex items-center">
-                    <svg className="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-5 h-5 text-green-400 mr-3" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
-                    <span className="text-gray-700">{feature}</span>
+                    <span className="text-gray-200">{feature}</span>
                   </li>
                 ))}
               </ul>
 
-              <button className={`w-full py-3 px-6 rounded-lg font-semibold transition-all duration-300 ${plan.buttonStyle}`}>
+              <button className={`w-full py-3 px-6 rounded-lg font-semibold transition-all duration-300 ${plan.buttonStyle} bg-blue-600/90 text-white hover:bg-blue-700/90 border-none`}>
                 {plan.buttonText}
               </button>
             </div>
@@ -122,7 +122,7 @@ const PricingSection = () => {
         <div className="text-center">
           <button 
             onClick={handleExplorePricing}
-            className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-8 py-3 rounded-lg transition-all duration-300"
+            className="bg-blue-600/90 hover:bg-blue-700/90 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-300"
           >
             Explore More Plans
           </button>

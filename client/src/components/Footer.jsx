@@ -17,11 +17,11 @@ export default function Footer() {
                     <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
                   </svg>
                 </div>
-                <span className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Autoverse</span>
+                <span className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">SuiteGenie</span>
               </div>
               <p className="text-slate-300 mb-6 text-lg leading-relaxed max-w-lg">
-                Empowering creators worldwide with AI-powered social media management. 
-                <span className="text-blue-400 font-semibold block mt-2">From Kota to the world - AI for everyone.</span>
+                SuiteGenie empowers creators and teams to automate, optimize, and scale content across every channel with AI. 
+                <span className="text-blue-400 font-semibold block mt-2">Your all-in-one content suite for growth.</span>
               </p>
               
               {/* Platforms We Support */}
@@ -112,7 +112,7 @@ export default function Footer() {
           <div className="pt-8 border-t border-white/10">
             <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
               <div className="text-slate-400 text-sm">
-                &copy; {new Date().getFullYear()} Autoverse. All rights reserved. Made with ❤️ in India.
+                &copy; {new Date().getFullYear()} SuiteGenie. All rights reserved. Made with ❤️ in India.
               </div>
               <div className="flex items-center gap-6 text-sm">
                 <a href="/terms" className="text-slate-400 hover:text-blue-400 transition-colors duration-300">Terms of Service</a>

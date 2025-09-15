@@ -5,75 +5,55 @@ const WorkflowSection = () => {
     {
       icon: (
         <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
         </svg>
       ),
-      title: "AI-Driven Task",
-      description: "Let our advanced AI algorithm take the guesswork out of your day. Our platform intelligently analyzes your work patterns, upcoming deadlines, and the importance of each project—helping you prioritize tasks, eliminate distractions, and maintain peak productivity throughout your workflow.",
-      bgColor: "bg-pink-100",
+      title: "Content & Image Generation",
+      description: "Generate engaging posts and stunning images for all your channels. SuiteGenie helps you create scroll-stopping content and visuals in seconds—no design or writing skills needed.",
+      bgColor: "bg-blue-100",
       reverse: false
     },
     {
       icon: (
         <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m4 4h1a2 2 0 002-2v-2a2 2 0 00-2-2h-1m-4 0H7a2 2 0 00-2 2v2a2 2 0 002 2h1" />
         </svg>
       ),
-      title: "Advanced Analytics",
-      description: "Let our advanced AI algorithm take the guesswork out of your day. Our platform intelligently analyzes your work patterns, upcoming deadlines, and the importance of each project—helping you prioritize tasks, eliminate distractions, and maintain peak productivity throughout your workflow.",
+      title: "Engagement Analytics",
+      description: "Track likes, comments, and engagement for every post. See what works, when your audience is most active, and optimize your strategy with real data—no guesswork. Discover the best times to post based on real engagement, so you always publish at the perfect moment.",
       bgColor: "bg-green-100",
       reverse: true
     },
     {
       icon: (
         <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       ),
-      title: "Cross-Platform Sync",
-      description: "Let our advanced AI algorithm take the guesswork out of your day. Our platform intelligently analyzes your work patterns, upcoming deadlines, and the importance of each project—helping you prioritize tasks, eliminate distractions, and maintain peak productivity throughout your workflow.",
-      bgColor: "bg-yellow-100",
-      reverse: false
+      title: "Bulk Generation & Scheduling",
+      description: "Create and schedule dozens of posts in one go. SuiteGenie makes it easy to plan campaigns, fill your calendar, and stay consistent—no more manual posting.",
+      bgColor: "bg-purple-100",
+      reverse: true
     }
   ];
 
   return (
-    <section className="py-24 bg-white">
+    <section className="py-24 bg-gradient-to-br from-white via-blue-50 to-purple-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-light text-gray-900 mb-6">Revolutionize Your Workflow</h2>
+          <h2 className="text-4xl font-extrabold text-gray-900 mb-4 tracking-tight">How SuiteGenie Works</h2>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">Automate your content creation, scheduling, and publishing across all your favorite platforms—without losing your creative touch.</p>
         </div>
-
-        <div className="space-y-24">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {workflows.map((workflow, index) => (
-            <div key={index} className={`grid grid-cols-1 lg:grid-cols-2 gap-12 items-center ${workflow.reverse ? 'lg:flex-row-reverse' : ''}`}>
-              {/* Content */}
-              <div className={workflow.reverse ? 'lg:order-2' : ''}>
-                <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mb-6">
-                  {workflow.icon}
-                </div>
-                <h3 className="text-2xl font-semibold text-gray-900 mb-4">{workflow.title}</h3>
-                <p className="text-gray-600 leading-relaxed text-lg">
-                  {workflow.description}
-                </p>
+            <div key={index} className={`bg-white/80 border border-blue-100 p-10 rounded-3xl text-center hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 flex flex-col items-center`}> 
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-xl flex items-center justify-center mb-6 shadow-md">
+                {workflow.icon}
               </div>
-              
-              {/* Image/Visual */}
-              <div className={workflow.reverse ? 'lg:order-1' : ''}>
-                <div className={`${workflow.bgColor} rounded-2xl p-8 h-80 flex items-center justify-center`}>
-                  <div className="text-center">
-                    <div className="w-24 h-24 bg-white rounded-lg flex items-center justify-center mx-auto mb-4 shadow-sm">
-                      {workflow.icon}
-                    </div>
-                    <p className="text-gray-600 font-medium">{workflow.title}</p>
-                    <div className="mt-4 space-y-2">
-                      <div className="h-2 bg-white/70 rounded w-3/4 mx-auto"></div>
-                      <div className="h-2 bg-white/70 rounded w-1/2 mx-auto"></div>
-                      <div className="h-2 bg-white/70 rounded w-2/3 mx-auto"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <h3 className="text-2xl font-bold text-blue-900 mb-4">{workflow.title}</h3>
+              <p className="text-gray-700 leading-relaxed text-lg">
+                {workflow.description}
+              </p>
             </div>
           ))}
         </div>
