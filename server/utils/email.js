@@ -13,7 +13,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function sendMail({ to, subject, html, text }) {
     console.log('📧 Sending email...');
-    console.log('From: Autoverse <noreply@kanishksaraswat.me>');
+    console.log('From: Autoverse <noreply@suitegenie.in>');
     console.log('To:', to);
     try {
         const { data, error } = await resend.emails.send({
