@@ -45,29 +45,20 @@ const FeaturesSection = () => {
   ];
 
   return (
-    <section className="py-24 bg-gray-50">
+    <section className="py-24 bg-gradient-to-br from-white via-blue-50 to-purple-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-light text-gray-900 mb-6">Powerful Platforms We Automate</h2>
-          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Dominate every major platform with AI-powered automation. From viral tweets to professional posts, we've got your entire content strategy covered.
-          </p>
-          <button
-            onClick={handleGetStarted}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-300"
-          >
-            Get Started
-          </button>
+          <h2 className="text-4xl font-extrabold text-gray-900 mb-4 tracking-tight">How SuiteGenie Works</h2>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">Automate your content creation, scheduling, and publishing across all your favorite platforms—without losing your creative touch.</p>
         </div>
-
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {platforms.map((platform, index) => (
-            <div key={index} className={`${platform.bgColor} ${platform.accent} p-8 rounded-2xl text-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1`}>
-              <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center mx-auto mb-6 shadow-sm">
+            <div key={index} className={`bg-white/80 border border-blue-100 p-10 rounded-3xl text-center hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 flex flex-col items-center`}> 
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-xl flex items-center justify-center mb-6 shadow-md">
                 {platform.icon}
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">{platform.title}</h3>
-              <p className="text-gray-600 leading-relaxed">
+              <h3 className="text-2xl font-bold text-blue-900 mb-4">{platform.title}</h3>
+              <p className="text-gray-700 leading-relaxed text-lg">
                 {platform.description}
               </p>
             </div>
