@@ -2,11 +2,19 @@ import { query } from '../config/database.js';
 import redisClient from '../config/redis.js';
 import CreditService from '../services/creditService.js';
 
+import redisClient from '../config/redis.js';
+import { query } from '../config/database.js';
+
 class SyncWorker {
     constructor() {
         this.isRunning = false;
         this.interval = null;
         this.syncInterval = 10 * 60 * 1000; // 10 minutes
+
+        // Monthly reset state
+        this.lastResetMonth = null;
+        this.monthlyResetInterval = 24 * 60 * 60 * 1000; // 24 hours
+        this.startMonthlyReset();
     }
 
     // Start the sync worker
@@ -28,6 +36,38 @@ class SyncWorker {
         }, this.syncInterval);
 
         console.log(`✅ Credit sync worker started (interval: ${this.syncInterval / 1000}s)`);
+    }
+
+    // Monthly credit reset logic
+    startMonthlyReset() {
+        setInterval(async () => {
+            const now = new Date();
+            const utcMonth = now.getUTCMonth();
+            const utcDate = now.getUTCDate();
+            const utcYear = now.getUTCFullYear();
+            const resetKey = `${utcYear}-${utcMonth}`;
+            if (utcDate === 1 && this.lastResetMonth !== resetKey) {
+                try {
+                    console.log('🔄 Performing monthly credit reset for all users...');
+                    // Update credits in DB: 25 for platform, 55 for BYOK
+                    await query("UPDATE users SET credits_remaining = CASE WHEN api_key_preference = 'byok' THEN 55 WHEN api_key_preference = 'platform' THEN 25 ELSE 0 END");
+
+                    // Fetch all user IDs and their mode
+                    const { rows: users } = await query("SELECT id, api_key_preference FROM users");
+                    for (const user of users) {
+                        let credits = 0;
+                        if (user.api_key_preference === 'byok') credits = 55;
+                        else if (user.api_key_preference === 'platform') credits = 25;
+                        // Update Redis cache
+                        await redisClient.setCredits(user.id, credits);
+                    }
+                    this.lastResetMonth = resetKey;
+                    console.log('✅ Monthly credit reset completed.');
+                } catch (err) {
+                    console.error('❌ Monthly credit reset failed:', err);
+                }
+            }
+        }, this.monthlyResetInterval);
     }
 
     // Stop the sync worker

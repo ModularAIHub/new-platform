@@ -44,7 +44,7 @@ class PlansController {
             const user = result.rows[0];
             const planConfig = PLAN_LIMITS[user.plan_type] || PLAN_LIMITS.free;
 
-            const apiKeysResult = await query('SELECT COUNT(*) as key_count FROM api_keys WHERE user_id = $1 AND is_active = true', [req.user.id]);
+            const apiKeysResult = await query('SELECT COUNT(*) as key_count FROM user_api_keys WHERE user_id = $1 AND is_active = true', [req.user.id]);
             const hasOwnKeys = parseInt(apiKeysResult.rows[0].key_count) > 0;
             let effectiveCredits = planConfig.credits;
             if (hasOwnKeys && user.plan_type !== 'free') {

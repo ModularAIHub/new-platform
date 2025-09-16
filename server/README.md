@@ -17,10 +17,11 @@ A robust Node.js/Express backend API for the Autoverse Hub platform, providing a
   - Password reset functionality
   - Account deletion
 
-- **API Keys System**
-  - Generate and manage API keys
-  - Usage tracking and analytics
-  - Key rotation and security
+
+- **BYOK API Keys System**
+   - Securely store and manage user-provided API keys (BYOK)
+   - Usage tracking and analytics
+   - Key rotation and security
 
 - **Credits Management**
   - Credit allocation and tracking
@@ -139,7 +140,6 @@ server/
 │   └── redis.js       # Redis configuration
 ├── controllers/        # Route controllers
 │   ├── authController.js
-│   ├── apiKeysController.js
 │   ├── creditController.js
 │   ├── paymentsController.js
 │   └── plansController.js
@@ -149,7 +149,6 @@ server/
 │   └── validate.js    # Request validation
 ├── routes/            # API routes
 │   ├── auth.js
-│   ├── apiKeys.js
 │   ├── credits.js
 │   ├── payments.js
 │   ├── plans.js
@@ -183,11 +182,12 @@ server/
 - `POST /api/auth/reset-password` - Reset password (with token)
 - `GET /api/auth/verify-token` - Verify JWT token
 
-### API Keys
-- `GET /api/api-keys` - List user's API keys
-- `POST /api/api-keys` - Create new API key
-- `DELETE /api/api-keys/:id` - Delete API key
-- `PUT /api/api-keys/:id/regenerate` - Regenerate API key
+
+### BYOK (Bring Your Own Key)
+- `GET /byok/keys` - List user's BYOK API keys
+- `POST /byok/key` - Add a new BYOK API key
+- `DELETE /byok/key/:id` - Delete BYOK API key
+- `PUT /byok/key/:id` - Update BYOK API key
 
 ### Credits
 - `GET /api/credits` - Get user's credit balance
@@ -226,21 +226,24 @@ CREATE TABLE users (
     password_hash VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
     plan_type VARCHAR(50) DEFAULT 'free',
-    credits_remaining INTEGER DEFAULT 25,
+   credits_remaining INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
 ```
 
-### API Keys Table
+
+### User API Keys Table (BYOK)
 ```sql
-CREATE TABLE api_keys (
-    id UUID PRIMARY KEY,
-    user_id UUID REFERENCES users(id),
-    name VARCHAR(255) NOT NULL,
-    key_hash VARCHAR(255) NOT NULL,
-    last_used TIMESTAMP,
-    created_at TIMESTAMP DEFAULT NOW()
+CREATE TABLE user_api_keys (
+   id SERIAL PRIMARY KEY,
+   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+   provider VARCHAR(32) NOT NULL,
+   key_name VARCHAR(64),
+   encrypted_key TEXT NOT NULL,
+   created_at TIMESTAMP DEFAULT NOW(),
+   updated_at TIMESTAMP DEFAULT NOW(),
+   is_active BOOLEAN DEFAULT TRUE
 );
 ```
 
