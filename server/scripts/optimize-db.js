@@ -7,7 +7,6 @@ async function optimizeDatabase() {
     // Analyze table statistics
     console.log('📊 Analyzing table statistics...');
     await query('ANALYZE users');
-    await query('ANALYZE api_keys');
     await query('ANALYZE credit_transactions');
     await query('ANALYZE team_members');
     console.log('✅ Table statistics updated');
@@ -27,10 +26,6 @@ async function optimizeDatabase() {
     `);
 
     // Performance indexes for API keys
-    await query(`
-      CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_api_keys_active_provider 
-      ON api_keys(is_active, provider) WHERE is_active = true
-    `);
 
     console.log('✅ Additional indexes created');
 
@@ -38,7 +33,6 @@ async function optimizeDatabase() {
     console.log('🧹 Running VACUUM and REINDEX...');
     await query('VACUUM ANALYZE users');
     await query('VACUUM ANALYZE credit_transactions');
-    await query('VACUUM ANALYZE api_keys');
     await query('REINDEX TABLE users');
     await query('REINDEX TABLE credit_transactions');
     console.log('✅ Database maintenance completed');
