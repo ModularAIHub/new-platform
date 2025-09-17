@@ -122,22 +122,18 @@ class AuthController {
             const passwordHash = await hashPassword(password);
             
             // Create user
+
             const userId = uuidv4();
+            // Set credits_remaining to 0 and do not assign plan_type or credits until user chooses
             const result = await query(
                 `INSERT INTO users (id, email, password_hash, name, plan_type, credits_remaining, created_at, updated_at)
                  VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
                  RETURNING id, email, name, plan_type, credits_remaining, created_at`,
-                [userId, email, passwordHash, name, 'free', 25]
+                [userId, email, passwordHash, name, null, 0]
             );
             const user = result.rows[0];
 
-            // Initialize Redis credits and plan
-            try {
-                await redisClient.setCredits(user.id, 25);
-                await redisClient.setPlan(user.id, 'free');
-            } catch (e) {
-                console.warn('Unable to initialize Redis for new user; will fallback to DB:', e?.message || e);
-            }
+            // Do NOT initialize Redis credits or plan here. This will be done when user selects a mode.
 
             // Return user data without tokens (tokens only issued by login)
             res.status(201).json({
@@ -209,12 +205,8 @@ class AuthController {
             const refreshToken = jwt.sign(
                 { userId: user.id },
                 process.env.JWT_REFRESH_SECRET,
-                { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '3d' }
+                { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
             );
-
-            // Debug: Log tokens after generation
-            console.log('[LOGIN] accessToken:', accessToken);
-            console.log('[LOGIN] refreshToken:', refreshToken);
 
             // Set cookies
             AuthController.setAuthCookies(res, accessToken, refreshToken);

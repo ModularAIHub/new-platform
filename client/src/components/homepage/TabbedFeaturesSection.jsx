@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 const TabbedFeaturesSection = () => {
   const [activeTab, setActiveTab] = useState('generation');
@@ -33,16 +33,16 @@ const TabbedFeaturesSection = () => {
       )
     },
     {
-      id: 'timing',
-      label: 'Optimal Timing',
-      desc: 'Discover the best time to post for maximum reach.',
+      id: 'byok',
+      label: 'BYOK (Bring Your Own Keys)',
+      desc: 'Use your own AI API keys for maximum control.',
       icon: (
-        <svg className="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        <svg className="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
       ),
       content: (
         <>
-          <h3 className="text-3xl font-extrabold mb-4 text-yellow-400">Optimal Timing</h3>
-          <p className="text-lg text-gray-200 mb-2">SuiteGenie analyzes when your audience interacts most, so you always publish at the perfect moment for maximum reach and engagement.</p>
+          <h3 className="text-3xl font-extrabold mb-4 text-orange-400">BYOK (Bring Your Own Keys)</h3>
+          <p className="text-lg text-gray-200 mb-2">Take full control with your own AI API keys. Use OpenAI, Gemini, or Perplexity for content generation. Image generation is supported via OpenAI and Gemini. Keep your data private, control your costs, and maintain complete ownership of your AI interactions.</p>
         </>
       )
     },
@@ -66,35 +66,44 @@ const TabbedFeaturesSection = () => {
   <section className="py-24 bg-gradient-to-br from-gray-800 via-gray-900 to-blue-900 min-h-[70vh]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-100 mb-6">
+          <div className="inline-flex items-center gap-2 bg-blue-500/20 text-blue-300 px-4 py-2 rounded-full text-sm font-medium mb-6 border border-blue-500/30">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            Powerful Features
+          </div>
+          <h2 className="text-4xl lg:text-5xl font-bold text-white mb-6 tracking-tight">
             Explore What SuiteGenie Can Do
           </h2>
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-            Everything you need to create, analyze, and schedule content—faster and smarter.
+          <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
+            Everything you need to create, analyze, and schedule content—faster and smarter than ever before.
           </p>
         </div>
 
         {/* Tab Navigation */}
         <div className="flex justify-center mb-12">
-          <div className="bg-gray-800/60 backdrop-blur p-2 rounded-2xl border border-gray-700 flex flex-col sm:flex-row flex-wrap gap-2 shadow-xl w-full max-w-3xl">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-3 px-4 sm:px-7 py-3 sm:py-4 rounded-xl font-semibold transition-all duration-300 w-full sm:w-auto min-w-[180px] sm:min-w-[200px] text-base focus:outline-none focus:ring-2 focus:ring-blue-500
-                  ${activeTab === tab.id
-                    ? 'bg-blue-700/90 text-white shadow-2xl scale-105 ring-2 ring-blue-400'
-                    : 'text-gray-300 hover:text-white hover:bg-gray-700/60'}
-                `}
-                title={tab.desc}
-              >
-                <span>{tab.icon}</span>
-                <span className="flex flex-col items-start">
-                  <span className="text-sm sm:text-base">{tab.label}</span>
-                  <span className="text-xs opacity-70 mt-1 font-normal">{tab.desc}</span>
-                </span>
-              </button>
-            ))}
+          <div className="bg-gray-800/80 backdrop-blur-sm p-3 rounded-2xl border border-gray-600/50 shadow-2xl w-full max-w-4xl">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-3 px-4 py-4 rounded-xl font-medium transition-all duration-200 text-left group focus:outline-none focus:ring-2 focus:ring-blue-400
+                    ${activeTab === tab.id
+                      ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg transform scale-[1.02]'
+                      : 'text-gray-300 hover:text-white hover:bg-gray-700/50 hover:transform hover:scale-[1.01]'}
+                  `}
+                >
+                  <div className={`p-2 rounded-lg transition-colors ${activeTab === tab.id ? 'bg-white/20' : 'bg-gray-700/50 group-hover:bg-gray-600/50'}`}>
+                    {tab.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold truncate">{tab.label}</div>
+                    <div className="text-xs opacity-75 mt-0.5 line-clamp-2">{tab.desc}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -103,14 +112,95 @@ const TabbedFeaturesSection = () => {
           <div className="h-1 w-32 bg-gradient-to-r from-blue-500 via-purple-500 to-yellow-400 rounded-full opacity-60"></div>
         </div>
 
-        {/* Tab Content - Text Only with Animation */}
+        {/* Tab Content */}
         <div className="flex justify-center">
-          <div
-            key={activeTab}
-            className="w-full max-w-2xl bg-gray-900/90 border border-blue-900 rounded-3xl shadow-2xl p-6 sm:p-10 md:p-12 text-center animate-tabFadeIn backdrop-blur-lg mx-2"
-            style={{ boxShadow: '0 8px 40px 0 rgba(80,120,255,0.10), 0 1.5px 8px 0 rgba(80,120,255,0.10)' }}
-          >
-            {tabs.find(tab => tab.id === activeTab)?.content}
+          <div className="w-full max-w-4xl bg-gradient-to-br from-gray-800/90 to-gray-900/90 border border-gray-600/30 rounded-2xl shadow-2xl p-8 sm:p-12 text-center backdrop-blur-sm">
+            <div key={activeTab} className="transition-all duration-300 ease-in-out">
+              {tabs.find(tab => tab.id === activeTab)?.content}
+              
+              {/* Feature Benefits */}
+              <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-6">
+                {activeTab === 'generation' && (
+                  <>
+                    <div className="bg-blue-500/10 rounded-xl p-4 border border-blue-500/20">
+                      <div className="text-2xl mb-2">⚡</div>
+                      <div className="text-sm font-medium text-blue-300">Lightning Fast</div>
+                      <div className="text-xs text-gray-400 mt-1">Generate content in seconds</div>
+                    </div>
+                    <div className="bg-blue-500/10 rounded-xl p-4 border border-blue-500/20">
+                      <div className="text-2xl mb-2">🎨</div>
+                      <div className="text-sm font-medium text-blue-300">AI-Powered</div>
+                      <div className="text-xs text-gray-400 mt-1">Smart content & image creation</div>
+                    </div>
+                    <div className="bg-blue-500/10 rounded-xl p-4 border border-blue-500/20">
+                      <div className="text-2xl mb-2">📱</div>
+                      <div className="text-sm font-medium text-blue-300">Multi-Platform</div>
+                      <div className="text-xs text-gray-400 mt-1">Works across all channels</div>
+                    </div>
+                  </>
+                )}
+                
+                {activeTab === 'analytics' && (
+                  <>
+                    <div className="bg-green-500/10 rounded-xl p-4 border border-green-500/20">
+                      <div className="text-2xl mb-2">📊</div>
+                      <div className="text-sm font-medium text-green-300">Real-Time Data</div>
+                      <div className="text-xs text-gray-400 mt-1">Live engagement tracking</div>
+                    </div>
+                    <div className="bg-green-500/10 rounded-xl p-4 border border-green-500/20">
+                      <div className="text-2xl mb-2">🎯</div>
+                      <div className="text-sm font-medium text-green-300">Smart Insights</div>
+                      <div className="text-xs text-gray-400 mt-1">Actionable recommendations</div>
+                    </div>
+                    <div className="bg-green-500/10 rounded-xl p-4 border border-green-500/20">
+                      <div className="text-2xl mb-2">📈</div>
+                      <div className="text-sm font-medium text-green-300">Growth Focused</div>
+                      <div className="text-xs text-gray-400 mt-1">Optimize for better results</div>
+                    </div>
+                  </>
+                )}
+                
+                {activeTab === 'byok' && (
+                  <>
+                    <div className="bg-orange-500/10 rounded-xl p-4 border border-orange-500/20">
+                      <div className="text-2xl mb-2">🔐</div>
+                      <div className="text-sm font-medium text-orange-300">Full Control</div>
+                      <div className="text-xs text-gray-400 mt-1">Your keys, your rules</div>
+                    </div>
+                    <div className="bg-orange-500/10 rounded-xl p-4 border border-orange-500/20">
+                      <div className="text-2xl mb-2">💰</div>
+                      <div className="text-sm font-medium text-orange-300">Cost Control</div>
+                      <div className="text-xs text-gray-400 mt-1">Pay only for what you use</div>
+                    </div>
+                    <div className="bg-orange-500/10 rounded-xl p-4 border border-orange-500/20">
+                      <div className="text-2xl mb-2">🛡️</div>
+                      <div className="text-sm font-medium text-orange-300">Privacy First</div>
+                      <div className="text-xs text-gray-400 mt-1">Your data stays with you</div>
+                    </div>
+                  </>
+                )}
+                
+                {activeTab === 'bulk' && (
+                  <>
+                    <div className="bg-purple-500/10 rounded-xl p-4 border border-purple-500/20">
+                      <div className="text-2xl mb-2">🚀</div>
+                      <div className="text-sm font-medium text-purple-300">Bulk Power</div>
+                      <div className="text-xs text-gray-400 mt-1">Create dozens at once</div>
+                    </div>
+                    <div className="bg-purple-500/10 rounded-xl p-4 border border-purple-500/20">
+                      <div className="text-2xl mb-2">📋</div>
+                      <div className="text-sm font-medium text-purple-300">Campaign Ready</div>
+                      <div className="text-xs text-gray-400 mt-1">Plan entire campaigns</div>
+                    </div>
+                    <div className="bg-purple-500/10 rounded-xl p-4 border border-purple-500/20">
+                      <div className="text-2xl mb-2">⏰</div>
+                      <div className="text-sm font-medium text-purple-300">Time Saver</div>
+                      <div className="text-xs text-gray-400 mt-1">Hours of work in minutes</div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
