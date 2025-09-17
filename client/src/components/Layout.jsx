@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import {
@@ -153,7 +153,9 @@ const Layout = ({ children }) => {
                 {/* Page content */}
                 <main className="py-6">
                     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                        {children}
+                        <Suspense fallback={<div>Loading...</div>}>
+                            {children}
+                        </Suspense>
                     </div>
                 </main>
             </div>
