@@ -9,7 +9,7 @@ const tryRefreshToken = async (req, res, refreshToken) => {
 
         // Check if user exists
         const userResult = await query(
-            'SELECT id, email, plan_type, credits_remaining, created_at FROM users WHERE id = $1',
+            'SELECT id, email, name, plan_type, credits_remaining, created_at FROM users WHERE id = $1',
             [decoded.userId]
         );
 
@@ -110,7 +110,7 @@ const authenticateToken = async (req, res, next) => {
 
         // Check if user still exists in database
         const userResult = await query(
-            'SELECT id, email, plan_type, credits_remaining, created_at FROM users WHERE id = $1',
+            'SELECT id, email, name, plan_type, credits_remaining, created_at FROM users WHERE id = $1',
             [decoded.userId]
         );
 
@@ -171,7 +171,7 @@ const optionalAuth = async (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
         const userResult = await query(
-            'SELECT id, email, plan_type, credits_remaining, created_at FROM users WHERE id = $1',
+            'SELECT id, email, name, plan_type, credits_remaining, created_at FROM users WHERE id = $1',
             [decoded.userId]
         );
 

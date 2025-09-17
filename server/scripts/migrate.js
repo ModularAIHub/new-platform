@@ -23,7 +23,7 @@ const migrations = [
         password_hash VARCHAR(255) NOT NULL,
         name VARCHAR(255) NOT NULL,
         plan_type VARCHAR(50) DEFAULT 'free' CHECK (plan_type IN ('free', 'pro', 'enterprise')),
-        credits_remaining NUMERIC(10,2) DEFAULT 25,
+  credits_remaining NUMERIC(10,2) DEFAULT 0,
         notification_email_enabled BOOLEAN DEFAULT true,
         two_factor_enabled BOOLEAN DEFAULT false,
         two_factor_secret TEXT,
@@ -33,26 +33,6 @@ const migrations = [
       
       CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
       CREATE INDEX IF NOT EXISTS idx_users_plan_type ON users(plan_type);
-    `
-  },
-  {
-    version: 3,
-    name: 'create_api_keys_table',
-    sql: `
-      CREATE TABLE IF NOT EXISTS api_keys (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        provider VARCHAR(50) NOT NULL CHECK (provider IN ('openai', 'gemini', 'perplexity')),
-        encrypted_key TEXT NOT NULL,
-        key_name VARCHAR(255) NOT NULL,
-        is_active BOOLEAN DEFAULT true,
-        created_at TIMESTAMP DEFAULT NOW(),
-        updated_at TIMESTAMP DEFAULT NOW(),
-        UNIQUE(user_id, provider, key_name)
-      );
-      
-      CREATE INDEX IF NOT EXISTS idx_api_keys_user_provider ON api_keys(user_id, provider);
-      CREATE INDEX IF NOT EXISTS idx_api_keys_active ON api_keys(is_active);
     `
   },
   {
@@ -94,6 +74,46 @@ const migrations = [
       CREATE INDEX IF NOT EXISTS idx_team_members_owner ON team_members(account_owner_id);
       CREATE INDEX IF NOT EXISTS idx_team_members_user ON team_members(user_id);
     `
+  },
+  // BYOK migration
+  {
+    version: 6,
+    name: 'byok_schema',
+    sql: `
+      -- BYOK: Add fields to users table
+      DO $$ BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='api_key_preference') THEN
+          ALTER TABLE users ADD COLUMN api_key_preference VARCHAR(16);
+        END IF;
+        -- Remove NOT NULL and DEFAULT from api_key_preference if they exist
+        BEGIN
+          ALTER TABLE users ALTER COLUMN api_key_preference DROP NOT NULL;
+        EXCEPTION WHEN others THEN NULL; END;
+        BEGIN
+          ALTER TABLE users ALTER COLUMN api_key_preference DROP DEFAULT;
+        EXCEPTION WHEN others THEN NULL; END;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='byok_locked_until') THEN
+          ALTER TABLE users ADD COLUMN byok_locked_until TIMESTAMP;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='byok_activated_at') THEN
+          ALTER TABLE users ADD COLUMN byok_activated_at TIMESTAMP;
+        END IF;
+      END $$;
+
+      -- BYOK: User API keys table
+      CREATE TABLE IF NOT EXISTS user_api_keys (
+        id SERIAL PRIMARY KEY,
+        user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+        provider VARCHAR(32) NOT NULL,
+        key_name VARCHAR(64),
+        encrypted_key TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW(),
+        is_active BOOLEAN DEFAULT TRUE
+      );
+
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_user_provider_active ON user_api_keys(user_id, provider) WHERE is_active;
+    `
   }
 ];
 
@@ -107,6 +127,9 @@ async function runMigrations() {
       console.log('Creating migration history table...');
       await query(migrationHistoryMigration.sql);
     }
+
+    // Ensure credits_remaining always defaults to 0 for new users
+    await query("ALTER TABLE users ALTER COLUMN credits_remaining SET DEFAULT 0;");
 
     // Get already executed migrations
     const { rows: executedMigrations } = await query(
@@ -140,6 +163,11 @@ async function runMigrations() {
         console.log(`⏭ Migration ${migration.version} already executed`);
       }
     }
+
+    // After all migrations, set credits_remaining to 0 for users with no mode
+    console.log('Resetting credits_remaining to 0 for users with no mode...');
+    await query("UPDATE users SET credits_remaining = 0 WHERE api_key_preference IS NULL OR api_key_preference = '';\n");
+    console.log('Done resetting credits for users with no mode.');
 
     console.log('🎉 All Platform migrations completed successfully!');
 

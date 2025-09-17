@@ -1,11 +1,10 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const CTASection = () => {
   const navigate = useNavigate();
 
-  const handleBookDemo = () => {
-    navigate('/demo');
+  const handleGetStarted = () => {
+    navigate('/register');
   };
 
   return (
@@ -19,10 +18,10 @@ const CTASection = () => {
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
           <button
-            onClick={handleBookDemo}
-            className="bg-blue-600 text-white hover:bg-blue-700 font-semibold px-8 py-4 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl"
+            onClick={handleGetStarted}
+            className="bg-primary-600 text-white hover:bg-primary-700 font-semibold px-8 py-4 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl"
           >
-            Book a Demo
+            Start Creating for Free
           </button>
         </div>
       </div>

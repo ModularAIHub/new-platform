@@ -54,7 +54,7 @@ const RoadmapSection = () => {
   ];
 
   return (
-    <section className="py-24 bg-white">
+  <section className="py-12 bg-white">
       <div className="max-w-7xl mx-auto px-6">
         <AnimatedSection>
           <div className="text-center mb-16">
@@ -113,29 +113,22 @@ export default function About() {
       name: "Kanishk", 
       role: "Developer ", 
       bio: "Built this from personal frustration as a creator. Now shaping the vision of AI-native content tooling.", 
-      imageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
+  imageUrl: "/kanishk.png",
       linkedinUrl: "https://www.linkedin.com/in/kanishk-saraswat"
     },
     { 
       name: "Ashutosh", 
       role: "AI & Engineering", 
       bio: "Focuses on building and fine-tuning the AI systems that power the platform's intelligence and reliability.", 
-      imageUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
-      linkedinUrl: "#"
+  imageUrl: "/ashutosh.jpg",
+  linkedinUrl: "https://www.linkedin.com/in/enterashutosh/"
     },
     { 
       name: "Abhay", 
       role: "Developer", 
       bio: "Builds the core platform features and ensures a seamless user experience across all modules.", 
-      imageUrl: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
-      linkedinUrl: "#"
-    },
-     { 
-      name: "Yash ", 
-      role: "Developer", 
-      bio: "Backend Developer", 
-      imageUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
-      linkedinUrl: "#"
+      imageUrl: "/abhay.jpg",
+      linkedinUrl: "https://www.linkedin.com/in/abhay-bharti",
     },
   ];
 
@@ -221,8 +214,7 @@ export default function About() {
                 
                 {/* Floating Stats */}
                 <div className="absolute -top-8 -left-8 bg-white/95 backdrop-blur-sm rounded-2xl p-4 shadow-xl border border-gray-100 animate-float z-20">
-                  <div className="text-2xl font-bold text-blue-600">10k+</div>
-                  <div className="text-sm text-gray-600">Active Users</div>
+                  <div className="text-2xl font-bold text-blue-600">Growing Community</div>
                 </div>
                 
                 <div className="absolute -bottom-6 -right-6 bg-white/95 backdrop-blur-sm rounded-2xl p-4 shadow-xl border border-gray-100 animate-float-delayed z-20">
@@ -241,12 +233,64 @@ export default function About() {
           </div>
         </div>
       </section>
-
+                  
+        {/* Meet the Team */}
+  <section className="py-12 bg-gray-50">
+          <div className="max-w-7xl mx-auto px-6">
+            <AnimatedSection>
+              <div className="text-center mb-16">
+                <h2 className="text-5xl font-bold text-gray-900 mb-4">
+                  Meet the <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Team</span>
+                </h2>
+                <div className="h-1 w-32 bg-gradient-to-r from-blue-600 to-purple-600 mx-auto rounded-full"></div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                {teamMembers.map((member, index) => (
+                  <div
+                    key={member.name}
+                    className="group bg-white rounded-3xl shadow-xl hover:shadow-2xl transition-shadow duration-300 p-8 flex flex-col items-center border border-gray-100 hover:border-blue-300 relative overflow-hidden"
+                  >
+                    <div className="relative mb-6">
+                      <span className="absolute -inset-1 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-500"></span>
+                      <img
+                        src={member.imageUrl}
+                        alt={member.name}
+                        className="relative w-32 h-32 object-cover rounded-full border-4 border-blue-100 shadow-lg group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                      <span className="absolute bottom-2 right-2 w-4 h-4 bg-green-400 border-2 border-white rounded-full animate-pulse"></span>
+                    </div>
+                    <h3 className="text-2xl font-extrabold text-gray-900 mb-1 tracking-tight group-hover:text-blue-700 transition-colors">{member.name}</h3>
+                    <p className="text-blue-600 font-semibold mb-2 text-base">{member.role}</p>
+                    <p className="text-gray-500 text-sm leading-relaxed mb-4 max-w-xs">{member.bio}</p>
+                    <div className="flex justify-center gap-3 mt-auto">
+                      {member.linkedinUrl && member.linkedinUrl !== "#" && (
+                        <a
+                          href={member.linkedinUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-800 shadow transition-all"
+                          title="LinkedIn"
+                        >
+                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.761 0 5-2.239 5-5v-14c0-2.761-2.239-5-5-5zm-11 19h-3v-10h3v10zm-1.5-11.268c-.966 0-1.75-.784-1.75-1.75s.784-1.75 1.75-1.75 1.75.784 1.75 1.75-.784 1.75-1.75 1.75zm15.5 11.268h-3v-5.604c0-1.337-.025-3.063-1.868-3.063-1.868 0-2.154 1.459-2.154 2.967v5.7h-3v-10h2.881v1.367h.041c.401-.761 1.379-1.563 2.841-1.563 3.039 0 3.6 2.001 3.6 4.601v5.595z"/>
+                          </svg>
+                        </a>
+                      )}
+                    </div>
+                    <div className="absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full opacity-30 group-hover:opacity-60 blur-2xl pointer-events-none"></div>
+                  </div>
+                ))}
+              </div>
+            </AnimatedSection>
+          </div>
+        </section>
       {/* Main Content */}
       <main className="relative">
         
         {/* Origin Story Section */}
-        <section className="py-24 bg-gray-50">
+  <section className="py-12 bg-gray-50">
           <div className="max-w-7xl mx-auto px-6">
             <AnimatedSection>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
@@ -298,7 +342,7 @@ export default function About() {
         </section>
 
         {/* What Makes Us Different */}
-        <section className="py-24 bg-white">
+  <section className="py-12 bg-white">
           <div className="max-w-7xl mx-auto px-6">
             <AnimatedSection>
               <div className="text-center mb-16">
@@ -370,57 +414,9 @@ export default function About() {
           </div>
         </section>
 
-        {/* Meet the Team */}
-        <section className="py-24 bg-gray-50">
-          <div className="max-w-7xl mx-auto px-6">
-            <AnimatedSection>
-              <div className="text-center mb-16">
-                <h2 className="text-5xl font-bold text-gray-900 mb-4">
-                  Meet the <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Team</span>
-                </h2>
-                <div className="h-1 w-32 bg-gradient-to-r from-blue-600 to-purple-600 mx-auto rounded-full"></div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                {teamMembers.map((member, index) => (
-                  <div key={member.name} className="group text-center">
-                    <div className="relative mb-6 inline-block">
-                      <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full opacity-20 blur-xl group-hover:opacity-40 transition-opacity duration-300"></div>
-                      <img
-                        src={member.imageUrl}
-                        alt={member.name}
-                        className="relative w-32 h-32 object-cover rounded-full border-4 border-white shadow-xl group-hover:scale-110 transition-transform duration-300"
-                        loading="lazy"
-                      />
-                      <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 rounded-full border-4 border-white animate-pulse"></div>
-                    </div>
-                    
-                    <h3 className="text-xl font-bold text-gray-900 mb-1">{member.name}</h3>
-                    <p className="text-blue-600 font-medium mb-3">{member.role}</p>
-                    <p className="text-gray-600 text-sm leading-relaxed mb-4">{member.bio}</p>
-                    
-                    {member.linkedinUrl && member.linkedinUrl !== "#" && (
-                      <a
-                        href={member.linkedinUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-500 font-medium group-hover:translate-y-1 transition-all"
-                      >
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.761 0 5-2.239 5-5v-14c0-2.761-2.239-5-5-5zm-11 19h-3v-10h3v10zm-1.5-11.268c-.966 0-1.75-.784-1.75-1.75s.784-1.75 1.75-1.75 1.75.784 1.75 1.75-.784 1.75-1.75 1.75zm15.5 11.268h-3v-5.604c0-1.337-.025-3.063-1.868-3.063-1.868 0-2.154 1.459-2.154 2.967v5.7h-3v-10h2.881v1.367h.041c.401-.761 1.379-1.563 2.841-1.563 3.039 0 3.6 2.001 3.6 4.601v5.595z"/>
-                        </svg>
-                        LinkedIn
-                      </a>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </AnimatedSection>
-          </div>
-        </section>
 
         {/* Mission, Vision, Values */}
-        <section className="py-24 bg-white">
+  <section className="py-12 bg-white">
           <div className="max-w-7xl mx-auto px-6">
             <AnimatedSection>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
@@ -465,7 +461,7 @@ export default function About() {
         </section>
 
         {/* Made in India Section */}
-        <section className="py-24 bg-gradient-to-br from-gray-900 to-black relative overflow-hidden">
+  <section className="py-12 bg-gradient-to-br from-gray-900 to-black relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-green-500/10"></div>
           <div className="absolute inset-0 opacity-20">
             <img
@@ -494,7 +490,7 @@ export default function About() {
         </div>
 
         {/* Call to Action */}
-        <section className="py-24 bg-gradient-to-r from-blue-600 to-purple-600 relative overflow-hidden">
+  <section className="py-12 bg-gradient-to-r from-blue-600 to-purple-600 relative overflow-hidden">
           <div className="absolute inset-0 opacity-10">
             <img
               src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80"
