@@ -1,12 +1,21 @@
 
 import { useAuth } from '../contexts/AuthContext'
-import { CreditCard, Key, Settings, ExternalLink, Lock } from 'lucide-react'
+import { CreditCard, Key, Settings, ExternalLink, Lock, TrendingUp, Calendar, BarChart3, Zap } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import api from '../utils/api'
 import { useNavigate } from 'react-router-dom'
+import {
+    Button,
+    Card,
+    CardHeader,
+    CardTitle,
+    CardDescription,
+    CardContent,
+    CardFooter
+} from '../components/ui'
 
 const DashboardPage = () => {
-    const { user } = useAuth()
+    const { user, loading: authLoading, initialLoad } = useAuth()
     const [prefLoading, setPrefLoading] = useState(true)
     const [preference, setPreference] = useState(null)
     const [lockUntil, setLockUntil] = useState(null)
@@ -16,11 +25,44 @@ const DashboardPage = () => {
     const [showPrefModal, setShowPrefModal] = useState(false)
     const [showByokInfo, setShowByokInfo] = useState(false)
     const [submitting, setSubmitting] = useState(false)
+    const [dashboardStats, setDashboardStats] = useState({
+        creditsAvailable: 0,
+        activeTools: 0,
+        contentGenerated: 0,
+        planType: 'free'
+    })
+    const [statsLoading, setStatsLoading] = useState(true)
     const navigate = useNavigate()
 
     useEffect(() => {
         fetchPreference()
     }, [])
+
+    // Update dashboard stats when creditTier changes
+    useEffect(() => {
+        if (!prefLoading) {
+            fetchDashboardStats()
+        }
+    }, [creditTier, prefLoading])
+
+    const fetchDashboardStats = async () => {
+        setStatsLoading(true);
+        try {
+            // Fetch actual credits from backend
+            const res = await api.get('/credits/balance');
+            const creditsAvailable = res.data.creditsRemaining || 0;
+            setDashboardStats({
+                creditsAvailable,
+                activeTools: 2, // Twitter Genie and LinkedIn Genie are active
+                contentGenerated: 0, // Removed from UI, placeholder
+                planType: user?.planType || 'free'
+            });
+        } catch (e) {
+            setDashboardStats(prev => ({ ...prev, creditsAvailable: 0 }));
+        } finally {
+            setStatsLoading(false);
+        }
+    }
 
     const fetchPreference = async () => {
         setPrefLoading(true)
@@ -39,7 +81,13 @@ const DashboardPage = () => {
                 setLockUntil(res.data.byok_locked_until)
                 setLocked(res.data.locked)
                 setLockMessage(res.data.lockMessage)
-                setCreditTier(res.data.creditTier || (res.data.api_key_preference === 'byok' ? 55 : 25))
+                // Always show actual available credits as the current credit tier
+                try {
+                    const creditsRes = await api.get('/credits/balance');
+                    setCreditTier(creditsRes.data.creditsRemaining || 0);
+                } catch {
+                    setCreditTier(0);
+                }
                 setShowPrefModal(false)
             }
         } catch (e) {
@@ -101,258 +149,461 @@ const DashboardPage = () => {
         }
     ]
 
-    if (prefLoading) return <div className="p-8 text-lg">Loading...</div>
+    if (initialLoad || prefLoading) {
+        return (
+            <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+                    <p className="text-lg text-neutral-600">Loading your dashboard...</p>
+                </div>
+            </div>
+        )
+    }
 
     return (
-        <div className="space-y-8 p-8">
-            {/* Mode Selection Modal (undismissable until choice) */}
-            {showPrefModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-                    <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full relative flex flex-col items-center">
-                        <h2 className="text-2xl font-bold mb-4 text-blue-900">Choose Your AI Key Mode</h2>
-                        <p className="mb-6 text-gray-700 text-center">Select how you want to use AI features. You can use platform keys (25 credits/month) or bring your own (BYOK, 55 credits/month, <b>3-month lock</b>). This cannot be skipped.</p>
-                        <div className="flex flex-col md:flex-row gap-4 w-full">
-                            <button
-                                className={`flex-1 px-6 py-3 rounded-xl font-bold text-lg transition-all duration-150 bg-blue-600 text-white`}
-                                disabled={submitting}
-                                onClick={() => handleSetPreference('platform')}
-                            >
-                                Use Platform Keys
-                            </button>
-                            <button
-                                className={`flex-1 px-6 py-3 rounded-xl font-bold text-lg transition-all duration-150 bg-green-600 text-white`}
-                                disabled={submitting}
-                                onClick={() => handleSetPreference('byok')}
-                            >
-                                Bring Your Own Key
-                            </button>
-                        </div>
-                        <div className="mt-4 text-xs text-gray-500 text-center">You can change this later, but BYOK is locked for <b>3 months</b> after switching.</div>
+        <div className="min-h-screen bg-neutral-50">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {/* Mode Selection Modal (undismissable until choice) */}
+                {showPrefModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                        <Card className="max-w-md w-full mx-4 animate-scale-in">
+                            <CardHeader className="text-center">
+                                <CardTitle className="text-2xl text-primary-900">Choose Your AI Key Mode</CardTitle>
+                                <CardDescription className="text-base">
+                                    Select how you want to use AI features. You can use platform keys (25 credits/month) or bring your own (BYOK, 55 credits/month, <strong>3-month lock</strong>). This cannot be skipped.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-3">
+                                    <Button
+                                        variant="primary"
+                                        size="lg"
+                                        fullWidth
+                                        loading={submitting}
+                                        onClick={() => handleSetPreference('platform')}
+                                    >
+                                        Use Platform Keys
+                                    </Button>
+                                    <Button
+                                        variant="success"
+                                        size="lg"
+                                        fullWidth
+                                        loading={submitting}
+                                        onClick={() => handleSetPreference('byok')}
+                                    >
+                                        Bring Your Own Key
+                                    </Button>
+                                </div>
+                            </CardContent>
+                            <CardFooter>
+                                <p className="text-xs text-neutral-500 text-center w-full">
+                                    You can change this later, but BYOK is locked for <strong>3 months</strong> after switching.
+                                </p>
+                            </CardFooter>
+                        </Card>
                     </div>
-                </div>
-            )}
-            {/* Inline BYOK/Platform Preference Section */}
-            <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 border border-gray-100">
+                )}
                 {/* BYOK Info Modal */}
                 {showByokInfo && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-                        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full relative">
-                            <button className="absolute top-3 right-3 text-gray-400 hover:text-gray-700" onClick={() => setShowByokInfo(false)}>&times;</button>
-                            <h2 className="text-2xl font-bold mb-2 text-blue-900">How BYOK Works</h2>
-                            <ul className="list-disc pl-6 text-gray-700 text-base mb-4">
-                                <li><b>BYOK</b> (Bring Your Own Key) lets you use your own API keys for OpenAI, Gemini, or Perplexity.</li>
-                                <li>When you switch to BYOK, your account is <b>locked for 30 days</b> (cannot switch back to platform keys).</li>
-                                <li>BYOK gives you <b>55 credits/month</b> (vs 25 for platform keys).</li>
-                                <li>You must add at least one valid API key for each provider you want to use.</li>
-                                <li>After 30 days, you can switch back to platform keys if you wish.</li>
-                                <li>Active keys are used for all AI requests for that provider.</li>
-                            </ul>
-                            <div className="bg-blue-50 border border-blue-200 rounded p-3 text-blue-800 text-sm">
-                                <b>Tip:</b> You can manage, add, or remove your keys on the <a href="/api-keys" className="underline text-blue-700">API Keys page</a>. If no key is configured for a provider, you cannot use that provider's AI features.
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                        <Card className="max-w-lg w-full mx-4 animate-scale-in">
+                            <CardHeader>
+                                <div className="flex items-center justify-between">
+                                    <CardTitle className="text-2xl text-primary-900">How BYOK Works</CardTitle>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setShowByokInfo(false)}
+                                        className="text-neutral-400 hover:text-neutral-700"
+                                    >
+                                        ×
+                                    </Button>
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                <ul className="list-disc pl-6 text-neutral-700 space-y-2 mb-4">
+                                    <li><strong>BYOK</strong> (Bring Your Own Key) lets you use your own API keys for OpenAI, Gemini, or Perplexity.</li>
+                                    <li>When you switch to BYOK, your account is <strong>locked for 30 days</strong> (cannot switch back to platform keys).</li>
+                                    <li>BYOK gives you <strong>55 credits/month</strong> (vs 25 for platform keys).</li>
+                                    <li>You must add at least one valid API key for each provider you want to use.</li>
+                                    <li>After 30 days, you can switch back to platform keys if you wish.</li>
+                                    <li>Active keys are used for all AI requests for that provider.</li>
+                                </ul>
+                                <div className="bg-primary-50 border border-primary-200 rounded-lg p-4 text-primary-800 text-sm">
+                                    <strong>Tip:</strong> You can manage, add, or remove your keys on the <a href="/api-keys" className="underline text-primary-700 hover:text-primary-900">API Keys page</a>. If no key is configured for a provider, you cannot use that provider's AI features.
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
+
+                {/* AI Key Preference Section */}
+                <Card variant="elevated" className="mb-8 animate-fade-in">
+                    <CardHeader>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Key className="w-5 h-5 text-primary-600" />
+                                    AI Key Preference
+                                </CardTitle>
+                                <CardDescription>
+                                    Select how you want to use AI features. You can use platform keys (25 credits/month) or bring your own (BYOK, 55 credits/month, <strong>3-month lock</strong>).
+                                </CardDescription>
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setShowByokInfo(true)}
+                            >
+                                What is BYOK?
+                            </Button>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                            <Button
+                                variant={preference === 'platform' ? 'primary' : 'outline'}
+                                size="lg"
+                                fullWidth
+                                loading={submitting}
+                                disabled={preference === 'byok' && locked}
+                                onClick={() => handleSetPreference('platform')}
+                            >
+                                Use Platform Keys (25 credits/month)
+                            </Button>
+                            <Button
+                                variant={preference === 'byok' ? 'success' : 'outline'}
+                                size="lg"
+                                fullWidth
+                                loading={submitting}
+                                onClick={() => handleSetPreference('byok')}
+                            >
+                                Bring Your Own Key (55 credits/month)
+                            </Button>
+                        </div>
+
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-neutral-600">Current mode:</span>
+                                <span className={`font-semibold ${preference === 'byok' ? 'text-success-700' : 'text-primary-700'}`}>
+                                    {preference === 'byok' ? 'BYOK (Your Own Keys)' : 'Platform Keys'}
+                                </span>
                             </div>
                         </div>
-                    </div>
-                )}
-                <div className="flex items-center gap-2 mb-2">
-                    <h2 className="text-xl font-bold text-gray-900">AI Key Preference</h2>
-                    <button className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 font-semibold" onClick={() => setShowByokInfo(true)}>What is BYOK?</button>
+
+                        {locked && (
+                            <div className="flex items-center gap-2 mt-4 p-3 bg-warning-50 border border-warning-200 rounded-lg text-warning-800 text-sm">
+                                <Lock className="h-4 w-4 flex-shrink-0" />
+                                <span>{lockMessage}</span>
+                            </div>
+                        )}
+
+                        {preference === 'byok' && (
+                            <div className="mt-4 p-3 bg-success-50 border border-success-200 rounded-lg text-success-800 text-sm">
+                                <strong>BYOK is active.</strong> You're using your own API keys for AI features.<br />
+                                <span>Manage your keys on the <a href="/api-keys" className="underline text-success-700 hover:text-success-900">API Keys page</a>.</span>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+                {/* Welcome Header */}
+                <div className="mb-8 animate-fade-in">
+                    <h1 className="text-3xl font-bold text-neutral-900 mb-2">
+                        Welcome back{user?.name ? `, ${user.name}` : ''}! 👋
+                    </h1>
+                    <p className="text-lg text-neutral-600">
+                        Here's what's happening with your AI-powered content creation.
+                    </p>
                 </div>
-                <p className="mb-4 text-gray-600">Select how you want to use AI features. You can use platform keys (25 credits/month) or bring your own (BYOK, 55 credits/month, <b>3-month lock</b>).</p>
-                <div className="flex flex-col md:flex-row gap-4">
-                    <button
-                        className={`flex-1 px-6 py-3 rounded-xl font-bold text-lg transition-all duration-150 ${preference === 'platform' ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'}`}
-                        disabled={submitting || (preference === 'byok' && locked)}
-                        onClick={() => handleSetPreference('platform')}
-                    >
-                        Use Platform Keys (25 credits/month)
-                    </button>
-                    <button
-                        className={`flex-1 px-6 py-3 rounded-xl font-bold text-lg transition-all duration-150 ${preference === 'byok' ? 'bg-green-600 text-white' : 'bg-green-50 text-green-700 hover:bg-green-100'}`}
-                        disabled={submitting}
-                        onClick={() => handleSetPreference('byok')}
-                    >
-                        Bring Your Own Key (55 credits/month)
-                    </button>
+
+                {/* Stats Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 </div>
-                <div className="mt-4 text-xs text-gray-500">You can change this later, but BYOK is locked for 30 days after switching.</div>
-                <div className="mt-2 text-base font-semibold text-blue-900">Current credit tier: <span className="text-blue-700">{creditTier} credits/month</span></div>
-                <div className="mt-2 text-base font-semibold text-blue-900">
-                  Current mode: <span className={preference === 'byok' ? 'text-green-700' : 'text-blue-700'}>
-                    {preference === 'byok' ? 'BYOK (Your Own Keys)' : 'Platform Keys'}
-                  </span>
-                </div>
-                {locked && (
-                    <div className="flex items-center gap-2 mt-2 text-sm text-yellow-700 bg-yellow-50 border border-yellow-200 rounded px-3 py-2">
-                        <Lock className="h-4 w-4" />
-                        {lockMessage}
-                    </div>
-                )}
-                {preference === 'byok' && (
-                    <div className="mt-4 text-sm text-green-700 bg-green-50 border border-green-200 rounded px-3 py-2">
-                        <b>BYOK is active.</b> <span>You're using your own API keys for AI features.</span> <br />
-                        <span>Manage your keys on the <a href="/api-keys" className="underline text-green-800">API Keys page</a>.</span>
-                    </div>
-                )}
-            </div>
-            <div className="mb-4">
-                <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-                <p className="text-gray-600">Welcome back, {user?.name}! Here's what's happening with your content.</p>
-            </div>
-            {/* Stats Cards
+                {/* Stats Cards
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <StatsCard title="Total Posts" value="42" subtitle="+12% this week" icon={<CreditCard className="h-6 w-6 text-blue-600" />} />
                 <StatsCard title="Engagement Rate" value="8.2%" subtitle="+2.1% this week" icon={<Settings className="h-6 w-6 text-green-600" />} highlight />
                 <StatsCard title="Scheduled Posts" value="7" subtitle="Next: 2 hours" icon={<Settings className="h-6 w-6 text-purple-600" />} />
                 <StatsCard title="Plan Type" value={user?.planType || 'Free'} subtitle="Upgrade for more" icon={<Key className="h-6 w-6 text-yellow-500" />} />
             </div> */}
-            {/* Quick Actions & Recent Activity */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div className="bg-white rounded-xl shadow p-6">
-                    <h2 className="font-semibold text-lg mb-4">Quick Actions</h2>
-                    <div className="space-y-4">
-                        <QuickAction label="Buy Credits" description="Top up your credit balance" color="green" />
-                        <QuickAction label="Manage API Keys" description="Configure your AI providers" color="blue" />
-                        <QuickAction label="View Analytics" description="Track your content performance" color="purple" />
-                    </div>
+                {/* Quick Actions & Recent Activity */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    <Card variant="default" className="animate-fade-in animate-stagger-1">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Zap className="w-5 h-5 text-primary-600" />
+                                Quick Actions
+                            </CardTitle>
+                            <CardDescription>
+                                Get started with these common tasks
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-3">
+                                <QuickAction
+                                    label="Buy Credits"
+                                    description="Top up your credit balance"
+                                    icon={<CreditCard className="w-5 h-5" />}
+                                    color="success"
+                                    onClick={() => navigate('/credits')}
+                                />
+                                <QuickAction
+                                    label="Manage API Keys"
+                                    description="Configure your AI providers"
+                                    icon={<Key className="w-5 h-5" />}
+                                    color="primary"
+                                    onClick={() => navigate('/api-keys')}
+                                />
+                                <QuickAction
+                                    label="View Settings"
+                                    description="Customize your experience"
+                                    icon={<Settings className="w-5 h-5" />}
+                                    color="secondary"
+                                    onClick={() => navigate('/settings')}
+                                />
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card variant="default" className="animate-fade-in animate-stagger-2">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Calendar className="w-5 h-5 text-primary-600" />
+                                Recent Activity
+                            </CardTitle>
+                            <CardDescription>
+                                Your latest actions and updates
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-4">
+                                <RecentActivity
+                                    label="AI-powered tweet generated"
+                                    source="Twitter Genie"
+                                    time="2 hours ago"
+                                    status="published"
+                                />
+                                <RecentActivity
+                                    label="Professional post created"
+                                    source="LinkedIn Genie"
+                                    time="4 hours ago"
+                                    status="scheduled"
+                                />
+                                <RecentActivity
+                                    label="Credits purchased: +50"
+                                    source="System"
+                                    time="1 day ago"
+                                    status="completed"
+                                />
+                                <RecentActivity
+                                    label="API key updated"
+                                    source="System"
+                                    time="2 days ago"
+                                    status="completed"
+                                />
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
-                {/* <div className="bg-white rounded-xl shadow p-6">
-                    <h2 className="font-semibold text-lg mb-4">Recent Activity</h2>
-                    <div className="space-y-4">
-                        <RecentActivity label="AI-powered tweet generated" source="Twitter" time="2 hours ago" status="published" />
-                        <RecentActivity label="Professional post created" source="LinkedIn" time="4 hours ago" status="scheduled" />
-                        <RecentActivity label="Credits purchased: +50" source="System" time="1 day ago" status="completed" />
-                        <RecentActivity label="API key updated" source="System" time="2 days ago" status="completed" />
-                    </div>
-                </div> */}
-            </div>
-            {/* AI Tools */}
-            <div className="bg-white rounded-xl shadow p-6">
-                <h2 className="font-semibold text-lg mb-4">Your AI Tools</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <AiToolCard name="Tweet Genie"  status="Active" />
-                    <AiToolCard name="LinkedIn Genie" status="Active" />
-                    <AiToolCard name="WordPress Writer" status="Coming Soon" />
-                    <AiToolCard name="Custom LLM" status="Coming Soon" />
-                </div>
-            </div>
-            {/* Why Choose Autoverse */}
-            <div className="bg-white rounded-xl shadow p-6 mt-8">
-                <h2 className="font-semibold text-lg mb-4">Why Choose Suitegenie?</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="flex items-center space-x-4">
-                        <span className="bg-green-100 p-3 rounded-full"><svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path fill="#22c55e" d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 110-16 8 8 0 010 16zm-1-13h2v6h-2V7zm0 8h2v2h-2v-2z"/></svg></span>
-                        <div>
-                            <div className="font-semibold">Multi-LLM Fallback</div>
-                            <div className="text-xs text-gray-500">99.9% uptime with intelligent AI routing</div>
+                {/* AI Tools */}
+                <Card variant="default" className="mb-8 animate-fade-in animate-stagger-3">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Zap className="w-5 h-5 text-primary-600" />
+                            Your AI Tools
+                        </CardTitle>
+                        <CardDescription>
+                            Access your AI-powered content creation tools
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <AiToolCard name="Tweet Genie" status="Active" />
+                            <AiToolCard name="LinkedIn Genie" status="Active" />
+                            <AiToolCard name="WordPress Writer" status="Coming Soon" />
+                            <AiToolCard name="Custom LLM" status="Coming Soon" />
                         </div>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                        <span className="bg-blue-100 p-3 rounded-full"><svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path fill="#2563eb" d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 110-16 8 8 0 010 16zm-1-13h2v6h-2V7zm0 8h2v2h-2v-2z"/></svg></span>
-                        <div>
-                            <div className="font-semibold">Cost Control</div>
-                            <div className="text-xs text-gray-500">Save 2-5x with BYOK or built-in providers</div>
+                    </CardContent>
+                </Card>
+                {/* Why Choose SuiteGenie */}
+                <Card variant="elevated" className="animate-fade-in animate-stagger-4">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <TrendingUp className="w-5 h-5 text-primary-600" />
+                            Why Choose SuiteGenie?
+                        </CardTitle>
+                        <CardDescription>
+                            Discover the advantages of our AI-powered content creation platform
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="flex items-start space-x-4">
+                                <div className="w-12 h-12 bg-success-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                    <svg className="w-6 h-6 text-success-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-neutral-900 mb-1">Multi-LLM Fallback</h3>
+                                    <p className="text-sm text-neutral-600">99.9% uptime with intelligent AI routing across multiple providers</p>
+                                </div>
+                            </div>
+                            <div className="flex items-start space-x-4">
+                                <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                    <svg className="w-6 h-6 text-primary-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-neutral-900 mb-1">Cost Control</h3>
+                                    <p className="text-sm text-neutral-600">Save 2-5x with BYOK or use our optimized built-in providers</p>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
             </div>
         </div>
     )
-    }
-    // Sidebar item component
-    function SidebarItem({ label, icon, active, badge }) {
-        return (
-            <div className={`flex items-center px-3 py-2 rounded-lg cursor-pointer ${active ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-gray-700 hover:bg-gray-100'}`}>
-                {icon}
-                <span className="ml-3">{label}</span>
-                {badge && <span className="ml-2 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-medium">{badge}</span>}
-            </div>
-        )
-    }
+}
+// Sidebar item component
+function SidebarItem({ label, icon, active, badge }) {
+    return (
+        <div className={`flex items-center px-3 py-2 rounded-lg cursor-pointer ${active ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-gray-700 hover:bg-gray-100'}`}>
+            {icon}
+            <span className="ml-3">{label}</span>
+            {badge && <span className="ml-2 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-medium">{badge}</span>}
+        </div>
+    )
+}
 
-    // Stats card component
-    function StatsCard({ title, value, subtitle, icon, highlight }) {
-        return (
-            <div className={`bg-white rounded-xl shadow p-6 flex items-center space-x-4 ${highlight ? 'border-2 border-green-200' : ''}`}>
-                <div>{icon}</div>
-                <div>
-                    <div className="text-sm text-gray-500 font-medium">{title}</div>
-                    <div className="text-2xl font-bold text-gray-900">{value}</div>
-                    <div className="text-xs text-green-600 mt-1">{subtitle}</div>
+// Stats card component
+function StatsCard({ title, value, subtitle, icon, trend, highlight }) {
+    return (
+        <Card
+            variant={highlight ? 'elevated' : 'default'}
+            className={`hover-lift animate-fade-in ${highlight ? 'ring-2 ring-success-200' : ''}`}
+        >
+            <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                        <p className="text-sm font-medium text-neutral-600 mb-1">{title}</p>
+                        <p className="text-3xl font-bold text-neutral-900 mb-1">{value}</p>
+                        <p className="text-xs text-neutral-500">{subtitle}</p>
+                    </div>
+                    <div className="ml-4 flex-shrink-0">
+                        {icon}
+                    </div>
                 </div>
-            </div>
-        )
-    }
-
-    // Quick action card
-    function QuickAction({ label, description, color }) {
-        const colorMap = {
-            green: 'bg-green-100 text-green-700',
-            blue: 'bg-blue-100 text-blue-700',
-            purple: 'bg-purple-100 text-purple-700',
-        }
-        return (
-            <div className="flex items-center justify-between p-4 rounded-lg border hover:shadow transition cursor-pointer">
-                <div className={`rounded-full p-2 ${colorMap[color]}`}>
-                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor" /></svg>
-                </div>
-                <div className="ml-4">
-                    <div className="font-semibold text-sm">{label}</div>
-                    <div className="text-xs text-gray-500">{description}</div>
-                </div>
-                <span className="ml-auto text-gray-400">→</span>
-            </div>
-        )
-    }
-
-    // Recent activity card
-    function RecentActivity({ label, source, time, status }) {
-        const statusMap = {
-            published: 'bg-green-100 text-green-700',
-            scheduled: 'bg-blue-100 text-blue-700',
-            completed: 'bg-gray-100 text-gray-700',
-        }
-        return (
-            <div className="flex items-center justify-between p-4 rounded-lg border">
-                <div>
-                    <div className="font-semibold text-sm">{label}</div>
-                    <div className="text-xs text-gray-500">{source} • {time}</div>
-                </div>
-                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusMap[status]}`}>{status}</span>
-            </div>
-        )
-    }
-
-    // AI tool card
-    function AiToolCard({ name, status }) {
-        const statusMap = {
-            Active: 'bg-green-100 text-green-700',
-            'Coming Soon': 'bg-yellow-100 text-yellow-700',
-        };
-        // Set launch URLs for each tool
-        let launchUrl = '#';
-        if (name === 'Tweet Genie') launchUrl = 'https://tweet.suitegenie.in';
-        else if (name === 'LinkedIn Genie') launchUrl = '#';
-        else if (name === 'WordPress Writer') launchUrl = '#';
-        else if (name === 'Custom LLM') launchUrl = '#';
-        return (
-            <div className="border rounded-lg p-4 flex flex-col justify-between hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between mb-2">
-                    <div className="font-semibold text-gray-900">{name}</div>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusMap[status]}`}>{status}</span>
-                </div>
-                {status === 'Active' && (
-                    <a
-                        href={launchUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-4 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 text-center block"
-                    >
-                        Launch
-                    </a>
+                {trend && (
+                    <div className="mt-3 pt-3 border-t border-neutral-100">
+                        <p className="text-xs text-success-600 font-medium">{trend}</p>
+                    </div>
                 )}
-            </div>
-        );
+            </CardContent>
+        </Card>
+    )
+}
+
+// Quick action card
+function QuickAction({ label, description, icon, color, onClick }) {
+    const colorMap = {
+        success: 'bg-success-100 text-success-700',
+        primary: 'bg-primary-100 text-primary-700',
+        secondary: 'bg-secondary-100 text-secondary-700',
     }
-    
+    return (
+        <button
+            onClick={onClick}
+            className="flex items-center w-full p-4 rounded-lg border border-neutral-200 hover:border-neutral-300 hover:shadow-sm transition-all duration-200 text-left group"
+        >
+            <div className={`rounded-lg p-2.5 ${colorMap[color]} group-hover:scale-105 transition-transform duration-200`}>
+                {icon}
+            </div>
+            <div className="ml-4 flex-1">
+                <div className="font-semibold text-sm text-neutral-900">{label}</div>
+                <div className="text-xs text-neutral-500">{description}</div>
+            </div>
+            <svg className="w-4 h-4 text-neutral-400 group-hover:text-neutral-600 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+        </button>
+    )
+}
+
+// Recent activity card
+function RecentActivity({ label, source, time, status }) {
+    const statusMap = {
+        published: 'badge-success',
+        scheduled: 'badge-info',
+        completed: 'badge-neutral',
+    }
+    return (
+        <div className="flex items-center justify-between p-3 rounded-lg hover:bg-neutral-50 transition-colors duration-200">
+            <div className="flex-1">
+                <div className="font-medium text-sm text-neutral-900 mb-1">{label}</div>
+                <div className="text-xs text-neutral-500">{source} • {time}</div>
+            </div>
+            <span className={`${statusMap[status]} ml-3 flex-shrink-0`}>
+                {status}
+            </span>
+        </div>
+    )
+}
+
+// AI tool card
+function AiToolCard({ name, status }) {
+    const statusMap = {
+        Active: 'badge-success',
+        'Coming Soon': 'badge-warning',
+    };
+
+    // Set launch URLs for each tool
+    let launchUrl = '#';
+    if (name === 'Tweet Genie') launchUrl = 'https://tweet.suitegenie.in';
+    else if (name === 'LinkedIn Genie') launchUrl = '#';
+    else if (name === 'WordPress Writer') launchUrl = '#';
+    else if (name === 'Custom LLM') launchUrl = '#';
+
+    return (
+        <Card variant="interactive" className="h-full">
+            <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold text-neutral-900">{name}</h3>
+                    <span className={statusMap[status]}>{status}</span>
+                </div>
+
+                <div className="flex items-center justify-center h-16 mb-4 bg-gradient-to-br from-primary-50 to-primary-100 rounded-lg">
+                    <Zap className="w-8 h-8 text-primary-600" />
+                </div>
+
+                {status === 'Active' ? (
+                    <Button
+                        variant="primary"
+                        size="sm"
+                        fullWidth
+                        icon={<ExternalLink className="w-4 h-4" />}
+                        iconPosition="right"
+                        onClick={() => window.open(launchUrl, '_blank')}
+                    >
+                        Launch Tool
+                    </Button>
+                ) : (
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        fullWidth
+                        disabled
+                    >
+                        Coming Soon
+                    </Button>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
 
 export default DashboardPage

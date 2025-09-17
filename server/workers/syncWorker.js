@@ -2,9 +2,6 @@ import { query } from '../config/database.js';
 import redisClient from '../config/redis.js';
 import CreditService from '../services/creditService.js';
 
-import redisClient from '../config/redis.js';
-import { query } from '../config/database.js';
-
 class SyncWorker {
     constructor() {
         this.isRunning = false;

@@ -1,3 +1,4 @@
+    
 import { createContext, useContext, useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
@@ -16,8 +17,10 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null)
     const [loading, setLoading] = useState(true)
+    const [initialLoad, setInitialLoad] = useState(true)
     const authCheckedRef = useRef(false)
     const navigate = useNavigate()
+
 
     // Check if user is authenticated on mount - ONLY ONCE
     useEffect(() => {
@@ -32,12 +35,10 @@ export const AuthProvider = ({ children }) => {
         const checkAuth = async () => {
             try {
                 console.log('Checking authentication with /auth/me endpoint...');
-                
                 // Since we're using httpOnly cookies, just try to call the protected endpoint
                 // The cookies will be sent automatically with the request
                 const response = await api.get('/auth/me')
                 console.log('Auth API response:', response.data);
-                
                 if (response.data.success && response.data.user) {
                     setUser(response.data.user)
                     console.log('User authenticated successfully:', response.data.user)
@@ -52,14 +53,18 @@ export const AuthProvider = ({ children }) => {
                 setUser(null)
             } finally {
                 setLoading(false)
+                setInitialLoad(false)
                 authCheckedRef.current = true
-                console.log('Auth check completed, user set:', !!user)
             }
         }
-
         // Run auth check only once on mount
         checkAuth()
     }, []) // Empty dependency array - only run on mount
+
+    // Log user state after it changes for accurate debugging
+    useEffect(() => {
+        console.log('[AuthContext] User state changed:', user);
+    }, [user]);
 
     const login = async (email, password, redirectUrl = null) => {
         try {
@@ -254,6 +259,7 @@ export const AuthProvider = ({ children }) => {
     const value = {
         user,
         loading,
+        initialLoad,
         login,
         register,
         sendOTP,

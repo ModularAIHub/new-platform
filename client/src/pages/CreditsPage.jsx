@@ -1,9 +1,18 @@
 import { useState, useEffect } from 'react'
-import { CreditCard, Plus, History, Loader2, RefreshCw } from 'lucide-react'
+import { CreditCard, Plus, History, Loader2, RefreshCw, Zap, TrendingUp } from 'lucide-react'
 import api from '../utils/api'
 import Loader from '../components/Loader'
 import { loadRazorpayScript } from '../utils/payment'
 import { useAuth } from '../contexts/AuthContext'
+import { 
+    Button, 
+    Card, 
+    CardHeader, 
+    CardTitle, 
+    CardDescription, 
+    CardContent, 
+    CardFooter 
+} from '../components/ui'
 
 const CreditsPage = () => {
     const { user, loading: authLoading } = useAuth()
