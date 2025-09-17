@@ -1,69 +1,98 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Card, CardContent } from '../ui';
+import { Twitter, Linkedin, FileText, Zap } from 'lucide-react';
 
 const FeaturesSection = () => {
-  const navigate = useNavigate();
-
-  const handleGetStarted = () => {
-    navigate('/register');
-  };
 
   const platforms = [
     {
-      icon: (
-        <svg className="w-8 h-8 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
-        </svg>
-      ),
-      title: "Twitter Automator",
-      description: "🚀 Turn your thoughts into viral tweets! Our AI crafts engaging content, schedules posts at peak times, and manages threads like a social media ninja. Say goodbye to tweet anxiety!",
-      bgColor: "bg-blue-100",
-      accent: "border-l-4 border-blue-500"
+      icon: <Twitter className="w-8 h-8" />,
+      title: "Tweet Genie",
+      description: "AI-powered tweet and thread generation with smart scheduling. Connect via OAuth, create content in bulk with credits, and track performance with detailed analytics. Scale your X/Twitter presence effortlessly.",
+      color: "from-blue-500 to-blue-600",
+      bgColor: "bg-blue-50",
+      stats: "OAuth integration & bulk creation",
+      features: ["OAuth Connection", "Bulk Content Creation", "Performance Analytics"]
     },
     {
-      icon: (
-        <svg className="w-8 h-8 text-blue-700" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-        </svg>
-      ),
-      title: "LinkedIn Automator",
-      description: "💼 Professional networking made effortless! Generate thought-leadership content, schedule industry insights, and build your professional brand while you sleep. Your career growth autopilot!",
-      bgColor: "bg-indigo-100",
-      accent: "border-l-4 border-blue-700"
+      icon: <Linkedin className="w-8 h-8" />,
+      title: "LinkedIn Automator", 
+      description: "Professional networking made effortless! Generate thought-leadership content, schedule industry insights, and build your professional brand.",
+      color: "from-blue-600 to-blue-700",
+      bgColor: "bg-blue-50",
+      stats: "Professional networking made easy",
+      features: ["Professional Content", "Industry Insights", "Brand Building"]
     },
     {
-      icon: (
-        <svg className="w-8 h-8 text-gray-700" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M21.469 6.825c.84 1.537 1.318 3.3 1.318 5.175 0 3.979-2.156 7.456-5.363 9.325l-3.295-5.704c.863-.496 1.435-1.412 1.435-2.496 0-.312-.06-.614-.172-.883l2.077-5.417zm-6.359 3.678c0-1.83-.731-3.51-1.912-4.69-.28-.28-.649-.421-1.018-.421-.372 0-.741.141-1.021.421C10.38 6.593 9.648 8.273 9.648 10.103c0 1.83.731 3.51 1.911 4.69.28.28.649.421 1.021.421.369 0 .738-.141 1.018-.421 1.181-1.18 1.912-2.86 1.912-4.69zm-1.634 11.374c2.019-.983 3.418-3.032 3.418-5.407 0-1.32-.425-2.549-1.154-3.561l-2.078 5.418c.062.208.095.426.095.65 0 1.084-.572 2-1.435 2.496l1.154 .404zM2.926 5.892c3.511-5.098 10.427-6.403 15.464-2.926 5.05 3.486 6.426 10.344 3.056 15.372L2.926 5.892z"/>
-        </svg>
-      ),
+      icon: <FileText className="w-8 h-8" />,
       title: "WordPress Automator",
-      description: "📝 Transform your blog into a content powerhouse! Auto-generate SEO-optimized posts, schedule publications, and keep your audience engaged with fresh content. Your 24/7 content creator!",
-      bgColor: "bg-gray-100",
-      accent: "border-l-4 border-gray-700"
+      description: "Transform your blog into a content powerhouse! Auto-generate SEO-optimized posts, schedule publications, and keep your audience engaged.",
+      color: "from-neutral-600 to-neutral-700",
+      bgColor: "bg-neutral-50",
+      stats: "SEO-optimized blog content",
+      features: ["SEO Optimization", "Auto Publishing", "Content Calendar"]
     }
   ];
 
   return (
-    <section className="py-24 bg-gradient-to-br from-white via-blue-50 to-purple-50">
+    <section className="pt-8 pb-24 bg-gradient-to-br from-neutral-50 via-primary-50/30 to-purple-50/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-extrabold text-gray-900 mb-4 tracking-tight">How SuiteGenie Works</h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">Automate your content creation, scheduling, and publishing across all your favorite platforms—without losing your creative touch.</p>
+        {/* Section Header */}
+        <div className="text-center mb-16 animate-fade-in">
+          <div className="inline-flex items-center gap-2 bg-primary-100 text-primary-700 px-4 py-2 rounded-full text-sm font-medium mb-4">
+            <Zap className="w-4 h-4" />
+            Powerful AI Tools
+          </div>
+          <h2 className="text-4xl md:text-5xl font-bold text-neutral-900 mb-6 tracking-tight">
+            How SuiteGenie Works
+          </h2>
+          <p className="text-xl text-neutral-600 max-w-3xl mx-auto leading-relaxed">
+            Automate your content creation, scheduling, and publishing across all your favorite platforms—without losing your creative touch.
+          </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+        {/* Features Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-16">
           {platforms.map((platform, index) => (
-            <div key={index} className={`bg-white/80 border border-blue-100 p-10 rounded-3xl text-center hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 flex flex-col items-center`}> 
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-xl flex items-center justify-center mb-6 shadow-md">
-                {platform.icon}
-              </div>
-              <h3 className="text-2xl font-bold text-blue-900 mb-4">{platform.title}</h3>
-              <p className="text-gray-700 leading-relaxed text-lg">
-                {platform.description}
-              </p>
-            </div>
+            <Card 
+              key={index} 
+              variant="interactive" 
+              className={`text-center hover-lift animate-fade-in`}
+              style={{animationDelay: `${index * 0.1}s`}}
+            >
+              <CardContent className="p-8">
+                {/* Icon */}
+                <div className={`w-16 h-16 bg-gradient-to-br ${platform.color} rounded-xl flex items-center justify-center mx-auto mb-6 text-white shadow-lg`}>
+                  {platform.icon}
+                </div>
+                
+                {/* Title */}
+                <h3 className="text-2xl font-bold text-neutral-900 mb-4">{platform.title}</h3>
+                
+                {/* Description */}
+                <p className="text-neutral-600 leading-relaxed mb-6">
+                  {platform.description}
+                </p>
+                
+                {/* Stats */}
+                <div className="bg-primary-50 rounded-lg p-3 mb-4">
+                  <p className="text-sm font-semibold text-primary-700">{platform.stats}</p>
+                </div>
+                
+                {/* Features List */}
+                <div className="space-y-2">
+                  {platform.features.map((feature, featureIndex) => (
+                    <div key={featureIndex} className="flex items-center justify-center gap-2 text-sm text-neutral-600">
+                      <div className="w-1.5 h-1.5 bg-primary-500 rounded-full"></div>
+                      <span>{feature}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
+
+
       </div>
     </section>
   );

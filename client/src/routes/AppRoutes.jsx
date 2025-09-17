@@ -18,6 +18,7 @@ import DashboardPage from '../pages/DashboardPage';
 import CreditsPage from '../pages/CreditsPage';
 import ApiKeysPage from '../pages/ApiKeysPage';
 import SettingsPage from '../pages/SettingsPage';
+
 // OnboardingPage import removed
 import { useEffect, useState } from 'react';
 import api from '../utils/api';
@@ -78,6 +79,8 @@ const AppRoutes = () => {
           </Layout>
         </ProtectedRoute>
       } />
+
+
 
       {/* Catch-all route - redirect to home */}
       <Route path="*" element={<HomePage />} />
