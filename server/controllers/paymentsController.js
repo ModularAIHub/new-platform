@@ -14,6 +14,7 @@ function getRazorpayInstance() {
 }
 
 const CREDIT_PACKAGES = {
+    '1rs-test': { credits: 5, price: 1 }, // 1 INR test payment, now gives 5 credits
     '25': { credits: 25, price: 45 },
     '50': { credits: 50, price: 75 },
     '80': { credits: 80, price: 100 }
@@ -97,7 +98,14 @@ class PaymentsController {
             const receipt = `ord_${shortId}`;
 
             const order = await getRazorpayInstance().orders.create({ amount, currency, receipt, notes, payment_capture: 1 });
-            res.json({ orderId: order.id, amount: order.amount, currency: order.currency, description, notes });
+            res.json({ 
+                orderId: order.id, 
+                amount: order.amount, 
+                currency: order.currency, 
+                description, 
+                notes,
+                razorpayKey: process.env.RAZORPAY_KEY_ID // Expose public key for frontend
+            });
         } catch (error) {
             console.error('Create order error:', error);
             res.status(500).json({ error: 'Failed to create order', code: 'CREATE_ORDER_ERROR' });

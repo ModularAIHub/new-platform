@@ -123,8 +123,11 @@ const CreditsPage = () => {
             }
 
             // Initialize Razorpay
+
+            // Fetch the Razorpay key from the backend (expose it via an endpoint or include in orderResponse)
+            const razorpayKey = orderResponse.data.razorpayKey || process.env.REACT_APP_RAZORPAY_KEY_ID || '';
             const options = {
-                key: 'rzp_test_RARXaiHMUK2Zrq', // Using the test key from .env
+                key: razorpayKey,
                 amount: amount,
                 currency: currency,
                 name: 'New Platform',
@@ -192,7 +195,33 @@ const CreditsPage = () => {
             <div className="bg-white shadow rounded-lg p-8">
                 <h2 className="text-xl font-bold text-gray-900 text-center mb-2">Buy Credits</h2>
                 <p className="text-gray-600 text-center mb-8">No commitment. Buy when you need them.</p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    {/* 1 INR Test Pack */}
+                    <div className="relative bg-white border rounded-xl p-6 flex flex-col items-center shadow hover:shadow-lg transition">
+                        <div className="absolute top-4 right-4 text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded">Test</div>
+                        <h3 className="text-lg font-semibold mb-2">Test Pack</h3>
+                        <div className="text-4xl font-bold text-primary-600 mb-1">5</div>
+                        <div className="text-gray-500 mb-2">credits</div>
+                        <div className="text-2xl font-bold mb-4">₹1</div>
+                        <ul className="mb-6 space-y-1 text-sm text-gray-600 text-left">
+                            <li>✔ For live payment test</li>
+                            <li>✔ No commitment</li>
+                            <li>✔ Get 5 credits for ₹1</li>
+                        </ul>
+                        <button 
+                            onClick={() => handlePurchase('1rs-test')}
+                            disabled={purchasing === '1rs-test'}
+                            className="w-full py-2 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold flex items-center justify-center"
+                        >
+                            {purchasing === '1rs-test' ? (
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                            ) : (
+                                <>
+                                    <Plus className="h-5 w-5 mr-2" /> Buy Now
+                                </>
+                            )}
+                        </button>
+                    </div>
                     {/* Starter Pack */}
                     <div className="relative bg-white border rounded-xl p-6 flex flex-col items-center shadow hover:shadow-lg transition">
                         <div className="absolute top-4 right-4 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Save ₹0</div>
