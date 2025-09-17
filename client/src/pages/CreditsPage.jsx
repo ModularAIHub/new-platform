@@ -186,18 +186,7 @@ const CreditsPage = () => {
                 <p className="text-gray-600 mt-2">Manage your credit balance and purchase additional credits when needed.</p>
             </div>
 
-            {/* Credit balance */}
-            <div className="bg-white shadow rounded-lg p-6">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                        <CreditCard className="h-8 w-8 text-primary-600" />
-                        <div className="ml-4">
-                            <h2 className="text-lg font-medium text-gray-900">Current Balance</h2>
-                            <p className="text-3xl font-bold text-primary-600">{balance} credits</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            {/* Credit balance section removed as requested */}
 
             {/* Buy Credits Section */}
             <div className="bg-white shadow rounded-lg p-8">
