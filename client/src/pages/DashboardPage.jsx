@@ -4,6 +4,7 @@ import { CreditCard, Key, Settings, ExternalLink, Lock, TrendingUp, Calendar, Ba
 import { useEffect, useState } from 'react'
 import api from '../utils/api'
 import { useNavigate } from 'react-router-dom'
+import { URLS, TOOLS, getToolUrl } from '../config/urls'
 import {
     Button,
     Card,
@@ -125,25 +126,26 @@ const DashboardPage = () => {
         }
     }
 
+
     const modules = [
         {
             name: 'Twitter Genie',
             description: 'AI-powered Twitter content generation',
-            url: 'https://tweet.suitegenie.in',
+            url: URLS.TWEET_GENIE,
             icon: ExternalLink,
             status: 'active'
         },
         {
             name: 'LinkedIn Genie',
             description: 'Professional LinkedIn content creation',
-            url: '#',
+            url: URLS.LINKEDIN_GENIE,
             icon: ExternalLink,
             status: 'active'
         },
         {
             name: 'WordPress Genie',
             description: 'WordPress content automation',
-            url: '#',
+            url: URLS.WORDPRESS_WRITER,
             icon: ExternalLink,
             status: 'coming-soon'
         }
@@ -560,12 +562,8 @@ function AiToolCard({ name, status }) {
         'Coming Soon': 'badge-warning',
     };
 
-    // Set launch URLs for each tool
-    let launchUrl = '#';
-    if (name === 'Tweet Genie') launchUrl = 'https://tweet.suitegenie.in';
-    else if (name === 'LinkedIn Genie') launchUrl = '#';
-    else if (name === 'WordPress Writer') launchUrl = '#';
-    else if (name === 'Custom LLM') launchUrl = '#';
+    // Set launch URLs for each tool using centralized configuration
+    const launchUrl = getToolUrl(name);
 
     return (
         <Card variant="interactive" className="h-full">

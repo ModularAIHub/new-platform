@@ -127,8 +127,8 @@ export default function About() {
       name: "Abhay", 
       role: "Developer", 
       bio: "Builds the core platform features and ensures a seamless user experience across all modules.", 
-      imageUrl: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
-      linkedinUrl: "#"
+      imageUrl: "/abhay.jpg",
+      linkedinUrl: "https://www.linkedin.com/in/abhay-bharti",
     },
   ];
 
