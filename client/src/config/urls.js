@@ -6,7 +6,7 @@ export const URLS = {
   API_BASE: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
   
   // Tool URLs
-  TWEET_GENIE: 'https://suite.tweetgenie.in',
+  TWEET_GENIE: 'https://tweet.suitegenie.in',
   LINKEDIN_GENIE: '',
   WORDPRESS_WRITER: import.meta.env.VITE_WORDPRESS_WRITER_URL || 'http://localhost:5176',
   CUSTOM_LLM: import.meta.env.VITE_CUSTOM_LLM_URL || 'http://localhost:5177',
