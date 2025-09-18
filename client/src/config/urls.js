@@ -6,8 +6,8 @@ export const URLS = {
   API_BASE: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
   
   // Tool URLs
-  TWEET_GENIE: import.meta.env.VITE_TWEET_GENIE_URL || 'http://localhost:5174',
-  LINKEDIN_GENIE: import.meta.env.VITE_LINKEDIN_GENIE_URL || 'http://localhost:5175',
+  TWEET_GENIE: 'https://suite.tweetgenie.in',
+  LINKEDIN_GENIE: '',
   WORDPRESS_WRITER: import.meta.env.VITE_WORDPRESS_WRITER_URL || 'http://localhost:5176',
   CUSTOM_LLM: import.meta.env.VITE_CUSTOM_LLM_URL || 'http://localhost:5177',
   
@@ -26,15 +26,15 @@ export const TOOLS = {
   TWEET_GENIE: {
     name: 'Tweet Genie',
     description: 'AI-powered tweet and thread generation with smart scheduling. Connect via OAuth, create content in bulk with credits, and track performance with detailed analytics. Scale your X/Twitter presence effortlessly.',
-    url: 'https://tweet.suitegenie.in',
+    url: URLS.TWEET_GENIE,
     status: 'active',
     icon: 'ExternalLink'
   },
   LINKEDIN_GENIE: {
     name: 'LinkedIn Genie',
     description: 'Professional LinkedIn content creation',
-    // url intentionally omitted to disable launch
-    status: 'active',
+    url: '',
+    status: 'coming-soon',
     icon: 'ExternalLink'
   },
   WORDPRESS_WRITER: {
