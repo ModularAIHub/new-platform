@@ -14,7 +14,6 @@ function getRazorpayInstance() {
 }
 
 const CREDIT_PACKAGES = {
-    '1rs-test': { credits: 5, price: 1 }, // 1 INR test payment, now gives 5 credits
     '25': { credits: 25, price: 45 },
     '50': { credits: 50, price: 75 },
     '80': { credits: 80, price: 100 }

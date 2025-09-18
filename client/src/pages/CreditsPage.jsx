@@ -197,12 +197,12 @@ const CreditsPage = () => {
                 <p className="text-gray-600 text-center mb-8">No commitment. Buy when you need them.</p>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     {/* 1 INR Test Pack */}
-                    <div className="relative bg-white border rounded-xl p-6 flex flex-col items-center shadow hover:shadow-lg transition">
+                    {/* <div className="relative bg-white border rounded-xl p-6 flex flex-col items-center shadow hover:shadow-lg transition">
                         <div className="absolute top-4 right-4 text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded">Test</div>
                         <h3 className="text-lg font-semibold mb-2">Test Pack</h3>
                         <div className="text-4xl font-bold text-primary-600 mb-1">5</div>
-                        <div className="text-gray-500 mb-2">credits</div>
-                        <div className="text-2xl font-bold mb-4">₹1</div>
+                        <div className="text-gray-500 mb-2">credits</div> */}
+                        {/* <div className="text-2xl font-bold mb-4">₹1</div>
                         <ul className="mb-6 space-y-1 text-sm text-gray-600 text-left">
                             <li>✔ For live payment test</li>
                             <li>✔ No commitment</li>
@@ -221,7 +221,7 @@ const CreditsPage = () => {
                                 </>
                             )}
                         </button>
-                    </div>
+                    </div> */}
                     {/* Starter Pack */}
                     <div className="relative bg-white border rounded-xl p-6 flex flex-col items-center shadow hover:shadow-lg transition">
                         <div className="absolute top-4 right-4 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Save ₹0</div>
