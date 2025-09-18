@@ -709,22 +709,23 @@ class AuthController {
                     `;
             }
 
-            // Respond to frontend immediately
-            res.json({ 
-                message: 'OTP sent successfully',
-                purpose,
-                expiresIn: 600 // 10 minutes in seconds
-            });
 
-            // Send email asynchronously (do not block response)
-            sendMail({
-                to: email,
-                subject,
-                html
-            }).catch(error => {
-                console.error('📧 Email sending failed:', error.message);
-                // Optionally log/mock email here
-            });
+            // Send email and only respond after success
+            try {
+                await sendMail({
+                    to: email,
+                    subject,
+                    html
+                });
+                res.json({ 
+                    message: 'OTP sent successfully',
+                    purpose,
+                    expiresIn: 600 // 10 minutes in seconds
+                });
+            } catch (emailError) {
+                console.error('📧 Email sending failed:', emailError.message);
+                return res.status(500).json({ error: 'Failed to send OTP email. Please try again.' });
+            }
 
         } catch (error) {
             console.error('Send OTP error:', error);
