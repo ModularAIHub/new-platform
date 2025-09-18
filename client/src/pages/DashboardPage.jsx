@@ -112,6 +112,7 @@ const DashboardPage = () => {
                     setPreference(pref)
                     setCreditTier(25)
                     setShowPrefModal(false)
+                    window.location.reload(); // Force reload to reflect mode and unlock navigation
                 } else {
                     setSubmitting(false)
                     return;
