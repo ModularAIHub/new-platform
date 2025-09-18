@@ -13,7 +13,7 @@ export const URLS = {
   
   // Production URLs (for reference)
   PRODUCTION: {
-    TWEET_GENIE: 'https://twitter.suitegenie.in',
+    TWEET_GENIE: 'https://tweet.suitegenie.in',
     LINKEDIN_GENIE: 'https://linkedin.suitegenie.in',
     WORDPRESS_WRITER: 'https://wordpress.suitegenie.in',
     CUSTOM_LLM: 'https://llm.suitegenie.in',
@@ -25,7 +25,7 @@ export const URLS = {
 export const TOOLS = {
   TWEET_GENIE: {
     name: 'Tweet Genie',
-    description: 'AI-powered Twitter content generation',
+    description: 'AI-powered tweet and thread generation with smart scheduling. Connect via OAuth, create content in bulk with credits, and track performance with detailed analytics. Scale your X/Twitter presence effortlessly.',
     url: URLS.TWEET_GENIE,
     status: 'active',
     icon: 'ExternalLink'

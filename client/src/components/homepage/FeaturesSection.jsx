@@ -11,7 +11,8 @@ const FeaturesSection = () => {
       color: "from-blue-500 to-blue-600",
       bgColor: "bg-blue-50",
       stats: "OAuth integration & bulk creation",
-      features: ["OAuth Connection", "Bulk Content Creation", "Performance Analytics"]
+      features: ["OAuth Connection", "Bulk Content Creation", "Performance Analytics"],
+      url: "https://tweet.suitegenie.in"
     },
     {
       icon: <Linkedin className="w-8 h-8" />,
@@ -86,6 +87,20 @@ const FeaturesSection = () => {
                       <span>{feature}</span>
                     </div>
                   ))}
+                  {/* Add access button for Tweet Genie only */}
+                  {platform.title === 'Tweet Genie' && platform.url && (
+                    <div className="mt-6 flex justify-center">
+                      <a
+                        href={platform.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block px-5 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+                        title="Open Tweet Genie"
+                      >
+                        Access Tweet Genie
+                      </a>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

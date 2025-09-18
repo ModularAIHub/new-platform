@@ -589,8 +589,9 @@ function AiToolCard({ name, status }) {
                         icon={<ExternalLink className="w-4 h-4" />}
                         iconPosition="right"
                         onClick={() => window.open(launchUrl, '_blank')}
+                        title={name === 'Tweet Genie' ? 'Open Tweet Genie in a new tab' : 'Launch this tool'}
                     >
-                        Launch Tool
+                        {name === 'Tweet Genie' ? 'Open Tweet Genie' : 'Launch Tool'}
                     </Button>
                 ) : (
                     <Button
@@ -604,7 +605,7 @@ function AiToolCard({ name, status }) {
                 )}
             </CardContent>
         </Card>
-    );
+    )
 }
 
 
