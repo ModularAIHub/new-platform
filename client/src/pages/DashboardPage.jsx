@@ -177,6 +177,9 @@ const DashboardPage = () => {
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
+                                <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-yellow-900 text-sm text-left">
+                                    <strong>Note:</strong> Image generation is currently more reliable with BYOK (OpenAI or Gemini). Using platform keys may result in rate limits or errors for image generation. We’re working to improve this soon!
+                                </div>
                                 <div className="space-y-3">
                                     <Button
                                         variant="primary"
