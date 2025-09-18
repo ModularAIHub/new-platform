@@ -13,7 +13,7 @@ export const URLS = {
   
   // Production URLs (for reference)
   PRODUCTION: {
-    TWEET_GENIE: 'https://tweet.suitegenie.in',
+    TWEET_GENIE: 'https://twitter.suitegenie.in',
     LINKEDIN_GENIE: 'https://linkedin.suitegenie.in',
     WORDPRESS_WRITER: 'https://wordpress.suitegenie.in',
     CUSTOM_LLM: 'https://llm.suitegenie.in',
