@@ -26,14 +26,14 @@ export const TOOLS = {
   TWEET_GENIE: {
     name: 'Tweet Genie',
     description: 'AI-powered tweet and thread generation with smart scheduling. Connect via OAuth, create content in bulk with credits, and track performance with detailed analytics. Scale your X/Twitter presence effortlessly.',
-    url: URLS.TWEET_GENIE,
+    url: 'https://tweet.suitegenie.in',
     status: 'active',
     icon: 'ExternalLink'
   },
   LINKEDIN_GENIE: {
     name: 'LinkedIn Genie',
     description: 'Professional LinkedIn content creation',
-    url: URLS.LINKEDIN_GENIE,
+    // url intentionally omitted to disable launch
     status: 'active',
     icon: 'ExternalLink'
   },
