@@ -36,17 +36,25 @@ if (process.env.NODE_ENV !== 'development') {
 
 // CORS configuration for cross-subdomain support
 app.use(cors({
-    origin: process.env.NODE_ENV === 'production'
-        ? [
+    origin: function (origin, callback) {
+        const allowedOrigins = [
             'https://suitegenie.in',
-            'https://tweet.suitegenie.in'
-        ]
-        : [
+            'https://tweet.suitegenie.in',
+            'https://api.suitegenie.in',
             'http://localhost:5173',
             'http://localhost:3000',
             'http://localhost:5174',
-            'http://localhost:3002'
-        ],
+            'http://localhost:3002',
+            'http://localhost:5175'
+        ];
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        } else {
+            console.log('CORS blocked origin:', origin);
+            return callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
