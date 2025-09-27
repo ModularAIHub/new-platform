@@ -1,4 +1,5 @@
 import express from 'express';
+import csurf from 'csurf';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
@@ -61,9 +62,18 @@ app.use(cors({
 }));
 
 // Body parsing middleware
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// CSRF protection for state-changing requests
+app.use(csurf({ cookie: true }));
+
+// CSRF token endpoint for frontend to fetch token
+app.get('/api/csrf-token', (req, res) => {
+    res.json({ csrfToken: req.csrfToken() });
+});
 
 // Health check endpoint
 app.get('/health', (req, res) => {
