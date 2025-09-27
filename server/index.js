@@ -38,6 +38,10 @@ if (process.env.NODE_ENV !== 'development') {
 // CORS configuration for cross-subdomain support
 app.use(cors({
     origin: function (origin, callback) {
+        if (process.env.NODE_ENV === 'development') {
+            // Allow all origins in development
+            return callback(null, true);
+        }
         const allowedOrigins = [
             'https://suitegenie.in',
             'https://tweet.suitegenie.in',
@@ -68,7 +72,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // CSRF protection for state-changing requests
-app.use(csurf({ cookie: true }));
+app.use(csurf({ cookie: { domain: '.suitegenie.in', httpOnly: true, sameSite: 'lax', secure: true } }));
 
 // CSRF token endpoint for frontend to fetch token
 app.get('/api/csrf-token', (req, res) => {
