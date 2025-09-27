@@ -72,7 +72,19 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // CSRF protection for state-changing requests
-app.use(csurf({ cookie: { domain: '.suitegenie.in', httpOnly: true, sameSite: 'lax', secure: true } }));
+// Dynamic CSRF cookie domain logic (matches auth cookies)
+const isProduction = process.env.NODE_ENV === 'production';
+const isLocalhost = process.env.DOMAIN === 'localhost' || process.env.CLIENT_URL?.includes('localhost');
+let csrfCookieOptions = {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
+    path: '/'
+};
+if (isProduction && process.env.DOMAIN && !isLocalhost) {
+    csrfCookieOptions.domain = '.' + process.env.DOMAIN;
+}
+app.use(csurf({ cookie: csrfCookieOptions }));
 
 // CSRF token endpoint for frontend to fetch token
 app.get('/api/csrf-token', (req, res) => {
