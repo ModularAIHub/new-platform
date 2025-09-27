@@ -54,7 +54,8 @@ app.use(cors({
         ];
         if (!origin) return callback(null, true);
         if (allowedOrigins.includes(origin)) {
-            return callback(null, true);
+            // Dynamically set Access-Control-Allow-Origin to the request's origin
+            return callback(null, origin);
         } else {
             console.log('CORS blocked origin:', origin);
             return callback(new Error('Not allowed by CORS'));
