@@ -1,5 +1,20 @@
 import axios from 'axios'
 
+// CSRF token cache
+let csrfToken = null;
+
+// Fetch CSRF token from backend
+export async function fetchCsrfToken() {
+    try {
+        const res = await api.get('/csrf-token');
+        csrfToken = res.data.csrfToken;
+        return csrfToken;
+    } catch (err) {
+        console.error('Failed to fetch CSRF token:', err);
+        return null;
+    }
+}
+
 const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 // Set timeout: 45s for production, 10s for local/dev
@@ -30,9 +45,17 @@ const processQueue = (error, token = null) => {
 
 // Request interceptor
 api.interceptors.request.use(
-    (config) => {
-        // Add any request headers here if needed
-        return config
+    async (config) => {
+        const method = config.method && config.method.toUpperCase();
+        if (["POST", "PUT", "DELETE", "PATCH"].includes(method)) {
+            if (!csrfToken) {
+                await fetchCsrfToken();
+            }
+            if (csrfToken) {
+                config.headers['X-CSRF-Token'] = csrfToken;
+            }
+        }
+        return config;
     },
     (error) => {
         return Promise.reject(error)
