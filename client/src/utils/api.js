@@ -116,8 +116,13 @@ api.interceptors.response.use(
 
             try {
                 console.log('Attempting token refresh...');
-                // Attempt to refresh the token
-                const response = await api.post('/auth/refresh');
+                // Always fetch and send CSRF token for refresh
+                if (!csrfToken) {
+                    await fetchCsrfToken();
+                }
+                const response = await api.post('/auth/refresh', {}, {
+                    headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : {}
+                });
                 console.log('Token refresh successful');
                 
                 processQueue(null);
