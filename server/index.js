@@ -42,18 +42,10 @@ app.use(cors({
             // Allow all origins in development
             return callback(null, true);
         }
-        const allowedOrigins = [
-            'https://suitegenie.in',
-            'https://tweet.suitegenie.in',
-            'https://api.suitegenie.in',
-            'http://localhost:5173',
-            'http://localhost:3000',
-            'http://localhost:5174',
-            'http://localhost:3002',
-            'http://localhost:5175'
-        ];
+        // Allow any SuiteGenie subdomain
+        const suitegenieRegex = /^https?:\/\/(?:[a-zA-Z0-9-]+\.)*suitegenie\.in$/;
         if (!origin) return callback(null, true);
-        if (allowedOrigins.includes(origin)) {
+        if (suitegenieRegex.test(origin)) {
             // Dynamically set Access-Control-Allow-Origin to the request's origin
             return callback(null, origin);
         } else {
