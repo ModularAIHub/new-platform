@@ -21,7 +21,8 @@ const FeaturesSection = () => {
       color: "from-blue-600 to-blue-700",
       bgColor: "bg-blue-50",
       stats: "Professional networking made easy",
-      features: ["Professional Content", "Industry Insights", "Brand Building"]
+      features: ["Professional Content", "Industry Insights", "Brand Building"],
+      url: "https://linkedin.suitegenie.in"
     },
     {
       icon: <FileText className="w-8 h-8" />,
@@ -39,9 +40,12 @@ const FeaturesSection = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-16 animate-fade-in">
-          <div className="inline-flex items-center gap-2 bg-primary-100 text-primary-700 px-4 py-2 rounded-full text-sm font-medium mb-4">
-            <Zap className="w-4 h-4" />
-            Powerful AI Tools
+          <div className="flex flex-col items-center justify-center mb-4">
+            {/* <img src="/logo[1].png" alt="SuiteGenie Logo" className="w-16 h-16 mb-2 rounded-xl shadow-lg" /> */}
+            <div className="inline-flex items-center gap-2 bg-primary-100 text-primary-700 px-4 py-2 rounded-full text-sm font-medium">
+              <Zap className="w-4 h-4" />
+              Powerful AI Tools
+            </div>
           </div>
           <h2 className="text-4xl md:text-5xl font-bold text-neutral-900 mb-6 tracking-tight">
             How SuiteGenie Works
@@ -98,6 +102,19 @@ const FeaturesSection = () => {
                         title="Open Tweet Genie"
                       >
                         Access Tweet Genie
+                      </a>
+                    </div>
+                  )}
+                  {platform.title === 'LinkedIn Automator' && platform.url && (
+                    <div className="mt-6 flex justify-center">
+                      <a
+                        href={platform.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block px-5 py-2 bg-blue-700 text-white font-semibold rounded-lg shadow hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                        title="Open LinkedIn Automator"
+                      >
+                        Access LinkedIn Automator
                       </a>
                     </div>
                   )}
