@@ -130,8 +130,9 @@ const authenticateToken = async (req, res, next) => {
             });
         }
 
-        req.user = userResult.rows[0];
-        next();
+    req.user = userResult.rows[0];
+    console.log('[AUTH MIDDLEWARE] req.user set:', req.user);
+    next();
     } catch (error) {
         if (error.name === 'TokenExpiredError') {
             // Try to refresh token using refresh token
