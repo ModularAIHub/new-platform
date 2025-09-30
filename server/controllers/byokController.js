@@ -20,10 +20,17 @@ export const ByokController = {
 
   async getPreference(req, res) {
     try {
+      if (!req.user || !req.user.id) {
+        console.error('[DEBUG] /byok/preference: No user in session', { user: req.user });
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
       const userId = req.user.id;
+      console.log('[DEBUG] /byok/preference: userId', userId);
       const result = await ByokService.getPreference(userId);
+      console.log('[DEBUG] /byok/preference: result', result);
       res.json({ success: true, ...result });
     } catch (error) {
+      console.error('[DEBUG] /byok/preference error:', error);
       res.status(400).json({ error: error.message });
     }
   },
