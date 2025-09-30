@@ -39,7 +39,7 @@ export const ByokController = {
       res.json({ success: true, ...result });
     } catch (error) {
       console.error('[DEBUG] /byok/preference error:', error);
-      res.status(400).json({ error: error.message, stack: error.stack });
+      res.status(400).json({ error: error.message, stack: error.stack, fullError: error });
     }
   },
 
