@@ -7,7 +7,7 @@ export const URLS = {
   
   // Tool URLs
   TWEET_GENIE: 'https://tweet.suitegenie.in',
-  LINKEDIN_GENIE: '',
+  LINKEDIN_GENIE: 'https://linkedin.suitegenie.in',
   WORDPRESS_WRITER: import.meta.env.VITE_WORDPRESS_WRITER_URL || 'http://localhost:5176',
   CUSTOM_LLM: import.meta.env.VITE_CUSTOM_LLM_URL || 'http://localhost:5177',
   
@@ -33,8 +33,8 @@ export const TOOLS = {
   LINKEDIN_GENIE: {
     name: 'LinkedIn Genie',
     description: 'Professional LinkedIn content creation',
-    url: '',
-    status: 'coming-soon',
+    url: 'https://linkedin.suitegenie.in',
+    status: 'active',
     icon: 'ExternalLink'
   },
   WORDPRESS_WRITER: {
