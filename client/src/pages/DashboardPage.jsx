@@ -69,8 +69,10 @@ const DashboardPage = () => {
         setPrefLoading(true)
         try {
             const res = await api.get('/byok/preference')
+            console.log('[DEBUG] /byok/preference response:', res.data);
             // Always treat null/undefined as unset
             if (!res.data.api_key_preference) {
+                console.warn('[DEBUG] No api_key_preference found for user:', res.data);
                 setPreference(null)
                 setCreditTier(0)
                 setShowPrefModal(true)
@@ -85,13 +87,16 @@ const DashboardPage = () => {
                 // Always show actual available credits as the current credit tier
                 try {
                     const creditsRes = await api.get('/credits/balance');
+                    console.log('[DEBUG] /credits/balance response:', creditsRes.data);
                     setCreditTier(creditsRes.data.creditsRemaining || 0);
-                } catch {
+                } catch (err) {
+                    console.error('[DEBUG] Error fetching credits:', err);
                     setCreditTier(0);
                 }
                 setShowPrefModal(false)
             }
         } catch (e) {
+            console.error('[DEBUG] Error fetching /byok/preference:', e);
             setPreference(null)
             setCreditTier(0)
             setShowPrefModal(true)
