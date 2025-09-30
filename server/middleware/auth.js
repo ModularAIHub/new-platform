@@ -40,6 +40,15 @@ const tryRefreshToken = async (req, res, refreshToken) => {
         return { success: true, user };
     } catch (error) {
         console.error('[AUTH MIDDLEWARE] Token refresh failed:', error);
+        // Clear refreshToken cookie to prevent repeated attempts
+        const isDevelopment = process.env.NODE_ENV === 'development';
+        res.clearCookie('refreshToken', {
+            httpOnly: true,
+            secure: !isDevelopment,
+            sameSite: isDevelopment ? 'lax' : 'none',
+            path: '/',
+            domain: isDevelopment ? undefined : '.suitegenie.in'
+        });
         return { success: false };
     }
 };
