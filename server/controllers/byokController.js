@@ -20,18 +20,26 @@ export const ByokController = {
 
   async getPreference(req, res) {
     try {
-      if (!req.user || !req.user.id) {
-        console.error('[DEBUG] /byok/preference: No user in session', { user: req.user });
-        return res.status(401).json({ error: 'Not authenticated' });
+      if (!req.user) {
+        console.error('[DEBUG] /byok/preference: No req.user object', { cookies: req.cookies });
+        return res.status(401).json({ error: 'No user object in request. Check authentication middleware.' });
+      }
+      if (!req.user.id) {
+        console.error('[DEBUG] /byok/preference: req.user.id missing', { user: req.user });
+        return res.status(401).json({ error: 'User ID missing in session. Check token parsing.' });
       }
       const userId = req.user.id;
       console.log('[DEBUG] /byok/preference: userId', userId);
       const result = await ByokService.getPreference(userId);
+      if (!result) {
+        console.error('[DEBUG] /byok/preference: No result from DB for user', userId);
+        return res.status(404).json({ error: 'User not found in database.' });
+      }
       console.log('[DEBUG] /byok/preference: result', result);
       res.json({ success: true, ...result });
     } catch (error) {
       console.error('[DEBUG] /byok/preference error:', error);
-      res.status(400).json({ error: error.message });
+      res.status(400).json({ error: error.message, stack: error.stack });
     }
   },
 
