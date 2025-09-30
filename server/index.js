@@ -42,11 +42,17 @@ app.use(cors({
             // Allow all origins in development
             return callback(null, true);
         }
-        // Allow any SuiteGenie subdomain
-        const suitegenieRegex = /^https?:\/\/(?:[a-zA-Z0-9-]+\.)*suitegenie\.in$/;
+        // Explicitly allow SuiteGenie API subdomains
+        const allowedOrigins = [
+            'https://api.suitegenie.in',
+            'https://apilinkedn.suitegenie.in',
+            'https://tweetapi.suitegenie.in',
+            'https://suitegenie.in',
+            'https://tweet.suitegenie.in',
+            'https://linkedin.suitegenie.in',
+        ];
         if (!origin) return callback(null, true);
-        if (suitegenieRegex.test(origin)) {
-            // Dynamically set Access-Control-Allow-Origin to the request's origin
+        if (allowedOrigins.includes(origin)) {
             return callback(null, origin);
         } else {
             console.log('CORS blocked origin:', origin);
