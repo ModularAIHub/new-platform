@@ -9,6 +9,7 @@ import paymentRoutes from './payments.js';
 import aiRoutes from './ai.js';
 import byokRoutes from './byok.js';
 import contactRoutes from './contact.js';
+import creditResetRoutes from './creditReset.js';
 
 const router = express.Router();
 
@@ -21,6 +22,7 @@ router.use('/payments', paymentRoutes);
 router.use('/ai', aiRoutes);
 router.use('/byok', byokRoutes);
 router.use('/contact', contactRoutes);
+router.use('/credit-reset', creditResetRoutes);
 
 export default router;
 

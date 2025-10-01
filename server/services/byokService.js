@@ -37,9 +37,10 @@ export const ByokService = {
       'UPDATE users SET api_key_preference = $1, byok_locked_until = $2, byok_activated_at = $3 WHERE id = $4',
       [preference, byokLockedUntil, byokActivatedAt, userId]
     );
-    // Set credits based on preference
+    // Set credits based on preference and update last reset timestamp
     const credits = preference === 'byok' ? BYOK_CREDIT_AMOUNT : PLATFORM_CREDIT_AMOUNT;
-    await query('UPDATE users SET credits_remaining = $1 WHERE id = $2', [credits, userId]);
+    await query('UPDATE users SET credits_remaining = $1, last_credit_reset = NOW() WHERE id = $2', [credits, userId]);
+    console.log(`[BYOK SERVICE] Updated user ${userId} credits to ${credits} (${preference} mode)`);
     return { preference, credits, byokLockedUntil };
   },
 
