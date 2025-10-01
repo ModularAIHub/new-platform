@@ -194,12 +194,12 @@ const ApiKeysPage = () => {
                             <label className="flex items-center gap-2 cursor-pointer">
                                 <input type="radio" name="api-key-pref" value="platform" checked={preference === 'platform'}
                                     onChange={() => {
-                                        if (preference !== 'platform' && (!lockUntil || new Date(lockUntil) <= new Date())) {
+                                        if (preference !== 'platform' && (!lockUntil || new Date(lockUntil) <= new Date()) && !locked) {
                                             setPendingPref('platform');
                                             setShowConfirm(true);
                                         }
                                     }}
-                                    disabled={preference === 'byok' && lockUntil && new Date(lockUntil) > new Date()}
+                                    disabled={locked || (preference === 'byok' && lockUntil && new Date(lockUntil) > new Date())}
                                 />
                                 <span className="font-semibold text-blue-700">Platform Key</span>
                                 <span className="text-xs text-gray-500">(25 credits/month)</span>
@@ -209,7 +209,7 @@ const ApiKeysPage = () => {
                                     onChange={() => {
                                         // Do nothing, handled by add key flow
                                     }}
-                                    disabled={preference === 'platform' && lockUntil && new Date(lockUntil) > new Date()}
+                                    disabled={locked || (preference === 'platform' && lockUntil && new Date(lockUntil) > new Date())}
                                 />
                                 <span className="font-semibold text-green-700">BYOK</span>
                                 <span className="text-xs text-gray-500">(55 credits/month, 30-day lock)</span>

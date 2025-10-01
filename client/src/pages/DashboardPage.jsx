@@ -277,7 +277,7 @@ const DashboardPage = () => {
                                 size="lg"
                                 fullWidth
                                 loading={submitting}
-                                disabled={preference === 'byok' && locked}
+                                disabled={locked}
                                 onClick={() => handleSetPreference('platform')}
                             >
                                 Use Platform Keys (25 credits/month)
@@ -287,6 +287,7 @@ const DashboardPage = () => {
                                 size="lg"
                                 fullWidth
                                 loading={submitting}
+                                disabled={locked}
                                 onClick={() => handleSetPreference('byok')}
                             >
                                 Bring Your Own Key (55 credits/month)
