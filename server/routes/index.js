@@ -10,6 +10,8 @@ import aiRoutes from './ai.js';
 import byokRoutes from './byok.js';
 import contactRoutes from './contact.js';
 import creditResetRoutes from './creditReset.js';
+import workspaceRoutes from './workspace.js';
+import teamRoutes from './team.js';
 
 const router = express.Router();
 
@@ -23,6 +25,8 @@ router.use('/ai', aiRoutes);
 router.use('/byok', byokRoutes);
 router.use('/contact', contactRoutes);
 router.use('/credit-reset', creditResetRoutes);
+router.use('/workspaces', workspaceRoutes);
+router.use('/team', teamRoutes);
 
 export default router;
 

@@ -5,21 +5,25 @@ const PLAN_LIMITS = {
     free: {
         credits: 25,
         profilesPerPlatform: 1,
+        totalSocialAccounts: 2,
         features: ['basic_ai_generation', 'built_in_keys'],
         support: 'community'
     },
     pro: {
-        credits: 150, // 200 with own keys
-        profilesPerPlatform: 3,
-        features: ['basic_ai_generation', 'built_in_keys', 'own_keys', 'email_support'],
-        support: 'email'
+        credits: 125, // 250 with own keys  
+        profilesPerPlatform: 8,
+        totalSocialAccounts: 8,
+        features: ['basic_ai_generation', 'built_in_keys', 'own_keys', 'team_collaboration', 'bulk_scheduling', 'advanced_analytics', 'priority_email_support'],
+        support: 'priority_email',
+        teamMembers: 5 // max team size including owner
     },
     enterprise: {
         credits: 500, // 750 with own keys
-        profilesPerPlatform: 6,
-        features: ['basic_ai_generation', 'built_in_keys', 'own_keys', 'team_collaboration', 'priority_support'],
+        profilesPerPlatform: 15,
+        totalSocialAccounts: 25,
+        features: ['basic_ai_generation', 'built_in_keys', 'own_keys', 'team_collaboration', 'bulk_scheduling', 'advanced_analytics', 'priority_support', 'custom_integrations'],
         support: 'priority',
-        teamMembers: 5
+        teamMembers: 15
     }
 };
 
@@ -48,7 +52,7 @@ class PlansController {
             const hasOwnKeys = parseInt(apiKeysResult.rows[0].key_count) > 0;
             let effectiveCredits = planConfig.credits;
             if (hasOwnKeys && user.plan_type !== 'free') {
-                if (user.plan_type === 'pro') effectiveCredits = 200;
+                if (user.plan_type === 'pro') effectiveCredits = 250;
                 else if (user.plan_type === 'enterprise') effectiveCredits = 750;
             }
 
@@ -62,6 +66,7 @@ class PlansController {
                 },
                 limits: {
                     profilesPerPlatform: planConfig.profilesPerPlatform,
+                    totalSocialAccounts: planConfig.totalSocialAccounts,
                     teamMembers: planConfig.teamMembers || 0
                 },
                 features: planConfig.features,
@@ -70,12 +75,13 @@ class PlansController {
                     type: planType,
                     name: planType.charAt(0).toUpperCase() + planType.slice(1),
                     credits: PLAN_LIMITS[planType].credits,
-                    bonusCredits: planType === 'pro' ? 200 : planType === 'enterprise' ? 750 : 25,
+                    bonusCredits: planType === 'pro' ? 250 : planType === 'enterprise' ? 750 : 25,
                     profilesPerPlatform: PLAN_LIMITS[planType].profilesPerPlatform,
+                    totalSocialAccounts: PLAN_LIMITS[planType].totalSocialAccounts,
                     features: PLAN_LIMITS[planType].features,
                     support: PLAN_LIMITS[planType].support,
                     teamMembers: PLAN_LIMITS[planType].teamMembers || 0,
-                    price: planType === 'free' ? 0 : planType === 'pro' ? 800 : 1100
+                    price: planType === 'free' ? 0 : planType === 'pro' ? 499 : 1100
                 }))
             });
         } catch (error) {
@@ -101,7 +107,7 @@ class PlansController {
             }
             const newPlanConfig = PLAN_LIMITS[planType];
             let bonusCredits = 0;
-            if (planType === 'pro') bonusCredits = 150;
+            if (planType === 'pro') bonusCredits = 125;
             else if (planType === 'enterprise') bonusCredits = 500;
             const newCredits = currentCredits + bonusCredits;
             await query('UPDATE users SET plan_type = $1, credits_remaining = $2, updated_at = NOW() WHERE id = $3', [planType, newCredits, req.user.id]);
@@ -131,10 +137,11 @@ class PlansController {
                 return {
                     type: planType,
                     name: planType.charAt(0).toUpperCase() + planType.slice(1),
-                    price: planType === 'free' ? 0 : planType === 'pro' ? 800 : 1100,
+                    price: planType === 'free' ? 0 : planType === 'pro' ? 499 : 1100,
                     credits: plan.credits,
-                    bonusCredits: planType === 'pro' ? 200 : planType === 'enterprise' ? 750 : 25,
+                    bonusCredits: planType === 'pro' ? 250 : planType === 'enterprise' ? 750 : 25,
                     profilesPerPlatform: plan.profilesPerPlatform,
+                    totalSocialAccounts: plan.totalSocialAccounts,
                     features: plan.features,
                     support: plan.support,
                     teamMembers: plan.teamMembers || 0,
