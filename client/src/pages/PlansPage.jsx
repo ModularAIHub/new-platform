@@ -141,22 +141,7 @@ const PlansPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 relative">
-      {/* LOCKED PAGE OVERLAY */}
-      {/* Overlay: less opaque, navbar visible */}
-      <div className="fixed inset-0 z-40 flex items-center justify-center" style={{pointerEvents: 'none'}}>
-        <div className="absolute inset-0 bg-blue-100" style={{opacity: 0.55, backdropFilter: 'blur(2px)'}} />
-      </div>
-      {/* Modal: above overlay, below navbar */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-auto">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center border-2 border-blue-500">
-          <h2 className="text-2xl font-bold text-blue-700 mb-4">Plans & Pricing Locked</h2>
-          <p className="text-gray-700 mb-4">Only the <b>Free</b> plan is available right now.<br/>Pro and Enterprise plans will be available soon.</p>
-          <div className="mb-4">
-            <span className="inline-block bg-blue-50 text-blue-700 rounded-full px-4 py-2 text-sm font-medium">Paid plans coming soon</span>
-          </div>
-          <button onClick={() => window.location.href = '/register'} className="mt-2 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Start Using Free Plan</button>
-        </div>
-      </div>
+
       <div className="bg-white">
         <div className="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
