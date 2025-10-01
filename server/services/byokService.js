@@ -11,10 +11,15 @@ const LOCK_PERIOD_DAYS = 90;
 export const ByokService = {
 
   async setPreference(userId, preference) {
+    console.log('[BYOK SERVICE] setPreference called with userId:', userId, 'preference:', preference);
+    
     // Only allow switching if lock expired
     const user = await query('SELECT api_key_preference, byok_locked_until FROM users WHERE id = $1', [userId]);
+    console.log('[BYOK SERVICE] User query result:', user.rows[0]);
+    
     const now = new Date();
     if (user.rows[0].byok_locked_until && new Date(user.rows[0].byok_locked_until) > now) {
+      console.log('[BYOK SERVICE] User is locked until:', user.rows[0].byok_locked_until);
       throw new Error('Cannot switch preference until lock expires');
     }
     let byokLockedUntil = null;
