@@ -35,33 +35,64 @@ class SyncWorker {
         console.log(`✅ Credit sync worker started (interval: ${this.syncInterval / 1000}s)`);
     }
 
-    // Monthly credit reset logic
+    // Monthly credit reset logic - runs on 1st of every month
     startMonthlyReset() {
+        console.log('🗓️  Monthly credit reset scheduler initialized');
+        
         setInterval(async () => {
             const now = new Date();
             const utcMonth = now.getUTCMonth();
             const utcDate = now.getUTCDate();
             const utcYear = now.getUTCFullYear();
             const resetKey = `${utcYear}-${utcMonth}`;
+            
+            // Check if it's the 1st of the month and we haven't reset this month yet
             if (utcDate === 1 && this.lastResetMonth !== resetKey) {
                 try {
-                    console.log('🔄 Performing monthly credit reset for all users...');
-                    // Update credits in DB: 25 for platform, 55 for BYOK
-                    await query("UPDATE users SET credits_remaining = CASE WHEN api_key_preference = 'byok' THEN 55 WHEN api_key_preference = 'platform' THEN 25 ELSE 0 END");
+                    console.log(`🔄 Performing monthly credit reset for ${utcMonth + 1}/${utcYear}...`);
+                    
+                    // Update credits in DB: 55 for BYOK, 25 for Platform, 0 for unset preference
+                    const updateResult = await query(`
+                        UPDATE users 
+                        SET credits_remaining = CASE 
+                            WHEN api_key_preference = 'byok' THEN 55 
+                            WHEN api_key_preference = 'platform' THEN 25 
+                            ELSE 0 
+                        END,
+                        last_credit_reset = NOW()
+                        WHERE api_key_preference IS NOT NULL
+                    `);
+                    
+                    console.log(`📊 Updated credits for ${updateResult.rowCount} users in database`);
 
-                    // Fetch all user IDs and their mode
-                    const { rows: users } = await query("SELECT id, api_key_preference FROM users");
+                    // Fetch all users with preferences and sync Redis cache
+                    const { rows: users } = await query(`
+                        SELECT id, api_key_preference, credits_remaining 
+                        FROM users 
+                        WHERE api_key_preference IS NOT NULL
+                    `);
+                    
+                    let redisUpdates = 0;
                     for (const user of users) {
-                        let credits = 0;
-                        if (user.api_key_preference === 'byok') credits = 55;
-                        else if (user.api_key_preference === 'platform') credits = 25;
-                        // Update Redis cache
-                        await redisClient.setCredits(user.id, credits);
+                        try {
+                            // Update Redis cache with new credit balance
+                            await redisClient.setCredits(user.id, user.credits_remaining);
+                            redisUpdates++;
+                        } catch (redisError) {
+                            console.error(`❌ Failed to update Redis for user ${user.id}:`, redisError.message);
+                        }
                     }
+                    
+                    // Mark this month as completed
                     this.lastResetMonth = resetKey;
-                    console.log('✅ Monthly credit reset completed.');
+                    
+                    console.log(`✅ Monthly credit reset completed successfully!`);
+                    console.log(`📈 Database updates: ${updateResult.rowCount}, Redis updates: ${redisUpdates}`);
+                    console.log(`💰 BYOK users: 55 credits, Platform users: 25 credits`);
+                    
                 } catch (err) {
                     console.error('❌ Monthly credit reset failed:', err);
+                    // Don't update lastResetMonth so it will retry
                 }
             }
         }, this.monthlyResetInterval);
