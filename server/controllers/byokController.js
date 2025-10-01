@@ -6,14 +6,28 @@ import { ByokService } from '../services/byokService.js';
 export const ByokController = {
   async setPreference(req, res) {
     try {
+      console.log('[BYOK CONTROLLER] setPreference called');
+      console.log('[BYOK CONTROLLER] req.user:', req.user);
+      console.log('[BYOK CONTROLLER] req.body:', req.body);
+      
       const userId = req.user.id;
       const { preference } = req.body;
+      
+      console.log('[BYOK CONTROLLER] userId:', userId);
+      console.log('[BYOK CONTROLLER] preference:', preference);
+      
       if (!['platform', 'byok'].includes(preference)) {
+        console.log('[BYOK CONTROLLER] Invalid preference:', preference);
         return res.status(400).json({ error: 'Invalid preference' });
       }
+      
+      console.log('[BYOK CONTROLLER] Calling ByokService.setPreference...');
       const result = await ByokService.setPreference(userId, preference);
+      console.log('[BYOK CONTROLLER] Service result:', result);
+      
       res.json({ success: true, ...result });
     } catch (error) {
+      console.error('[BYOK CONTROLLER] Error in setPreference:', error);
       res.status(400).json({ error: error.message });
     }
   },
