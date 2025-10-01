@@ -28,9 +28,10 @@ export const ByokService = {
     let byokLockedUntil = null;
     let byokActivatedAt = null;
     if (preference === 'byok') {
-      byokLockedUntil = new Date(now.getTime() + LOCK_PERIOD_DAYS * 24 * 60 * 60 * 1000);
+      // BYOK mode: don't lock until user submits API key
       byokActivatedAt = now;
     } else if (preference === 'platform') {
+      // Platform mode: lock immediately
       byokLockedUntil = new Date(now.getTime() + LOCK_PERIOD_DAYS * 24 * 60 * 60 * 1000);
     }
     await query(
@@ -84,6 +85,20 @@ export const ByokService = {
     if (!apiKey || apiKey.length < 10) {
       throw new Error('API key too short');
     }
+    
+    // Check if user is in BYOK mode and not yet locked
+    const user = await query('SELECT api_key_preference, byok_locked_until FROM users WHERE id = $1', [userId]);
+    const userPref = user.rows[0];
+    
+    // If user is in BYOK mode and not locked, this is their first API key submission - apply lock
+    if (userPref.api_key_preference === 'byok' && (!userPref.byok_locked_until || new Date(userPref.byok_locked_until) <= new Date())) {
+      const lockPeriod = new Date();
+      lockPeriod.setDate(lockPeriod.getDate() + LOCK_PERIOD_DAYS);
+      
+      await query('UPDATE users SET byok_locked_until = $1 WHERE id = $2', [lockPeriod, userId]);
+      console.log('[BYOK SERVICE] First API key submitted - locking BYOK user until:', lockPeriod);
+    }
+    
     // Encrypt key
     const encryptedKey = encrypt(apiKey);
     // Deactivate any existing key for this provider
