@@ -13,14 +13,17 @@ export const ByokService = {
   async setPreference(userId, preference) {
     console.log('[BYOK SERVICE] setPreference called with userId:', userId, 'preference:', preference);
     
-    // Only allow switching if lock expired
+    // Get current user preference and lock status
     const user = await query('SELECT api_key_preference, byok_locked_until FROM users WHERE id = $1', [userId]);
     console.log('[BYOK SERVICE] User query result:', user.rows[0]);
     
     const now = new Date();
+    
+    // Strict lock enforcement - user cannot make ANY preference changes while locked
     if (user.rows[0].byok_locked_until && new Date(user.rows[0].byok_locked_until) > now) {
+      const lockUntilDate = new Date(user.rows[0].byok_locked_until).toLocaleDateString();
       console.log('[BYOK SERVICE] User is locked until:', user.rows[0].byok_locked_until);
-      throw new Error('Cannot switch preference until lock expires');
+      throw new Error(`Preference is locked until ${lockUntilDate}. You cannot make any changes during the 3-month lock period.`);
     }
     let byokLockedUntil = null;
     let byokActivatedAt = null;
