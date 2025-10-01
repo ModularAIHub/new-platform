@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MapPin, Mail, Clock, Send, MessageCircle, Zap, Users, HeadphonesIcon } from 'lucide-react';
 import Footer from '../components/Footer';
 import { Button, Input, Card, CardContent } from '../components/ui';
@@ -14,15 +14,38 @@ const ContactPage = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null); // 'success' | 'error' | null
+  const [csrfToken, setCsrfToken] = useState(null);
+
+  // Fetch CSRF token on component mount
+  useEffect(() => {
+    const fetchCsrfToken = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/csrf-token`, {
+          credentials: 'include'
+        });
+        const data = await response.json();
+        setCsrfToken(data.csrfToken);
+      } catch (error) {
+        console.error('Failed to fetch CSRF token:', error);
+      }
+    };
+    fetchCsrfToken();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitStatus(null);
     try {
+      const headers = { 'Content-Type': 'application/json' };
+      if (csrfToken) {
+        headers['X-CSRF-Token'] = csrfToken;
+      }
+
       const res = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/contact`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
+        credentials: 'include',
         body: JSON.stringify(formData)
       });
       if (res.ok) {
