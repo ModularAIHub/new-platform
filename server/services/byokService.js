@@ -60,9 +60,11 @@ export const ByokService = {
     const now = new Date();
     let locked = false;
     let lockMessage = null;
-    if (api_key_preference === 'byok' && pref.byok_locked_until && new Date(pref.byok_locked_until) > now) {
+    // Check if user is locked regardless of current preference (both platform and byok can be locked)
+    if (pref.byok_locked_until && new Date(pref.byok_locked_until) > now) {
       locked = true;
-      lockMessage = `BYOK is locked until ${new Date(pref.byok_locked_until).toLocaleString()}`;
+      const lockUntilDate = new Date(pref.byok_locked_until).toLocaleDateString();
+      lockMessage = `Preference is locked until ${lockUntilDate}. You cannot make changes during the 3-month lock period.`;
     }
     return {
       ...pref,
