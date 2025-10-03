@@ -42,10 +42,14 @@ router.post('/change-password', authenticateToken, AuthController.changePassword
 // Reset password (for forgot password flow - no authentication required)
 router.post('/reset-password', AuthController.resetPassword);
 
+
+// CSRF token endpoint for frontend
+router.get('/csrf-token', (req, res) => {
+	res.json({ csrfToken: req.csrfToken() });
+});
+
 router.post('/notifications', authenticateToken, AuthController.updateNotifications);
-
 router.post('/two-factor', authenticateToken, AuthController.toggleTwoFactor);
-
 router.delete('/delete-account', authenticateToken, AuthController.deleteAccount);
 
 export default router;
