@@ -18,6 +18,9 @@ import DashboardPage from '../pages/DashboardPage';
 import CreditsPage from '../pages/CreditsPage';
 import ApiKeysPage from '../pages/ApiKeysPage';
 import SettingsPage from '../pages/SettingsPage';
+import TeamPage from '../pages/TeamPage';
+import TeamInvitePage from '../pages/TeamInvitePage';
+
 
 // OnboardingPage import removed
 import { useEffect, useState } from 'react';
@@ -80,7 +83,18 @@ const AppRoutes = () => {
         </ProtectedRoute>
       } />
 
+      <Route path="/team" element={
+        <ProtectedRoute>
+          <Layout>
+            <TeamPage />
+          </Layout>
+        </ProtectedRoute>
+      } />
 
+
+
+      {/* Team invitation - public route (no Layout/auth required) */}
+      <Route path="/team/invite/:token" element={<TeamInvitePage />} />
 
       {/* Catch-all route - redirect to home */}
       <Route path="*" element={<HomePage />} />

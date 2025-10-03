@@ -20,8 +20,19 @@ const app = express();
 app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 
-// Security middleware
-app.use(helmet());
+// Security middleware with CSP configuration for development
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      connectSrc: ["'self'", "http://localhost:*", "https://api.twitter.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:", "http:"],
+      fontSrc: ["'self'", "https:", "data:"],
+    },
+  },
+}));
 
 // Rate limiting - only enable in production
 if (process.env.NODE_ENV !== 'development') {
@@ -45,8 +56,8 @@ app.use(cors({
         // Explicitly allow SuiteGenie API subdomains
         const allowedOrigins = [
             'https://api.suitegenie.in',
-            'https://apilinkedn.suitegenie.in',
-            'https://tweetapi.suitegenie.in',
+            'https://apilinkedin.suitegenie.in',
+            'https://apitweet.suitegenie.in',
             'https://suitegenie.in',
             'https://tweet.suitegenie.in',
             'https://linkedin.suitegenie.in',
@@ -83,7 +94,22 @@ let csrfCookieOptions = {
 if (isProduction && process.env.DOMAIN && !isLocalhost) {
     csrfCookieOptions.domain = '.' + process.env.DOMAIN;
 }
-app.use(csurf({ cookie: csrfCookieOptions }));
+
+// Skip CSRF for specific API routes that need external access
+const csrfProtection = csurf({ 
+    cookie: csrfCookieOptions,
+    ignoreMethods: ['GET', 'HEAD', 'OPTIONS'],
+    skip: (req) => {
+        // Skip CSRF for SSO token generation (used by other services)
+        if (req.path === '/api/team/sso-token') return true;
+        // Skip CSRF for webhook endpoints
+        if (req.path.startsWith('/api/webhooks/')) return true;
+        // Skip CSRF for team social accounts endpoints in development
+        if (process.env.NODE_ENV === 'development' && req.path.startsWith('/pro-team/social-accounts')) return true;
+        return false;
+    }
+});
+app.use(csrfProtection);
 
 // CSRF token endpoint for frontend to fetch token
 app.get('/api/csrf-token', (req, res) => {

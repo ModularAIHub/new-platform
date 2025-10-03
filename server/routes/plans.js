@@ -31,6 +31,7 @@ const PLAN_LIMITS = {
 
 // Get plan limits and features
 router.get('/', authenticateToken, PlansController.getLimits);
+router.get('/limits', authenticateToken, PlansController.getLimits);
 
 // Upgrade plan
 router.post('/upgrade', [
