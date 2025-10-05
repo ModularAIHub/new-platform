@@ -6,7 +6,7 @@ const PLAN_LIMITS = {
         credits: 25,
         profilesPerPlatform: 1,
         totalSocialAccounts: 2,
-        features: ['basic_ai_generation', 'built_in_keys', 'own_keys'],
+        features: ['basic_ai_generation', 'built_in_keys'],
         support: 'community'
     },
     pro: {
@@ -29,11 +29,10 @@ const PLAN_LIMITS = {
 
 function getRequiredPlanForFeature(featureName) {
     const featurePlanMap = {
+        own_keys: 'pro',
         team_collaboration: 'enterprise',
         priority_support: 'enterprise',
-        email_support: 'pro',
-        bulk_scheduling: 'pro',
-        advanced_analytics: 'pro'
+        email_support: 'pro'
     };
     return featurePlanMap[featureName] || 'free';
 }
@@ -41,49 +40,29 @@ function getRequiredPlanForFeature(featureName) {
 class PlansController {
     static async getLimits(req, res) {
         try {
-            const result = await query('SELECT plan_type, credits_remaining, current_team_id FROM users WHERE id = $1', [req.user.id]);
+            const result = await query('SELECT plan_type, credits_remaining FROM users WHERE id = $1', [req.user.id]);
             if (result.rows.length === 0) {
                 return res.status(404).json({ error: 'User not found', code: 'USER_NOT_FOUND' });
             }
 
             const user = result.rows[0];
-            // Default to 'free' if plan_type is null
-            let userPlanType = user.plan_type || 'free';
-            
-            // Check if user is part of a Pro/Enterprise team
-            let teamPlanType = null;
-            if (user.current_team_id) {
-                const teamResult = await query('SELECT plan_type FROM teams WHERE id = $1', [user.current_team_id]);
-                if (teamResult.rows.length > 0) {
-                    teamPlanType = teamResult.rows[0].plan_type;
-                }
-            }
-            
-            // Use the higher plan type (individual vs team)
-            const effectivePlanType = teamPlanType && (teamPlanType === 'pro' || teamPlanType === 'enterprise') 
-                ? teamPlanType 
-                : userPlanType;
-            
-            const planConfig = PLAN_LIMITS[effectivePlanType] || PLAN_LIMITS.free;
+            const planConfig = PLAN_LIMITS[user.plan_type] || PLAN_LIMITS.free;
 
             const apiKeysResult = await query('SELECT COUNT(*) as key_count FROM user_api_keys WHERE user_id = $1 AND is_active = true', [req.user.id]);
             const hasOwnKeys = parseInt(apiKeysResult.rows[0].key_count) > 0;
             let effectiveCredits = planConfig.credits;
-            if (hasOwnKeys && effectivePlanType !== 'free') {
-                if (effectivePlanType === 'pro') effectiveCredits = 250;
-                else if (effectivePlanType === 'enterprise') effectiveCredits = 750;
+            if (hasOwnKeys && user.plan_type !== 'free') {
+                if (user.plan_type === 'pro') effectiveCredits = 250;
+                else if (user.plan_type === 'enterprise') effectiveCredits = 750;
             }
 
             res.json({
                 currentPlan: {
-                    type: effectivePlanType,
-                    name: effectivePlanType.charAt(0).toUpperCase() + effectivePlanType.slice(1),
+                    type: user.plan_type,
+                    name: user.plan_type.charAt(0).toUpperCase() + user.plan_type.slice(1),
                     creditsRemaining: user.credits_remaining,
                     effectiveCredits,
-                    hasOwnKeys,
-                    individualPlan: userPlanType,
-                    teamPlan: teamPlanType,
-                    hasTeamAccess: teamPlanType && (teamPlanType === 'pro' || teamPlanType === 'enterprise')
+                    hasOwnKeys
                 },
                 limits: {
                     profilesPerPlatform: planConfig.profilesPerPlatform,
