@@ -45,7 +45,7 @@ app.use(cors({
         // Explicitly allow SuiteGenie API subdomains
         const allowedOrigins = [
             'https://api.suitegenie.in',
-            'https://apilinkedn.suitegenie.in',
+            'https://apilinkedin.suitegenie.in',
             'https://tweetapi.suitegenie.in',
             'https://suitegenie.in',
             'https://tweet.suitegenie.in',
