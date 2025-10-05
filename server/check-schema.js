@@ -4,50 +4,45 @@ async function checkSchema() {
   const client = await pool.connect();
   
   try {
-    console.log('🔍 Checking user_social_accounts table schema...');
+    console.log('🔍 Checking credit_transactions table schema...');
 
     const { rows } = await client.query(`
       SELECT column_name, data_type, is_nullable, column_default
       FROM information_schema.columns 
-      WHERE table_name = 'user_social_accounts' 
+      WHERE table_name = 'credit_transactions' 
       ORDER BY ordinal_position
     `);
     
-    console.log('user_social_accounts columns:');
+    console.log('credit_transactions columns:');
     rows.forEach(row => {
       console.log(`  ${row.column_name}: ${row.data_type} ${row.is_nullable === 'NO' ? 'NOT NULL' : 'NULLABLE'}`);
     });
 
-    // Test if OAuth1 columns exist
-    const oauth1TokenColumn = rows.find(row => row.column_name === 'oauth1_access_token');
-    const oauth1SecretColumn = rows.find(row => row.column_name === 'oauth1_access_token_secret');
-    
-    if (!oauth1TokenColumn || !oauth1SecretColumn) {
-      console.log('❌ OAuth1 columns missing - adding them...');
+    // Test if service_name column exists
+    const serviceNameColumn = rows.find(row => row.column_name === 'service_name');
+    if (serviceNameColumn) {
+      console.log('✅ service_name column exists');
+    } else {
+      console.log('❌ service_name column missing - adding it...');
       
       await client.query(`
-        ALTER TABLE user_social_accounts 
-        ADD COLUMN IF NOT EXISTS oauth1_access_token TEXT,
-        ADD COLUMN IF NOT EXISTS oauth1_access_token_secret TEXT
+        ALTER TABLE credit_transactions 
+        ADD COLUMN IF NOT EXISTS service_name VARCHAR(100)
       `);
       
-      console.log('✅ Added OAuth1 columns');
-    } else {
-      console.log('✅ OAuth1 columns exist');
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_credit_transactions_service 
+        ON credit_transactions(service_name)
+      `);
+      
+      console.log('✅ Added service_name column');
     }
-
-    // Check if table exists
-    if (rows.length === 0) {
-      console.log('❌ user_social_accounts table does not exist');
-      return;
-    }
-
-    console.log('✅ Schema check completed successfully');
 
   } catch (error) {
     console.error('❌ Schema check failed:', error);
   } finally {
     client.release();
+    await pool.end();
   }
 }
 

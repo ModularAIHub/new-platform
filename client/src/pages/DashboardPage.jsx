@@ -1,6 +1,6 @@
 
 import { useAuth } from '../contexts/AuthContext'
-import { CreditCard, Key, Settings, ExternalLink, Lock, TrendingUp, Calendar, BarChart3, Zap, Crown } from 'lucide-react'
+import { CreditCard, Key, Settings, ExternalLink, Lock, TrendingUp, Calendar, BarChart3, Zap } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import api from '../utils/api'
 import { useNavigate } from 'react-router-dom'
@@ -14,8 +14,6 @@ import {
     CardContent,
     CardFooter
 } from '../components/ui'
-import UpgradePrompt from '../components/UpgradePrompt'
-import usePlanAccess from '../hooks/usePlanAccess'
 
 const DashboardPage = () => {
     const { user, loading: authLoading, initialLoad } = useAuth()
@@ -35,42 +33,7 @@ const DashboardPage = () => {
         planType: 'free'
     })
     const [statsLoading, setStatsLoading] = useState(true)
-    const [showUpgradePrompt, setShowUpgradePrompt] = useState(false)
-    const [upgradeFeature, setUpgradeFeature] = useState(null)
     const navigate = useNavigate()
-    const { userPlan, hasFeatureAccess, canAddMoreAccounts } = usePlanAccess()
-
-    const handleRestrictedFeature = (featureName, action) => {
-        if (hasFeatureAccess(featureName)) {
-            action();
-        } else {
-            setUpgradeFeature(featureName);
-            setShowUpgradePrompt(true);
-        }
-    }
-
-    // Test function to upgrade to Pro plan
-    const handleTestUpgrade = async () => {
-        if (userPlan?.type === 'pro') {
-            alert('You are already on Pro plan!');
-            return;
-        }
-        
-        try {
-            setSubmitting(true);
-            const response = await api.post('/plans/upgrade', { planType: 'pro' });
-            if (response.data) {
-                alert(`Successfully upgraded to ${response.data.newPlan.name} plan! You now have ${response.data.newPlan.creditsRemaining} credits.`);
-                // Refresh the page to show updated plan
-                window.location.reload();
-            }
-        } catch (error) {
-            console.error('Upgrade error:', error);
-            alert('Upgrade failed: ' + (error.response?.data?.error || error.message));
-        } finally {
-            setSubmitting(false);
-        }
-    }
 
     useEffect(() => {
         fetchPreference()
@@ -373,17 +336,7 @@ const DashboardPage = () => {
                 <StatsCard title="Total Posts" value="42" subtitle="+12% this week" icon={<CreditCard className="h-6 w-6 text-blue-600" />} />
                 <StatsCard title="Engagement Rate" value="8.2%" subtitle="+2.1% this week" icon={<Settings className="h-6 w-6 text-green-600" />} highlight />
                 <StatsCard title="Scheduled Posts" value="7" subtitle="Next: 2 hours" icon={<Settings className="h-6 w-6 text-purple-600" />} />
-                <StatsCard 
-                    title="Plan Type" 
-                    value={userPlan?.name || 'Free'} 
-                    subtitle={userPlan?.type === 'free' ? "Upgrade to Pro" : "Active"} 
-                    icon={userPlan?.type === 'free' ? <Crown className="h-6 w-6 text-yellow-500" /> : <Key className="h-6 w-6 text-green-500" />}
-                    onClick={userPlan?.type === 'free' ? () => {
-                        setUpgradeFeature('Pro Plan Access');
-                        setShowUpgradePrompt(true);
-                    } : null}
-                    isClickable={userPlan?.type === 'free'}
-                />
+                <StatsCard title="Plan Type" value={user?.planType || 'Free'} subtitle="Upgrade for more" icon={<Key className="h-6 w-6 text-yellow-500" />} />
             </div> */}
                 {/* Quick Actions & Recent Activity */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
@@ -414,44 +367,12 @@ const DashboardPage = () => {
                                     onClick={() => navigate('/api-keys')}
                                 />
                                 <QuickAction
-                                    label="Bulk Scheduling"
-                                    description={hasFeatureAccess('bulk_scheduling') ? "Schedule multiple posts at once" : "Pro feature - Schedule in bulk"}
-                                    icon={<Calendar className="w-5 h-5" />}
-                                    color={hasFeatureAccess('bulk_scheduling') ? "primary" : "secondary"}
-                                    onClick={() => handleRestrictedFeature('bulk_scheduling', () => {
-                                        // TODO: Navigate to bulk scheduling page
-                                        alert('Bulk scheduling feature coming soon!');
-                                    })}
-                                    isPro={!hasFeatureAccess('bulk_scheduling')}
-                                />
-                                <QuickAction
-                                    label="Advanced Analytics"
-                                    description={hasFeatureAccess('advanced_analytics') ? "Detailed performance insights" : "Pro feature - Deep analytics"}
-                                    icon={<BarChart3 className="w-5 h-5" />}
-                                    color={hasFeatureAccess('advanced_analytics') ? "success" : "secondary"}
-                                    onClick={() => handleRestrictedFeature('advanced_analytics', () => {
-                                        // TODO: Navigate to analytics page
-                                        alert('Advanced analytics feature coming soon!');
-                                    })}
-                                    isPro={!hasFeatureAccess('advanced_analytics')}
-                                />
-                                <QuickAction
                                     label="View Settings"
                                     description="Customize your experience"
                                     icon={<Settings className="w-5 h-5" />}
                                     color="secondary"
                                     onClick={() => navigate('/settings')}
                                 />
-                                {userPlan?.type === 'free' && (
-                                    <QuickAction
-                                        label="🚀 Test Upgrade to Pro"
-                                        description="Instantly upgrade to Pro plan (for testing)"
-                                        icon={<Crown className="w-5 h-5" />}
-                                        color="warning"
-                                        onClick={handleTestUpgrade}
-                                        disabled={submitting}
-                                    />
-                                )}
                             </div>
                         </CardContent>
                     </Card>
@@ -556,15 +477,6 @@ const DashboardPage = () => {
                     </CardContent>
                 </Card>
             </div>
-
-            {/* Upgrade Prompt Modal */}
-            <UpgradePrompt
-                isOpen={showUpgradePrompt}
-                onClose={() => setShowUpgradePrompt(false)}
-                feature={upgradeFeature}
-                title="Upgrade to Pro Plan"
-                description="Unlock powerful features to supercharge your content creation"
-            />
         </div>
     )
 }
@@ -580,21 +492,18 @@ function SidebarItem({ label, icon, active, badge }) {
 }
 
 // Stats card component
-function StatsCard({ title, value, subtitle, icon, trend, highlight, onClick, isClickable }) {
-    const CardComponent = isClickable ? 'button' : 'div';
-    
+function StatsCard({ title, value, subtitle, icon, trend, highlight }) {
     return (
         <Card
             variant={highlight ? 'elevated' : 'default'}
-            className={`hover-lift animate-fade-in ${highlight ? 'ring-2 ring-success-200' : ''} ${isClickable ? 'cursor-pointer hover:shadow-lg transition-shadow' : ''}`}
-            onClick={onClick}
+            className={`hover-lift animate-fade-in ${highlight ? 'ring-2 ring-success-200' : ''}`}
         >
             <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                     <div className="flex-1">
                         <p className="text-sm font-medium text-neutral-600 mb-1">{title}</p>
                         <p className="text-3xl font-bold text-neutral-900 mb-1">{value}</p>
-                        <p className={`text-xs ${isClickable ? 'text-blue-600 font-medium' : 'text-neutral-500'}`}>{subtitle}</p>
+                        <p className="text-xs text-neutral-500">{subtitle}</p>
                     </div>
                     <div className="ml-4 flex-shrink-0">
                         {icon}
@@ -611,7 +520,7 @@ function StatsCard({ title, value, subtitle, icon, trend, highlight, onClick, is
 }
 
 // Quick action card
-function QuickAction({ label, description, icon, color, onClick, isPro }) {
+function QuickAction({ label, description, icon, color, onClick }) {
     const colorMap = {
         success: 'bg-success-100 text-success-700',
         primary: 'bg-primary-100 text-primary-700',
@@ -620,21 +529,13 @@ function QuickAction({ label, description, icon, color, onClick, isPro }) {
     return (
         <button
             onClick={onClick}
-            className={`flex items-center w-full p-4 rounded-lg border border-neutral-200 hover:border-neutral-300 hover:shadow-sm transition-all duration-200 text-left group relative ${isPro ? 'bg-gradient-to-r from-blue-50 to-purple-50' : ''}`}
+            className="flex items-center w-full p-4 rounded-lg border border-neutral-200 hover:border-neutral-300 hover:shadow-sm transition-all duration-200 text-left group"
         >
             <div className={`rounded-lg p-2.5 ${colorMap[color]} group-hover:scale-105 transition-transform duration-200`}>
                 {icon}
             </div>
             <div className="ml-4 flex-1">
-                <div className="flex items-center gap-2">
-                    <span className="font-semibold text-sm text-neutral-900">{label}</span>
-                    {isPro && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-blue-500 to-purple-600 text-white">
-                            <Crown className="w-3 h-3 mr-1" />
-                            Pro
-                        </span>
-                    )}
-                </div>
+                <div className="font-semibold text-sm text-neutral-900">{label}</div>
                 <div className="text-xs text-neutral-500">{description}</div>
             </div>
             <svg className="w-4 h-4 text-neutral-400 group-hover:text-neutral-600 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">

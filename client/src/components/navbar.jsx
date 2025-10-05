@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X, User, Users, Settings, LogOut, LayoutDashboard } from 'lucide-react';
+import { Menu, X, User, Settings, LogOut, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui';
 
@@ -116,15 +116,6 @@ const Navbar = () => {
                         <p className="text-xs text-neutral-500">{user?.email}</p>
                       </div>
                       <Link 
-                        to="/team" 
-                        className="flex items-center px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 hover:text-primary-600 transition-colors duration-200"
-                        onClick={() => setIsProfileOpen(false)}
-                      >
-                        <Users className="w-4 h-4 mr-3" />
-                        Team
-                      </Link>
-
-                      <Link 
                         to="/settings" 
                         className="flex items-center px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 hover:text-primary-600 transition-colors duration-200"
                         onClick={() => setIsProfileOpen(false)}
@@ -223,15 +214,6 @@ const Navbar = () => {
                       <LayoutDashboard className="w-4 h-4 mr-3" />
                       Dashboard
                     </Link>
-                    <Link 
-                      to="/team" 
-                      className="flex items-center px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-lg font-medium transition-all duration-200"
-                      onClick={closeMenu}
-                    >
-                      <Users className="w-4 h-4 mr-3" />
-                      Team
-                    </Link>
-
                     <Link 
                       to="/settings" 
                       className="flex items-center px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-lg font-medium transition-all duration-200"
