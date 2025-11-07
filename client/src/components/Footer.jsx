@@ -73,9 +73,8 @@ export default function Footer() {
                   <li><a href="/integrations" className="text-neutral-300 hover:text-primary-400 transition-colors duration-200 text-sm">
                     Integrations
                   </a></li>
-                  <li><a href="/changelog" className="text-neutral-300 hover:text-primary-400 transition-colors duration-200 text-sm">
-                    Changelog
-                  </a></li>
+                  {/* Changelog link removed */}
+                  <li><a href="/agency" className="text-neutral-300 hover:text-pink-400 transition-colors duration-200 text-sm">Agency</a></li>
                 </ul>
               </div>
               
