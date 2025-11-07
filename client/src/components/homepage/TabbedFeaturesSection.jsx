@@ -59,6 +59,20 @@ const TabbedFeaturesSection = () => {
           <p className="text-lg text-gray-200 mb-2">Create and schedule dozens of posts in one go. SuiteGenie makes it easy to plan campaigns, fill your calendar, and stay consistent—no more manual posting.</p>
         </>
       )
+    },
+    {
+      id: 'agency',
+      label: 'Agency Services',
+      desc: 'Full-stack expertise, branding, marketing, and automation for your brand.',
+      icon: (
+        <svg className="w-6 h-6 text-pink-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+      ),
+      content: (
+        <>
+          {/* ...existing code... */}
+          <a href="/agency" className="inline-block mt-6 px-8 py-3 bg-pink-600 text-white rounded-lg font-semibold shadow-lg hover:bg-pink-700 transition">Learn More</a>
+        </>
+      )
     }
   ];
 
@@ -196,6 +210,26 @@ const TabbedFeaturesSection = () => {
                       <div className="text-2xl mb-2">⏰</div>
                       <div className="text-sm font-medium text-purple-300">Time Saver</div>
                       <div className="text-xs text-gray-400 mt-1">Hours of work in minutes</div>
+                    </div>
+                  </>
+                )}
+                
+                {activeTab === 'agency' && (
+                  <>
+                    <div className="bg-pink-500/10 rounded-xl p-4 border border-pink-500/20">
+                      <div className="text-2xl mb-2">🌟</div>
+                      <div className="text-sm font-medium text-pink-300">Full-Stack Expertise</div>
+                      <div className="text-xs text-gray-400 mt-1">UI/UX, branding, marketing, SEO, web development</div>
+                    </div>
+                    <div className="bg-pink-500/10 rounded-xl p-4 border border-pink-500/20">
+                      <div className="text-2xl mb-2">⚙️</div>
+                      <div className="text-sm font-medium text-pink-300">Automation Ready</div>
+                      <div className="text-xs text-gray-400 mt-1">Seamless integration with SuiteGenie tools</div>
+                    </div>
+                    <div className="bg-pink-500/10 rounded-xl p-4 border border-pink-500/20">
+                      <div className="text-2xl mb-2">🚀</div>
+                      <div className="text-sm font-medium text-pink-300">Growth Driven</div>
+                      <div className="text-xs text-gray-400 mt-1">Strategies that scale with your business</div>
                     </div>
                   </>
                 )}

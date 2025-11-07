@@ -10,6 +10,8 @@ import TestimonialsSection from '../components/homepage/TestimonialsSection';
 // import PricingSection from '../components/homepage/PricingSection';
 import ComparisonSection from '../components/homepage/ComparisonSection';
 import CTASection from '../components/homepage/CTASection';
+import Agency from './Agency';
+// import AgencyPreviewSection from './AgencyPreviewSection';
 
 const HomePage = () => {
 
@@ -49,6 +51,10 @@ const HomePage = () => {
         <FadeInSection>
           <CTASection />
         </FadeInSection>
+
+            {/* <FadeInSection>
+              <AgencyPreviewSection />
+            </FadeInSection> */}
 
       </main>
       <Footer />

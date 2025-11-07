@@ -36,7 +36,7 @@ const HeroSection = () => {
               </span>
             </div>
             <p className="text-lg sm:text-xl text-neutral-600 mb-10 leading-relaxed max-w-2xl mx-auto lg:mx-0 animate-fade-in animate-stagger-3">
-              The all-in-one AI suite for creators, marketers, and teams. Effortlessly generate, schedule, and manage content across every platform—so you can focus on what matters most: growing your brand.
+              The all-in-one AI suite for creators, marketers, and teams. Effortlessly generate, schedule, and manage content across every platform,so you can focus on what matters most: growing your brand.
             </p>
 
             <div className="flex justify-center lg:justify-start mb-6">
