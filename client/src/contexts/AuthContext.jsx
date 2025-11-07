@@ -1,6 +1,6 @@
     
 import { createContext, useContext, useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import api from '../utils/api'
 
@@ -20,46 +20,49 @@ export const AuthProvider = ({ children }) => {
     const [initialLoad, setInitialLoad] = useState(true)
     const authCheckedRef = useRef(false)
     const navigate = useNavigate()
+    const location = useLocation()
 
 
-    // Check if user is authenticated on mount - ONLY ONCE
+    // Only check auth for protected routes
     useEffect(() => {
-        // Prevent multiple auth checks in React.StrictMode
-        if (authCheckedRef.current) {
-            console.log('Auth already checked, skipping...')
-            return
+        // List of protected routes (update as needed)
+        const protectedRoutes = [
+            '/dashboard',
+            '/credits',
+            '/api-keys',
+            '/settings',
+        ];
+        const isProtected = protectedRoutes.some(route => location.pathname.startsWith(route));
+        if (!isProtected) {
+            setLoading(false);
+            setInitialLoad(false);
+            return;
         }
-
-        console.log('Running auth check...')
-
+        if (authCheckedRef.current) {
+            return;
+        }
         const checkAuth = async () => {
             try {
-                console.log('Checking authentication with /auth/me endpoint...');
-                // Since we're using httpOnly cookies, just try to call the protected endpoint
-                // The cookies will be sent automatically with the request
-                const response = await api.get('/auth/me')
-                console.log('Auth API response:', response.data);
+                const response = await api.get('/auth/me');
                 if (response.data.success && response.data.user) {
-                    setUser(response.data.user)
-                    console.log('User authenticated successfully:', response.data.user)
+                    setUser(response.data.user);
                 } else {
-                    console.log('Authentication failed - no user data');
                     setUser(null);
                 }
             } catch (error) {
-                console.log('Auth check error:', error.response?.status, error.response?.data)
-                console.log('Error details:', error);
-                // Clear user state on auth failure
-                setUser(null)
+                if (error.response?.status === 401 && error.response?.data?.code === 'TOKEN_MISSING') {
+                    setUser(null);
+                } else {
+                    setUser(null);
+                }
             } finally {
-                setLoading(false)
-                setInitialLoad(false)
-                authCheckedRef.current = true
+                setLoading(false);
+                setInitialLoad(false);
+                authCheckedRef.current = true;
             }
-        }
-        // Run auth check only once on mount
-        checkAuth()
-    }, []) // Empty dependency array - only run on mount
+        };
+        checkAuth();
+    }, [location.pathname]);
 
     // Log user state after it changes for accurate debugging
     useEffect(() => {
