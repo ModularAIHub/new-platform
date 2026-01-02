@@ -19,7 +19,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
     const { resetPassword } = useAuth()
     const [step, setStep] = useState(1) // 1: OTP verification, 2: set new password
     const [email, setEmail] = useState('')
-    const [verificationToken, setVerificationToken] = useState('')
+    const [otp, setOtp] = useState('')
     const [newPassword, setNewPassword] = useState('')
     const [confirmPassword, setConfirmPassword] = useState('')
     const [passwordErrors, setPasswordErrors] = useState({})
@@ -31,7 +31,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
         if (isOpen) {
             setStep(1)
             setEmail('')
-            setVerificationToken('')
+            setOtp('')
             setNewPassword('')
             setConfirmPassword('')
             setPasswordErrors({})
@@ -44,7 +44,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
     // Handle successful OTP verification
     const handleOTPSuccess = (data) => {
         setEmail(data.email)
-        setVerificationToken(data.verificationToken)
+        setOtp(data.otp)
         setShowOTPModal(false)
         setStep(2) // Move to password reset step
         toast.success('Email verified! Now set your new password.')
@@ -65,8 +65,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
         // Validate password change data
         const validation = validatePasswordChange({ 
             newPassword, 
-            confirmPassword, 
-            verificationToken 
+            confirmPassword 
         })
         
         if (!validation.isValid) {
@@ -78,13 +77,13 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
         
         setLoading(true)
         try {
-            // Use the verification token to reset password
-            await resetPassword(validation.sanitized.newPassword, validation.sanitized.verificationToken)
+            // Send email, otp, and newPassword to backend
+            await resetPassword(validation.sanitized.newPassword, email, otp)
             
             // Reset all state
             setStep(1)
             setEmail('')
-            setVerificationToken('')
+            setOtp('')
             setNewPassword('')
             setConfirmPassword('')
             setPasswordErrors({})

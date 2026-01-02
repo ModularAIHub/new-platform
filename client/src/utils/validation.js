@@ -339,8 +339,9 @@ export const validatePasswordChange = (data) => {
         isValid = false
     }
     
-    // Validate verification token
-    if (!verificationToken || typeof verificationToken !== 'string' || verificationToken.trim().length === 0) {
+    // Validate verification token (optional for reset password flow)
+    // Only check if verificationToken is provided in the data
+    if (data.hasOwnProperty('verificationToken') && (!verificationToken || typeof verificationToken !== 'string' || verificationToken.trim().length === 0)) {
         errors.verificationToken = ['Verification token is required']
         isValid = false
     }

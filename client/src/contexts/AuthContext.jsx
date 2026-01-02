@@ -186,18 +186,44 @@ export const AuthProvider = ({ children }) => {
             return response.data
         } catch (error) {
             let message = error.response?.data?.error || 'Failed to change password.'
+            
+            // Show detailed validation errors if available
+            if (error.response?.data?.details) {
+                const details = error.response.data.details
+                const errorMessages = []
+                for (const [field, errors] of Object.entries(details)) {
+                    errorMessages.push(...errors)
+                }
+                if (errorMessages.length > 0) {
+                    message = errorMessages.join(', ')
+                }
+            }
+            
             toast.error(message)
             throw error
         }
     }
 
-    const resetPassword = async (newPassword, verificationToken) => {
+    const resetPassword = async (newPassword, email, otp) => {
         try {
-            const response = await api.post('/auth/reset-password', { newPassword, verificationToken })
+            const response = await api.post('/auth/reset-password', { newPassword, email, otp })
             toast.success('Password reset successfully!')
             return response.data
         } catch (error) {
             let message = error.response?.data?.error || 'Failed to reset password.'
+            
+            // Show detailed validation errors if available
+            if (error.response?.data?.details) {
+                const details = error.response.data.details
+                const errorMessages = []
+                for (const [field, errors] of Object.entries(details)) {
+                    errorMessages.push(...errors)
+                }
+                if (errorMessages.length > 0) {
+                    message = errorMessages.join(', ')
+                }
+            }
+            
             toast.error(message)
             throw error
         }

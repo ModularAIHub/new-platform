@@ -373,9 +373,19 @@ class AuthController {
     // Reset password (for forgot password flow - no authentication required)
     static async resetPassword(req, res) {
         try {
+            // Log the incoming request for debugging
+            console.log('Reset password request body:', {
+                hasNewPassword: !!req.body.newPassword,
+                newPasswordLength: req.body.newPassword?.length,
+                hasEmail: !!req.body.email,
+                hasOtp: !!req.body.otp,
+                otpLength: req.body.otp?.length
+            });
+
             // Validate password reset data
             const validation = validatePasswordReset(req.body);
             if (!validation.isValid) {
+                console.log('Validation errors:', validation.errors);
                 return res.status(400).json({
                     error: 'Validation failed',
                     details: validation.errors,
@@ -391,16 +401,23 @@ class AuthController {
             console.log(`[RESET PASSWORD] OTP Key: ${otpKey}`);
             console.log(`[RESET PASSWORD] Stored OTP: ${storedOtp}`);
             console.log(`[RESET PASSWORD] Provided OTP: ${otp}`);
-            if (!storedOtp || storedOtp !== otp) {
+            console.log(`[RESET PASSWORD] OTP Types - Stored: ${typeof storedOtp}, Provided: ${typeof otp}`);
+            console.log(`[RESET PASSWORD] OTP Match: ${String(storedOtp).trim() === String(otp).trim()}`);
+            
+            if (!storedOtp || String(storedOtp).trim() !== String(otp).trim()) {
+                console.log('[RESET PASSWORD] OTP verification failed');
                 return res.status(400).json({
                     error: 'Invalid or expired OTP',
                     code: 'INVALID_OTP'
                 });
             }
 
+            console.log('[RESET PASSWORD] OTP verified successfully, proceeding with password reset');
+
             // Find user by email
             const userResult = await query('SELECT id FROM users WHERE email = $1', [email]);
             if (userResult.rows.length === 0) {
+                console.log('[RESET PASSWORD] User not found');
                 return res.status(404).json({
                     error: 'User not found',
                     code: 'USER_NOT_FOUND'
@@ -408,18 +425,22 @@ class AuthController {
             }
 
             const userId = userResult.rows[0].id;
+            console.log('[RESET PASSWORD] User found, ID:', userId);
 
             // Hash new password
             const passwordHash = await hashPassword(newPassword);
+            console.log('[RESET PASSWORD] Password hashed successfully');
 
             // Update password in database
             await query(
                 'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
                 [passwordHash, userId]
             );
+            console.log('[RESET PASSWORD] Password updated in database');
 
             // Delete the OTP after successful password reset to prevent replay attacks
             await redisClient.del(otpKey);
+            console.log('[RESET PASSWORD] OTP deleted from Redis');
 
             res.json({
                 message: 'Password reset successfully!'
@@ -437,9 +458,18 @@ class AuthController {
     // Change password (for authenticated users) (with OTP verification)
     static async changePassword(req, res) {
         try {
+            // Log the incoming request for debugging
+            console.log('Change password request body:', {
+                hasNewPassword: !!req.body.newPassword,
+                newPasswordLength: req.body.newPassword?.length,
+                hasVerificationToken: !!req.body.verificationToken,
+                verificationTokenLength: req.body.verificationToken?.length
+            });
+
             // Validate password change data
             const validation = validatePasswordChange(req.body);
             if (!validation.isValid) {
+                console.log('Validation errors:', validation.errors);
                 return res.status(400).json({
                     error: 'Validation failed',
                     details: validation.errors,
@@ -784,8 +814,11 @@ class AuthController {
                 { expiresIn: '1h' } // Token valid for 1 hour
             );
 
-            // Delete OTP from Redis
-            await redisClient.del(otpKey);
+            // Only delete OTP if it's NOT for password-reset
+            // For password-reset, keep the OTP so resetPassword endpoint can verify it
+            if (purpose !== 'password-reset') {
+                await redisClient.del(otpKey);
+            }
 
             // Clear rate limit
             await redisClient.del(`otp_rate_limit:${email}`);
