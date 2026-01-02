@@ -8,10 +8,10 @@ class SyncWorker {
         this.interval = null;
         this.syncInterval = 10 * 60 * 1000; // 10 minutes
 
-        // Monthly reset state
-        this.lastResetMonth = null;
-        this.monthlyResetInterval = 24 * 60 * 60 * 1000; // 24 hours
-        this.startMonthlyReset();
+        // Weekly reset state
+        this.lastResetWeek = null;
+        this.weeklyResetInterval = 60 * 60 * 1000; // Check every hour
+        this.startWeeklyReset();
     }
 
     // Start the sync worker
@@ -35,21 +35,25 @@ class SyncWorker {
         console.log(`✅ Credit sync worker started (interval: ${this.syncInterval / 1000}s)`);
     }
 
-    // Monthly credit reset logic - runs on 1st of every month
-    startMonthlyReset() {
-        console.log('🗓️  Monthly credit reset scheduler initialized');
+    // Weekly credit reset logic - runs every Monday at 00:00 UTC
+    startWeeklyReset() {
+        console.log('🗓️  Weekly credit reset scheduler initialized');
         
         setInterval(async () => {
             const now = new Date();
-            const utcMonth = now.getUTCMonth();
-            const utcDate = now.getUTCDate();
-            const utcYear = now.getUTCFullYear();
-            const resetKey = `${utcYear}-${utcMonth}`;
+            const utcDay = now.getUTCDay(); // 0 = Sunday, 1 = Monday, etc.
+            const utcHour = now.getUTCHours();
             
-            // Check if it's the 1st of the month and we haven't reset this month yet
-            if (utcDate === 1 && this.lastResetMonth !== resetKey) {
+            // Calculate week number for tracking (ISO week)
+            const startOfYear = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
+            const daysSinceStart = Math.floor((now - startOfYear) / (24 * 60 * 60 * 1000));
+            const weekNumber = Math.ceil((daysSinceStart + startOfYear.getUTCDay() + 1) / 7);
+            const resetKey = `${now.getUTCFullYear()}-W${weekNumber}`;
+            
+            // Check if it's Monday (day 1) at hour 0 and we haven't reset this week yet
+            if (utcDay === 1 && utcHour === 0 && this.lastResetWeek !== resetKey) {
                 try {
-                    console.log(`🔄 Performing monthly credit reset for ${utcMonth + 1}/${utcYear}...`);
+                    console.log(`🔄 Performing weekly credit reset for week ${weekNumber}/${now.getUTCFullYear()}...`);
                     
                     // Update credits in DB: 55 for BYOK, 25 for Platform, 0 for unset preference
                     const updateResult = await query(`
@@ -83,19 +87,19 @@ class SyncWorker {
                         }
                     }
                     
-                    // Mark this month as completed
-                    this.lastResetMonth = resetKey;
+                    // Mark this week as completed
+                    this.lastResetWeek = resetKey;
                     
-                    console.log(`✅ Monthly credit reset completed successfully!`);
+                    console.log(`✅ Weekly credit reset completed successfully!`);
                     console.log(`📈 Database updates: ${updateResult.rowCount}, Redis updates: ${redisUpdates}`);
                     console.log(`💰 BYOK users: 55 credits, Platform users: 25 credits`);
                     
                 } catch (err) {
-                    console.error('❌ Monthly credit reset failed:', err);
-                    // Don't update lastResetMonth so it will retry
+                    console.error('❌ Weekly credit reset failed:', err);
+                    // Don't update lastResetWeek so it will retry
                 }
             }
-        }, this.monthlyResetInterval);
+        }, this.weeklyResetInterval);
     }
 
     // Stop the sync worker

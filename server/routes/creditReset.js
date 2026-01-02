@@ -9,7 +9,7 @@ const router = express.Router();
 // All credit reset routes require authentication
 router.use(authenticateToken);
 
-// Manual monthly credit reset (admin only - add admin middleware in production)
+// Manual weekly credit reset (admin only - add admin middleware in production)
 router.post('/manual-reset', CreditResetController.manualMonthlyReset);
 
 // Get credit reset information

@@ -4,10 +4,10 @@ import { query } from '../config/database.js';
 import redisClient from '../config/redis.js';
 
 export const CreditResetController = {
-  // Manual trigger for monthly credit reset (admin only)
+  // Manual trigger for weekly credit reset (admin only)
   async manualMonthlyReset(req, res) {
     try {
-      console.log('[CREDIT RESET] Manual monthly reset triggered by admin');
+      console.log('[CREDIT RESET] Manual weekly reset triggered by admin');
       
       // Update credits in DB: 55 for BYOK, 25 for Platform, 0 for unset preference
       const updateResult = await query(`
@@ -46,7 +46,7 @@ export const CreditResetController = {
       
       res.json({
         success: true,
-        message: 'Monthly credit reset completed successfully',
+        message: 'Weekly credit reset completed successfully',
         stats: {
           databaseUpdates: updateResult.rowCount,
           redisUpdates,
@@ -68,7 +68,12 @@ export const CreditResetController = {
   async getResetInfo(req, res) {
     try {
       const now = new Date();
-      const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      
+      // Calculate next Monday
+      const daysUntilMonday = (8 - now.getDay()) % 7 || 7;
+      const nextMonday = new Date(now);
+      nextMonday.setDate(now.getDate() + daysUntilMonday);
+      nextMonday.setUTCHours(0, 0, 0, 0);
       
       // Get last reset info from database
       const { rows } = await query(`
@@ -86,7 +91,8 @@ export const CreditResetController = {
       res.json({
         success: true,
         resetInfo: {
-          nextScheduledReset: nextMonth.toISOString(),
+          nextScheduledReset: nextMonday.toISOString(),
+          resetFrequency: 'weekly',
           lastGlobalReset: stats.last_global_reset,
           userStats: {
             totalUsers: parseInt(stats.total_users),
