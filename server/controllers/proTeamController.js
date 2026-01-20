@@ -698,7 +698,7 @@ export const ProTeamController = {
             
             // Generate redirect URL to subdomain
             const subdomains = {
-                twitter: process.env.TWITTER_SUBDOMAIN || 'tweet.suitegenie.in',
+                twitter: process.env.TWITTER_SUBDOMAIN || 'tweetapi.suitegenie.in',
                 linkedin: process.env.LINKEDIN_SUBDOMAIN || 'linkedin.suitegenie.in',
                 wordpress: process.env.WORDPRESS_SUBDOMAIN || 'wordpress.suitegenie.in',
                 facebook: process.env.FACEBOOK_SUBDOMAIN || 'facebook.suitegenie.in',
