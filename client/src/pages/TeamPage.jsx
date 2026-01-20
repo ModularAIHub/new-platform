@@ -30,6 +30,25 @@ const TeamPage = () => {
         }
     }, [hasTeamAccess]);
 
+    // Handle OAuth callback success
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const success = urlParams.get('success');
+        const username = urlParams.get('username');
+        const error = urlParams.get('error');
+        
+        if (success === 'team' && username) {
+            alert(`Successfully connected Twitter account @${username}!`);
+            fetchSocialAccounts(); // Refresh the accounts list
+            // Clean up URL
+            window.history.replaceState({}, '', '/team');
+        } else if (error) {
+            alert(`Failed to connect account: ${error}`);
+            // Clean up URL
+            window.history.replaceState({}, '', '/team');
+        }
+    }, []);
+
     const fetchTeam = async () => {
         try {
             const response = await api.get('/pro-team');
@@ -595,9 +614,9 @@ const TeamPage = () => {
                     )}
                 </div>
                 
-                {/* Connect New Accounts - Only owner/admin can connect */}
+                {/* Connect New Accounts - Only owner/admin can connect (max 8 accounts) */}
                 {['owner', 'admin'].includes(userPermissions.role) && 
-                 socialAccounts.length < (userPermissions.limits?.max_profile_connections || 0) && (
+                 socialAccounts.length < 8 && (
                     <div className="p-6 border-t border-gray-200">
                         <h3 className="text-md font-medium text-gray-900 mb-4">Connect New Account</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

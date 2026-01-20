@@ -224,13 +224,32 @@ export const TeamService = {
             throw new Error(`Team is at maximum capacity`);
         }
 
-        // Add user to team
-        await query(
-            `INSERT INTO team_members (team_id, user_id, email, role, status, joined_at)
-             SELECT $1, $2, u.email, 'editor', 'active', CURRENT_TIMESTAMP
-             FROM users u WHERE u.id = $2`,
-            [invite.team_id, userId]
+        // Get the role from the pending team_members entry
+        const pendingMember = await query(
+            `SELECT role FROM team_members WHERE team_id = $1 AND email = $2 AND status = 'pending'`,
+            [invite.team_id, invite.email]
         );
+        
+        const assignedRole = pendingMember.rows[0]?.role || 'editor'; // Fallback to editor if not found
+
+        // Update the existing pending team_members entry to active
+        const updateResult = await query(
+            `UPDATE team_members 
+             SET user_id = $1, status = 'active', joined_at = CURRENT_TIMESTAMP
+             WHERE team_id = $2 AND email = $3 AND status = 'pending'
+             RETURNING id`,
+            [userId, invite.team_id, invite.email]
+        );
+        
+        // If no pending entry was found (legacy invitations), create a new one
+        if (updateResult.rows.length === 0) {
+            await query(
+                `INSERT INTO team_members (team_id, user_id, email, role, status, joined_at)
+                 SELECT $1, $2, u.email, $3, 'active', CURRENT_TIMESTAMP
+                 FROM users u WHERE u.id = $2`,
+                [invite.team_id, userId, assignedRole]
+            );
+        }
 
         // Update user's current team
         await query(
