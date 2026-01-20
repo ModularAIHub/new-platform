@@ -731,53 +731,43 @@ export const ProTeamController = {
         try {
             const userId = req.user.id;
             const { accountId } = req.params;
-            
-            // Get user's team and role
-            const teamResult = await query(`
-                SELECT tm.team_id, tm.role
-                FROM team_members tm 
-                WHERE tm.user_id = $1 AND tm.status = 'active'
-            `, [userId]);
-            
-            if (teamResult.rows.length === 0) {
-                return res.status(400).json({ error: 'User is not part of any team' });
-            }
-            
-            const { team_id: teamId, role } = teamResult.rows[0];
-            
-            // Check if user can disconnect accounts (owner/admin only)
-            if (!['owner', 'admin'].includes(role)) {
-                return res.status(403).json({ 
-                    error: 'Only team owners and admins can disconnect social accounts' 
-                });
-            }
-            
-            // Verify account belongs to user's team
-            const accountResult = await query(`
-                SELECT id FROM user_social_accounts 
-                WHERE id = $1 AND team_id = $2 AND is_active = true
-            `, [accountId, teamId]);
-            
+
+            // Find account and its team
+            const accountResult = await query(
+                `SELECT id, team_id FROM user_social_accounts WHERE id = $1 AND is_active = true`,
+                [accountId]
+            );
+
             if (accountResult.rows.length === 0) {
                 return res.status(404).json({ error: 'Social account not found' });
             }
-            
-            // Soft delete the account
-            await query(`
-                UPDATE user_social_accounts 
-                SET is_active = false, updated_at = CURRENT_TIMESTAMP
-                WHERE id = $1
-            `, [accountId]);
-            
-            res.json({
-                success: true,
-                message: 'Social account disconnected successfully'
-            });
+
+            const { team_id: accountTeamId } = accountResult.rows[0];
+
+            // Verify user is owner/admin of that team
+            const membership = await query(
+                `SELECT role FROM team_members WHERE user_id = $1 AND team_id = $2 AND status = 'active'`,
+                [userId, accountTeamId]
+            );
+
+            if (membership.rows.length === 0) {
+                return res.status(403).json({ error: 'You are not part of this team' });
+            }
+
+            const role = membership.rows[0].role;
+            if (!['owner', 'admin'].includes(role)) {
+                return res.status(403).json({ error: 'Only team owners and admins can disconnect social accounts' });
+            }
+
+            await query(
+                `UPDATE user_social_accounts SET is_active = false, updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
+                [accountId]
+            );
+
+            res.json({ success: true, message: 'Social account disconnected successfully' });
         } catch (error) {
             console.error('Disconnect account error:', error);
-            res.status(500).json({ 
-                error: 'Failed to disconnect social account' 
-            });
+            res.status(500).json({ error: 'Failed to disconnect social account' });
         }
     },
 
