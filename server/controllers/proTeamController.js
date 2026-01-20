@@ -6,37 +6,52 @@ import { RolePermissionsService } from '../services/rolePermissions.js';
 import { query } from '../config/database.js';
 
 export const ProTeamController = {
-    // Get team's social accounts (robust, debug, CSRF compatible)
+    // Get team's social accounts (team-wide across sources)
     async getTeamSocialAccounts(req, res) {
         try {
             const userId = req.user?.id;
-            const teamId = req.user?.teamId || req.user?.team_id;
-            console.log('[DEBUG /pro-team/social-accounts] userId:', userId, 'teamId:', teamId);
-
+            let teamId = req.user?.teamId || req.user?.team_id;
+            if (!teamId) {
+                const teamResult = await query(
+                    `SELECT team_id FROM team_members WHERE user_id = $1 AND status = 'active' LIMIT 1`,
+                    [userId]
+                );
+                teamId = teamResult.rows[0]?.team_id;
+            }
             if (!teamId) {
                 return res.status(403).json({ success: false, error: 'User is not in a team', accounts: [] });
             }
 
-            const result = await query(
-                `SELECT id, platform, account_username, account_display_name, account_id, profile_image_url, created_at, last_used_at
-                 FROM user_social_accounts
-                 WHERE team_id = $1 AND platform = 'twitter' AND is_active = true
-                 ORDER BY connection_order ASC, created_at ASC`,
+            // Fetch OAuth1/user_social_accounts
+            const userAccountsResult = await query(
+                `SELECT id, platform, account_username, account_display_name, account_id, profile_image_url, created_at,
+                        u.name as connected_by_name, u.email as connected_by_email,
+                        true as is_active
+                 FROM user_social_accounts usa
+                 LEFT JOIN users u ON usa.user_id = u.id
+                 WHERE usa.team_id = $1 AND usa.is_active = true
+                 ORDER BY usa.created_at ASC`,
                 [teamId]
             );
 
-            const accounts = result.rows;
-            console.log('[DEBUG /pro-team/social-accounts] Query result:', accounts);
+            // Fetch OAuth2/team_accounts
+            const teamAccountsResult = await query(
+                `SELECT id, 'twitter' as platform, twitter_username as account_username, twitter_display_name as account_display_name,
+                        twitter_user_id as account_id, twitter_profile_image_url as profile_image_url,
+                        u.name as connected_by_name, u.email as connected_by_email,
+                        active as is_active
+                 FROM team_accounts ta
+                 LEFT JOIN users u ON ta.user_id = u.id
+                 WHERE ta.team_id = $1 AND ta.active = true
+                 ORDER BY ta.updated_at DESC`,
+                [teamId]
+            );
 
-            res.json({
-                success: true,
-                accounts,
-                totalAccounts: accounts.length,
-                teamId,
-            });
+            const merged = [...userAccountsResult.rows, ...teamAccountsResult.rows];
+            res.json({ success: true, accounts: merged, totalAccounts: merged.length, teamId });
         } catch (error) {
-            console.error('[DEBUG /pro-team/social-accounts] Error:', error);
-            res.status(500).json({ success: false, error: error.message, accounts: [] });
+            console.error('[pro-team/social-accounts] Error:', error);
+            res.status(500).json({ success: false, error: 'Failed to get team social accounts', accounts: [] });
         }
     },
     // Get current user's team
