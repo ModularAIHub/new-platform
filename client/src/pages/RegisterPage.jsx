@@ -82,15 +82,13 @@ const RegisterPage = () => {
 			
 			setShowOTPModal(false);
 			
-			// If plan=pro, upgrade to Pro trial and login
+			// If plan=pro, upgrade to Pro trial
 			console.log('planType detected:', planType);
 			if (planType === 'pro') {
 				console.log('Starting Pro trial upgrade flow...');
 				try {
-					// Login first to get auth tokens
-					console.log('Logging in user...');
-					await login(validation.sanitized.email, validation.sanitized.password);
-					console.log('Login successful, calling upgrade API...');
+					// User is already logged in from register response, just upgrade
+					console.log('Calling upgrade API...');
 					
 					// Upgrade to Pro trial
 					const upgradeResponse = await api.post('/plans/upgrade', {
@@ -99,9 +97,10 @@ const RegisterPage = () => {
 					});
 					console.log('Upgrade API response:', upgradeResponse.data);
 					
+					const bonusCredits = upgradeResponse.data.newPlan?.bonusCredits || 1500;
 					console.log('Showing success toast...');
 					toast.success(
-						'🎉 Welcome to Pro! Your 14-day trial has started. You now have access to unlimited posts, all platforms, and 1500 credits!',
+						`🎉 Welcome to Pro! Your 14-day trial has started.\n\n✨ You now have:\n• Unlimited posts\n• All platforms unlocked\n• ${bonusCredits.toLocaleString()} bonus credits!`,
 						{ duration: 6000 }
 					);
 				} catch (error) {
