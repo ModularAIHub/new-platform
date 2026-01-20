@@ -138,28 +138,6 @@ const LoginPage = () => {
                                         </Link>
                                     </span>
                                 </div>
-
-                                {/* Divider */}
-                                <div className="relative">
-                                    <div className="absolute inset-0 flex items-center">
-                                        <div className="w-full border-t border-neutral-200" />
-                                    </div>
-                                    <div className="relative flex justify-center text-sm">
-                                        <span className="px-2 bg-white text-neutral-500">Or continue with</span>
-                                    </div>
-                                </div>
-
-                                {/* Google Sign In */}
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="lg"
-                                    fullWidth
-                                    icon={<span className="w-5 h-5 text-lg">G</span>}
-                                    iconPosition="left"
-                                >
-                                    Continue with Google
-                                </Button>
                             </form>
                         </CardContent>
                     </Card>

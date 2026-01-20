@@ -8,6 +8,9 @@ import HomePage from '../pages/HomePage';
 import PlansPage from '../pages/PlansPage';
 import AboutPage from '../pages/AboutPage';
 import ContactPage from '../pages/ContactPage';
+import TermsPage from '../pages/TermsPage';
+import PrivacyPage from '../pages/PrivacyPage';
+
 
 // Auth Pages
 import LoginPage from '../pages/LoginPage';
@@ -37,6 +40,8 @@ const AppRoutes = () => {
       <Route path="/plans" element={<PlansPage />} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/contact" element={<ContactPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
       
       {/* Guest routes - redirect to dashboard if already logged in */}
       <Route path="/login" element={

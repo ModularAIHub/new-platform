@@ -16,7 +16,8 @@ const TeamPage = () => {
     const [socialAccountsApiResponse, setSocialAccountsApiResponse] = useState(null);
     const [userPermissions, setUserPermissions] = useState({ role: null, permissions: [], limits: null });
     const [connecting, setConnecting] = useState(null);
-    const { hasFeatureAccess, userPlan } = usePlanAccess();
+    const { hasFeatureAccess, userPlan, refreshPlanInfo } = usePlanAccess();
+    const [hasRetriedCreate, setHasRetriedCreate] = useState(false);
 
     const hasTeamAccess = hasFeatureAccess('team_collaboration');
 
@@ -66,16 +67,39 @@ const TeamPage = () => {
     const createTeam = async () => {
         try {
             const response = await api.post('/pro-team', { teamName: 'My Team' });
-            
             const data = response.data;
-            
+
             if (data.success) {
                 setTeam(data.team);
-            } else if (data.code === 'UPGRADE_REQUIRED') {
-                setShowUpgrade(true);
+                setHasRetriedCreate(false);
+                return;
             }
+
+            if (data.code === 'UPGRADE_REQUIRED') {
+                setShowUpgrade(true);
+                return;
+            }
+
+            const errorMessage = data.error || 'Failed to create team';
+            throw new Error(errorMessage);
         } catch (error) {
             console.error('Failed to create team:', error);
+
+            // After upgrade, plan info can lag; refresh limits once and retry
+            if (!hasRetriedCreate) {
+                try {
+                    await refreshPlanInfo();
+                    setHasRetriedCreate(true);
+                    const retryResponse = await api.post('/pro-team', { teamName: 'My Team' });
+                    if (retryResponse.data?.success) {
+                        setTeam(retryResponse.data.team);
+                        return;
+                    }
+                } catch (retryError) {
+                    console.error('Retry create team failed:', retryError);
+                }
+            }
+
             const errorMessage = error.response?.data?.error || error.message || 'Failed to create team';
             alert(errorMessage);
         }
