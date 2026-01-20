@@ -2,10 +2,15 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Check, X, ChevronDown, ChevronUp } from 'lucide-react';
 import Footer from '../components/Footer';
+import { useAuth } from '../contexts/AuthContext';
+import toast from 'react-hot-toast';
+import api from '../utils/api';
 
 const PlansPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [openFaq, setOpenFaq] = useState(null);
+  const [upgrading, setUpgrading] = useState(false);
 
   const toggleFaq = (index) => {
     setOpenFaq(openFaq === index ? null : index);
@@ -205,14 +210,56 @@ const PlansPage = () => {
               </div>
 
               <button
-                onClick={() => navigate('/register')}
+                onClick={async () => {
+                  // Check if user is already on Pro plan
+                  if (plan.name === 'Professional' && user?.planType === 'pro') {
+                    toast.success('You are already a Pro user! 🎉');
+                    return;
+                  }
+                  
+                  // If user is logged in and clicking Professional plan, upgrade directly
+                  if (plan.name === 'Professional' && user) {
+                    setUpgrading(true);
+                    try {
+                      console.log('Starting Pro trial upgrade for logged-in user...');
+                      const upgradeResponse = await api.post('/plans/upgrade', {
+                        planType: 'pro',
+                        isTrial: true
+                      });
+                      console.log('Upgrade API response:', upgradeResponse.data);
+                      
+                      toast.success(
+                        '🎉 Welcome to Pro! Your 14-day trial has started. You now have access to unlimited posts, all platforms, and 1500 credits!',
+                        { duration: 6000 }
+                      );
+                      
+                      // Reload to refresh user data
+                      window.location.reload();
+                    } catch (error) {
+                      console.error('Pro upgrade error:', error);
+                      console.error('Error details:', error.response?.data);
+                      toast.error(error.response?.data?.error || 'Failed to activate Pro trial. Please try again.');
+                    } finally {
+                      setUpgrading(false);
+                    }
+                    return;
+                  }
+                  
+                  // For logged-out users, go to registration with plan parameter
+                  if (plan.name === 'Professional') {
+                    navigate('/register?plan=pro');
+                  } else {
+                    navigate('/register');
+                  }
+                }}
+                disabled={upgrading}
                 className={`w-full py-3 px-6 rounded-lg font-medium transition-colors ${
                   plan.popular
                     ? 'bg-blue-600 text-white hover:bg-blue-700'
                     : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
-                }`}
+                } ${upgrading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                {plan.buttonText}
+                {upgrading ? 'Upgrading...' : (plan.name === 'Professional' && user?.planType === 'pro' ? 'Current Plan ✓' : plan.buttonText)}
               </button>
             </div>
           ))}

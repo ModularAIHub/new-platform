@@ -162,7 +162,7 @@ const DashboardPage = () => {
             } else if (pref === 'byok') {
                 // Just redirect to API Keys page, do not update preference yet
                 setShowPrefModal(false);
-                navigate('/api-keys');
+                navigate('/api-keys?mode=byok');
             }
         } finally {
             setSubmitting(false)

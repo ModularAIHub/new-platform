@@ -176,25 +176,43 @@ export const ProTeamController = {
             const { memberId } = req.params;
             const { role } = req.body;
 
+            console.log('🔄 [PRO TEAM] Update Role Request:', {
+                userId,
+                memberId,
+                newRole: role,
+                body: req.body,
+                params: req.params
+            });
+
             // Validate role
             if (!['admin', 'editor', 'viewer'].includes(role)) {
+                console.log('❌ [PRO TEAM] Invalid role:', role);
                 return res.status(400).json({ error: 'Invalid role. Must be admin, editor, or viewer' });
             }
 
             // Get user's team and verify permissions
+            console.log('🔍 [PRO TEAM] Getting user team for userId:', userId);
             const userTeam = await TeamService.getUserTeam(userId);
+            console.log('👥 [PRO TEAM] User team:', userTeam);
+            
             if (!userTeam) {
+                console.log('❌ [PRO TEAM] User not part of any team');
                 return res.status(404).json({ error: 'You are not part of any team' });
             }
 
             if (userTeam.user_role !== 'owner') {
+                console.log('❌ [PRO TEAM] Insufficient permissions. User role:', userTeam.user_role);
                 return res.status(403).json({ error: 'Only team owners can modify member roles' });
             }
 
+            console.log('✏️ [PRO TEAM] Updating member role. TeamId:', userTeam.id, 'MemberId:', memberId, 'NewRole:', role);
             await TeamService.updateMemberRole(userTeam.id, memberId, role, userId);
+            console.log('✅ [PRO TEAM] Member role updated successfully');
+            
             res.json({ success: true, message: 'Member role updated successfully' });
         } catch (error) {
-            console.error('Update member role error:', error);
+            console.error('❌ [PRO TEAM] Update member role error:', error);
+            console.error('Error stack:', error.stack);
             res.status(400).json({ error: error.message });
         }
     },

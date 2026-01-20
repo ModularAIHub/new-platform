@@ -309,43 +309,60 @@ export const TeamService = {
 
     // Update team member role
     async updateMemberRole(teamId, memberId, newRole, updatedByUserId) {
+        console.log('🔧 [TEAM SERVICE] updateMemberRole called:', {
+            teamId,
+            memberId,
+            newRole,
+            updatedByUserId
+        });
+
         // Check permissions - only owners can update roles 
+        console.log('🔍 [TEAM SERVICE] Checking updater permissions...');
         const updater = await query(
             `SELECT role FROM team_members 
              WHERE team_id = $1 AND user_id = $2 AND status = 'active'`,
             [teamId, updatedByUserId]
         );
+        console.log('👤 [TEAM SERVICE] Updater result:', updater.rows);
 
         if (!updater.rows[0] || updater.rows[0].role !== 'owner') {
+            console.log('❌ [TEAM SERVICE] Permission denied. Updater role:', updater.rows[0]?.role);
             throw new Error('Only team owners can modify member roles');
         }
 
         // Check if target member exists and is not owner (using member id instead of user_id)
+        console.log('🔍 [TEAM SERVICE] Checking target member...');
         const member = await query(
             `SELECT role FROM team_members 
              WHERE team_id = $1 AND id = $2 AND status = 'active'`,
             [teamId, memberId]
         );
+        console.log('🎯 [TEAM SERVICE] Target member result:', member.rows);
 
         if (!member.rows[0]) {
+            console.log('❌ [TEAM SERVICE] Member not found');
             throw new Error('Member not found');
         }
 
         if (member.rows[0].role === 'owner') {
+            console.log('❌ [TEAM SERVICE] Cannot change owner role');
             throw new Error('Cannot change owner role');
         }
 
         // Validate new role
         if (!['admin', 'editor', 'viewer'].includes(newRole)) {
+            console.log('❌ [TEAM SERVICE] Invalid role:', newRole);
             throw new Error('Invalid role. Must be admin, editor, or viewer');
         }
 
         // Update member role (using member id instead of user_id)
-        await query(
+        console.log('✏️ [TEAM SERVICE] Executing UPDATE query...');
+        const updateResult = await query(
             `UPDATE team_members SET role = $1 
-             WHERE team_id = $2 AND id = $3`,
+             WHERE team_id = $2 AND id = $3 RETURNING *`,
             [newRole, teamId, memberId]
         );
+        console.log('✅ [TEAM SERVICE] Update result:', updateResult.rows);
 
         return { success: true };
     },

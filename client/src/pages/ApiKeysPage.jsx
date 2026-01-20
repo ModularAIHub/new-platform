@@ -1,5 +1,6 @@
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Key, Plus, Edit, Trash2, Lock, AlertTriangle, Info } from 'lucide-react'
 import api from '../utils/api'
 import Loader from '../components/Loader'
@@ -16,6 +17,9 @@ import {
 } from '../components/ui'
 
 const ApiKeysPage = () => {
+    const [searchParams] = useSearchParams();
+    const byokSectionRef = useRef(null);
+    const [highlightByok, setHighlightByok] = useState(false);
     const [apiKeys, setApiKeys] = useState({})
     const [loading, setLoading] = useState(true)
     const [submitting, setSubmitting] = useState(false)
@@ -30,11 +34,22 @@ const ApiKeysPage = () => {
     const [showConfirm, setShowConfirm] = useState(false)
     const [pendingPref, setPendingPref] = useState(null)
     const [showByokSwitch, setShowByokSwitch] = useState(false)
+    const [byokSelected, setByokSelected] = useState(false)
 
 
     useEffect(() => {
         fetchByokKeys()
         fetchPreference()
+        
+        // Check if redirected from BYOK mode selection
+        const mode = searchParams.get('mode');
+        if (mode === 'byok' && byokSectionRef.current) {
+            setTimeout(() => {
+                byokSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                setHighlightByok(true);
+                setTimeout(() => setHighlightByok(false), 3000);
+            }, 500);
+        }
     }, [])
 
     const fetchPreference = async () => {
@@ -190,6 +205,26 @@ const ApiKeysPage = () => {
                             <button className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 font-semibold" onClick={() => setShowByokInfo(true)}>What is BYOK?</button>
                         </div>
                         <p className="text-gray-500 mt-2 text-lg">Choose your API key mode. <b>Platform</b>: 25 credits/month. <b>BYOK</b>: 55 credits/month, 90-day lock.</p>
+                        
+                        {/* BYOK Mode Guide Banner */}
+                        {searchParams.get('mode') === 'byok' && preference !== 'byok' && (
+                            <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-400 rounded-lg shadow-lg animate-pulse">
+                                <div className="flex items-start gap-3">
+                                    <Info className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                                    <div>
+                                        <h3 className="font-bold text-green-900 mb-1">🚀 Ready to switch to BYOK?</h3>
+                                        <p className="text-sm text-green-800">
+                                            To activate BYOK mode and get <b>55 credits/month</b>, add your first API key below. 
+                                            Once added, you'll automatically switch to BYOK mode.
+                                        </p>
+                                        <p className="text-xs text-green-700 mt-2">
+                                            👉 Scroll down to the form and add your OpenAI, Gemini, or Perplexity API key.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        
                         <div className="flex items-center gap-6 mt-4">
                             <label className="flex items-center gap-2 cursor-pointer">
                                 <input type="radio" name="api-key-pref" value="platform" checked={preference === 'platform'}
@@ -205,18 +240,31 @@ const ApiKeysPage = () => {
                                 <span className="text-xs text-gray-500">(25 credits/month)</span>
                             </label>
                             <label className="flex items-center gap-2 cursor-pointer">
-                                <input type="radio" name="api-key-pref" value="byok" checked={preference === 'byok'}
+                                <input type="radio" name="api-key-pref" value="byok" 
+                                    checked={preference === 'byok' || (byokSelected && preference !== 'byok')}
                                     onChange={() => {
-                                        // Do nothing, handled by add key flow
+                                        if (preference !== 'byok') {
+                                            setByokSelected(true);
+                                            setTimeout(() => {
+                                                byokSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                                setHighlightByok(true);
+                                                setTimeout(() => setHighlightByok(false), 3000);
+                                            }, 100);
+                                        }
                                     }}
                                     disabled={locked || (preference === 'platform' && lockUntil && new Date(lockUntil) > new Date())}
                                 />
                                 <span className="font-semibold text-green-700">BYOK</span>
                                 <span className="text-xs text-gray-500">(55 credits/month, 30-day lock)</span>
                             </label>
-                            {preference !== 'byok' && (
-                                <div className="mt-2 text-sm text-green-700">
-                                    Enter a key below to get into BYOK mode.
+                            {byokSelected && preference !== 'byok' && (
+                                <div className="mt-2 px-3 py-2 bg-green-50 border border-green-300 rounded-lg text-sm text-green-800 font-medium">
+                                    ✅ BYOK selected! Add your first API key below to activate BYOK mode and unlock 55 credits/month.
+                                </div>
+                            )}
+                            {!byokSelected && preference !== 'byok' && (
+                                <div className="mt-2 text-sm text-gray-600">
+                                    Click BYOK above to get started, then enter a key below.
                                 </div>
                             )}
                         </div>
@@ -234,7 +282,13 @@ const ApiKeysPage = () => {
                         )}
                     </div>
                     {/* Add Key Form */}
-                    <form onSubmit={handleAdd} className="flex flex-col md:flex-row items-center gap-2 bg-white/70 backdrop-blur-md p-4 rounded-xl shadow-lg border border-gray-200">
+                    <form 
+                        ref={byokSectionRef}
+                        onSubmit={handleAdd} 
+                        className={`flex flex-col md:flex-row items-center gap-2 bg-white/70 backdrop-blur-md p-4 rounded-xl shadow-lg border border-gray-200 transition-all duration-500 ${
+                            highlightByok ? 'ring-4 ring-green-400 ring-opacity-50 shadow-2xl' : ''
+                        }`}
+                    >
                         <select
                             className="border rounded-lg px-4 py-2 text-sm font-medium focus:ring-2 focus:ring-blue-400"
                             value={form.provider}

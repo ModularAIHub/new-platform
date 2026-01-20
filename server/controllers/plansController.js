@@ -113,34 +113,59 @@ class PlansController {
 
     static async upgradePlan(req, res) {
         try {
-            const { planType } = req.body;
-            const currentResult = await query('SELECT plan_type, credits_remaining FROM users WHERE id = $1', [req.user.id]);
+            const { planType, isTrial } = req.body;
+            const currentResult = await query('SELECT plan_type, credits_remaining, trial_ends_at FROM users WHERE id = $1', [req.user.id]);
             if (currentResult.rows.length === 0) {
                 return res.status(404).json({ error: 'User not found', code: 'USER_NOT_FOUND' });
             }
             const currentPlan = currentResult.rows[0].plan_type;
             const currentCredits = Number(currentResult.rows[0].credits_remaining);
+            const existingTrialEndsAt = currentResult.rows[0].trial_ends_at;
+            
+            // Don't allow upgrade if already on enterprise
             if (currentPlan === 'enterprise') {
                 return res.status(400).json({ error: 'Already on highest plan', code: 'ALREADY_HIGHEST_PLAN' });
             }
-            if (currentPlan === 'pro' && planType === 'pro') {
+            
+            // For Pro trial signups, allow even if null plan
+            if (currentPlan === 'pro' && planType === 'pro' && !isTrial) {
                 return res.status(400).json({ error: 'Already on Pro plan', code: 'ALREADY_PRO_PLAN' });
             }
+            
             const newPlanConfig = PLAN_LIMITS[planType];
             let bonusCredits = 0;
-            if (planType === 'pro') bonusCredits = 125;
+            if (planType === 'pro') bonusCredits = 1500; // Pro trial gets 1500 credits
             else if (planType === 'enterprise') bonusCredits = 500;
             const newCredits = currentCredits + bonusCredits;
-            await query('UPDATE users SET plan_type = $1, credits_remaining = $2, updated_at = NOW() WHERE id = $3', [planType, newCredits, req.user.id]);
+            
+            // Set trial end date if this is a trial upgrade
+            let trialEndsAt = existingTrialEndsAt;
+            if (isTrial && planType === 'pro' && !existingTrialEndsAt) {
+                const trialEnd = new Date();
+                trialEnd.setDate(trialEnd.getDate() + 14); // 14 days from now
+                trialEndsAt = trialEnd;
+            }
+            
+            // Update user with trial info
+            if (trialEndsAt) {
+                await query('UPDATE users SET plan_type = $1, credits_remaining = $2, trial_ends_at = $3, updated_at = NOW() WHERE id = $4', 
+                    [planType, newCredits, trialEndsAt, req.user.id]);
+            } else {
+                await query('UPDATE users SET plan_type = $1, credits_remaining = $2, updated_at = NOW() WHERE id = $3', 
+                    [planType, newCredits, req.user.id]);
+            }
+            
             res.json({
-                message: 'Plan upgraded successfully',
+                message: isTrial ? 'Pro trial activated successfully' : 'Plan upgraded successfully',
                 newPlan: {
                     type: planType,
                     name: planType.charAt(0).toUpperCase() + planType.slice(1),
                     creditsRemaining: newCredits,
                     bonusCredits,
                     features: newPlanConfig.features,
-                    support: newPlanConfig.support
+                    support: newPlanConfig.support,
+                    isTrial: isTrial || false,
+                    trialEndsAt: trialEndsAt
                 }
             });
         } catch (error) {
