@@ -331,64 +331,6 @@ export const ProTeamController = {
         }
     },
 
-    // Disconnect a social account
-    async disconnectAccount(req, res) {
-        try {
-            const userId = req.user.id;
-            const { accountId } = req.params;
-
-            // Check permissions
-            const canConnect = await RolePermissionsService.canUserPerformAction(userId, 'connect_profiles');
-            if (!canConnect) {
-                return res.status(403).json({ 
-                    error: 'You do not have permission to manage social accounts' 
-                });
-            }
-
-            // Get user's team
-            const userPermissions = await RolePermissionsService.getUserPermissions(userId);
-            if (!userPermissions.team_id) {
-                return res.status(404).json({ error: 'You are not part of any team' });
-            }
-
-            // Verify account belongs to user's team
-            const account = await query(`
-                SELECT user_id FROM user_social_accounts 
-                WHERE id = $1 AND team_id = $2 AND is_active = true
-            `, [accountId, userPermissions.team_id]);
-
-            if (account.rows.length === 0) {
-                return res.status(404).json({ error: 'Social account not found' });
-            }
-
-            // Only allow users to disconnect their own accounts, or owners to disconnect any
-            const accountOwnerId = account.rows[0].user_id;
-            const isOwner = userPermissions.role === 'owner';
-            const isAccountOwner = accountOwnerId === userId;
-
-            if (!isOwner && !isAccountOwner) {
-                return res.status(403).json({ 
-                    error: 'You can only disconnect your own accounts' 
-                });
-            }
-
-            // Deactivate the account (soft delete)
-            await query(`
-                UPDATE user_social_accounts 
-                SET is_active = false, updated_at = CURRENT_TIMESTAMP
-                WHERE id = $1
-            `, [accountId]);
-
-            res.json({
-                success: true,
-                message: 'Social account disconnected successfully'
-            });
-        } catch (error) {
-            console.error('Disconnect account error:', error);
-            res.status(500).json({ error: 'Failed to disconnect social account' });
-        }
-    },
-
     // Leave team
     async leaveTeam(req, res) {
         try {
