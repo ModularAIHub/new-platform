@@ -149,7 +149,7 @@ class AuthController {
             );
 
             // Set auth cookies
-            setAuthCookies(res, accessToken, refreshToken);
+            AuthController.setAuthCookies(res, accessToken, refreshToken);
 
             // Return user data with tokens for auto-login
             res.status(201).json({
