@@ -103,7 +103,14 @@ const Navbar = () => {
                     <div className="w-8 h-8 bg-gradient-to-br from-primary-600 to-primary-700 rounded-full flex items-center justify-center shadow-sm">
                       <User className="w-4 h-4 text-white" />
                     </div>
-                    <span className="font-medium text-sm">{user?.name}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-sm">{user?.name}</span>
+                      {user?.planType === 'pro' && (
+                        <span className="px-2 py-0.5 text-xs font-semibold bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-full shadow-sm">
+                          PRO
+                        </span>
+                      )}
+                    </div>
                     <svg className="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
@@ -114,6 +121,20 @@ const Navbar = () => {
                       <div className="px-4 py-2 border-b border-neutral-100">
                         <p className="text-sm font-medium text-neutral-900">{user?.name}</p>
                         <p className="text-xs text-neutral-500">{user?.email}</p>
+                        {user?.planType && (
+                          <div className="mt-2 flex items-center gap-2">
+                            <span className={`px-2 py-1 text-xs font-semibold rounded-md ${
+                              user?.planType === 'pro' 
+                                ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-white' 
+                                : 'bg-neutral-100 text-neutral-700'
+                            }`}>
+                              {user?.planType === 'pro' ? '⭐ PRO' : user?.planType?.toUpperCase() || 'FREE'}
+                            </span>
+                            <span className="text-xs text-neutral-500">
+                              {user?.creditsRemaining || 0} credits
+                            </span>
+                          </div>
+                        )}
                       </div>
                       <Link 
                         to="/team" 

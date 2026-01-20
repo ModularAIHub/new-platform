@@ -383,31 +383,68 @@ class AuthController {
                 });
             }
 
-            const { newPassword, email, otp } = validation.sanitized;
+            const { newPassword, email, otp, verificationToken } = validation.sanitized;
 
-            // Verify OTP from Redis
-            const otpKey = `otp:password-reset:${email}`;
-            const storedOtp = await redisClient.get(otpKey);
-            console.log(`[RESET PASSWORD] OTP Key: ${otpKey}`);
-            console.log(`[RESET PASSWORD] Stored OTP: ${storedOtp}`);
-            console.log(`[RESET PASSWORD] Provided OTP: ${otp}`);
-            if (!storedOtp || storedOtp !== otp) {
-                return res.status(400).json({
-                    error: 'Invalid or expired OTP',
-                    code: 'INVALID_OTP'
-                });
+            // Two flows: JWT-based (verificationToken) or OTP-based (email + otp)
+            let userId;
+            let userEmail;
+
+            if (verificationToken) {
+                // JWT-based flow: verify token
+                try {
+                    const tokenPayload = jwt.verify(verificationToken, process.env.JWT_SECRET);
+                    
+                    if (tokenPayload.purpose !== 'password-reset' || !tokenPayload.verified) {
+                        return res.status(400).json({ 
+                            error: 'Invalid verification token',
+                            code: 'INVALID_TOKEN'
+                        });
+                    }
+                    
+                    userEmail = tokenPayload.email;
+                } catch (error) {
+                    return res.status(400).json({ 
+                        error: 'Invalid or expired verification token',
+                        code: 'TOKEN_EXPIRED'
+                    });
+                }
+                
+                // Find user by email from token
+                const userResult = await query('SELECT id FROM users WHERE email = $1', [userEmail]);
+                if (userResult.rows.length === 0) {
+                    return res.status(404).json({
+                        error: 'User not found',
+                        code: 'USER_NOT_FOUND'
+                    });
+                }
+                userId = userResult.rows[0].id;
+            } else {
+                // OTP-based flow: verify OTP from Redis
+                const otpKey = `otp:password-reset:${email}`;
+                const storedOtp = await redisClient.get(otpKey);
+                console.log(`[RESET PASSWORD] OTP Key: ${otpKey}`);
+                console.log(`[RESET PASSWORD] Stored OTP: ${storedOtp}`);
+                console.log(`[RESET PASSWORD] Provided OTP: ${otp}`);
+                if (!storedOtp || storedOtp !== otp) {
+                    return res.status(400).json({
+                        error: 'Invalid or expired OTP',
+                        code: 'INVALID_OTP'
+                    });
+                }
+
+                // Find user by email
+                const userResult = await query('SELECT id FROM users WHERE email = $1', [email]);
+                if (userResult.rows.length === 0) {
+                    return res.status(404).json({
+                        error: 'User not found',
+                        code: 'USER_NOT_FOUND'
+                    });
+                }
+                userId = userResult.rows[0].id;
+                
+                // Delete the OTP after verification
+                await redisClient.del(otpKey);
             }
-
-            // Find user by email
-            const userResult = await query('SELECT id FROM users WHERE email = $1', [email]);
-            if (userResult.rows.length === 0) {
-                return res.status(404).json({
-                    error: 'User not found',
-                    code: 'USER_NOT_FOUND'
-                });
-            }
-
-            const userId = userResult.rows[0].id;
 
             // Hash new password
             const passwordHash = await hashPassword(newPassword);
@@ -417,9 +454,6 @@ class AuthController {
                 'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
                 [passwordHash, userId]
             );
-
-            // Delete the OTP after successful password reset to prevent replay attacks
-            await redisClient.del(otpKey);
 
             res.json({
                 message: 'Password reset successfully!'

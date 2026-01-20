@@ -209,28 +209,16 @@ const TeamPage = () => {
 
     const updateMemberRole = async (memberId, newRole) => {
         try {
+            console.log('Updating role for member:', memberId, 'to:', newRole);
             const response = await api.put(`/pro-team/members/${memberId}/role`, { role: newRole });
+            console.log('Update response:', response);
             
-            // Check if response indicates success (either response.success or HTTP 200)
-            if (response.success || response.message) {
-                fetchTeam(); // Refresh team data
-                // Show success message if available
-                if (response.message) {
-                    // Optional: could show a toast notification instead of alert
-                    console.log('Role updated:', response.message);
-                }
-            } else {
-                alert(response.error || 'Failed to update member role');
-            }
+            // Always refresh on successful API call
+            await fetchTeam();
+            console.log('Team data refreshed after role update');
+            
         } catch (error) {
             console.error('Failed to update member role:', error);
-            
-            // Check if it's actually a success response disguised as an error
-            if (error.response?.status === 200 && error.response?.data?.success) {
-                fetchTeam(); // Refresh on success
-                return;
-            }
-            
             const errorMessage = error.response?.data?.error || error.message || 'Failed to update member role';
             alert(errorMessage);
         }
@@ -357,16 +345,6 @@ const TeamPage = () => {
     // Pro users with a team
     return (
         <div className="max-w-4xl mx-auto p-6">
-            {/* Debug: Show raw social accounts API response */}
-            <div className="card p-4 mb-4 bg-yellow-100 text-xs text-gray-800">
-                <strong>Debug: /pro-team/social-accounts API Response</strong>
-                <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{JSON.stringify(socialAccountsApiResponse, null, 2)}</pre>
-            </div>
-            {/* Debug: Show raw socialAccounts array */}
-            <div className="card p-4 mb-4 bg-yellow-50 text-xs text-gray-800">
-                <strong>Debug: Raw Social Accounts Array</strong>
-                <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{JSON.stringify(socialAccounts, null, 2)}</pre>
-            </div>
             <div className="mb-8">
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">{team.name}</h1>
                 <p className="text-gray-600">
@@ -485,66 +463,6 @@ const TeamPage = () => {
                             </div>
                         </div>
                     ))}
-                </div>
-            </div>
-
-            {/* Platform Tools Section */}
-            <div className="bg-white border border-gray-200 rounded-lg mb-6">
-                <div className="p-6 border-b border-gray-200">
-                    <h2 className="text-lg font-semibold text-gray-900">Platform Tools</h2>
-                    <p className="text-gray-600">Access specialized tools for each social media platform</p>
-                </div>
-                
-                <div className="p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <button
-                            onClick={goToTweetGenie}
-                            className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors group"
-                        >
-                            <div className="flex-shrink-0">
-                                <Twitter className="h-8 w-8 text-blue-400 group-hover:text-blue-500" />
-                            </div>
-                            <div className="text-left">
-                                <h3 className="font-semibold text-gray-900 group-hover:text-blue-900">Tweet Genie</h3>
-                                <p className="text-sm text-gray-600">Advanced Twitter management</p>
-                            </div>
-                            <ExternalLink className="h-4 w-4 text-gray-400 group-hover:text-blue-500 ml-auto" />
-                        </button>
-                        
-                        <button
-                            disabled
-                            className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg opacity-50 cursor-not-allowed"
-                        >
-                            <div className="flex-shrink-0">
-                                <Linkedin className="h-8 w-8 text-gray-400" />
-                            </div>
-                            <div className="text-left">
-                                <h3 className="font-semibold text-gray-500">LinkedIn Pro</h3>
-                                <p className="text-sm text-gray-400">Coming soon</p>
-                            </div>
-                        </button>
-                        
-                        <button
-                            disabled
-                            className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg opacity-50 cursor-not-allowed"
-                        >
-                            <div className="flex-shrink-0">
-                                <Globe className="h-8 w-8 text-gray-400" />
-                            </div>
-                            <div className="text-left">
-                                <h3 className="font-semibold text-gray-500">Content Hub</h3>
-                                <p className="text-sm text-gray-400">Coming soon</p>
-                            </div>
-                        </button>
-                    </div>
-                    
-                    <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                        <h4 className="font-medium text-blue-900 mb-2">🚀 Seamless Team Access</h4>
-                        <p className="text-sm text-blue-700">
-                            Click any tool to access it with your team role and permissions automatically applied. 
-                            No need to log in again!
-                        </p>
-                    </div>
                 </div>
             </div>
 

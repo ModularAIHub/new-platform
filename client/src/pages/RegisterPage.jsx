@@ -1,11 +1,12 @@
-import { useState, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useCallback, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import OTPModal from '../components/OTPModal';
 import { validateRegistrationData, validateOTPRequest, formatValidationErrors } from '../utils/validation';
 import toast from 'react-hot-toast';
 import { Button, Input, Card, CardContent } from '../components/ui';
 import { User, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import api from '../utils/api';
 
 const RegisterPage = () => {
 	const [name, setName] = useState('');
@@ -15,8 +16,10 @@ const RegisterPage = () => {
 	const [loading, setLoading] = useState(false);
 	const [showOTPModal, setShowOTPModal] = useState(false);
 	const [validationErrors, setValidationErrors] = useState({});
-	const { register, sendOTP } = useAuth();
+	const { register, sendOTP, login } = useAuth();
 	const navigate = useNavigate();
+	const [searchParams] = useSearchParams();
+	const planType = searchParams.get('plan');
 
 	const handleSubmit = useCallback(async (e) => {
 		e.preventDefault();
@@ -76,8 +79,40 @@ const RegisterPage = () => {
 				validation.sanitized.password,
 				verificationToken
 			);
-			toast.success('Account created successfully');
+			
 			setShowOTPModal(false);
+			
+			// If plan=pro, upgrade to Pro trial and login
+			console.log('planType detected:', planType);
+			if (planType === 'pro') {
+				console.log('Starting Pro trial upgrade flow...');
+				try {
+					// Login first to get auth tokens
+					console.log('Logging in user...');
+					await login(validation.sanitized.email, validation.sanitized.password);
+					console.log('Login successful, calling upgrade API...');
+					
+					// Upgrade to Pro trial
+					const upgradeResponse = await api.post('/plans/upgrade', {
+						planType: 'pro',
+						isTrial: true
+					});
+					console.log('Upgrade API response:', upgradeResponse.data);
+					
+					console.log('Showing success toast...');
+					toast.success(
+						'🎉 Welcome to Pro! Your 14-day trial has started. You now have access to unlimited posts, all platforms, and 1500 credits!',
+						{ duration: 6000 }
+					);
+				} catch (error) {
+					console.error('Pro upgrade error:', error);
+					console.error('Error details:', error.response?.data);
+					toast.error('Account created but failed to activate Pro trial. Please contact support.');
+				}
+			} else {
+				toast.success('Account created successfully');
+			}
+			
 			navigate('/dashboard');
 		} catch (error) {
 			console.error('Register error:', error);
@@ -195,19 +230,21 @@ const RegisterPage = () => {
 										</Link>
 									</span>
 								</div>
-							</form>
-						</CardContent>
-					</Card>
-						<OTPModal
-							isOpen={showOTPModal}
-							onClose={() => setShowOTPModal(false)}
-							email={email}
-							onSuccess={handleOTPSuccess}
-							title="Verify Your Email"
-							purpose="account-verification"
-						/>
-					</div>
-				</div>
+					</form>
+				</CardContent>
+			</Card>
+			
+			<OTPModal
+				isOpen={showOTPModal}
+				onClose={() => setShowOTPModal(false)}
+				email={email}
+				onSuccess={handleOTPSuccess}
+				title="Verify Your Email"
+				purpose="account-verification"
+			/>
+		</div>
+	</div>
+			
 			{/* Features Panel */}
 			<div className="hidden lg:flex lg:flex-1 bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800 relative overflow-hidden">
 				{/* Background Pattern */}

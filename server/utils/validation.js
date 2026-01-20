@@ -436,9 +436,32 @@ export const validatePasswordChange = (data) => {
 
 // Password reset validation (for forgot password flow with OTP)
 export const validatePasswordReset = (data) => {
-    const { newPassword, email, otp } = data;
+    const { newPassword, email, otp, verificationToken } = data;
     const errors = {};
 
+    // If using verificationToken (JWT-based flow), validate token and newPassword only
+    if (verificationToken) {
+        // Validate new password
+        const passwordValidation = validatePassword(newPassword);
+        if (!passwordValidation.isValid) {
+            errors.newPassword = passwordValidation.errors;
+        }
+
+        if (!verificationToken || typeof verificationToken !== 'string') {
+            errors.verificationToken = ['Verification token is required'];
+        }
+
+        return {
+            isValid: Object.keys(errors).length === 0,
+            errors,
+            sanitized: {
+                newPassword: newPassword?.trim(),
+                verificationToken: verificationToken?.trim()
+            }
+        };
+    }
+
+    // Original OTP-based flow validation
     // Validate email
     const emailValidation = validateEmail(email);
     if (!emailValidation.isValid) {

@@ -142,12 +142,20 @@ class TeamController {
     // Update team member role (Owner only)
     static async updateRole(req, res) {
         try {
-            const { workspaceId, memberId } = req.params;
+            const { teamId, memberId } = req.params;
             const { role } = req.body;
+            
+            console.log('🔄 Update Role Request:', {
+                teamId,
+                memberId,
+                newRole: role,
+                userId: req.user?.id
+            });
             
             // Validate role
             const validRoles = ['admin', 'editor', 'viewer'];
             if (!validRoles.includes(role)) {
+                console.log('❌ Invalid role:', role);
                 return res.status(400).json({ 
                     error: 'Invalid role. Must be admin, editor, or viewer',
                     code: 'INVALID_ROLE' 
@@ -155,25 +163,33 @@ class TeamController {
             }
             
             // Check if user is owner
+            console.log('🔍 Checking user role for teamId:', teamId, 'userId:', req.user.id);
             const userRoleResult = await query(`
                 SELECT role FROM team_members 
-                WHERE workspace_id = $1 AND user_id = $2 AND status = 'accepted'
-            `, [workspaceId, req.user.id]);
+                WHERE team_id = $1 AND user_id = $2 AND status = 'accepted'
+            `, [teamId, req.user.id]);
+            
+            console.log('👤 User role result:', userRoleResult.rows);
             
             if (userRoleResult.rows.length === 0 || userRoleResult.rows[0].role !== 'owner') {
+                console.log('❌ Insufficient permissions. User role:', userRoleResult.rows[0]?.role);
                 return res.status(403).json({ 
-                    error: 'Only workspace owners can change team member roles',
+                    error: 'Only team owners can change team member roles',
                     code: 'INSUFFICIENT_PERMISSIONS' 
                 });
             }
             
             // Check if trying to change owner role
+            console.log('🔍 Checking target member:', memberId);
             const targetMemberResult = await query(`
                 SELECT role FROM team_members 
-                WHERE id = $1 AND workspace_id = $2
-            `, [memberId, workspaceId]);
+                WHERE id = $1 AND team_id = $2
+            `, [memberId, teamId]);
+            
+            console.log('🎯 Target member result:', targetMemberResult.rows);
             
             if (targetMemberResult.rows.length === 0) {
+                console.log('❌ Member not found');
                 return res.status(404).json({ 
                     error: 'Team member not found',
                     code: 'MEMBER_NOT_FOUND' 
@@ -181,6 +197,7 @@ class TeamController {
             }
             
             if (targetMemberResult.rows[0].role === 'owner') {
+                console.log('❌ Cannot change owner role');
                 return res.status(400).json({ 
                     error: 'Cannot change owner role',
                     code: 'CANNOT_CHANGE_OWNER' 
@@ -188,10 +205,13 @@ class TeamController {
             }
             
             // Update role
-            await query(
-                'UPDATE team_members SET role = $1, updated_at = NOW() WHERE id = $2',
+            console.log('✏️ Updating role to:', role, 'for member:', memberId);
+            const updateResult = await query(
+                'UPDATE team_members SET role = $1 WHERE id = $2 RETURNING *',
                 [role, memberId]
             );
+            
+            console.log('✅ Update result:', updateResult.rows);
             
             res.json({
                 message: 'Team member role updated successfully',
@@ -199,9 +219,11 @@ class TeamController {
             });
             
         } catch (error) {
-            console.error('Update team member role error:', error);
+            console.error('❌ Update team member role error:', error);
+            console.error('Error stack:', error.stack);
             res.status(500).json({ 
                 error: 'Failed to update team member role', 
+                details: error.message,
                 code: 'TEAM_ROLE_UPDATE_ERROR' 
             });
         }
