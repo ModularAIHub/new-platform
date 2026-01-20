@@ -192,7 +192,8 @@ export const TeamService = {
             );
 
             const team = teamInfo.rows[0];
-            const inviteUrl = `${process.env.CLIENT_URL}/team/invite/${token}`;
+            const clientUrl = process.env.CLIENT_URL || process.env.BASE_URL || 'https://suitegenie.in';
+            const inviteUrl = `${clientUrl}/team/invite/${token}`;
             
             // Use the Resend EmailService
             const emailService = new EmailService();
@@ -214,7 +215,8 @@ export const TeamService = {
             console.log(`✅ Team invitation email sent to ${email}`);
         } catch (error) {
             console.error('❌ Failed to send invitation email:', error);
-            const inviteUrl = `${process.env.CLIENT_URL}/team/invite/${token}`;
+            const clientUrl = process.env.CLIENT_URL || process.env.BASE_URL || 'https://suitegenie.in';
+            const inviteUrl = `${clientUrl}/team/invite/${token}`;
             console.log('📧 Invitation link (email failed):', inviteUrl);
         }
     },

@@ -12,7 +12,7 @@ class EmailService {
         this.resend = new Resend(process.env.RESEND_API_KEY);
         this.fromEmail = process.env.RESEND_FROM_EMAIL || 'noreply@suitegenie.in';
         this.platformName = process.env.PLATFORM_NAME || 'SuiteGenie';
-        this.baseUrl = process.env.BASE_URL || 'http://localhost:5173';
+        this.baseUrl = process.env.CLIENT_URL || process.env.BASE_URL || 'https://suitegenie.in';
         
         console.log('📧 Resend EmailService initialized');
         console.log('🔑 API Key loaded:', process.env.RESEND_API_KEY.substring(0, 10) + '...');
