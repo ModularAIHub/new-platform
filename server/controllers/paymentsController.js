@@ -193,15 +193,23 @@ class PaymentsController {
                 } else if (orderType === 'plan') {
                     const planType = order.notes.plan;
                     const costInRupees = order.amount / 100;
-                    await client.query('UPDATE users SET plan_type = $1, updated_at = NOW() WHERE id = $2', [planType, req.user.id]);
+                    
+                    // Award 150 bonus credits for Pro plan upgrade
+                    const bonusCredits = planType === 'pro' ? 150 : 0;
+                    if (bonusCredits > 0) {
+                        await client.query('UPDATE users SET plan_type = $1, credits_remaining = credits_remaining + $2, updated_at = NOW() WHERE id = $3', [planType, bonusCredits, req.user.id]);
+                    } else {
+                        await client.query('UPDATE users SET plan_type = $1, updated_at = NOW() WHERE id = $2', [planType, req.user.id]);
+                    }
+                    
                     const transactionId = uuidv4();
                     await client.query(
                         `INSERT INTO credit_transactions (id, user_id, type, credits_amount, cost_in_rupees, razorpay_order_id, razorpay_payment_id, razorpay_signature, description, created_at)
                          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW())`,
-                        [transactionId, req.user.id, 'purchase', 0, costInRupees, razorpayOrderId, razorpayPaymentId, razorpaySignature, `Plan upgrade: ${order.notes.name}`]
+                        [transactionId, req.user.id, 'purchase', bonusCredits, costInRupees, razorpayOrderId, razorpayPaymentId, razorpaySignature, `Plan upgrade: ${order.notes.name}${bonusCredits > 0 ? ` (+${bonusCredits} bonus credits)` : ''}`]
                     );
                     await client.query('COMMIT');
-                    return res.json({ message: 'Payment verified and plan upgraded successfully', newPlan: planType, planName: order.notes.name });
+                    return res.json({ message: 'Payment verified and plan upgraded successfully', newPlan: planType, planName: order.notes.name, bonusCredits });
                 }
             } catch (err) {
                 await client.query('ROLLBACK');
