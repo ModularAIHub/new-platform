@@ -135,9 +135,26 @@ class AuthController {
 
             // Do NOT initialize Redis credits or plan here. This will be done when user selects a mode.
 
-            // Return user data without tokens (tokens only issued by login)
+            // Generate tokens to auto-login the user
+            const accessToken = jwt.sign(
+                { userId: user.id, email: user.email },
+                process.env.JWT_SECRET,
+                { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
+            );
+
+            const refreshToken = jwt.sign(
+                { userId: user.id, email: user.email },
+                process.env.JWT_REFRESH_SECRET,
+                { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+            );
+
+            // Set auth cookies
+            setAuthCookies(res, accessToken, refreshToken);
+
+            // Return user data with tokens for auto-login
             res.status(201).json({
-                message: 'Account created successfully. Please login to continue.',
+                message: 'Account created successfully',
+                accessToken,
                 user: {
                     id: user.id,
                     email: user.email,
