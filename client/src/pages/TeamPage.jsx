@@ -76,6 +76,8 @@ const TeamPage = () => {
             }
         } catch (error) {
             console.error('Failed to create team:', error);
+            const errorMessage = error.response?.data?.error || error.message || 'Failed to create team';
+            alert(errorMessage);
         }
     };
 
@@ -411,7 +413,8 @@ const TeamPage = () => {
                 </div>
                 
                 <div className="divide-y divide-gray-200">
-                    {team.members.map((member) => (
+                    {team?.members && Array.isArray(team.members) ? (
+                        team.members.map((member) => (
                         <div key={member.id} className="p-6 flex items-center justify-between">
                             <div className="flex items-center gap-4">
                                 <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
@@ -462,7 +465,13 @@ const TeamPage = () => {
                                 )}
                             </div>
                         </div>
-                    ))}
+                    ))
+                    ) : (
+                        <div className="p-8 text-center">
+                            <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                            <p className="text-gray-600">No team members yet</p>
+                        </div>
+                    )}
                 </div>
             </div>
 
