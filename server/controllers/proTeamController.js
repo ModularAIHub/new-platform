@@ -698,20 +698,21 @@ export const ProTeamController = {
             
             // Generate redirect URL to subdomain
             const subdomains = {
-                'twitter': process.env.TWITTER_SUBDOMAIN || 'localhost:3002',
-                'linkedin': process.env.LINKEDIN_SUBDOMAIN || 'localhost:3001', 
-                'wordpress': process.env.WORDPRESS_SUBDOMAIN || 'localhost:3003',
-                'facebook': process.env.FACEBOOK_SUBDOMAIN || 'localhost:3004',
-                'instagram': process.env.INSTAGRAM_SUBDOMAIN || 'localhost:3005'
+                twitter: process.env.TWITTER_SUBDOMAIN || 'tweet.suitegenie.in',
+                linkedin: process.env.LINKEDIN_SUBDOMAIN || 'linkedin.suitegenie.in',
+                wordpress: process.env.WORDPRESS_SUBDOMAIN || 'wordpress.suitegenie.in',
+                facebook: process.env.FACEBOOK_SUBDOMAIN || 'facebook.suitegenie.in',
+                instagram: process.env.INSTAGRAM_SUBDOMAIN || 'instagram.suitegenie.in'
             };
-            
+
             const subdomain = subdomains[platform.toLowerCase()];
             if (!subdomain) {
                 return res.status(400).json({ error: 'Unsupported platform' });
             }
             
-            const returnUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/team`; // Frontend URL, not backend
-            const redirectUrl = `http://${subdomain}/api/twitter/team-connect?teamId=${teamId}&userId=${userId}&returnUrl=${encodeURIComponent(returnUrl)}`;
+            const ensureUrl = (host) => host.startsWith('http') ? host : `https://${host}`;
+            const returnUrl = `${ensureUrl(process.env.CLIENT_URL || 'https://suitegenie.in')}/team`; // Frontend URL, not backend
+            const redirectUrl = `${ensureUrl(subdomain)}/api/twitter/team-connect?teamId=${teamId}&userId=${userId}&returnUrl=${encodeURIComponent(returnUrl)}`;
             
             res.json({
                 success: true,
