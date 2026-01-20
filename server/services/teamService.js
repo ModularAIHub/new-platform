@@ -16,21 +16,43 @@ export const TeamService = {
             [teamName, ownerId, maxMembers]
         );
         
+        const teamId = result.rows[0].id;
+        
         // Add owner as team member
         await query(
             `INSERT INTO team_members (team_id, user_id, email, role, status, joined_at)
              SELECT $1, $2, u.email, 'owner', 'active', CURRENT_TIMESTAMP
              FROM users u WHERE u.id = $2`,
-            [result.rows[0].id, ownerId]
+            [teamId, ownerId]
         );
         
         // Set as user's current team
         await query(
             `UPDATE users SET current_team_id = $1 WHERE id = $2`,
-            [result.rows[0].id, ownerId]
+            [teamId, ownerId]
         );
         
-        return result.rows[0];
+        // Get team members to return full team object
+        const membersResult = await query(`
+            SELECT 
+                tm.id,
+                tm.email,
+                tm.role,
+                tm.status,
+                tm.joined_at,
+                COALESCE(u.name, tm.email) as user_name
+            FROM team_members tm 
+            LEFT JOIN users u ON tm.user_id = u.id
+            WHERE tm.team_id = $1 AND tm.status = $2
+            ORDER BY tm.joined_at ASC
+        `, [teamId, 'active']);
+        
+        return {
+            ...result.rows[0],
+            user_role: 'owner',
+            member_count: membersResult.rows.length,
+            members: membersResult.rows
+        };
     },
 
     // Get user's team info
