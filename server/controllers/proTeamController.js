@@ -692,7 +692,7 @@ export const ProTeamController = {
                 return res.status(400).json({ error: 'Unsupported platform' });
             }
             
-            const returnUrl = `http://localhost:5173/team`; // Frontend URL, not backend
+            const returnUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/team`; // Frontend URL, not backend
             const redirectUrl = `http://${subdomain}/api/twitter/team-connect?teamId=${teamId}&userId=${userId}&returnUrl=${encodeURIComponent(returnUrl)}`;
             
             res.json({

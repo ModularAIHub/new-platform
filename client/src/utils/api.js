@@ -15,7 +15,8 @@ export async function fetchCsrfToken() {
     }
 }
 
-const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+// Use relative URL in development to leverage Vite proxy
+const baseURL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '/api' : 'http://localhost:3000/api');
 
 // Set timeout: 45s for production, 10s for local/dev
 const isProd = window.location.hostname.includes('suitegenie.in') || import.meta.env.MODE === 'production';
