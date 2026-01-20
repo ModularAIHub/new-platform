@@ -142,7 +142,15 @@ const CreditsPage = () => {
                             razorpaySignature: response.razorpay_signature
                         })
 
-                        alert(`Payment successful! ${verifyResponse.data.creditsAdded} credits added to your account.`)
+                        // Show success message with bonus credits if applicable
+                        const bonusCredits = verifyResponse.data.bonusCredits;
+                        if (bonusCredits > 0) {
+                            alert(`🎉 Payment successful!\n\n✨ ${verifyResponse.data.planName || 'Plan'} activated!\n💰 ${bonusCredits} bonus credits added to your account!`)
+                        } else if (verifyResponse.data.creditsAdded) {
+                            alert(`Payment successful! ${verifyResponse.data.creditsAdded} credits added to your account.`)
+                        } else {
+                            alert('Payment successful! Your plan has been upgraded.')
+                        }
                         
                         // Refresh data
                         await fetchData()

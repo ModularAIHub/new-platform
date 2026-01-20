@@ -134,7 +134,8 @@ class PlansController {
             
             const newPlanConfig = PLAN_LIMITS[planType];
             let bonusCredits = 0;
-            if (planType === 'pro') bonusCredits = 1500; // Pro trial gets 1500 credits
+            if (planType === 'pro' && isTrial) bonusCredits = 1500; // Pro trial gets 1500 credits
+            else if (planType === 'pro' && !isTrial) bonusCredits = 150; // Paid Pro upgrade gets 150 credits
             else if (planType === 'enterprise') bonusCredits = 500;
             const newCredits = currentCredits + bonusCredits;
             
