@@ -20,6 +20,12 @@ const app = express();
 app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 
+// Request logger (lightweight) to surface failing calls
+app.use((req, res, next) => {
+    console.log(`[REQ] ${req.method} ${req.originalUrl} origin=${req.headers.origin || 'n/a'} referer=${req.headers.referer || 'n/a'}`);
+    next();
+});
+
 // Security middleware with CSP configuration for development
 app.use(helmet({
   contentSecurityPolicy: {
@@ -47,33 +53,51 @@ if (process.env.NODE_ENV !== 'development') {
 }
 
 // CORS configuration for cross-subdomain support
-app.use(cors({
+const allowedOrigins = [
+    'https://api.suitegenie.in',
+    'https://apilinkedin.suitegenie.in',
+    'https://apitweet.suitegenie.in',
+    'https://suitegenie.in',
+    'https://tweet.suitegenie.in',
+    'https://linkedin.suitegenie.in',
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:3002'
+];
+
+const corsOptions = {
     origin: function (origin, callback) {
         if (process.env.NODE_ENV === 'development') {
-            // Allow all origins in development
             return callback(null, true);
         }
-        // Explicitly allow SuiteGenie API subdomains
-        const allowedOrigins = [
-            'https://api.suitegenie.in',
-            'https://apilinkedin.suitegenie.in',
-            'https://apitweet.suitegenie.in',
-            'https://suitegenie.in',
-            'https://tweet.suitegenie.in',
-            'https://linkedin.suitegenie.in',
-        ];
         if (!origin) return callback(null, true);
+        if (origin.includes('localhost')) {
+            // Allow localhost only for dev/testing hitting prod API (optional)
+            return callback(null, true);
+        }
         if (allowedOrigins.includes(origin)) {
             return callback(null, origin);
-        } else {
-            console.log('CORS blocked origin:', origin);
-            return callback(new Error('Not allowed by CORS'));
         }
+        console.log('CORS blocked origin:', origin);
+        return callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-CSRF-Token']
-}));
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-CSRF-Token', 'X-Requested-With'],
+    optionsSuccessStatus: 200,
+};
+
+app.use((req, res, next) => {
+    if (req.method === 'OPTIONS') {
+        console.log(`[CORS] Preflight ${req.originalUrl} origin=${req.headers.origin || 'n/a'}`);
+    }
+    next();
+});
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // Body parsing middleware
 
@@ -136,6 +160,37 @@ app.get('/', (req, res) => {
 
 // API routes
 app.use('/api', apiRouter);
+
+// Detailed CSRF error logging
+app.use((err, req, res, next) => {
+    if (err && err.code === 'EBADCSRFTOKEN') {
+        console.error('[CSRF ERROR]', {
+            path: req.originalUrl,
+            method: req.method,
+            origin: req.headers.origin,
+            referer: req.headers.referer,
+            cookies: req.headers.cookie,
+            csrfHeader: req.headers['x-csrf-token'],
+        });
+        return res.status(403).json({ error: 'Invalid CSRF token' });
+    }
+    return next(err);
+});
+
+// Generic error logger (before custom error handler)
+app.use((err, req, res, next) => {
+    if (err) {
+        console.error('[REQUEST ERROR]', {
+            path: req.originalUrl,
+            method: req.method,
+            origin: req.headers.origin,
+            status: err.status || err.statusCode,
+            message: err.message,
+            stack: err.stack,
+        });
+    }
+    next(err);
+});
 
 // 404 handler
 app.use('*', (req, res) => {
