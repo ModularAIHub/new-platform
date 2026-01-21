@@ -23,7 +23,7 @@ const tryRefreshToken = async (req, res, refreshToken) => {
         const newAccessToken = jwt.sign(
             { userId: user.id, email: user.email },
             process.env.JWT_SECRET,
-            { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
+            { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
         );
 
         const newRefreshToken = jwt.sign(
@@ -61,7 +61,7 @@ const setAuthCookies = (res, accessToken, refreshToken) => {
         httpOnly: true,
         secure: !isDevelopment,
         sameSite: isDevelopment ? 'lax' : 'none',
-        maxAge: 15 * 60 * 1000, // 15 minutes
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         path: '/'
     };
 

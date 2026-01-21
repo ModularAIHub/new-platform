@@ -29,7 +29,7 @@ class AuthController {
             secure: isProduction,
             sameSite: isProduction ? 'none' : 'lax',
             path: '/',
-            maxAge: 15 * 60 * 1000 // 15 minutes
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         };
 
         // Only set domain in production
@@ -216,7 +216,7 @@ class AuthController {
             const accessToken = jwt.sign(
                 { userId: user.id, email: user.email },
                 process.env.JWT_SECRET,
-                { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
+                { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
             );
 
             const refreshToken = jwt.sign(
@@ -291,7 +291,7 @@ class AuthController {
             const accessToken = jwt.sign(
                 { userId: user.id, email: user.email },
                 process.env.JWT_SECRET,
-                { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
+                { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
             );
 
             const refreshToken = jwt.sign(
@@ -933,7 +933,7 @@ class AuthController {
             const newAccessToken = jwt.sign(
                 { userId: user.id, email: user.email },
                 process.env.JWT_SECRET,
-                { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
+                { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
             );
 
             const newRefreshToken = jwt.sign(
