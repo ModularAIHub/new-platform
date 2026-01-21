@@ -97,7 +97,7 @@ const RegisterPage = () => {
 					});
 					console.log('Upgrade API response:', upgradeResponse.data);
 					
-					const bonusCredits = upgradeResponse.data.newPlan?.bonusCredits || 1500;
+					const bonusCredits = upgradeResponse.data.newPlan?.bonusCredits || 150;
 					console.log('Showing success toast...');
 					toast.success(
 						`🎉 Welcome to Pro! Your 14-day trial has started.\n\n✨ You now have:\n• Unlimited posts\n• All platforms unlocked\n• ${bonusCredits.toLocaleString()} bonus credits!`,
