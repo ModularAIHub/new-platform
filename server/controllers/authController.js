@@ -176,9 +176,12 @@ class AuthController {
     // Login user
     static async login(req, res) {
         try {
+            console.log('[LOGIN] Login attempt for email:', req.body.email);
+            
             // Validate login data
             const validation = validateLoginData(req.body);
             if (!validation.isValid) {
+                console.log('[LOGIN] Validation failed:', validation.errors);
                 return res.status(400).json({
                     error: 'Validation failed',
                     details: validation.errors,
@@ -195,6 +198,7 @@ class AuthController {
             );
 
             if (result.rows.length === 0) {
+                console.log('[LOGIN] User not found:', email);
                 return res.status(401).json({
                     error: 'Invalid email or password',
                     code: 'INVALID_CREDENTIALS'
@@ -202,16 +206,22 @@ class AuthController {
             }
 
             const user = result.rows[0];
+            console.log('[LOGIN] User found:', user.email, 'ID:', user.id);
 
             // Verify password
             const isValidPassword = await comparePassword(password, user.password_hash);
+            console.log('[LOGIN] Password valid:', isValidPassword);
+            
             if (!isValidPassword) {
+                console.log('[LOGIN] Invalid password for user:', email);
                 return res.status(401).json({
                     error: 'Invalid email or password',
                     code: 'INVALID_CREDENTIALS'
                 });
             }
 
+            console.log('[LOGIN] Generating tokens for user:', user.id);
+            
             // Generate tokens
             const accessToken = jwt.sign(
                 { userId: user.id, email: user.email },
@@ -228,6 +238,8 @@ class AuthController {
             // Set cookies
             AuthController.setAuthCookies(res, accessToken, refreshToken);
 
+            console.log('[LOGIN] Login successful for:', user.email);
+            
             res.json({
                 message: 'Login successful',
                 user: {
@@ -239,7 +251,8 @@ class AuthController {
                 }
             });
         } catch (error) {
-            console.error('Login error:', error);
+            console.error('[LOGIN] Login error:', error);
+            console.error('[LOGIN] Error stack:', error.stack);
             res.status(500).json({
                 error: 'Login failed',
                 code: 'LOGIN_ERROR',

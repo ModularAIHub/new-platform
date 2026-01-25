@@ -4,8 +4,11 @@ import { query } from '../config/database.js';
 // Helper function to try refreshing token
 const tryRefreshToken = async (req, res, refreshToken) => {
     try {
+        console.log('[AUTH MIDDLEWARE] Attempting to verify refresh token...');
+        
         // Verify refresh token
         const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+        console.log('[AUTH MIDDLEWARE] Refresh token verified for userId:', decoded.userId);
 
         // Check if user exists
         const userResult = await query(
@@ -14,10 +17,12 @@ const tryRefreshToken = async (req, res, refreshToken) => {
         );
 
         if (userResult.rows.length === 0) {
+            console.error('[AUTH MIDDLEWARE] User not found in database:', decoded.userId);
             return { success: false };
         }
 
         const user = userResult.rows[0];
+        console.log('[AUTH MIDDLEWARE] User found:', user.email);
 
         // Generate new tokens
         const newAccessToken = jwt.sign(
@@ -39,7 +44,11 @@ const tryRefreshToken = async (req, res, refreshToken) => {
 
         return { success: true, user };
     } catch (error) {
-        console.error('[AUTH MIDDLEWARE] Token refresh failed:', error);
+        console.error('[AUTH MIDDLEWARE] Token refresh failed:', error.message);
+        console.error('[AUTH MIDDLEWARE] Error name:', error.name);
+        console.error('[AUTH MIDDLEWARE] Error stack:', error.stack);
+        console.error('[AUTH MIDDLEWARE] JWT_REFRESH_SECRET configured:', !!process.env.JWT_REFRESH_SECRET);
+        
         // Clear refreshToken cookie to prevent repeated attempts
         const isDevelopment = process.env.NODE_ENV === 'development';
         res.clearCookie('refreshToken', {
