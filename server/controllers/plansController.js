@@ -102,7 +102,7 @@ class PlansController {
                     features: PLAN_LIMITS[planType].features,
                     support: PLAN_LIMITS[planType].support,
                     teamMembers: PLAN_LIMITS[planType].teamMembers || 0,
-                    price: planType === 'free' ? 0 : planType === 'pro' ? 499 : 1100
+                    price: planType === 'free' ? 0 : planType === 'pro' ? 399 : 1100
                 }))
             });
         } catch (error) {
@@ -184,7 +184,7 @@ class PlansController {
                 return {
                     type: planType,
                     name: planType.charAt(0).toUpperCase() + planType.slice(1),
-                    price: planType === 'free' ? 0 : planType === 'pro' ? 499 : 1100,
+                    price: planType === 'free' ? 0 : planType === 'pro' ? 399 : 1100,
                     credits: plan.credits,
                     bonusCredits: planType === 'pro' ? 250 : planType === 'enterprise' ? 750 : 25,
                     profilesPerPlatform: plan.profilesPerPlatform,

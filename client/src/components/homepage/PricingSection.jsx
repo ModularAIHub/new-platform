@@ -26,7 +26,7 @@ const PricingSection = () => {
     },
     {
       name: "Professional", 
-      price: "$29",
+      price: "₹399",
       period: "per month",
       description: "Best for growing businesses and creators",
       features: [
@@ -43,8 +43,8 @@ const PricingSection = () => {
     },
     {
       name: "Enterprise",
-      price: "$99", 
-      period: "per month",
+      price: "Custom", 
+      period: "Contact us",
       description: "For large teams and agencies",
       features: [
         "Unlimited accounts",

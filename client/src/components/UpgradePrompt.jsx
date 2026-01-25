@@ -25,8 +25,8 @@ const UpgradePrompt = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl max-w-md w-full p-6 relative animate-fadeIn">
+    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl max-w-md w-full p-6 relative animate-fadeIn shadow-2xl">
         {/* Close button */}
         <button
           onClick={onClose}
@@ -67,11 +67,11 @@ const UpgradePrompt = ({
         <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 mb-6">
           <div className="text-center">
             <div className="flex items-baseline justify-center mb-2">
-              <span className="text-3xl font-bold text-gray-900">$29</span>
-              <span className="text-gray-600 ml-1">/month</span>
+              <span className="text-3xl font-bold text-gray-900">₹399</span>
+              <span className="text-gray-500 ml-1">/month</span>
             </div>
             <p className="text-sm text-gray-600">
-              Billed annually: <span className="font-semibold">$1500</span> (save $348)
+              After 14-day trial
             </p>
           </div>
         </div>

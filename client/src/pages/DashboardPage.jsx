@@ -1,6 +1,6 @@
 
 import { useAuth } from '../contexts/AuthContext'
-import { CreditCard, Key, Settings, ExternalLink, Lock, TrendingUp, Calendar, BarChart3, Zap, Crown } from 'lucide-react'
+import { CreditCard, Key, Settings, ExternalLink, Lock, TrendingUp, Calendar, BarChart3, Zap, Crown, Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import api from '../utils/api'
 import { useNavigate } from 'react-router-dom'
@@ -413,6 +413,15 @@ const DashboardPage = () => {
                                     color="primary"
                                     onClick={() => navigate('/api-keys')}
                                 />
+                                {userPlan?.type === 'pro' && (
+                                    <QuickAction
+                                        label="👥 Team Collaboration"
+                                        description="Manage your team members"
+                                        icon={<Users className="w-5 h-5" />}
+                                        color="primary"
+                                        onClick={() => navigate('/team')}
+                                    />
+                                )}
                                 <QuickAction
                                     label="Bulk Scheduling"
                                     description={hasFeatureAccess('bulk_scheduling') ? "Schedule multiple posts at once" : "Pro feature - Schedule in bulk"}

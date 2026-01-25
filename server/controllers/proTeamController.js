@@ -57,6 +57,12 @@ export const ProTeamController = {
     // Get current user's team
     async getTeam(req, res) {
         try {
+            // Validate user is authenticated
+            if (!req.user || !req.user.id) {
+                console.error('[getTeam] Missing user authentication', { user: req.user });
+                return res.status(401).json({ error: 'User not authenticated' });
+            }
+
             const userId = req.user.id;
             const team = await TeamService.getUserTeam(userId);
             
@@ -72,14 +78,20 @@ export const ProTeamController = {
                 }
             });
         } catch (error) {
-            console.error('Get team error:', error);
-            res.status(500).json({ error: 'Failed to get team information' });
+            console.error('[getTeam] Error:', error);
+            res.status(500).json({ error: 'Failed to get team information', details: error.message });
         }
     },
 
     // Create a team (for Pro users)
     async createTeam(req, res) {
         try {
+            // Validate user is authenticated
+            if (!req.user || !req.user.id) {
+                console.error('[createTeam] Missing user authentication', { user: req.user });
+                return res.status(401).json({ error: 'User not authenticated' });
+            }
+
             const userId = req.user.id;
             const { teamName } = req.body;
 
@@ -102,21 +114,39 @@ export const ProTeamController = {
             }
 
             const team = await TeamService.createTeam(userId, teamName || `${req.user.email}'s Team`);
-            res.json({ success: true, team });
+            res.json({ 
+                success: true, 
+                team: {
+                    ...team,
+                    canInvite: team.member_count < team.max_members && ['owner', 'admin'].includes(team.user_role)
+                }
+            });
         } catch (error) {
-            console.error('Create team error:', error);
-            res.status(500).json({ error: 'Failed to create team' });
+            console.error('[createTeam] Error:', error);
+            res.status(500).json({ error: error.message || 'Failed to create team' });
         }
     },
 
     // Invite user to team
     async inviteUser(req, res) {
         try {
+            // Validate user is authenticated
+            if (!req.user || !req.user.id) {
+                console.error('[inviteUser] Missing user authentication', { user: req.user });
+                return res.status(401).json({ error: 'User not authenticated' });
+            }
+
             const userId = req.user.id;
-            const { email } = req.body;
+            const { email, role } = req.body;
 
             if (!email || !/\S+@\S+\.\S+/.test(email)) {
                 return res.status(400).json({ error: 'Valid email is required' });
+            }
+
+            // Validate role if provided
+            const validRoles = ['owner', 'admin', 'editor', 'viewer'];
+            if (role && !validRoles.includes(role)) {
+                return res.status(400).json({ error: 'Invalid role specified' });
             }
 
             // Get user's team
@@ -125,10 +155,10 @@ export const ProTeamController = {
                 return res.status(404).json({ error: 'You are not part of any team' });
             }
 
-            const invitation = await TeamService.inviteToTeam(userTeam.id, userId, email);
+            const invitation = await TeamService.inviteToTeam(userTeam.id, userId, email, role || 'editor');
             const message = invitation.isResend 
-                ? `Invitation resent to ${email}` 
-                : `Invitation sent to ${email}`;
+                ? `Invitation resent to ${email} as ${role || 'editor'}` 
+                : `Invitation sent to ${email} as ${role || 'editor'}`;
             
             res.json({ 
                 success: true, 
@@ -137,12 +167,13 @@ export const ProTeamController = {
                 invitation: {
                     id: invitation.id,
                     email: invitation.email,
+                    role: role || 'editor',
                     expires_at: invitation.expires_at
                 }
             });
         } catch (error) {
-            console.error('Invite user error:', error);
-            res.status(400).json({ error: error.message });
+            console.error('[inviteUser] Error:', error);
+            res.status(400).json({ error: error.message || 'Failed to invite user' });
         }
     },
 
@@ -349,6 +380,12 @@ export const ProTeamController = {
     // Leave team
     async leaveTeam(req, res) {
         try {
+            // Validate user is authenticated
+            if (!req.user || !req.user.id) {
+                console.error('[leaveTeam] Missing user authentication', { user: req.user });
+                return res.status(401).json({ error: 'User not authenticated' });
+            }
+
             const userId = req.user.id;
 
             // Get user's team
@@ -366,8 +403,26 @@ export const ProTeamController = {
             await TeamService.removeMember(userTeam.id, userId, userId);
             res.json({ success: true, message: 'You have left the team' });
         } catch (error) {
-            console.error('Leave team error:', error);
-            res.status(400).json({ error: error.message });
+            console.error('[leaveTeam] Error:', error);
+            res.status(500).json({ error: error.message || 'Failed to leave team' });
+        }
+    },
+
+    // Delete team (owner only)
+    async deleteTeam(req, res) {
+        try {
+            // Validate user is authenticated
+            if (!req.user || !req.user.id) {
+                console.error('[deleteTeam] Missing user authentication', { user: req.user });
+                return res.status(401).json({ error: 'User not authenticated' });
+            }
+
+            const userId = req.user.id;
+            await TeamService.deleteTeam(userId);
+            res.json({ success: true, message: 'Team deleted' });
+        } catch (error) {
+            console.error('[deleteTeam] Error:', error);
+            res.status(500).json({ error: error.message || 'Failed to delete team' });
         }
     },
 
