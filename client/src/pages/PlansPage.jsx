@@ -236,7 +236,7 @@ const PlansPage = () => {
                     setUpgrading(true);
                     try {
                       // Start 14-day free trial (no payment)
-                      const response = await api.post('/plans/upgrade-plan', {
+                      const response = await api.post('/plans/upgrade', {
                         planType: 'pro',
                         isTrial: true
                       });
