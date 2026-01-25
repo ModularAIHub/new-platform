@@ -104,7 +104,7 @@ export const TeamService = {
     },
 
     // Invite a user to team
-    async inviteToTeam(teamId, inviterUserId, inviteEmail) {
+    async inviteToTeam(teamId, inviterUserId, inviteEmail, role = 'editor') {
         // Check if inviter has permission
         const inviter = await query(
             `SELECT tm.role, t.max_members, t.owner_id
@@ -158,19 +158,34 @@ export const TeamService = {
             // Update existing invitation with new token and expiry (allows resending)
             invitation = await query(
                 `UPDATE team_invitations 
-                 SET token = $1, expires_at = $2, created_at = CURRENT_TIMESTAMP, invited_by = $3
-                 WHERE id = $4
+                 SET token = $1, expires_at = $2, created_at = CURRENT_TIMESTAMP, invited_by = $3, role = $4
+                 WHERE id = $5
                  RETURNING *`,
-                [token, expiresAt, inviterUserId, existingInvite.rows[0].id]
+                [token, expiresAt, inviterUserId, role, existingInvite.rows[0].id]
             );
             isResend = true;
+
+            // Update pending team_members entry with new role
+            await query(
+                `UPDATE team_members 
+                 SET role = $1
+                 WHERE team_id = $2 AND email = $3 AND status = 'pending'`,
+                [role, teamId, inviteEmail]
+            );
         } else {
             // Create new invitation
             invitation = await query(
-                `INSERT INTO team_invitations (team_id, email, invited_by, token, expires_at)
-                 VALUES ($1, $2, $3, $4, $5)
+                `INSERT INTO team_invitations (team_id, email, invited_by, token, expires_at, role)
+                 VALUES ($1, $2, $3, $4, $5, $6)
                  RETURNING *`,
-                [teamId, inviteEmail, inviterUserId, token, expiresAt]
+                [teamId, inviteEmail, inviterUserId, token, expiresAt, role]
+            );
+
+            // Create a pending team_members entry with the specified role
+            await query(
+                `INSERT INTO team_members (team_id, email, role, status)
+                 VALUES ($1, $2, $3, 'pending')`,
+                [teamId, inviteEmail, role]
             );
         }
 
@@ -416,5 +431,32 @@ export const TeamService = {
         `, [teamId]);
 
         return accounts.rows;
+    },
+
+    // Delete team (owner only)
+    async deleteTeam(ownerUserId) {
+        // Verify requester is owner and get team id
+        const teamResult = await query(
+            `SELECT tm.team_id FROM team_members tm 
+             WHERE tm.user_id = $1 AND tm.role = 'owner' AND tm.status = 'active'
+             LIMIT 1`,
+            [ownerUserId]
+        );
+
+        if (!teamResult.rows[0]) {
+            throw new Error('Only team owners can delete the team');
+        }
+
+        const teamId = teamResult.rows[0].team_id;
+
+        // Remove related data. No transaction helper here, so run sequentially.
+        await query('DELETE FROM team_invitations WHERE team_id = $1', [teamId]);
+        await query('DELETE FROM user_social_accounts WHERE team_id = $1', [teamId]);
+        await query('DELETE FROM team_accounts WHERE team_id = $1', [teamId]);
+        await query('UPDATE users SET current_team_id = NULL WHERE current_team_id = $1', [teamId]);
+        await query('DELETE FROM team_members WHERE team_id = $1', [teamId]);
+        await query('DELETE FROM teams WHERE id = $1', [teamId]);
+
+        return { success: true };
     }
 };

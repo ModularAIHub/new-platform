@@ -43,6 +43,9 @@ router.delete('/social-accounts/:accountId', ProTeamController.disconnectAccount
 // Leave team
 router.post('/leave', ProTeamController.leaveTeam);
 
+// Delete team (owner only)
+router.delete('/', ProTeamController.deleteTeam);
+
 // Get user's role permissions and limits
 router.get('/permissions', ProTeamController.getUserPermissions);
 

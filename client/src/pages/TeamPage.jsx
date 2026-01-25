@@ -1,6 +1,6 @@
 // TeamPage.jsx - Pro plan team collaboration
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, Mail, UserX, Crown, Shield, Eye, Edit, Linkedin, Twitter, ExternalLink, Globe, MessageSquare } from 'lucide-react';
+import { Users, Plus, Mail, UserX, Crown, Shield, Eye, Edit, Linkedin, Twitter, ExternalLink, Globe, MessageSquare, LogOut, Trash2, RefreshCw } from 'lucide-react';
 import usePlanAccess from '../hooks/usePlanAccess';
 import UpgradePrompt from '../components/UpgradePrompt';
 import api from '../utils/api';
@@ -10,26 +10,31 @@ const TeamPage = () => {
     const [loading, setLoading] = useState(true);
     const [inviteEmail, setInviteEmail] = useState('');
     const [inviteRole, setInviteRole] = useState('editor');
+    const [teamName, setTeamName] = useState('');
     const [isInviting, setIsInviting] = useState(false);
+    const [leaving, setLeaving] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
     const [showUpgrade, setShowUpgrade] = useState(false);
     const [socialAccounts, setSocialAccounts] = useState([]);
     const [socialAccountsApiResponse, setSocialAccountsApiResponse] = useState(null);
     const [userPermissions, setUserPermissions] = useState({ role: null, permissions: [], limits: null });
     const [connecting, setConnecting] = useState(null);
-    const { hasFeatureAccess, userPlan, refreshPlanInfo } = usePlanAccess();
+    const { hasFeatureAccess, userPlan, refreshPlanInfo, loading: planLoading } = usePlanAccess();
     const [hasRetriedCreate, setHasRetriedCreate] = useState(false);
 
     const hasTeamAccess = hasFeatureAccess('team_collaboration');
 
     useEffect(() => {
-        if (hasTeamAccess) {
-            fetchTeam();
+        fetchTeam();
+    }, []);
+
+    useEffect(() => {
+        if (team) {
             fetchSocialAccounts();
             fetchUserPermissions();
-        } else {
-            setLoading(false);
         }
-    }, [hasTeamAccess]);
+    }, [team]);
 
     // Handle OAuth callback success
     useEffect(() => {
@@ -66,7 +71,7 @@ const TeamPage = () => {
 
     const createTeam = async () => {
         try {
-            const response = await api.post('/pro-team', { teamName: 'My Team' });
+            const response = await api.post('/pro-team', { teamName: teamName || 'My Team' });
             const data = response.data;
 
             if (data.success) {
@@ -222,6 +227,69 @@ const TeamPage = () => {
         }
     };
 
+    const leaveTeam = async () => {
+        if (!team || team.user_role === 'owner') return;
+        if (!confirm('Leave this team? You will lose access to its shared accounts and content.')) return;
+        setLeaving(true);
+        try {
+            const response = await api.post('/pro-team/leave');
+            if (response.data?.success) {
+                setTeam(null);
+                setSocialAccounts([]);
+                setSocialAccountsApiResponse(null);
+                setInviteEmail('');
+                setInviteRole('editor');
+                alert('You have left the team.');
+            } else {
+                alert(response.data?.error || 'Failed to leave team');
+            }
+        } catch (error) {
+            console.error('Failed to leave team:', error);
+            alert(error.response?.data?.error || 'Failed to leave team');
+        } finally {
+            setLeaving(false);
+        }
+    };
+
+    const deleteTeam = async () => {
+        if (!team || team.user_role !== 'owner') return;
+        if (!confirm('Delete this team permanently? All members will lose access and connected accounts will be removed.')) return;
+        setDeleting(true);
+        try {
+            const response = await api.delete('/pro-team');
+            if (response.data?.success) {
+                setTeam(null);
+                setSocialAccounts([]);
+                setSocialAccountsApiResponse(null);
+                setInviteEmail('');
+                setInviteRole('editor');
+                alert('Team deleted.');
+            } else {
+                alert(response.data?.error || 'Failed to delete team');
+            }
+        } catch (error) {
+            console.error('Failed to delete team:', error);
+            alert(error.response?.data?.error || 'Failed to delete team');
+        } finally {
+            setDeleting(false);
+        }
+    };
+
+    const refreshPage = async () => {
+        setRefreshing(true);
+        try {
+            await Promise.all([
+                fetchTeam(),
+                fetchSocialAccounts(),
+                fetchUserPermissions()
+            ]);
+        } catch (error) {
+            console.error('Failed to refresh:', error);
+        } finally {
+            setRefreshing(false);
+        }
+    };
+
     const getPlatformIcon = (platform) => {
         switch (platform?.toLowerCase()) {
             case 'linkedin': return <Linkedin className="h-5 w-5 text-blue-600" />;
@@ -234,17 +302,25 @@ const TeamPage = () => {
     };
 
     const updateMemberRole = async (memberId, newRole) => {
+        // Optimistic update - update UI immediately
+        const previousMembers = team.members;
+        setTeam(prev => ({
+            ...prev,
+            members: prev.members.map(m => 
+                m.id === memberId ? { ...m, role: newRole } : m
+            )
+        }));
+
         try {
-            console.log('Updating role for member:', memberId, 'to:', newRole);
             const response = await api.put(`/pro-team/members/${memberId}/role`, { role: newRole });
-            console.log('Update response:', response);
             
-            // Always refresh on successful API call
+            // Refresh to ensure consistency
             await fetchTeam();
-            console.log('Team data refreshed after role update');
             
         } catch (error) {
             console.error('Failed to update member role:', error);
+            // Revert on error
+            setTeam(prev => ({ ...prev, members: previousMembers }));
             const errorMessage = error.response?.data?.error || error.message || 'Failed to update member role';
             alert(errorMessage);
         }
@@ -276,7 +352,7 @@ const TeamPage = () => {
         window.location.href = 'http://localhost:5174';
     };
 
-    if (loading) {
+    if (loading || planLoading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600"></div>
@@ -284,8 +360,8 @@ const TeamPage = () => {
         );
     }
 
-    // Free plan users see upgrade prompt
-    if (!hasTeamAccess) {
+    // No team and no Pro access - show upgrade
+    if (!team && !hasTeamAccess) {
         return (
             <div className="max-w-4xl mx-auto p-6">
                 <div className="text-center mb-8">
@@ -324,25 +400,24 @@ const TeamPage = () => {
                     </button>
                 </div>
 
-                {showUpgrade && (
-                    <UpgradePrompt
-                        feature="Team Collaboration"
-                        description="Invite team members and collaborate on your social media strategy"
-                        benefits={[
-                            "Invite up to 5 team members",
-                            "Connect up to 8 social accounts",
-                            "Shared content calendar",
-                            "Team analytics dashboard"
-                        ]}
-                        onClose={() => setShowUpgrade(false)}
-                    />
-                )}
+                <UpgradePrompt
+                    isOpen={showUpgrade}
+                    feature="Team Collaboration"
+                    description="Invite team members and collaborate on your social media strategy"
+                    benefits={[
+                        "Invite up to 5 team members",
+                        "Connect up to 8 social accounts",
+                        "Shared content calendar",
+                        "Team analytics dashboard"
+                    ]}
+                    onClose={() => setShowUpgrade(false)}
+                />
             </div>
         );
     }
 
-    // Pro users without a team yet
-    if (!team) {
+    // Has Pro access but no team yet - show create team
+    if (!team && hasTeamAccess) {
         return (
             <div className="max-w-4xl mx-auto p-6">
                 <div className="text-center mb-8">
@@ -351,15 +426,31 @@ const TeamPage = () => {
                     <p className="text-gray-600">Start collaborating with your team members</p>
                 </div>
 
-                <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-                    <h3 className="text-xl font-semibold text-gray-900 mb-4">Ready to build your team?</h3>
-                    <p className="text-gray-600 mb-6">
+                <div className="bg-white border border-gray-200 rounded-lg p-8">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-4 text-center">Ready to build your team?</h3>
+                    <p className="text-gray-600 mb-6 text-center">
                         Create a team workspace where you can invite up to 5 members to collaborate on your social media strategy.
                     </p>
                     
+                    <div className="mb-6">
+                        <label htmlFor="teamName" className="block text-sm font-medium text-gray-700 mb-2">
+                            Team Name (optional)
+                        </label>
+                        <input
+                            id="teamName"
+                            type="text"
+                            value={teamName}
+                            onChange={(e) => setTeamName(e.target.value)}
+                            placeholder="e.g., Marketing Team, Content Creators, Social Squad"
+                            maxLength="50"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">{teamName.length}/50 characters</p>
+                    </div>
+                    
                     <button
                         onClick={createTeam}
-                        className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                        className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
                     >
                         Create Team
                     </button>
@@ -368,14 +459,49 @@ const TeamPage = () => {
         );
     }
 
-    // Pro users with a team
+    // Has team - show team page
     return (
         <div className="max-w-4xl mx-auto p-6">
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">{team.name}</h1>
-                <p className="text-gray-600">
-                    {team.member_count} of {team.max_members} members • Pro Plan
-                </p>
+            <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-900 mb-2">{team.name}</h1>
+                    <p className="text-gray-600">
+                        {team.member_count} of {team.max_members} members • Pro Plan
+                    </p>
+                </div>
+                {team.user_role !== 'owner' && (
+                    <button
+                        onClick={leaveTeam}
+                        disabled={leaving}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-red-200 text-red-700 hover:bg-red-50 disabled:opacity-50"
+                        title="Leave this team"
+                    >
+                        <LogOut className="h-4 w-4" />
+                        {leaving ? 'Leaving...' : 'Leave Team'}
+                    </button>
+                )}
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={refreshPage}
+                        disabled={refreshing}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                        title="Refresh this page"
+                    >
+                        <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                        {refreshing ? 'Refreshing...' : 'Refresh'}
+                    </button>
+                    {team.user_role === 'owner' && (
+                        <button
+                            onClick={deleteTeam}
+                            disabled={deleting}
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-50"
+                            title="Delete this team"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                            {deleting ? 'Deleting...' : 'Delete Team'}
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Invite Section */}

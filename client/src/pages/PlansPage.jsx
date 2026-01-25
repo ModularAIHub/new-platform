@@ -43,8 +43,8 @@ const PlansPage = () => {
     },
     {
       name: 'Professional',
-      price: '$1500',
-      monthlyPrice: '$29',
+      price: '₹399',
+      monthlyPrice: '₹399',
       description: 'Everything you need to scale your social presence',
       features: [
         'Unlimited automated posts',
@@ -55,6 +55,7 @@ const PlansPage = () => {
         'Custom content templates',
         'Bulk content generation',
         'Multi-account management',
+        'Team collaboration (up to 5 members)',
         'Priority email support',
         'Content calendar',
         'Hashtag optimization',
@@ -141,6 +142,10 @@ const PlansPage = () => {
     {
       question: 'What kind of support do you provide?',
       answer: 'Starter users get email support, Professional users get priority email support, and Enterprise customers receive dedicated 24/7 phone support with a dedicated account manager.'
+    },
+    {
+      question: 'Where do I manage my team after upgrading to Pro?',
+      answer: 'After upgrading to Pro, you can visit the /team page on your dashboard to create or manage your team. You\'ll be able to invite members, manage social accounts, and collaborate with your team on content creation.'
     }
   ];
 
@@ -189,8 +194,11 @@ const PlansPage = () => {
                     <span className="text-gray-500 ml-1">/month</span>
                   )}
                 </div>
-                {plan.price !== 'Free' && plan.price !== 'Custom' && (
-                  <p className="text-sm text-gray-500 mt-1">Billed annually: {plan.price}</p>
+                {plan.price !== 'Free' && plan.price !== 'Custom' && plan.name === 'Professional' && (
+                  <div className="mt-2">
+                    <p className="text-sm text-green-600 font-medium">✨ Free 14-day trial</p>
+                    <p className="text-xs text-gray-500 mt-1">Then ₹399 per month</p>
+                  </div>
                 )}
               </div>
 
@@ -217,40 +225,31 @@ const PlansPage = () => {
                     return;
                   }
                   
-                  // If user is logged in and clicking Professional plan, upgrade directly
-                  if (plan.name === 'Professional' && user) {
-                    setUpgrading(true);
-                    try {
-                      console.log('Starting Pro trial upgrade for logged-in user...');
-                      const upgradeResponse = await api.post('/plans/upgrade', {
-                        planType: 'pro',
-                        isTrial: true
-                      });
-                      console.log('Upgrade API response:', upgradeResponse.data);
-                      
-                      const bonusCredits = upgradeResponse.data.newPlan?.bonusCredits || 150;
-                      toast.success(
-                        `🎉 Welcome to Pro! Your 14-day trial has started.\n\n✨ You now have:\n• Unlimited posts\n• All platforms unlocked\n• ${bonusCredits.toLocaleString()} bonus credits!`,
-                        { duration: 6000 }
-                      );
-                      
-                      // Reload to refresh user data
-                      window.location.reload();
-                    } catch (error) {
-                      console.error('Pro upgrade error:', error);
-                      console.error('Error details:', error.response?.data);
-                      toast.error(error.response?.data?.error || 'Failed to activate Pro trial. Please try again.');
-                    } finally {
-                      setUpgrading(false);
-                    }
+                  // If not logged in, redirect to signup
+                  if (!user) {
+                    navigate('/signup');
                     return;
                   }
                   
-                  // For logged-out users, go to registration with plan parameter
+                  // If user is logged in and clicking Professional plan, start trial
                   if (plan.name === 'Professional') {
-                    navigate('/register?plan=pro');
-                  } else {
-                    navigate('/register');
+                    setUpgrading(true);
+                    try {
+                      // Start 14-day free trial (no payment)
+                      const response = await api.post('/plans/upgrade-plan', {
+                        planType: 'pro',
+                        isTrial: true
+                      });
+                      
+                      toast.success(`🎉 Welcome to Pro! Your 14-day trial starts now!\n✨ ${response.data.message}`);
+                      // Redirect to Team page after successful upgrade
+                      setTimeout(() => navigate('/team'), 1500);
+                    } catch (error) {
+                      console.error('Trial activation error:', error);
+                      toast.error(error.response?.data?.error || 'Failed to activate trial');
+                      setUpgrading(false);
+                    }
+                    return;
                   }
                 }}
                 disabled={upgrading}
@@ -260,7 +259,7 @@ const PlansPage = () => {
                     : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                 } ${upgrading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                {upgrading ? 'Upgrading...' : (plan.name === 'Professional' && user?.planType === 'pro' ? 'Current Plan ✓' : plan.buttonText)}
+                {upgrading ? 'Processing...' : (plan.name === 'Professional' && user?.planType === 'pro' ? 'Current Plan ✓' : plan.buttonText)}
               </button>
             </div>
           ))}
@@ -326,6 +325,51 @@ const PlansPage = () => {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      {/* Team Collaboration Feature Section */}
+      <div className="py-16 bg-gradient-to-r from-blue-50 to-indigo-50">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">👥 Team Collaboration</h2>
+            <p className="text-xl text-gray-600">Bring your team together and collaborate on content</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+              <div className="text-4xl mb-4">👤</div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Invite Members</h3>
+              <p className="text-gray-600">Invite up to 5 team members to collaborate on your social media strategy. Assign roles based on permissions.</p>
+            </div>
+
+            <div className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+              <div className="text-4xl mb-4">🔗</div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Shared Accounts</h3>
+              <p className="text-gray-600">Connect and share up to 8 social media accounts with your team. Everyone can create content together.</p>
+            </div>
+
+            <div className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+              <div className="text-4xl mb-4">📊</div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Team Analytics</h3>
+              <p className="text-gray-600">View performance metrics across all team accounts. Track engagement and optimize together.</p>
+            </div>
+          </div>
+
+          <div className="mt-12 bg-white rounded-lg p-8 border-2 border-blue-500">
+            <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center">Get Started with Your Team</h3>
+            <p className="text-gray-600 text-center mb-6">
+              After upgrading to Pro, you'll be able to visit the <span className="font-semibold text-blue-600">/team</span> dashboard where you can create a team, invite members, and start collaborating.
+            </p>
+            <div className="text-center">
+              <button
+                onClick={() => navigate('/plans')}
+                className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+              >
+                Start Your 14-Day Free Trial
+              </button>
+            </div>
           </div>
         </div>
       </div>

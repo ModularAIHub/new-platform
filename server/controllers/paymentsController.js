@@ -20,7 +20,7 @@ const CREDIT_PACKAGES = {
 };
 
 const PLAN_PACKAGES = {
-    pro: { price: 499, name: 'Autoverse Pro Plan' },
+    pro: { price: 399, name: 'Autoverse Pro Plan' },
     enterprise: { price: 1100, name: 'Enterprise Plan' }
 };
 

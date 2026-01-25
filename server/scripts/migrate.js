@@ -14,6 +14,18 @@ const migrations = [
     `
   },
   {
+    version: 12,
+    name: 'add_role_to_team_invitations',
+    sql: `
+      ALTER TABLE team_invitations
+      ADD COLUMN IF NOT EXISTS role VARCHAR(50) NOT NULL DEFAULT 'editor';
+
+      UPDATE team_invitations
+      SET role = 'editor'
+      WHERE role IS NULL;
+    `
+  },
+  {
     version: 2,
     name: 'create_users_table',
     sql: `
