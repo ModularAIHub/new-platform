@@ -85,7 +85,7 @@ const corsOptions = {
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-CSRF-Token', 'X-Requested-With'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-CSRF-Token', 'X-Requested-With', 'X-Selected-Account-Id'],
     optionsSuccessStatus: 200,
 };
 
@@ -97,6 +97,16 @@ app.use((req, res, next) => {
 });
 
 app.use(cors(corsOptions));
+// Ensure ACAO echoes the exact requesting origin for suitegenie subdomains
+app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (origin && (allowedOrigins.includes(origin) || /\.suitegenie\.in$/.test(new URL(origin).hostname))) {
+        res.header('Access-Control-Allow-Origin', origin);
+        res.header('Access-Control-Allow-Credentials', 'true');
+        res.header('Vary', 'Origin');
+    }
+    next();
+});
 app.options('*', cors(corsOptions));
 
 // Body parsing middleware
