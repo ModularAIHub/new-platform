@@ -31,7 +31,7 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      connectSrc: ["'self'", "http://localhost:*", "https://api.twitter.com"],
+      connectSrc: ["'self'", "http://localhost:*", "https://api.twitter.com", "https://*.suitegenie.in", "https://suitegenie.in"],
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:", "https:", "http:"],
@@ -69,44 +69,68 @@ const allowedOrigins = [
 
 const corsOptions = {
     origin: function (origin, callback) {
-        if (process.env.NODE_ENV === 'development') {
-            return callback(null, true);
-        }
+        // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
-        if (origin.includes('localhost')) {
-            // Allow localhost only for dev/testing hitting prod API (optional)
-            return callback(null, true);
+
+        // Check if origin is in allowed list or is a subdomain of suitegenie.in
+        let isAllowed = false;
+        if (allowedOrigins.includes(origin) || origin.includes('localhost')) {
+            isAllowed = true;
+        } else {
+            try {
+                const hostname = new URL(origin).hostname;
+                if (hostname === 'suitegenie.in' || hostname.endsWith('.suitegenie.in')) {
+                    isAllowed = true;
+                }
+            } catch (err) {
+                isAllowed = false;
+            }
         }
-        if (allowedOrigins.includes(origin)) {
-            return callback(null, origin);
+
+        if (isAllowed || process.env.NODE_ENV === 'development') {
+            return callback(null, origin); // Reflect the actual origin string
         }
+
         console.log('CORS blocked origin:', origin);
         return callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-CSRF-Token', 'X-Requested-With', 'X-Selected-Account-Id'],
+    exposedHeaders: ['Set-Cookie'], // Allow client to see Set-Cookie if needed
     optionsSuccessStatus: 200,
 };
 
+app.use(cors(corsOptions));
+
+// Explicitly set CORS headers as a fallback and for non-cors-middleware-covered routes
 app.use((req, res, next) => {
-    if (req.method === 'OPTIONS') {
-        console.log(`[CORS] Preflight ${req.originalUrl} origin=${req.headers.origin || 'n/a'}`);
+    const origin = req.headers.origin;
+    if (origin) {
+        let isAllowed = false;
+        if (allowedOrigins.includes(origin) || origin.includes('localhost')) {
+            isAllowed = true;
+        } else {
+            try {
+                const hostname = new URL(origin).hostname;
+                if (hostname === 'suitegenie.in' || hostname.endsWith('.suitegenie.in')) {
+                    isAllowed = true;
+                }
+            } catch (err) {
+                isAllowed = false;
+            }
+        }
+
+        if (isAllowed || process.env.NODE_ENV === 'development') {
+            res.header('Access-Control-Allow-Origin', origin);
+            res.header('Access-Control-Allow-Credentials', 'true');
+            res.header('Vary', 'Origin');
+        }
     }
     next();
 });
 
-app.use(cors(corsOptions));
-// Ensure ACAO echoes the exact requesting origin for suitegenie subdomains
-app.use((req, res, next) => {
-    const origin = req.headers.origin;
-    if (origin && (allowedOrigins.includes(origin) || /\.suitegenie\.in$/.test(new URL(origin).hostname))) {
-        res.header('Access-Control-Allow-Origin', origin);
-        res.header('Access-Control-Allow-Credentials', 'true');
-        res.header('Vary', 'Origin');
-    }
-    next();
-});
+// Handle preflight for all routes
 app.options('*', cors(corsOptions));
 
 // Body parsing middleware
@@ -134,6 +158,8 @@ const csrfProtection = csurf({
     cookie: csrfCookieOptions,
     ignoreMethods: ['GET', 'HEAD', 'OPTIONS'],
     skip: (req) => {
+        // Skip CSRF for refresh token endpoint
+        if (req.path === '/api/auth/refresh') return true;
         // Skip CSRF for SSO token generation (used by other services)
         if (req.path === '/api/team/sso-token') return true;
         // Skip CSRF for webhook endpoints
@@ -174,6 +200,27 @@ app.use('/api', apiRouter);
 // Detailed CSRF error logging
 app.use((err, req, res, next) => {
     if (err && err.code === 'EBADCSRFTOKEN') {
+        const origin = req.headers.origin;
+        if (origin) {
+            let isAllowed = false;
+            if (allowedOrigins.includes(origin) || origin.includes('localhost')) {
+                isAllowed = true;
+            } else {
+                try {
+                    const hostname = new URL(origin).hostname;
+                    if (hostname === 'suitegenie.in' || hostname.endsWith('.suitegenie.in')) {
+                        isAllowed = true;
+                    }
+                } catch (e) {
+                    isAllowed = false;
+                }
+            }
+            if (isAllowed) {
+                res.header('Access-Control-Allow-Origin', origin);
+                res.header('Access-Control-Allow-Credentials', 'true');
+            }
+        }
+        
         console.error('[CSRF ERROR]', {
             path: req.originalUrl,
             method: req.method,
@@ -190,6 +237,27 @@ app.use((err, req, res, next) => {
 // Generic error logger (before custom error handler)
 app.use((err, req, res, next) => {
     if (err) {
+        const origin = req.headers.origin;
+        if (origin) {
+            let isAllowed = false;
+            if (allowedOrigins.includes(origin) || origin.includes('localhost')) {
+                isAllowed = true;
+            } else {
+                try {
+                    const hostname = new URL(origin).hostname;
+                    if (hostname === 'suitegenie.in' || hostname.endsWith('.suitegenie.in')) {
+                        isAllowed = true;
+                    }
+                } catch (e) {
+                    isAllowed = false;
+                }
+            }
+            if (isAllowed) {
+                res.header('Access-Control-Allow-Origin', origin);
+                res.header('Access-Control-Allow-Credentials', 'true');
+            }
+        }
+
         console.error('[REQUEST ERROR]', {
             path: req.originalUrl,
             method: req.method,
