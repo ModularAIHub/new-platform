@@ -9,12 +9,17 @@ export const CreditResetController = {
     try {
       console.log('[CREDIT RESET] Manual monthly reset triggered by admin');
       
-      // Update credits in DB: 55 for BYOK, 25 for Platform, 0 for unset preference
+      // Update credits based on BOTH plan_type and api_key_preference
+      // Free: 50 (platform) / 100 (BYOK) | Pro: 150 (platform) / 300 (BYOK) | Enterprise: 500 (platform) / 1000 (BYOK)
       const updateResult = await query(`
         UPDATE users 
         SET credits_remaining = CASE 
-            WHEN api_key_preference = 'byok' THEN 55 
-            WHEN api_key_preference = 'platform' THEN 25 
+            WHEN COALESCE(plan_type, 'free') = 'free' AND api_key_preference = 'platform' THEN 50
+            WHEN COALESCE(plan_type, 'free') = 'free' AND api_key_preference = 'byok' THEN 100
+            WHEN plan_type = 'pro' AND api_key_preference = 'platform' THEN 150
+            WHEN plan_type = 'pro' AND api_key_preference = 'byok' THEN 300
+            WHEN plan_type = 'enterprise' AND api_key_preference = 'platform' THEN 500
+            WHEN plan_type = 'enterprise' AND api_key_preference = 'byok' THEN 1000
             ELSE 0 
         END,
         last_credit_reset = NOW()
@@ -25,17 +30,32 @@ export const CreditResetController = {
 
       // Fetch all users with preferences and sync Redis cache
       const { rows: users } = await query(`
-        SELECT id, api_key_preference, credits_remaining 
+        SELECT id, api_key_preference, plan_type, credits_remaining 
         FROM users 
         WHERE api_key_preference IS NOT NULL
       `);
       
       let redisUpdates = 0;
+      const statsByTier = {
+        'free-platform': 0,
+        'free-byok': 0,
+        'pro-platform': 0,
+        'pro-byok': 0,
+        'enterprise-platform': 0,
+        'enterprise-byok': 0
+      };
+      
       for (const user of users) {
         try {
           // Update Redis cache with new credit balance
           await redisClient.setCredits(user.id, user.credits_remaining);
           redisUpdates++;
+          
+          // Track stats
+          const tier = `${user.plan_type || 'free'}-${user.api_key_preference}`;
+          if (statsByTier[tier] !== undefined) {
+            statsByTier[tier]++;
+          }
         } catch (redisError) {
           console.error(`[CREDIT RESET] Failed to update Redis for user ${user.id}:`, redisError.message);
         }
@@ -43,6 +63,7 @@ export const CreditResetController = {
       
       console.log(`[CREDIT RESET] Manual reset completed successfully!`);
       console.log(`[CREDIT RESET] Database updates: ${updateResult.rowCount}, Redis updates: ${redisUpdates}`);
+      console.log('[CREDIT RESET] Stats by tier:', statsByTier);
       
       res.json({
         success: true,
@@ -50,6 +71,7 @@ export const CreditResetController = {
         stats: {
           databaseUpdates: updateResult.rowCount,
           redisUpdates,
+          byTier: statsByTier,
           timestamp: new Date().toISOString()
         }
       });
@@ -70,12 +92,18 @@ export const CreditResetController = {
       const now = new Date();
       const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
       
-      // Get last reset info from database
+      // Get last reset info from database with plan breakdown
       const { rows } = await query(`
         SELECT 
           COUNT(*) as total_users,
           COUNT(CASE WHEN api_key_preference = 'byok' THEN 1 END) as byok_users,
           COUNT(CASE WHEN api_key_preference = 'platform' THEN 1 END) as platform_users,
+          COUNT(CASE WHEN COALESCE(plan_type, 'free') = 'free' AND api_key_preference = 'platform' THEN 1 END) as free_platform,
+          COUNT(CASE WHEN COALESCE(plan_type, 'free') = 'free' AND api_key_preference = 'byok' THEN 1 END) as free_byok,
+          COUNT(CASE WHEN plan_type = 'pro' AND api_key_preference = 'platform' THEN 1 END) as pro_platform,
+          COUNT(CASE WHEN plan_type = 'pro' AND api_key_preference = 'byok' THEN 1 END) as pro_byok,
+          COUNT(CASE WHEN plan_type = 'enterprise' AND api_key_preference = 'platform' THEN 1 END) as enterprise_platform,
+          COUNT(CASE WHEN plan_type = 'enterprise' AND api_key_preference = 'byok' THEN 1 END) as enterprise_byok,
           MAX(last_credit_reset) as last_global_reset
         FROM users 
         WHERE api_key_preference IS NOT NULL
@@ -91,11 +119,20 @@ export const CreditResetController = {
           userStats: {
             totalUsers: parseInt(stats.total_users),
             byokUsers: parseInt(stats.byok_users),
-            platformUsers: parseInt(stats.platform_users)
+            platformUsers: parseInt(stats.platform_users),
+            breakdown: {
+              freePlatform: parseInt(stats.free_platform),
+              freeByok: parseInt(stats.free_byok),
+              proPlatform: parseInt(stats.pro_platform),
+              proByok: parseInt(stats.pro_byok),
+              enterprisePlatform: parseInt(stats.enterprise_platform),
+              enterpriseByok: parseInt(stats.enterprise_byok)
+            }
           },
           creditAmounts: {
-            byok: 55,
-            platform: 25
+            free: { platform: 50, byok: 100 },
+            pro: { platform: 150, byok: 300 },
+            enterprise: { platform: 500, byok: 1000 }
           }
         }
       });

@@ -51,12 +51,19 @@ class SyncWorker {
                 try {
                     console.log(`🔄 Performing monthly credit reset for ${utcMonth + 1}/${utcYear}...`);
                     
-                    // Update credits in DB: 55 for BYOK, 25 for Platform, 0 for unset preference
+                    // Update credits based on BOTH plan_type and api_key_preference
+                    // Free: 50 (platform) / 100 (BYOK)
+                    // Pro: 150 (platform) / 300 (BYOK)
+                    // Enterprise: 500 (platform) / 1000 (BYOK)
                     const updateResult = await query(`
                         UPDATE users 
                         SET credits_remaining = CASE 
-                            WHEN api_key_preference = 'byok' THEN 55 
-                            WHEN api_key_preference = 'platform' THEN 25 
+                            WHEN COALESCE(plan_type, 'free') = 'free' AND api_key_preference = 'platform' THEN 50
+                            WHEN COALESCE(plan_type, 'free') = 'free' AND api_key_preference = 'byok' THEN 100
+                            WHEN plan_type = 'pro' AND api_key_preference = 'platform' THEN 150
+                            WHEN plan_type = 'pro' AND api_key_preference = 'byok' THEN 300
+                            WHEN plan_type = 'enterprise' AND api_key_preference = 'platform' THEN 500
+                            WHEN plan_type = 'enterprise' AND api_key_preference = 'byok' THEN 1000
                             ELSE 0 
                         END,
                         last_credit_reset = NOW()
@@ -67,17 +74,32 @@ class SyncWorker {
 
                     // Fetch all users with preferences and sync Redis cache
                     const { rows: users } = await query(`
-                        SELECT id, api_key_preference, credits_remaining 
+                        SELECT id, api_key_preference, plan_type, credits_remaining 
                         FROM users 
                         WHERE api_key_preference IS NOT NULL
                     `);
                     
                     let redisUpdates = 0;
+                    const statsByTier = {
+                        'free-platform': 0,
+                        'free-byok': 0,
+                        'pro-platform': 0,
+                        'pro-byok': 0,
+                        'enterprise-platform': 0,
+                        'enterprise-byok': 0
+                    };
+                    
                     for (const user of users) {
                         try {
                             // Update Redis cache with new credit balance
                             await redisClient.setCredits(user.id, user.credits_remaining);
                             redisUpdates++;
+                            
+                            // Track stats
+                            const tier = `${user.plan_type || 'free'}-${user.api_key_preference}`;
+                            if (statsByTier[tier] !== undefined) {
+                                statsByTier[tier]++;
+                            }
                         } catch (redisError) {
                             console.error(`❌ Failed to update Redis for user ${user.id}:`, redisError.message);
                         }
@@ -88,7 +110,32 @@ class SyncWorker {
                     
                     console.log(`✅ Monthly credit reset completed successfully!`);
                     console.log(`📈 Database updates: ${updateResult.rowCount}, Redis updates: ${redisUpdates}`);
-                    console.log(`💰 BYOK users: 55 credits, Platform users: 25 credits`);
+                    console.log(`💰 Credit allocation by tier:`);
+                    console.log(`   Free+Platform (50): ${statsByTier['free-platform']} users`);
+                    console.log(`   Free+BYOK (100): ${statsByTier['free-byok']} users`);
+                    console.log(`   Pro+Platform (150): ${statsByTier['pro-platform']} users`);
+                    console.log(`   Pro+BYOK (300): ${statsByTier['pro-byok']} users`);
+                    console.log(`   Enterprise+Platform (500): ${statsByTier['enterprise-platform']} users`);
+                    console.log(`   Enterprise+BYOK (1000): ${statsByTier['enterprise-byok']} users`);
+                    
+                    // TEAM CREDIT RESET - Reset team credits based on owner's plan
+                    console.log(`🔄 Resetting team credits...`);
+                    const teamResetResult = await query(`
+                        UPDATE teams t
+                        SET 
+                          credits_remaining = CASE 
+                            WHEN u.plan_type = 'pro' AND u.api_key_preference = 'platform' THEN 150
+                            WHEN u.plan_type = 'pro' AND u.api_key_preference = 'byok' THEN 300
+                            WHEN u.plan_type = 'enterprise' AND u.api_key_preference = 'platform' THEN 500
+                            WHEN u.plan_type = 'enterprise' AND u.api_key_preference = 'byok' THEN 1000
+                            ELSE 150
+                          END,
+                          plan_type = COALESCE(u.plan_type, 'pro'),
+                          last_credit_reset = NOW()
+                        FROM users u
+                        WHERE t.owner_id = u.id
+                    `);
+                    console.log(`✅ Reset credits for ${teamResetResult.rowCount} teams`);
                     
                 } catch (err) {
                     console.error('❌ Monthly credit reset failed:', err);

@@ -96,6 +96,8 @@ const PlansPage = () => {
   ];
 
   const comparisonFeatures = [
+    { name: 'Monthly Credits (Platform)', starter: '50', professional: '150', enterprise: '500' },
+    { name: 'Monthly Credits (BYOK)', starter: '100', professional: '300', enterprise: '1000' },
     { name: 'Monthly Posts', starter: '5', professional: 'Unlimited', enterprise: 'Unlimited' },
     { name: 'Social Platforms', starter: '1', professional: 'All (3+)', enterprise: 'All (3+)' },
     { name: 'AI Content Generation', starter: 'Basic', professional: 'Advanced', enterprise: 'Advanced' },

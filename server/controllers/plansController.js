@@ -1,16 +1,17 @@
 import { query } from '../config/database.js';
 
 // Plan configurations
+// Credits: Platform API / BYOK (2x multiplier)
 const PLAN_LIMITS = {
     free: {
-        credits: 25,
+        credits: 50, // 100 with BYOK (2x)
         profilesPerPlatform: 1,
         totalSocialAccounts: 2,
         features: ['basic_ai_generation', 'built_in_keys', 'own_keys'],
         support: 'community'
     },
     pro: {
-        credits: 125, // 250 with own keys  
+        credits: 150, // 300 with BYOK (2x)
         profilesPerPlatform: 8,
         totalSocialAccounts: 8,
         features: ['basic_ai_generation', 'built_in_keys', 'own_keys', 'team_collaboration', 'bulk_scheduling', 'advanced_analytics', 'priority_email_support'],
@@ -18,7 +19,7 @@ const PLAN_LIMITS = {
         teamMembers: 5 // max team size including owner
     },
     enterprise: {
-        credits: 500, // 750 with own keys
+        credits: 500, // 1000 with BYOK (2x)
         profilesPerPlatform: 15,
         totalSocialAccounts: 25,
         features: ['basic_ai_generation', 'built_in_keys', 'own_keys', 'team_collaboration', 'bulk_scheduling', 'advanced_analytics', 'priority_support', 'custom_integrations'],
