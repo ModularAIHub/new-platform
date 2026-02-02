@@ -328,20 +328,26 @@ export const TeamService = {
 
     // Remove team member
     async removeMember(teamId, memberUserId, removedByUserId) {
-        // Check permissions
-        const remover = await query(
-            `SELECT role FROM team_members 
-             WHERE team_id = $1 AND user_id = $2 AND status = 'active'`,
-            [teamId, removedByUserId]
-        );
+        // Check if user is removing themselves (leaving) or being removed by admin/owner
+        const isSelfRemoval = memberUserId === removedByUserId;
+        
+        // For self-removal, just check they're a member
+        // For admin removal, check permissions
+        if (!isSelfRemoval) {
+            const remover = await query(
+                `SELECT role FROM team_members 
+                 WHERE team_id = $1 AND user_id = $2 AND status = 'active'`,
+                [teamId, removedByUserId]
+            );
 
-        if (!remover.rows[0] || !['owner', 'admin'].includes(remover.rows[0].role)) {
-            throw new Error('You do not have permission to remove members');
+            if (!remover.rows[0] || !['owner', 'admin'].includes(remover.rows[0].role)) {
+                throw new Error('You do not have permission to remove members');
+            }
         }
 
         // Can't remove owner
         const member = await query(
-            `SELECT role FROM team_members 
+            `SELECT role, email FROM team_members 
              WHERE team_id = $1 AND user_id = $2 AND status = 'active'`,
             [teamId, memberUserId]
         );
@@ -350,12 +356,21 @@ export const TeamService = {
             throw new Error('Cannot remove team owner');
         }
 
-        // Remove member
-        await query(
-            `UPDATE team_members SET status = 'inactive' 
-             WHERE team_id = $1 AND user_id = $2`,
+        if (!member.rows[0]) {
+            throw new Error('Member not found in team');
+        }
+
+        const memberEmail = member.rows[0].email;
+
+        // COMPLETELY DELETE the member entry (not just set inactive)
+        const deleteResult = await query(
+            `DELETE FROM team_members 
+             WHERE team_id = $1 AND user_id = $2
+             RETURNING id`,
             [teamId, memberUserId]
         );
+
+        console.log(`✅ Completely removed member ${memberEmail} from team ${teamId}`);
 
         // Clear user's current team if this was their active team
         await query(
