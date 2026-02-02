@@ -78,19 +78,52 @@ export class RolePermissionsService {
     // Get user's effective permissions in their team
     static async getUserPermissions(userId) {
         try {
-            const userResult = await query(`
-                SELECT tm.role, tm.team_id
-                FROM team_members tm 
-                WHERE tm.user_id = $1 AND tm.status = 'active'
+            // First try to get user's current_team_id from users table
+            const currentTeamResult = await query(`
+                SELECT current_team_id FROM users WHERE id = $1
             `, [userId]);
+            
+            const currentTeamId = currentTeamResult.rows[0]?.current_team_id;
+            
+            let userResult;
+            
+            if (currentTeamId) {
+                // Use the user's selected current team
+                userResult = await query(`
+                    SELECT tm.role, tm.team_id
+                    FROM team_members tm 
+                    WHERE tm.user_id = $1 AND tm.team_id = $2 AND tm.status = 'active'
+                `, [userId, currentTeamId]);
+            }
+            
+            // If no current team or not found, get any active membership
+            if (!userResult || userResult.rows.length === 0) {
+                userResult = await query(`
+                    SELECT tm.role, tm.team_id
+                    FROM team_members tm 
+                    WHERE tm.user_id = $1 AND tm.status = 'active'
+                    ORDER BY 
+                        CASE tm.role 
+                            WHEN 'owner' THEN 1
+                            WHEN 'admin' THEN 2
+                            WHEN 'editor' THEN 3
+                            WHEN 'viewer' THEN 4
+                            ELSE 5
+                        END,
+                        tm.joined_at DESC
+                    LIMIT 1
+                `, [userId]);
+            }
 
             if (userResult.rows.length === 0) {
-                return { role: null, permissions: [], limits: null };
+                return { role: null, permissions: [], limits: null, team_id: null };
             }
 
             const { role, team_id } = userResult.rows[0];
             const permissions = await this.getRolePermissions(role);
             const limits = await this.getRoleLimits(role);
+
+            console.log('[PERMISSIONS] User', userId, 'has role', role, 'in team', team_id);
 
             return {
                 role,
@@ -100,7 +133,7 @@ export class RolePermissionsService {
             };
         } catch (error) {
             console.error('Error getting user permissions:', error);
-            return { role: null, permissions: [], limits: null };
+            return { role: null, permissions: [], limits: null, team_id: null };
         }
     }
 
