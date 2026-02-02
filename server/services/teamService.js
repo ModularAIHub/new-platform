@@ -456,28 +456,72 @@ export const TeamService = {
 
     // Delete team (owner only)
     async deleteTeam(ownerUserId) {
-        // Verify requester is owner and get team id
-        const teamResult = await query(
-            `SELECT tm.team_id FROM team_members tm 
-             WHERE tm.user_id = $1 AND tm.role = 'owner' AND tm.status = 'active'
-             LIMIT 1`,
-            [ownerUserId]
-        );
+        await query('BEGIN');
+        
+        try {
+            // Verify requester is owner and get team id
+            const teamResult = await query(
+                `SELECT tm.team_id, t.name FROM team_members tm 
+                 JOIN teams t ON tm.team_id = t.id
+                 WHERE tm.user_id = $1 AND tm.role = 'owner' AND tm.status = 'active'
+                 LIMIT 1`,
+                [ownerUserId]
+            );
 
-        if (!teamResult.rows[0]) {
-            throw new Error('Only team owners can delete the team');
+            if (!teamResult.rows[0]) {
+                await query('ROLLBACK');
+                throw new Error('Only team owners can delete the team');
+            }
+
+            const teamId = teamResult.rows[0].team_id;
+            const teamName = teamResult.rows[0].name;
+
+            console.log(`🗑️ Deleting team: ${teamName} (${teamId})`);
+
+            // Delete all team-related data
+            // 1. Delete pending invitations
+            const invitationsResult = await query('DELETE FROM team_invitations WHERE team_id = $1', [teamId]);
+            console.log(`   ✓ Deleted ${invitationsResult.rowCount} invitations`);
+
+            // 2. Disconnect social accounts (set team_id to NULL, don't delete accounts)
+            const socialAccountsResult = await query(
+                'UPDATE user_social_accounts SET team_id = NULL WHERE team_id = $1',
+                [teamId]
+            );
+            console.log(`   ✓ Disconnected ${socialAccountsResult.rowCount} social accounts`);
+
+            // 3. Delete team_accounts entries (if table exists)
+            try {
+                const teamAccountsResult = await query('DELETE FROM team_accounts WHERE team_id = $1', [teamId]);
+                console.log(`   ✓ Deleted ${teamAccountsResult.rowCount} team account entries`);
+            } catch (error) {
+                // Table might not exist, ignore error
+                console.log('   ⓘ team_accounts table not found (skipped)');
+            }
+
+            // 4. Clear current_team_id for all users pointing to this team
+            const usersResult = await query(
+                'UPDATE users SET current_team_id = NULL WHERE current_team_id = $1',
+                [teamId]
+            );
+            console.log(`   ✓ Cleared current_team_id for ${usersResult.rowCount} users`);
+
+            // 5. Delete all team members
+            const membersResult = await query('DELETE FROM team_members WHERE team_id = $1', [teamId]);
+            console.log(`   ✓ Removed ${membersResult.rowCount} team members`);
+
+            // 6. Finally, delete the team itself
+            await query('DELETE FROM teams WHERE id = $1', [teamId]);
+            console.log(`   ✓ Deleted team "${teamName}"`);
+
+            await query('COMMIT');
+            console.log(`✅ Team "${teamName}" completely deleted`);
+
+            return { success: true, teamName };
+        } catch (error) {
+            await query('ROLLBACK');
+            console.error('❌ Team deletion failed:', error);
+            throw error;
         }
-
-        const teamId = teamResult.rows[0].team_id;
-
-        // Remove related data. No transaction helper here, so run sequentially.
-        await query('DELETE FROM team_invitations WHERE team_id = $1', [teamId]);
-        await query('DELETE FROM user_social_accounts WHERE team_id = $1', [teamId]);
-        await query('DELETE FROM team_accounts WHERE team_id = $1', [teamId]);
-        await query('UPDATE users SET current_team_id = NULL WHERE current_team_id = $1', [teamId]);
-        await query('DELETE FROM team_members WHERE team_id = $1', [teamId]);
-        await query('DELETE FROM teams WHERE id = $1', [teamId]);
-
-        return { success: true };
     }
 };
