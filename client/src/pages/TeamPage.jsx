@@ -15,6 +15,7 @@ const TeamPage = () => {
     const [leaving, setLeaving] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
+    const [isCreatingTeam, setIsCreatingTeam] = useState(false);
     const [showUpgrade, setShowUpgrade] = useState(false);
     const [socialAccounts, setSocialAccounts] = useState([]);
     const [socialAccountsApiResponse, setSocialAccountsApiResponse] = useState(null);
@@ -70,6 +71,9 @@ const TeamPage = () => {
     };
 
     const createTeam = async () => {
+        if (isCreatingTeam) return; // Prevent double-click
+        
+        setIsCreatingTeam(true);
         try {
             const response = await api.post('/pro-team', { teamName: teamName || 'My Team' });
             const data = response.data;
@@ -107,6 +111,8 @@ const TeamPage = () => {
 
             const errorMessage = error.response?.data?.error || error.message || 'Failed to create team';
             alert(errorMessage);
+        } finally {
+            setIsCreatingTeam(false);
         }
     };
 
@@ -450,9 +456,17 @@ const TeamPage = () => {
                     
                     <button
                         onClick={createTeam}
-                        className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                        disabled={isCreatingTeam}
+                        className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
-                        Create Team
+                        {isCreatingTeam ? (
+                            <>
+                                <RefreshCw size={18} className="animate-spin" />
+                                Creating Team...
+                            </>
+                        ) : (
+                            'Create Team'
+                        )}
                     </button>
                 </div>
             </div>
