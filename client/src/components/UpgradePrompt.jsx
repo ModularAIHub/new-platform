@@ -19,7 +19,7 @@ const UpgradePrompt = ({
     "Multi-account management (up to 8)",
     "Bulk content generation",
     "Priority email support",
-    "125 credits (250 with BYOK)"
+    "150 credits (300 with BYOK)"
   ];
 
   if (!isOpen) return null;
