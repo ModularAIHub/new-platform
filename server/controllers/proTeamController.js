@@ -435,8 +435,11 @@ export const ProTeamController = {
             }
 
             const userId = req.user.id;
-            await TeamService.deleteTeam(userId);
-            res.json({ success: true, message: 'Team deleted' });
+            const result = await TeamService.deleteTeam(userId);
+            res.json({ 
+                success: true, 
+                message: `Team "${result.teamName}" has been completely deleted. All members have been removed and social accounts have been disconnected.` 
+            });
         } catch (error) {
             console.error('[deleteTeam] Error:', error);
             res.status(500).json({ error: error.message || 'Failed to delete team' });
