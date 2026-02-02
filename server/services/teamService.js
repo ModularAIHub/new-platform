@@ -9,50 +9,71 @@ export const TeamService = {
     async createTeam(ownerId, teamName) {
         const maxMembers = 5; // Pro plan limit
         
-        const result = await query(
-            `INSERT INTO teams (name, owner_id, plan_type, max_members) 
-             VALUES ($1, $2, 'pro', $3) 
-             RETURNING *`,
-            [teamName, ownerId, maxMembers]
-        );
+        // Use BEGIN/COMMIT to prevent race conditions
+        await query('BEGIN');
         
-        const teamId = result.rows[0].id;
-        
-        // Add owner as team member
-        await query(
-            `INSERT INTO team_members (team_id, user_id, email, role, status, joined_at)
-             SELECT $1, $2, u.email, 'owner', 'active', CURRENT_TIMESTAMP
-             FROM users u WHERE u.id = $2`,
-            [teamId, ownerId]
-        );
-        
-        // Set as user's current team
-        await query(
-            `UPDATE users SET current_team_id = $1 WHERE id = $2`,
-            [teamId, ownerId]
-        );
-        
-        // Get team members to return full team object
-        const membersResult = await query(`
-            SELECT 
-                tm.id,
-                tm.email,
-                tm.role,
-                tm.status,
-                tm.joined_at,
-                COALESCE(u.name, tm.email) as user_name
-            FROM team_members tm 
-            LEFT JOIN users u ON tm.user_id = u.id
-            WHERE tm.team_id = $1 AND tm.status = $2
-            ORDER BY tm.joined_at ASC
-        `, [teamId, 'active']);
-        
-        return {
-            ...result.rows[0],
-            user_role: 'owner',
-            member_count: membersResult.rows.length,
-            members: membersResult.rows
-        };
+        try {
+            // Check if user already owns a team (within transaction)
+            const existingOwner = await query(
+                `SELECT id FROM teams WHERE owner_id = $1 FOR UPDATE`,
+                [ownerId]
+            );
+            
+            if (existingOwner.rows.length > 0) {
+                await query('ROLLBACK');
+                throw new Error('You already own a team');
+            }
+            
+            const result = await query(
+                `INSERT INTO teams (name, owner_id, plan_type, max_members) 
+                 VALUES ($1, $2, 'pro', $3) 
+                 RETURNING *`,
+                [teamName, ownerId, maxMembers]
+            );
+            
+            const teamId = result.rows[0].id;
+            
+            // Add owner as team member
+            await query(
+                `INSERT INTO team_members (team_id, user_id, email, role, status, joined_at)
+                 SELECT $1, $2, u.email, 'owner', 'active', CURRENT_TIMESTAMP
+                 FROM users u WHERE u.id = $2`,
+                [teamId, ownerId]
+            );
+            
+            // Set as user's current team
+            await query(
+                `UPDATE users SET current_team_id = $1 WHERE id = $2`,
+                [teamId, ownerId]
+            );
+            
+            await query('COMMIT');
+            
+            // Get team members to return full team object
+            const membersResult = await query(`
+                SELECT 
+                    tm.id,
+                    tm.email,
+                    tm.role,
+                    tm.status,
+                    tm.joined_at,
+                    COALESCE(u.name, tm.email) as user_name
+                FROM team_members tm 
+                LEFT JOIN users u ON tm.user_id = u.id
+                WHERE tm.team_id = $1 AND tm.status = $2
+                ORDER BY tm.joined_at ASC
+            `, [teamId, 'active']);
+            
+            return {
+                ...result.rows[0],
+                user_role: 'owner',
+                member_count: membersResult.rows.length,
+                members: membersResult.rows
+            };
+        } catch (error) {
+            await query('ROLLBACK');
+            throw error;
+        }
     },
 
     // Get user's team info
