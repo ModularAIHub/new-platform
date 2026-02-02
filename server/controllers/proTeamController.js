@@ -123,6 +123,23 @@ export const ProTeamController = {
             });
         } catch (error) {
             console.error('[createTeam] Error:', error);
+            
+            // Handle specific constraint violation (duplicate team ownership)
+            if (error.message === 'You already own a team') {
+                return res.status(400).json({ 
+                    error: 'You already own a team. Please delete your existing team before creating a new one.',
+                    code: 'DUPLICATE_TEAM'
+                });
+            }
+            
+            // Handle database unique constraint violation
+            if (error.code === '23505' && error.constraint === 'teams_owner_id_unique') {
+                return res.status(400).json({ 
+                    error: 'You already own a team. Please delete your existing team before creating a new one.',
+                    code: 'DUPLICATE_TEAM'
+                });
+            }
+            
             res.status(500).json({ error: error.message || 'Failed to create team' });
         }
     },
