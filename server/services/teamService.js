@@ -211,13 +211,13 @@ export const TeamService = {
         }
 
         // Send invitation email
-        await this.sendInvitationEmail(inviteEmail, token, teamId);
+        await this.sendInvitationEmail(inviteEmail, token, teamId, role);
 
         return { ...invitation.rows[0], isResend };
     },
 
     // Send invitation email using Resend
-    async sendInvitationEmail(email, token, teamId) {
+    async sendInvitationEmail(email, token, teamId, role = 'editor') {
         try {
             const teamInfo = await query(
                 `SELECT t.name, u.email as owner_email, u.name as owner_name
@@ -243,7 +243,7 @@ export const TeamService = {
                 inviterName: team.owner_name,
                 inviterEmail: team.owner_email,
                 teamName: team.name,
-                role: 'editor', // Default role for legacy invitations
+                role: role,
                 invitationToken: token,
                 expiresAt: expiresAt
             });
