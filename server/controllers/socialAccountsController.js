@@ -10,27 +10,42 @@ export const SocialAccountsController = {
             
             // Get user's team and permissions
             const userPermissions = await RolePermissionsService.getUserPermissions(userId);
-            if (!userPermissions.role) {
-                return res.status(404).json({ error: 'You are not part of any team' });
+            const teamId = userPermissions.team_id || null;
+            
+            let accounts;
+            
+            if (teamId) {
+                // Get all team social accounts
+                accounts = await query(`
+                    SELECT 
+                        sa.*,
+                        u.email as connected_by_email,
+                        u.name as connected_by_name
+                    FROM user_social_accounts sa
+                    JOIN users u ON sa.user_id = u.id
+                    WHERE sa.team_id = $1 AND sa.is_active = true
+                    ORDER BY sa.platform, sa.created_at DESC
+                `, [teamId]);
+            } else {
+                // Get personal accounts for users not in teams
+                accounts = await query(`
+                    SELECT 
+                        sa.*,
+                        u.email as connected_by_email,
+                        u.name as connected_by_name
+                    FROM user_social_accounts sa
+                    JOIN users u ON sa.user_id = u.id
+                    WHERE sa.user_id = $1 AND sa.team_id IS NULL AND sa.is_active = true
+                    ORDER BY sa.platform, sa.created_at DESC
+                `, [userId]);
             }
-
-            // Get all team social accounts
-            const accounts = await query(`
-                SELECT 
-                    sa.*,
-                    u.email as connected_by_email,
-                    u.name as connected_by_name
-                FROM user_social_accounts sa
-                JOIN users u ON sa.user_id = u.id
-                WHERE sa.team_id = $1 AND sa.is_active = true
-                ORDER BY sa.platform, sa.created_at DESC
-            `, [userPermissions.team_id]);
 
             res.json({
                 success: true,
                 accounts: accounts.rows,
                 userRole: userPermissions.role,
-                limits: userPermissions.limits
+                limits: userPermissions.limits,
+                isPersonalAccount: !teamId
             });
         } catch (error) {
             console.error('Get team social accounts error:', error);
@@ -54,36 +69,77 @@ export const SocialAccountsController = {
 
             // Get user's team and role limits
             const userPermissions = await RolePermissionsService.getUserPermissions(userId);
-            if (!userPermissions.team_id) {
-                return res.status(404).json({ error: 'You are not part of any team' });
+            const teamId = userPermissions.team_id || null; // Allow personal accounts if no team
+            
+            console.log('[CONNECT] User', userId, 'connecting', platform, 'account. Team ID:', teamId);
+
+            // If user is in a team, check if they have a personal account and migrate it
+            if (teamId) {
+                const personalAccount = await query(`
+                    SELECT id FROM user_social_accounts 
+                    WHERE user_id = $1 AND platform = $2 AND account_id = $3 AND team_id IS NULL AND is_active = true
+                `, [userId, platform, accountData.account_id]);
+
+                if (personalAccount.rows.length > 0) {
+                    // Migrate personal account to team account
+                    await query(`
+                        UPDATE user_social_accounts 
+                        SET team_id = $1, updated_at = NOW()
+                        WHERE id = $2
+                    `, [teamId, personalAccount.rows[0].id]);
+
+                    console.log('[CONNECT] Migrated personal account to team account:', personalAccount.rows[0].id);
+
+                    return res.json({
+                        success: true,
+                        message: `${platform} account migrated to team successfully`,
+                        accountId: personalAccount.rows[0].id,
+                        isTeamAccount: true,
+                        migrated: true
+                    });
+                }
             }
 
-            // Check if user has reached their connection limit
-            const userAccountsCount = await query(`
-                SELECT COUNT(*) as count 
-                FROM user_social_accounts 
-                WHERE user_id = $1 AND team_id = $2 AND is_active = true
-            `, [userId, userPermissions.team_id]);
+            // Check if user has reached their connection limit (only for team members)
+            if (teamId) {
+                const userAccountsCount = await query(`
+                    SELECT COUNT(*) as count 
+                    FROM user_social_accounts 
+                    WHERE user_id = $1 AND team_id = $2 AND is_active = true
+                `, [userId, teamId]);
 
-            const currentCount = parseInt(userAccountsCount.rows[0].count);
-            const maxConnections = userPermissions.limits.max_profile_connections;
+                const currentCount = parseInt(userAccountsCount.rows[0].count);
+                const maxConnections = userPermissions.limits.max_profile_connections;
 
-            if (currentCount >= maxConnections) {
-                return res.status(400).json({ 
-                    error: `You have reached your connection limit (${maxConnections} accounts)` 
-                });
-            }
+                if (currentCount >= maxConnections) {
+                    return res.status(400).json({ 
+                        error: `You have reached your connection limit (${maxConnections} accounts)` 
+                    });
+                }
 
-            // Check if account is already connected to the team
-            const existingAccount = await query(`
-                SELECT id FROM user_social_accounts 
-                WHERE team_id = $1 AND platform = $2 AND account_id = $3 AND is_active = true
-            `, [userPermissions.team_id, platform, accountData.account_id]);
+                // Check if account is already connected to the team
+                const existingAccount = await query(`
+                    SELECT id FROM user_social_accounts 
+                    WHERE team_id = $1 AND platform = $2 AND account_id = $3 AND is_active = true
+                `, [teamId, platform, accountData.account_id]);
 
-            if (existingAccount.rows.length > 0) {
-                return res.status(400).json({ 
-                    error: 'This account is already connected to your team' 
-                });
+                if (existingAccount.rows.length > 0) {
+                    return res.status(400).json({ 
+                        error: 'This account is already connected to your team' 
+                    });
+                }
+            } else {
+                // For personal accounts, check if they already connected this account
+                const existingAccount = await query(`
+                    SELECT id FROM user_social_accounts 
+                    WHERE user_id = $1 AND platform = $2 AND account_id = $3 AND is_active = true AND team_id IS NULL
+                `, [userId, platform, accountData.account_id]);
+
+                if (existingAccount.rows.length > 0) {
+                    return res.status(400).json({ 
+                        error: 'This account is already connected to your profile' 
+                    });
+                }
             }
 
             // Create social account connection
@@ -95,7 +151,7 @@ export const SocialAccountsController = {
                 RETURNING id
             `, [
                 userId,
-                userPermissions.team_id,
+                teamId, // Will be NULL for personal accounts, team_id for team members
                 platform,
                 accountData.username,
                 accountData.displayName,
@@ -106,10 +162,13 @@ export const SocialAccountsController = {
                 accountData.profileImage || null
             ]);
 
+            console.log('[CONNECT] Successfully connected', platform, 'account', accountData.username, 'for user', userId, 'with team_id:', teamId);
+
             res.json({
                 success: true,
                 message: `${platform} account connected successfully`,
-                accountId: result.rows[0].id
+                accountId: result.rows[0].id,
+                isTeamAccount: !!teamId
             });
         } catch (error) {
             console.error('Connect account error:', error);
