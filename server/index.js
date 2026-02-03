@@ -88,7 +88,7 @@ const corsOptions = {
         }
 
         if (isAllowed || process.env.NODE_ENV === 'development') {
-            return callback(null, origin); // Reflect the actual origin string
+            return callback(null, true); // Allow the origin
         }
 
         console.log('CORS blocked origin:', origin);
