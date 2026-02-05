@@ -1,6 +1,6 @@
 // TeamPage.jsx - Pro plan team collaboration
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, Mail, UserX, Crown, Shield, Eye, Edit, Linkedin, Twitter, ExternalLink, Globe, MessageSquare, LogOut, Trash2, RefreshCw } from 'lucide-react';
+import { Users, Plus, Mail, UserX, Crown, Shield, Eye, Edit, Linkedin, Twitter, ExternalLink, Globe, MessageSquare, LogOut, Trash2, RefreshCw, Building2, User } from 'lucide-react';
 import usePlanAccess from '../hooks/usePlanAccess';
 import UpgradePrompt from '../components/UpgradePrompt';
 import api from '../utils/api';
@@ -23,6 +23,11 @@ const TeamPage = () => {
     const [connecting, setConnecting] = useState(null);
     const { hasFeatureAccess, userPlan, refreshPlanInfo, loading: planLoading } = usePlanAccess();
     const [hasRetriedCreate, setHasRetriedCreate] = useState(false);
+    
+    // LinkedIn account selection modal state
+    const [showLinkedInSelection, setShowLinkedInSelection] = useState(false);
+    const [linkedInSelectionData, setLinkedInSelectionData] = useState(null);
+    const [selectingAccount, setSelectingAccount] = useState(false);
 
     const hasTeamAccess = hasFeatureAccess('team_collaboration');
 
@@ -43,18 +48,96 @@ const TeamPage = () => {
         const success = urlParams.get('success');
         const username = urlParams.get('username');
         const error = urlParams.get('error');
+        const accountName = urlParams.get('accountName');
+        const existingTeam = urlParams.get('existingTeam');
+        
+        // Check for LinkedIn account selection flow
+        const selectLinkedIn = urlParams.get('select_linkedin_account');
+        const selectionId = urlParams.get('selectionId');
+        const organizationsParam = urlParams.get('organizations');
+        const personalConnected = urlParams.get('personalConnected') === 'true';
+        const userName = urlParams.get('userName');
+        
+        if (selectLinkedIn === 'true' && selectionId && organizationsParam) {
+            try {
+                const organizations = JSON.parse(decodeURIComponent(organizationsParam));
+                setLinkedInSelectionData({
+                    selectionId,
+                    organizations,
+                    personalConnected,
+                    userName
+                });
+                setShowLinkedInSelection(true);
+                // Clean up URL but keep the modal open
+                window.history.replaceState({}, '', '/team');
+            } catch (e) {
+                console.error('Failed to parse organizations:', e);
+            }
+            return;
+        }
         
         if (success === 'team' && username) {
-            alert(`Successfully connected Twitter account @${username}!`);
+            alert(`Successfully connected account: ${username}!`);
             fetchSocialAccounts(); // Refresh the accounts list
             // Clean up URL
             window.history.replaceState({}, '', '/team');
         } else if (error) {
-            alert(`Failed to connect account: ${error}`);
+            let errorMessage = '';
+            
+            switch (error) {
+                case 'no_org_pages':
+                    errorMessage = `Your LinkedIn account "${accountName || 'this account'}" is already connected as a personal account.\n\nTo connect a LinkedIn Organization Page (Company Page), you need to:\n\n1. Be an admin of a LinkedIn Company Page\n2. Have "Super Admin" or "Content Admin" role\n\nIf you have admin access to a Company Page and still don't see the option, LinkedIn's API may not have granted access yet.`;
+                    break;
+                case 'already_connected':
+                    errorMessage = `This LinkedIn account "${accountName || ''}" is already connected to team "${existingTeam || 'another team'}".\n\nEach LinkedIn account can only be connected to one team. If you want to use it here, please disconnect it from the other team first.`;
+                    break;
+                default:
+                    errorMessage = `Failed to connect account: ${error}`;
+            }
+            
+            alert(errorMessage);
             // Clean up URL
             window.history.replaceState({}, '', '/team');
         }
     }, []);
+    
+    // Handle LinkedIn account type selection
+    const handleLinkedInSelection = async (accountType, organizationId = null) => {
+        if (!linkedInSelectionData) return;
+        
+        setSelectingAccount(true);
+        try {
+            const linkedinApiUrl = import.meta.env.VITE_LINKEDIN_API_URL || 'http://localhost:3004';
+            const response = await fetch(`${linkedinApiUrl}/api/oauth/linkedin/complete-team-selection`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    selectionId: linkedInSelectionData.selectionId,
+                    accountType,
+                    organizationId
+                }),
+                credentials: 'include'
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                setShowLinkedInSelection(false);
+                setLinkedInSelectionData(null);
+                alert(`Successfully connected ${accountType === 'organization' ? 'organization page' : 'personal account'}!`);
+                fetchSocialAccounts();
+            } else {
+                alert(data.error || 'Failed to complete account selection');
+            }
+        } catch (error) {
+            console.error('Failed to complete LinkedIn selection:', error);
+            alert('Failed to connect account. Please try again.');
+        } finally {
+            setSelectingAccount(false);
+        }
+    };
 
     const fetchTeam = async () => {
         try {
@@ -809,6 +892,91 @@ const TeamPage = () => {
                     ]}
                     onClose={() => setShowUpgrade(false)}
                 />
+            )}
+            
+            {/* LinkedIn Account Selection Modal */}
+            {showLinkedInSelection && linkedInSelectionData && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 overflow-hidden">
+                        <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+                            <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+                                <Linkedin className="h-6 w-6" />
+                                Select Account Type
+                            </h3>
+                            <p className="text-blue-100 text-sm mt-1">
+                                Choose which LinkedIn account to connect
+                            </p>
+                        </div>
+                        
+                        <div className="p-6 space-y-4">
+                            {/* Personal Account Option */}
+                            {!linkedInSelectionData.personalConnected && (
+                                <button
+                                    onClick={() => handleLinkedInSelection('personal')}
+                                    disabled={selectingAccount}
+                                    className="w-full p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all flex items-center gap-4 disabled:opacity-50"
+                                >
+                                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                        <User className="h-6 w-6 text-blue-600" />
+                                    </div>
+                                    <div className="text-left flex-1">
+                                        <div className="font-semibold text-gray-900">Personal Profile</div>
+                                        <div className="text-sm text-gray-500">{linkedInSelectionData.userName}</div>
+                                    </div>
+                                </button>
+                            )}
+                            
+                            {linkedInSelectionData.personalConnected && (
+                                <div className="p-4 bg-gray-100 rounded-lg text-gray-500 text-sm flex items-center gap-3">
+                                    <User className="h-5 w-5" />
+                                    Personal profile already connected
+                                </div>
+                            )}
+                            
+                            {/* Organization Pages */}
+                            <div className="border-t pt-4">
+                                <div className="text-sm font-medium text-gray-500 mb-3 flex items-center gap-2">
+                                    <Building2 className="h-4 w-4" />
+                                    Organization Pages
+                                </div>
+                                
+                                {linkedInSelectionData.organizations.map((org) => (
+                                    <button
+                                        key={org.id}
+                                        onClick={() => handleLinkedInSelection('organization', org.id)}
+                                        disabled={selectingAccount}
+                                        className="w-full p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all flex items-center gap-4 mb-2 disabled:opacity-50"
+                                    >
+                                        {org.logo ? (
+                                            <img src={org.logo} alt={org.name} className="w-12 h-12 rounded-lg object-cover" />
+                                        ) : (
+                                            <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                                                <Building2 className="h-6 w-6 text-gray-400" />
+                                            </div>
+                                        )}
+                                        <div className="text-left flex-1">
+                                            <div className="font-semibold text-gray-900">{org.name}</div>
+                                            <div className="text-sm text-gray-500">Organization Page</div>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        
+                        <div className="px-6 py-4 bg-gray-50 border-t flex justify-end">
+                            <button
+                                onClick={() => {
+                                    setShowLinkedInSelection(false);
+                                    setLinkedInSelectionData(null);
+                                }}
+                                disabled={selectingAccount}
+                                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
