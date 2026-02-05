@@ -9,21 +9,21 @@ export const TeamService = {
     async createTeam(ownerId, teamName) {
         const maxMembers = 5; // Pro plan limit
         
-        // Use BEGIN/COMMIT to prevent race conditions
-        await query('BEGIN');
+        console.log('[TeamService] Creating team for user:', ownerId, 'name:', teamName);
         
         try {
-            // Check if user already owns a team (within transaction)
+            // Check if user already owns a team (no lock needed for SELECT)
             const existingOwner = await query(
-                `SELECT id FROM teams WHERE owner_id = $1 FOR UPDATE`,
+                `SELECT id FROM teams WHERE owner_id = $1`,
                 [ownerId]
             );
             
             if (existingOwner.rows.length > 0) {
-                await query('ROLLBACK');
+                console.log('[TeamService] User already owns team:', existingOwner.rows[0].id);
                 throw new Error('You already own a team');
             }
             
+            console.log('[TeamService] Inserting new team...');
             const result = await query(
                 `INSERT INTO teams (name, owner_id, plan_type, max_members) 
                  VALUES ($1, $2, 'pro', $3) 
@@ -32,8 +32,10 @@ export const TeamService = {
             );
             
             const teamId = result.rows[0].id;
+            console.log('[TeamService] Team created with ID:', teamId);
             
             // Add owner as team member
+            console.log('[TeamService] Adding owner as team member...');
             await query(
                 `INSERT INTO team_members (team_id, user_id, email, role, status, joined_at)
                  SELECT $1, $2, u.email, 'owner', 'active', CURRENT_TIMESTAMP
@@ -42,14 +44,14 @@ export const TeamService = {
             );
             
             // Set as user's current team
+            console.log('[TeamService] Setting as current team...');
             await query(
                 `UPDATE users SET current_team_id = $1 WHERE id = $2`,
                 [teamId, ownerId]
             );
             
-            await query('COMMIT');
-            
             // Get team members to return full team object
+            console.log('[TeamService] Fetching team members...');
             const membersResult = await query(`
                 SELECT 
                     tm.id,
@@ -64,6 +66,7 @@ export const TeamService = {
                 ORDER BY tm.joined_at ASC
             `, [teamId, 'active']);
             
+            console.log('[TeamService] Team creation successful');
             return {
                 ...result.rows[0],
                 user_role: 'owner',
@@ -71,7 +74,7 @@ export const TeamService = {
                 members: membersResult.rows
             };
         } catch (error) {
-            await query('ROLLBACK');
+            console.error('[TeamService] Team creation error:', error.message);
             throw error;
         }
     },
@@ -493,17 +496,43 @@ export const TeamService = {
 
             console.log(`🗑️ Deleting team: ${teamName} (${teamId})`);
 
+            // Call LinkedIn microservice to COMPLETELY DELETE all team LinkedIn accounts (connected by anyone)
+            try {
+                const linkedinCleanupResponse = await fetch(`${process.env.LINKEDIN_API_URL || 'http://localhost:3004'}/api/cleanup/team`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ teamId })
+                });
+                const linkedinResult = await linkedinCleanupResponse.json();
+                console.log(`   ✓ LinkedIn cleanup - deleted ${linkedinResult.deletedCounts?.teamAccounts || 0} accounts, ${linkedinResult.deletedCounts?.scheduledPosts || 0} scheduled posts`);
+            } catch (error) {
+                console.warn(`   ⚠️  LinkedIn cleanup failed:`, error.message);
+            }
+
+            // Call Twitter microservice to COMPLETELY DELETE all team Twitter accounts (connected by anyone)
+            try {
+                const twitterCleanupResponse = await fetch(`${process.env.TWEET_API_URL || 'http://localhost:3002'}/api/cleanup/team`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ teamId })
+                });
+                const twitterResult = await twitterCleanupResponse.json();
+                console.log(`   ✓ Twitter cleanup - deleted ${twitterResult.deletedCounts?.teamAccounts || 0} accounts, ${twitterResult.deletedCounts?.scheduledTweets || 0} scheduled tweets`);
+            } catch (error) {
+                console.warn(`   ⚠️  Twitter cleanup failed:`, error.message);
+            }
+
             // Delete all team-related data
             // 1. Delete pending invitations
             const invitationsResult = await query('DELETE FROM team_invitations WHERE team_id = $1', [teamId]);
             console.log(`   ✓ Deleted ${invitationsResult.rowCount} invitations`);
 
-            // 2. Disconnect social accounts (set team_id to NULL, don't delete accounts)
+            // 2. COMPLETELY DELETE team social accounts from user_social_accounts (not just disconnect)
             const socialAccountsResult = await query(
-                'UPDATE user_social_accounts SET team_id = NULL WHERE team_id = $1',
+                'DELETE FROM user_social_accounts WHERE team_id = $1',
                 [teamId]
             );
-            console.log(`   ✓ Disconnected ${socialAccountsResult.rowCount} social accounts`);
+            console.log(`   ✓ Deleted ${socialAccountsResult.rowCount} team social accounts`);
 
             // 3. Delete team_accounts entries (if table exists)
             try {

@@ -227,9 +227,13 @@ const PlansPage = () => {
                     return;
                   }
                   
-                  // If not logged in, redirect to signup
+                  // If not logged in, redirect to signup with plan parameter
                   if (!user) {
-                    navigate('/signup');
+                    if (plan.name === 'Professional') {
+                      navigate('/signup?plan=pro');
+                    } else {
+                      navigate('/signup');
+                    }
                     return;
                   }
                   

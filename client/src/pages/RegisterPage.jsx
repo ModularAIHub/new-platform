@@ -46,7 +46,7 @@ const RegisterPage = () => {
 		try {
 			await sendOTP(validation.sanitized.email, 'account-verification');
 			setShowOTPModal(true);
-			toast.success('OTP sent to your email');
+
 		} catch (error) {
 			console.error('Send OTP error:', error);
 			toast.error(error?.message || 'Failed to send OTP. Please try again.');
@@ -73,7 +73,7 @@ const RegisterPage = () => {
 				setLoading(false);
 				return;
 			}
-			await register(
+			const registerResult = await register(
 				validation.sanitized.name,
 				validation.sanitized.email,
 				validation.sanitized.password,
@@ -82,8 +82,13 @@ const RegisterPage = () => {
 			
 			setShowOTPModal(false);
 			
+			// Check if registration was successful
+			if (!registerResult?.user) {
+				toast.error('Registration failed. Please try again.');
+				return;
+			}
+			
 			// If plan=pro, upgrade to Pro trial
-			console.log('planType detected:', planType);
 			if (planType === 'pro') {
 				console.log('Starting Pro trial upgrade flow...');
 				try {
@@ -101,7 +106,7 @@ const RegisterPage = () => {
 					console.log('Showing success toast...');
 					toast.success(
 						`🎉 Welcome to Pro! Your 14-day trial has started.\n\n✨ You now have:\n• Unlimited posts\n• All platforms unlocked\n• ${bonusCredits.toLocaleString()} bonus credits!`,
-						{ duration: 6000 }
+						{ duration: 5000 }
 					);
 				} catch (error) {
 					console.error('Pro upgrade error:', error);
@@ -109,9 +114,10 @@ const RegisterPage = () => {
 					toast.error('Account created but failed to activate Pro trial. Please contact support.');
 				}
 			} else {
-				toast.success('Account created successfully');
+				toast.success('🎉 Account created! Welcome to SuiteGenie!');
 			}
 			
+			// Navigate to dashboard (user is now logged in)
 			navigate('/dashboard');
 		} catch (error) {
 			console.error('Register error:', error);
