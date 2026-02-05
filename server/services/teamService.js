@@ -375,6 +375,32 @@ export const TeamService = {
 
         console.log(`✅ Completely removed member ${memberEmail} from team ${teamId}`);
 
+        // Clean up LinkedIn team accounts connected by this user for this team
+        try {
+            const linkedinCleanupResponse = await fetch(`${process.env.LINKEDIN_API_URL || 'http://localhost:3004'}/api/cleanup/member`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ teamId, userId: memberUserId })
+            });
+            const linkedinResult = await linkedinCleanupResponse.json();
+            console.log(`   ✓ LinkedIn cleanup for member - deleted ${linkedinResult.deletedCounts?.teamAccounts || 0} accounts`);
+        } catch (error) {
+            console.warn(`   ⚠️  LinkedIn member cleanup failed:`, error.message);
+        }
+
+        // Clean up Twitter team accounts connected by this user for this team
+        try {
+            const twitterCleanupResponse = await fetch(`${process.env.TWEET_API_URL || 'http://localhost:3002'}/api/cleanup/member`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ teamId, userId: memberUserId })
+            });
+            const twitterResult = await twitterCleanupResponse.json();
+            console.log(`   ✓ Twitter cleanup for member - deleted ${twitterResult.deletedCounts?.teamAccounts || 0} accounts`);
+        } catch (error) {
+            console.warn(`   ⚠️  Twitter member cleanup failed:`, error.message);
+        }
+
         // Clear user's current team if this was their active team
         await query(
             `UPDATE users SET current_team_id = NULL 

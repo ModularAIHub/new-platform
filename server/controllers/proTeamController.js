@@ -712,25 +712,75 @@ export const ProTeamController = {
             const userId = req.user.id;
             const { accountId } = req.params;
 
-            // Try to find account in all three tables
-            let accountResult = await query(
-                `SELECT id, team_id, 'user_social_accounts' as table_name FROM user_social_accounts WHERE id = $1 AND is_active = true
-                 UNION ALL
-                 SELECT id, team_id, 'team_accounts' as table_name FROM team_accounts WHERE id = $1 AND active = true
-                 UNION ALL
-                 SELECT id, team_id, 'linkedin_team_accounts' as table_name FROM linkedin_team_accounts WHERE id = $1 AND active = true`,
-                [accountId]
-            );
+            console.log('[disconnectAccount] Attempting to disconnect account:', { userId, accountId });
 
-            if (accountResult.rows.length === 0) {
+            // Try to find account in all three tables separately to avoid type issues
+            let accountResult = { rows: [] };
+            let table_name = null;
+            let accountTeamId = null;
+
+            // Check if accountId looks like a UUID or integer
+            const isUUID = accountId.includes('-');
+
+            // Check user_social_accounts first (has UUID id)
+            if (isUUID) {
+                try {
+                    const usaResult = await query(
+                        `SELECT id, team_id::text as team_id FROM user_social_accounts WHERE id = $1 AND is_active = true`,
+                        [accountId]
+                    );
+                    if (usaResult.rows.length > 0) {
+                        table_name = 'user_social_accounts';
+                        accountTeamId = usaResult.rows[0].team_id;
+                    }
+                } catch (e) {
+                    // Not a UUID, skip
+                }
+            }
+
+            // Check team_accounts if not found (has UUID id)
+            if (!table_name && isUUID) {
+                try {
+                    const taResult = await query(
+                        `SELECT id, team_id::text as team_id FROM team_accounts WHERE id = $1 AND active = true`,
+                        [accountId]
+                    );
+                    if (taResult.rows.length > 0) {
+                        table_name = 'team_accounts';
+                        accountTeamId = taResult.rows[0].team_id;
+                    }
+                } catch (e) {
+                    // Not a UUID, skip
+                }
+            }
+
+            // Check linkedin_team_accounts if not found (has integer id)
+            if (!table_name) {
+                try {
+                    const ltaResult = await query(
+                        `SELECT id, team_id FROM linkedin_team_accounts WHERE id = $1 AND active = true`,
+                        [parseInt(accountId, 10) || accountId]
+                    );
+                    if (ltaResult.rows.length > 0) {
+                        table_name = 'linkedin_team_accounts';
+                        accountTeamId = ltaResult.rows[0].team_id; // Already TEXT
+                    }
+                } catch (e) {
+                    console.log('[disconnectAccount] Error checking linkedin_team_accounts:', e.message);
+                }
+            }
+
+            console.log('[disconnectAccount] Account query result:', { table_name, accountTeamId });
+
+            if (!table_name) {
                 return res.status(404).json({ error: 'Social account not found' });
             }
 
-            const { team_id: accountTeamId, table_name } = accountResult.rows[0];
+            console.log('[disconnectAccount] Found account in table:', table_name, 'team_id:', accountTeamId);
 
-            // Verify user is owner/admin of that team
+            // Verify user is owner/admin of that team - cast team_id for comparison
             const membership = await query(
-                `SELECT role FROM team_members WHERE user_id = $1 AND team_id = $2 AND status = 'active'`,
+                `SELECT role FROM team_members WHERE user_id = $1 AND team_id::text = $2 AND status = 'active'`,
                 [userId, accountTeamId]
             );
 
@@ -750,14 +800,16 @@ export const ProTeamController = {
                     [accountId]
                 );
             } else if (table_name === 'team_accounts') {
+                // Actually DELETE Twitter team accounts to prevent orphans
                 await query(
-                    `UPDATE team_accounts SET active = false, updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
+                    `DELETE FROM team_accounts WHERE id = $1`,
                     [accountId]
                 );
             } else if (table_name === 'linkedin_team_accounts') {
+                // Actually DELETE LinkedIn team accounts to prevent orphans
                 await query(
-                    `UPDATE linkedin_team_accounts SET active = false, updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
-                    [accountId]
+                    `DELETE FROM linkedin_team_accounts WHERE id = $1`,
+                    [parseInt(accountId, 10)]
                 );
             }
 
