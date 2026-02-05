@@ -24,7 +24,7 @@ export const ProTeamController = {
 
             // Fetch OAuth1/user_social_accounts
             const userAccountsResult = await query(
-                `SELECT id, platform, account_username, account_display_name, account_id, profile_image_url, created_at,
+                `SELECT usa.id, usa.platform, usa.account_username, usa.account_display_name, usa.account_id, usa.profile_image_url, usa.created_at,
                         u.name as connected_by_name, u.email as connected_by_email,
                         true as is_active
                  FROM user_social_accounts usa
@@ -34,12 +34,12 @@ export const ProTeamController = {
                 [teamId]
             );
 
-            // Fetch OAuth2/team_accounts
+            // Fetch OAuth2/team_accounts (Twitter)
             const teamAccountsResult = await query(
-                `SELECT id, 'twitter' as platform, twitter_username as account_username, twitter_display_name as account_display_name,
-                        twitter_user_id as account_id, twitter_profile_image_url as profile_image_url,
+                `SELECT ta.id, 'twitter' as platform, ta.twitter_username as account_username, ta.twitter_display_name as account_display_name,
+                        ta.twitter_user_id as account_id, ta.twitter_profile_image_url as profile_image_url,
                         u.name as connected_by_name, u.email as connected_by_email,
-                        active as is_active
+                        ta.active as is_active
                  FROM team_accounts ta
                  LEFT JOIN users u ON ta.user_id = u.id
                  WHERE ta.team_id = $1 AND ta.active = true
@@ -47,10 +47,52 @@ export const ProTeamController = {
                 [teamId]
             );
 
-            const merged = [...userAccountsResult.rows, ...teamAccountsResult.rows];
+            // Fetch LinkedIn team accounts from LinkedIn-genie microservice
+            let linkedinAccounts = [];
+            try {
+                const apiUrl = `${process.env.LINKEDIN_API_URL || 'http://localhost:3004'}/api/team/accounts`;
+                
+                const linkedinResponse = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Cookie': req.headers.cookie || '', // Forward cookies for authentication
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (linkedinResponse.ok) {
+                    const linkedinData = await linkedinResponse.json();
+                    const allAccounts = linkedinData.accounts || [];
+                    
+                    linkedinAccounts = allAccounts
+                        .filter(acc => acc.isTeamAccount && acc.team_id === teamId)
+                        .map(acc => ({
+                            id: acc.id,
+                            platform: 'linkedin',
+                            account_username: acc.linkedin_username,
+                            account_display_name: acc.linkedin_display_name,
+                            account_id: acc.linkedin_user_id,
+                            profile_image_url: acc.linkedin_profile_image_url,
+                            headline: acc.headline || null,
+                            connections_count: acc.connections_count || null,
+                            connected_by_name: null,
+                            connected_by_email: null,
+                            is_active: true,
+                            ...acc
+                        }));
+                } else {
+                    const errorText = await linkedinResponse.text();
+                    console.error('[LINKEDIN FETCH] Failed - Status:', linkedinResponse.status, errorText);
+                }
+            } catch (error) {
+                console.error('[LINKEDIN FETCH] Exception:', error.message);
+            }
+
+            const merged = [...userAccountsResult.rows, ...teamAccountsResult.rows, ...linkedinAccounts];
             res.json({ success: true, accounts: merged, totalAccounts: merged.length, teamId });
         } catch (error) {
             console.error('[pro-team/social-accounts] Error:', error);
+            console.error('[pro-team/social-accounts] Stack:', error.stack);
             res.status(500).json({ success: false, error: 'Failed to get team social accounts', accounts: [] });
         }
     },
@@ -277,41 +319,6 @@ export const ProTeamController = {
             console.error('❌ [PRO TEAM] Update member role error:', error);
             console.error('Error stack:', error.stack);
             res.status(400).json({ error: error.message });
-        }
-    },
-
-    // Get team's social accounts
-    async getTeamSocialAccounts(req, res) {
-        try {
-            const userId = req.user.id;
-            
-            // Get user's team and permissions
-            const userPermissions = await RolePermissionsService.getUserPermissions(userId);
-            if (!userPermissions.role) {
-                return res.status(404).json({ error: 'You are not part of any team' });
-            }
-
-            // Get all team social accounts
-            const accounts = await query(`
-                SELECT 
-                    sa.*,
-                    u.email as connected_by_email,
-                    u.name as connected_by_name
-                FROM user_social_accounts sa
-                JOIN users u ON sa.user_id = u.id
-                WHERE sa.team_id = $1 AND sa.is_active = true
-                ORDER BY sa.platform, sa.created_at DESC
-            `, [userPermissions.team_id]);
-
-            res.json({
-                success: true,
-                accounts: accounts.rows,
-                userRole: userPermissions.role,
-                limits: userPermissions.limits
-            });
-        } catch (error) {
-            console.error('Get team social accounts error:', error);
-            res.status(500).json({ error: 'Failed to get social accounts' });
         }
     },
 
@@ -630,58 +637,6 @@ export const ProTeamController = {
         }
     },
 
-    // Get team's social accounts
-    async getTeamSocialAccounts(req, res) {
-        try {
-            const userId = req.user.id;
-            // Get user's team
-            const teamResult = await query(`
-                SELECT team_id FROM team_members 
-                WHERE user_id = $1 AND status = 'active'
-            `, [userId]);
-            if (teamResult.rows.length === 0) {
-                return res.json({ success: true, accounts: [] });
-            }
-            const teamId = teamResult.rows[0].team_id;
-
-            // Get all social accounts for the team (user_social_accounts)
-            const userAccountsResult = await query(`
-                SELECT usa.id, usa.platform, usa.account_username, usa.account_display_name, 
-                       usa.account_id, usa.profile_image_url, usa.created_at,
-                       u.name as connected_by_name, u.email as connected_by_email,
-                       true as is_active
-                FROM user_social_accounts usa
-                LEFT JOIN users u ON usa.user_id = u.id
-                WHERE usa.team_id = $1 AND usa.is_active = true
-                ORDER BY usa.created_at ASC
-            `, [teamId]);
-
-            // Get all team_accounts for the team
-            const teamAccountsResult = await query(`
-                SELECT ta.id, 'twitter' as platform, ta.twitter_username as account_username, ta.twitter_display_name as account_display_name,
-                       ta.twitter_user_id as account_id, NULL as profile_image_url,
-                       u.name as connected_by_name, u.email as connected_by_email,
-                       ta.active
-                FROM team_accounts ta
-                LEFT JOIN users u ON ta.user_id = u.id
-                WHERE ta.team_id = $1 AND ta.active = true
-            `, [teamId]);
-
-            // Merge both account arrays
-            const mergedAccounts = [...userAccountsResult.rows, ...teamAccountsResult.rows];
-
-            res.json({
-                success: true,
-                accounts: mergedAccounts
-            });
-        } catch (error) {
-            console.error('Get team social accounts error:', error);
-            res.status(500).json({ 
-                error: 'Failed to get team social accounts' 
-            });
-        }
-    },
-
     // Connect social account (redirect to subdomain)
     async connectAccount(req, res) {
         try {
@@ -729,9 +684,11 @@ export const ProTeamController = {
             }
             
             // Generate redirect URL to subdomain
+            // For local development, use localhost ports
+            const isLocal = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
             const subdomains = {
-                twitter: process.env.TWITTER_SUBDOMAIN || 'tweetapi.suitegenie.in',
-                linkedin: process.env.LINKEDIN_SUBDOMAIN || 'linkedin.suitegenie.in',
+                twitter: process.env.TWITTER_SUBDOMAIN || (isLocal ? 'http://localhost:3001' : 'tweetapi.suitegenie.in'),
+                linkedin: process.env.LINKEDIN_SUBDOMAIN || (isLocal ? 'http://localhost:3004' : 'apilinkedin.suitegenie.in'),
                 wordpress: process.env.WORDPRESS_SUBDOMAIN || 'wordpress.suitegenie.in',
                 facebook: process.env.FACEBOOK_SUBDOMAIN || 'facebook.suitegenie.in',
                 instagram: process.env.INSTAGRAM_SUBDOMAIN || 'instagram.suitegenie.in'
@@ -742,9 +699,20 @@ export const ProTeamController = {
                 return res.status(400).json({ error: 'Unsupported platform' });
             }
             
+            // Platform-specific OAuth paths
+            const oauthPaths = {
+                twitter: '/api/twitter/team-connect',
+                linkedin: '/api/oauth/linkedin/team-connect'
+            };
+            
+            const oauthPath = oauthPaths[platform.toLowerCase()];
+            if (!oauthPath) {
+                return res.status(400).json({ error: `Platform ${platform} OAuth not yet implemented` });
+            }
+            
             const ensureUrl = (host) => host.startsWith('http') ? host : `https://${host}`;
-            const returnUrl = `${ensureUrl(process.env.CLIENT_URL || 'https://suitegenie.in')}/team`; // Frontend URL, not backend
-            const redirectUrl = `${ensureUrl(subdomain)}/api/twitter/team-connect?teamId=${teamId}&userId=${userId}&returnUrl=${encodeURIComponent(returnUrl)}`;
+            const returnUrl = isLocal ? 'http://localhost:5173/team' : `${ensureUrl(process.env.CLIENT_URL || 'https://suitegenie.in')}/team`;
+            const redirectUrl = `${ensureUrl(subdomain)}${oauthPath}?teamId=${teamId}&userId=${userId}&returnUrl=${encodeURIComponent(returnUrl)}`;
             
             res.json({
                 success: true,
@@ -764,9 +732,13 @@ export const ProTeamController = {
             const userId = req.user.id;
             const { accountId } = req.params;
 
-            // Find account and its team
-            const accountResult = await query(
-                `SELECT id, team_id FROM user_social_accounts WHERE id = $1 AND is_active = true`,
+            // Try to find account in all three tables
+            let accountResult = await query(
+                `SELECT id, team_id, 'user_social_accounts' as table_name FROM user_social_accounts WHERE id = $1 AND is_active = true
+                 UNION ALL
+                 SELECT id, team_id, 'team_accounts' as table_name FROM team_accounts WHERE id = $1 AND active = true
+                 UNION ALL
+                 SELECT id, team_id, 'linkedin_team_accounts' as table_name FROM linkedin_team_accounts WHERE id = $1 AND active = true`,
                 [accountId]
             );
 
@@ -774,7 +746,7 @@ export const ProTeamController = {
                 return res.status(404).json({ error: 'Social account not found' });
             }
 
-            const { team_id: accountTeamId } = accountResult.rows[0];
+            const { team_id: accountTeamId, table_name } = accountResult.rows[0];
 
             // Verify user is owner/admin of that team
             const membership = await query(
@@ -791,10 +763,23 @@ export const ProTeamController = {
                 return res.status(403).json({ error: 'Only team owners and admins can disconnect social accounts' });
             }
 
-            await query(
-                `UPDATE user_social_accounts SET is_active = false, updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
-                [accountId]
-            );
+            // Update the appropriate table
+            if (table_name === 'user_social_accounts') {
+                await query(
+                    `UPDATE user_social_accounts SET is_active = false, updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
+                    [accountId]
+                );
+            } else if (table_name === 'team_accounts') {
+                await query(
+                    `UPDATE team_accounts SET active = false, updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
+                    [accountId]
+                );
+            } else if (table_name === 'linkedin_team_accounts') {
+                await query(
+                    `UPDATE linkedin_team_accounts SET active = false, updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
+                    [accountId]
+                );
+            }
 
             res.json({ success: true, message: 'Social account disconnected successfully' });
         } catch (error) {

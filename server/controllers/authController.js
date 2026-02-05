@@ -661,8 +661,10 @@ class AuthController {
         try {
             const userId = req.user.id;
 
+            console.log(`🗑️ Starting account deletion for user: ${userId}`);
+
             // Check if user exists
-            const userResult = await query('SELECT id FROM users WHERE id = $1', [userId]);
+            const userResult = await query('SELECT id, email FROM users WHERE id = $1', [userId]);
             if (userResult.rows.length === 0) {
                 return res.status(404).json({
                     error: 'User not found',
@@ -670,8 +672,181 @@ class AuthController {
                 });
             }
 
-            // Delete user account
-            await query('DELETE FROM users WHERE id = $1', [userId]);
+            const userEmail = userResult.rows[0].email;
+            console.log(`📧 Deleting account for: ${userEmail}`);
+
+            // Begin transaction for complete cleanup
+            await query('BEGIN');
+
+            try {
+                // 1. Check if user owns any teams - if yes, delete the entire team
+                const ownedTeamsResult = await query(
+                    'SELECT id, name FROM teams WHERE owner_id = $1',
+                    [userId]
+                );
+
+                if (ownedTeamsResult.rows.length > 0) {
+                    for (const team of ownedTeamsResult.rows) {
+                        console.log(`🏢 User owns team: ${team.name} (${team.id}), deleting team...`);
+
+                        // Call LinkedIn microservice to cleanup team data
+                        try {
+                            const linkedinCleanupResponse = await fetch(`${process.env.LINKEDIN_API_URL || 'http://localhost:3004'}/api/cleanup/team`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ teamId: team.id })
+                            });
+                            const linkedinResult = await linkedinCleanupResponse.json();
+                            console.log(`   ✓ LinkedIn cleanup:`, linkedinResult.deletedCounts);
+                        } catch (error) {
+                            console.warn(`   ⚠️  LinkedIn cleanup failed:`, error.message);
+                        }
+
+                        // Call Twitter microservice to cleanup team data
+                        try {
+                            const twitterCleanupResponse = await fetch(`${process.env.TWEET_API_URL || 'http://localhost:3002'}/api/cleanup/team`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ teamId: team.id })
+                            });
+                            const twitterResult = await twitterCleanupResponse.json();
+                            console.log(`   ✓ Twitter cleanup:`, twitterResult.deletedCounts);
+                        } catch (error) {
+                            console.warn(`   ⚠️  Twitter cleanup failed:`, error.message);
+                        }
+
+                        // Delete team invitations
+                        const invitationsResult = await query(
+                            'DELETE FROM team_invitations WHERE team_id = $1',
+                            [team.id]
+                        );
+                        console.log(`   ✓ Deleted ${invitationsResult.rowCount} team invitations`);
+
+                        // Delete team social accounts from user_social_accounts
+                        const teamSocialAccountsResult = await query(
+                            'DELETE FROM user_social_accounts WHERE team_id = $1',
+                            [team.id]
+                        );
+                        console.log(`   ✓ Deleted ${teamSocialAccountsResult.rowCount} team social accounts`);
+
+                        // Delete team_accounts entries (if table exists)
+                        try {
+                            const teamAccountsResult = await query(
+                                'DELETE FROM team_accounts WHERE team_id = $1',
+                                [team.id]
+                            );
+                            console.log(`   ✓ Deleted ${teamAccountsResult.rowCount} team account entries`);
+                        } catch (error) {
+                            console.log(`   ℹ️  team_accounts table not found (skipped)`);
+                        }
+
+                        // Clear current_team_id for all users pointing to this team
+                        const usersResult = await query(
+                            'UPDATE users SET current_team_id = NULL WHERE current_team_id = $1',
+                            [team.id]
+                        );
+                        console.log(`   ✓ Cleared current_team_id for ${usersResult.rowCount} users`);
+
+                        // Delete all team members
+                        const membersResult = await query(
+                            'DELETE FROM team_members WHERE team_id = $1',
+                            [team.id]
+                        );
+                        console.log(`   ✓ Removed ${membersResult.rowCount} team members`);
+
+                        // Finally, delete the team itself
+                        await query('DELETE FROM teams WHERE id = $1', [team.id]);
+                        console.log(`   ✓ Deleted team: ${team.name}`);
+                    }
+                }
+
+                // 2. Delete user's personal social accounts (LinkedIn, Twitter, etc.)
+                const personalAccountsResult = await query(
+                    'DELETE FROM user_social_accounts WHERE user_id = $1 AND team_id IS NULL',
+                    [userId]
+                );
+                console.log(`📱 Deleted ${personalAccountsResult.rowCount} personal social accounts`);
+
+                // Call LinkedIn microservice to cleanup user's personal data
+                try {
+                    const linkedinUserCleanupResponse = await fetch(`${process.env.LINKEDIN_API_URL || 'http://localhost:3004'}/api/cleanup/user`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId })
+                    });
+                    const linkedinUserResult = await linkedinUserCleanupResponse.json();
+                    console.log(`📘 LinkedIn user cleanup:`, linkedinUserResult.deletedCounts);
+                } catch (error) {
+                    console.warn(`   ⚠️  LinkedIn user cleanup failed:`, error.message);
+                }
+
+                // Call Twitter microservice to cleanup user's personal data
+                try {
+                    const twitterUserCleanupResponse = await fetch(`${process.env.TWEET_API_URL || 'http://localhost:3002'}/api/cleanup/user`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId })
+                    });
+                    const twitterUserResult = await twitterUserCleanupResponse.json();
+                    console.log(`🐦 Twitter user cleanup:`, twitterUserResult.deletedCounts);
+                } catch (error) {
+                    console.warn(`   ⚠️  Twitter user cleanup failed:`, error.message);
+                }
+
+                // 3. Remove user from any team memberships (where they're not owner)
+                const membershipResult = await query(
+                    'DELETE FROM team_members WHERE user_id = $1',
+                    [userId]
+                );
+                console.log(`👥 Removed user from ${membershipResult.rowCount} team memberships`);
+
+                // 4. Delete user API keys (BYOK)
+                try {
+                    const apiKeysResult = await query(
+                        'DELETE FROM user_api_keys WHERE user_id = $1',
+                        [userId]
+                    );
+                    console.log(`🔑 Deleted ${apiKeysResult.rowCount} API keys`);
+                } catch (error) {
+                    console.log(`   ℹ️  user_api_keys cleanup skipped`);
+                }
+
+                // 5. Delete credit transactions history
+                try {
+                    const transactionsResult = await query(
+                        'DELETE FROM credit_transactions WHERE user_id = $1',
+                        [userId]
+                    );
+                    console.log(`💳 Deleted ${transactionsResult.rowCount} credit transactions`);
+                } catch (error) {
+                    console.log(`   ℹ️  credit_transactions cleanup skipped`);
+                }
+
+                // 6. Delete pending team invitations sent to this user
+                try {
+                    const userInvitesResult = await query(
+                        'DELETE FROM team_invitations WHERE email = $1',
+                        [userEmail]
+                    );
+                    console.log(`📨 Deleted ${userInvitesResult.rowCount} pending invitations`);
+                } catch (error) {
+                    console.log(`   ℹ️  team_invitations cleanup skipped`);
+                }
+
+                // 7. Finally, delete the user account
+                await query('DELETE FROM users WHERE id = $1', [userId]);
+                console.log(`✅ Deleted user account: ${userEmail}`);
+
+                // Commit transaction
+                await query('COMMIT');
+                console.log(`🎉 Account deletion completed successfully`);
+
+            } catch (error) {
+                // Rollback on any error
+                await query('ROLLBACK');
+                console.error('❌ Error during account deletion, rolled back:', error);
+                throw error;
+            }
 
             // Clear authentication cookies
             AuthController.clearAuthCookies(res);
@@ -680,12 +855,13 @@ class AuthController {
             try {
                 await redisClient.del(`credits:${userId}`);
                 await redisClient.del(`plan:${userId}`);
+                console.log(`🗑️  Cleared Redis cache for user`);
             } catch (e) {
                 console.warn('Failed to clean up Redis data for deleted user:', e?.message || e);
             }
 
             res.json({ 
-                message: 'Account deleted successfully',
+                message: 'Account and all related data deleted successfully',
                 deleted: true
             });
         } catch (error) {

@@ -171,8 +171,10 @@ const TeamPage = () => {
     const fetchSocialAccounts = async () => {
         try {
             const response = await api.get('/pro-team/social-accounts');
+            console.log('[FRONTEND] Social accounts API response:', response.data);
             setSocialAccountsApiResponse(response.data);
             if (response.data.success) {
+                console.log('[FRONTEND] Setting accounts:', response.data.accounts);
                 setSocialAccounts(response.data.accounts || []);
             }
         } catch (error) {
@@ -683,11 +685,11 @@ const TeamPage = () => {
                                 
                                 <div className="flex items-center gap-2">
                                     <span className={`px-2 py-1 text-xs rounded-full ${
-                                        account.active 
+                                        (account.active || account.is_active) 
                                             ? 'bg-green-100 text-green-800' 
                                             : 'bg-red-100 text-red-800'
                                     }`}>
-                                        {account.active ? 'Active' : 'Inactive'}
+                                        {(account.active || account.is_active) ? 'Active' : 'Inactive'}
                                     </span>
                                     
                                     {['owner', 'admin'].includes(userPermissions.role) && (

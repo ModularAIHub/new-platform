@@ -135,6 +135,11 @@ export const AuthProvider = ({ children }) => {
     const register = async (name, email, password, verificationToken) => {
         try {
             const response = await api.post('/auth/register', { name, email, password, verificationToken })
+            // Auto-login after successful registration
+            if (response.data.user) {
+                setUser(response.data.user)
+                console.log('[AuthContext] User registered and logged in:', response.data.user)
+            }
             return response.data
         } catch (error) {
             let message

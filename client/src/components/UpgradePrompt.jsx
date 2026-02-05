@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Crown, Check, ArrowRight, Sparkles } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 const UpgradePrompt = ({ 
   isOpen, 
@@ -10,6 +11,7 @@ const UpgradePrompt = ({
   description = "Unlock powerful features to grow your social media presence" 
 }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const proFeatures = [
     "Unlimited automated posts",
@@ -80,12 +82,19 @@ const UpgradePrompt = ({
         <div className="space-y-3">
           <button
             onClick={() => {
+              // If not logged in, redirect to signup page with plan parameter
+              if (!user) {
+                navigate('/signup?plan=pro');
+                onClose();
+                return;
+              }
+              // If logged in, go to plans page
               navigate('/plans');
               onClose();
             }}
             className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-200 flex items-center justify-center"
           >
-            Start 14-Day Free Trial
+            {user ? 'Start 14-Day Free Trial' : 'Sign Up for Free Trial'}
             <ArrowRight className="h-4 w-4 ml-2" />
           </button>
           
