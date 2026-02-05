@@ -47,45 +47,25 @@ export const ProTeamController = {
                 [teamId]
             );
 
-            // Fetch LinkedIn team accounts from LinkedIn-genie microservice
+            // Fetch LinkedIn team accounts directly from database (same database as new-platform)
             let linkedinAccounts = [];
             try {
-                const apiUrl = `${process.env.LINKEDIN_API_URL || 'http://localhost:3004'}/api/team/accounts`;
+                const linkedinResult = await query(
+                    `SELECT lta.id, 'linkedin' as platform, lta.linkedin_username as account_username, 
+                            lta.linkedin_display_name as account_display_name, lta.linkedin_user_id as account_id,
+                            lta.linkedin_profile_image_url as profile_image_url, lta.headline, lta.connections_count,
+                            u.name as connected_by_name, u.email as connected_by_email, lta.active as is_active
+                     FROM linkedin_team_accounts lta
+                     LEFT JOIN users u ON lta.user_id = u.id
+                     WHERE lta.team_id = $1 AND lta.active = true
+                     ORDER BY lta.created_at DESC`,
+                    [teamId]
+                );
                 
-                const linkedinResponse = await fetch(apiUrl, {
-                    method: 'GET',
-                    headers: {
-                        'Cookie': req.headers.cookie || '', // Forward cookies for authentication
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                if (linkedinResponse.ok) {
-                    const linkedinData = await linkedinResponse.json();
-                    const allAccounts = linkedinData.accounts || [];
-                    
-                    linkedinAccounts = allAccounts
-                        .filter(acc => acc.isTeamAccount && acc.team_id === teamId)
-                        .map(acc => ({
-                            id: acc.id,
-                            platform: 'linkedin',
-                            account_username: acc.linkedin_username,
-                            account_display_name: acc.linkedin_display_name,
-                            account_id: acc.linkedin_user_id,
-                            profile_image_url: acc.linkedin_profile_image_url,
-                            headline: acc.headline || null,
-                            connections_count: acc.connections_count || null,
-                            connected_by_name: null,
-                            connected_by_email: null,
-                            is_active: true,
-                            ...acc
-                        }));
-                } else {
-                    const errorText = await linkedinResponse.text();
-                    console.error('[LINKEDIN FETCH] Failed - Status:', linkedinResponse.status, errorText);
-                }
+                linkedinAccounts = linkedinResult.rows;
+                console.log('[LINKEDIN FETCH] Fetched LinkedIn team accounts from database:', linkedinAccounts.length);
             } catch (error) {
-                console.error('[LINKEDIN FETCH] Exception:', error.message);
+                console.error('[LINKEDIN FETCH] Database query failed:', error.message);
             }
 
             const merged = [...userAccountsResult.rows, ...teamAccountsResult.rows, ...linkedinAccounts];
