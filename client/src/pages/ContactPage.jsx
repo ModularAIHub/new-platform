@@ -264,8 +264,8 @@ const ContactPage = () => {
                 </div>
                 
                 <div>
-                  <h4 className="font-semibold text-neutral-900 mb-2">Is there a free trial?</h4>
-                  <p className="text-neutral-600 text-sm">Yes! You can start creating content for free and explore all our features before upgrading to a paid plan.</p>
+                  <h4 className="font-semibold text-neutral-900 mb-2">Is the Teams plan free?</h4>
+                  <p className="text-neutral-600 text-sm">Yes! The Teams plan is currently free. You can upgrade and access all team collaboration features without any payment.</p>
                 </div>
               </div>
             </Card>

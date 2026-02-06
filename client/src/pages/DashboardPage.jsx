@@ -49,10 +49,10 @@ const DashboardPage = () => {
         }
     }
 
-    // Test function to upgrade to Pro plan
+    // Test function to upgrade to Teams plan
     const handleTestUpgrade = async () => {
         if (userPlan?.type === 'pro') {
-            alert('You are already on Pro plan!');
+            alert('You are already on Teams plan!');
             return;
         }
         
@@ -215,7 +215,7 @@ const DashboardPage = () => {
                             <CardHeader className="text-center">
                                 <CardTitle className="text-2xl text-primary-900">Choose Your AI Key Mode</CardTitle>
                                 <CardDescription className="text-base">
-                                    Select how you want to use AI features. You can use platform keys (50 Free / 150 Pro) or bring your own (BYOK with 2x credits: 100 Free / 300 Pro, <strong>3-month lock</strong>). This cannot be skipped.
+                                    Select how you want to use AI features. You can use platform keys (50 Free / 150 Teams) or bring your own (BYOK with 2x credits: 100 Free / 300 Teams, <strong>3-month lock</strong>). This cannot be skipped.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
@@ -272,7 +272,7 @@ const DashboardPage = () => {
                                 <ul className="list-disc pl-6 text-neutral-700 space-y-2 mb-4">
                                     <li><strong>BYOK</strong> (Bring Your Own Key) lets you use your own API keys for OpenAI, Gemini, or Perplexity.</li>
                                     <li>When you switch to BYOK, your account is <strong>locked for 30 days</strong> (cannot switch back to platform keys).</li>
-                                    <li>BYOK gives you <strong>2x credits</strong> (Free: 100, Pro: 300 vs Platform's Free: 50, Pro: 150).</li>
+                                    <li>BYOK gives you <strong>2x credits</strong> (Free: 100, Teams: 300 vs Platform's Free: 50, Teams: 150).</li>
                                     <li>You must add at least one valid API key for each provider you want to use.</li>
                                     <li>After 30 days, you can switch back to platform keys if you wish.</li>
                                     <li>Active keys are used for all AI requests for that provider.</li>
@@ -295,7 +295,7 @@ const DashboardPage = () => {
                                     AI Key Preference
                                 </CardTitle>
                                 <CardDescription>
-                                    Select how you want to use AI features. You can use platform keys (50 Free / 150 Pro) or bring your own (BYOK with 2x: 100 Free / 300 Pro, <strong>3-month lock</strong>).
+                                    Select how you want to use AI features. You can use platform keys (50 Free / 150 Teams) or bring your own (BYOK with 2x: 100 Free / 300 Teams, <strong>3-month lock</strong>).
                                 </CardDescription>
                             </div>
                             <Button
@@ -376,10 +376,10 @@ const DashboardPage = () => {
                 <StatsCard 
                     title="Plan Type" 
                     value={userPlan?.name || 'Free'} 
-                    subtitle={userPlan?.type === 'free' ? "Upgrade to Pro" : "Active"} 
+                    subtitle={userPlan?.type === 'free' ? "Upgrade to Teams" : "Active"} 
                     icon={userPlan?.type === 'free' ? <Crown className="h-6 w-6 text-yellow-500" /> : <Key className="h-6 w-6 text-green-500" />}
                     onClick={userPlan?.type === 'free' ? () => {
-                        setUpgradeFeature('Pro Plan Access');
+                        setUpgradeFeature('Teams Plan Access');
                         setShowUpgradePrompt(true);
                     } : null}
                     isClickable={userPlan?.type === 'free'}
@@ -453,8 +453,8 @@ const DashboardPage = () => {
                                 />
                                 {userPlan?.type === 'free' && (
                                     <QuickAction
-                                        label="🚀 Test Upgrade to Pro"
-                                        description="Instantly upgrade to Pro plan (for testing)"
+                                        label="🚀 Test Upgrade to Teams"
+                                        description="Instantly upgrade to Teams plan (for testing)"
                                         icon={<Crown className="w-5 h-5" />}
                                         color="warning"
                                         onClick={handleTestUpgrade}
@@ -571,7 +571,7 @@ const DashboardPage = () => {
                 isOpen={showUpgradePrompt}
                 onClose={() => setShowUpgradePrompt(false)}
                 feature={upgradeFeature}
-                title="Upgrade to Pro Plan"
+                title="Upgrade to Teams Plan"
                 description="Unlock powerful features to supercharge your content creation"
             />
         </div>

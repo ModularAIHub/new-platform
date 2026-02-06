@@ -125,7 +125,7 @@ const SocialAccountsPage = () => {
                     <p className="text-gray-600 mb-8">Connect and manage your social media accounts for team collaboration</p>
                     
                     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-8 max-w-2xl mx-auto">
-                        <h3 className="text-lg font-semibold text-blue-900 mb-4">🚀 Upgrade to Pro for Social Accounts</h3>
+                        <h3 className="text-lg font-semibold text-blue-900 mb-4">🚀 Upgrade to Teams for Social Accounts</h3>
                         <p className="text-blue-700 mb-6">
                             Connect up to 8 social media accounts and collaborate with your team on content creation and scheduling.
                         </p>
@@ -145,7 +145,7 @@ const SocialAccountsPage = () => {
                             onClick={() => window.location.href = '/plans'}
                             className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
                         >
-                            Upgrade to Pro
+                            Upgrade to Teams
                         </button>
                     </div>
                 </div>

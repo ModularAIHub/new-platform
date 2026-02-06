@@ -16,6 +16,9 @@ import syncWorker from './workers/syncWorker.js';
 
 const app = express();
 
+// Disable ETag to prevent 304 responses with cached CORS headers
+app.set('etag', false);
+
 // Trust the first proxy (needed for Railway and other cloud hosts)
 app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
@@ -125,6 +128,10 @@ app.use((req, res, next) => {
             res.header('Access-Control-Allow-Origin', origin);
             res.header('Access-Control-Allow-Credentials', 'true');
             res.header('Vary', 'Origin');
+            // Prevent caching of CORS responses to avoid cross-origin cache pollution
+            res.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+            res.header('Pragma', 'no-cache');
+            res.header('Expires', '0');
         }
     }
     next();

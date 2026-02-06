@@ -14,7 +14,7 @@ const CTASection = () => {
           Ready to Grow with SuiteGenie?
         </h2>
         <p className="text-xl text-gray-700 mb-8 max-w-3xl mx-auto">
-          Start your free trial and see how effortless content creation and automation can be. Join thousands of creators and teams building their brand with SuiteGenie.
+          Get started for free and see how effortless content creation and automation can be. Join thousands of creators and teams building their brand with SuiteGenie.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
           <button

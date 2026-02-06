@@ -88,30 +88,30 @@ const RegisterPage = () => {
 				return;
 			}
 			
-			// If plan=pro, upgrade to Pro trial
+			// If plan=pro, upgrade to Teams
 			if (planType === 'pro') {
-				console.log('Starting Pro trial upgrade flow...');
+				console.log('Starting Teams upgrade flow...');
 				try {
 					// User is already logged in from register response, just upgrade
 					console.log('Calling upgrade API...');
 					
-					// Upgrade to Pro trial
+					// Upgrade to Teams
 					const upgradeResponse = await api.post('/plans/upgrade', {
 						planType: 'pro',
-						isTrial: true
+						isTrial: false
 					});
 					console.log('Upgrade API response:', upgradeResponse.data);
 					
 					const bonusCredits = upgradeResponse.data.newPlan?.bonusCredits || 150;
 					console.log('Showing success toast...');
 					toast.success(
-						`🎉 Welcome to Pro! Your 14-day trial has started.\n\n✨ You now have:\n• Unlimited posts\n• All platforms unlocked\n• ${bonusCredits.toLocaleString()} bonus credits!`,
+						`🎉 Welcome to Teams!\n\n✨ You now have:\n• Unlimited posts\n• All platforms unlocked\n• ${bonusCredits.toLocaleString()} bonus credits!`,
 						{ duration: 5000 }
 					);
 				} catch (error) {
-					console.error('Pro upgrade error:', error);
+					console.error('Teams upgrade error:', error);
 					console.error('Error details:', error.response?.data);
-					toast.error('Account created but failed to activate Pro trial. Please contact support.');
+					toast.error('Account created but failed to upgrade to Teams. Please contact support.');
 				}
 			} else {
 				toast.success('🎉 Account created! Welcome to SuiteGenie!');

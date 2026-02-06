@@ -42,9 +42,9 @@ const PlansPage = () => {
       popular: false
     },
     {
-      name: 'Professional',
-      price: '₹399',
-      monthlyPrice: '₹399',
+      name: 'Teams',
+      price: 'Free',
+      monthlyPrice: 'Free',
       description: 'Everything you need to scale your social presence',
       features: [
         'Unlimited automated posts',
@@ -67,7 +67,7 @@ const PlansPage = () => {
         'Custom integrations',
         'Phone support'
       ],
-      buttonText: 'Start 14-Day Trial',
+      buttonText: 'Upgrade to Teams',
       popular: true
     },
     {
@@ -96,34 +96,34 @@ const PlansPage = () => {
   ];
 
   const comparisonFeatures = [
-    { name: 'Monthly Credits (Platform)', starter: '50', professional: '150', enterprise: '500' },
-    { name: 'Monthly Credits (BYOK)', starter: '100', professional: '300', enterprise: '1000' },
-    { name: 'Monthly Posts', starter: '5', professional: 'Unlimited', enterprise: 'Unlimited' },
-    { name: 'Social Platforms', starter: '1', professional: 'All (3+)', enterprise: 'All (3+)' },
-    { name: 'AI Content Generation', starter: 'Basic', professional: 'Advanced', enterprise: 'Advanced' },
-    { name: 'Analytics', starter: 'Basic', professional: 'Advanced', enterprise: 'Custom' },
-    { name: 'Team Members', starter: '1', professional: '5', enterprise: 'Unlimited' },
-    { name: 'Support', starter: 'Email', professional: 'Priority Email', enterprise: '24/7 Phone' },
-    { name: 'Custom Templates', starter: false, professional: true, enterprise: true },
-    { name: 'Bulk Generation', starter: false, professional: true, enterprise: true },
-    { name: 'White-label', starter: false, professional: false, enterprise: true },
-    { name: 'API Access', starter: false, professional: false, enterprise: true },
-    { name: 'SSO', starter: false, professional: false, enterprise: true },
-    { name: 'Dedicated Manager', starter: false, professional: false, enterprise: true }
+    { name: 'Monthly Credits (Platform)', starter: '50', teams: '150', enterprise: '500' },
+    { name: 'Monthly Credits (BYOK)', starter: '100', teams: '300', enterprise: '1000' },
+    { name: 'Monthly Posts', starter: '5', teams: 'Unlimited', enterprise: 'Unlimited' },
+    { name: 'Social Platforms', starter: '1', teams: 'All (3+)', enterprise: 'All (3+)' },
+    { name: 'AI Content Generation', starter: 'Basic', teams: 'Advanced', enterprise: 'Advanced' },
+    { name: 'Analytics', starter: 'Basic', teams: 'Advanced', enterprise: 'Custom' },
+    { name: 'Team Members', starter: '1', teams: '5', enterprise: 'Unlimited' },
+    { name: 'Support', starter: 'Email', teams: 'Priority Email', enterprise: '24/7 Phone' },
+    { name: 'Custom Templates', starter: false, teams: true, enterprise: true },
+    { name: 'Bulk Generation', starter: false, teams: true, enterprise: true },
+    { name: 'White-label', starter: false, teams: false, enterprise: true },
+    { name: 'API Access', starter: false, teams: false, enterprise: true },
+    { name: 'SSO', starter: false, teams: false, enterprise: true },
+    { name: 'Dedicated Manager', starter: false, teams: false, enterprise: true }
   ];
 
   const faqs = [
     {
-      question: 'What happens after my 14-day trial ends?',
-      answer: 'After your 14-day trial, you can choose to continue with a paid plan or downgrade to our free Starter plan. No credit card required for the trial.'
+      question: 'How do I upgrade to Teams?',
+      answer: 'Simply click \'Upgrade to Teams\' and your account will be upgraded instantly. No credit card required.'
     },
     {
       question: 'Can I change plans at any time?',
-      answer: 'Yes! You can upgrade or downgrade your plan at any time. Changes take effect immediately, and billing is prorated accordingly.'
+      answer: 'Yes! You can upgrade or downgrade your plan at any time. Changes take effect immediately.'
     },
     {
       question: 'What social platforms do you support?',
-      answer: 'We currently support Twitter, LinkedIn, and WordPress with more platforms coming soon. Our Professional and Enterprise plans include access to all supported platforms.'
+      answer: 'We currently support Twitter, LinkedIn, and WordPress with more platforms coming soon. Our Teams and Enterprise plans include access to all supported platforms.'
     },
     {
       question: 'Is there a setup fee or contract?',
@@ -133,21 +133,21 @@ const PlansPage = () => {
       question: 'How does the AI content generation work?',
       answer: 'Our AI analyzes your brand voice, industry trends, and engagement patterns to create personalized content that resonates with your audience across all platforms.'
     },
-    {
+    /* {
       question: 'Can I get a refund if I\'m not satisfied?',
       answer: 'We offer a 30-day money-back guarantee for all paid plans. If you\'re not completely satisfied, contact our support team for a full refund.'
-    },
+    }, */
     {
       question: 'Do you offer custom integrations for Enterprise customers?',
       answer: 'Yes! Enterprise customers can request custom integrations with their existing tools and workflows. Our development team will work with you to create tailored solutions.'
     },
     {
       question: 'What kind of support do you provide?',
-      answer: 'Starter users get email support, Professional users get priority email support, and Enterprise customers receive dedicated 24/7 phone support with a dedicated account manager.'
+      answer: 'Starter users get email support, Teams users get priority email support, and Enterprise customers receive dedicated 24/7 phone support with a dedicated account manager.'
     },
     {
-      question: 'Where do I manage my team after upgrading to Pro?',
-      answer: 'After upgrading to Pro, you can visit the /team page on your dashboard to create or manage your team. You\'ll be able to invite members, manage social accounts, and collaborate with your team on content creation.'
+      question: 'Where do I manage my team after upgrading to Teams?',
+      answer: 'After upgrading to Teams, you can visit the /team page on your dashboard to create or manage your team. You\'ll be able to invite members, manage social accounts, and collaborate with your team on content creation.'
     }
   ];
 
@@ -157,15 +157,15 @@ const PlansPage = () => {
       <div className="bg-white">
         <div className="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Start Your Free 14-Day Trial Now
+            Choose Your Plan
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
             Choose the perfect plan for your social media automation needs. 
             Scale your content creation with AI-powered tools across Twitter, LinkedIn, and WordPress.
           </p>
-          <div className="inline-flex items-center bg-blue-50 rounded-full px-4 py-2 text-blue-700">
+          {/* <div className="inline-flex items-center bg-blue-50 rounded-full px-4 py-2 text-blue-700">
             <span className="text-sm font-medium">✨ No credit card required for trial</span>
-          </div>
+          </div> */}
         </div>
       </div>
 
@@ -196,12 +196,12 @@ const PlansPage = () => {
                     <span className="text-gray-500 ml-1">/month</span>
                   )}
                 </div>
-                {plan.price !== 'Free' && plan.price !== 'Custom' && plan.name === 'Professional' && (
+                {/* {plan.price !== 'Free' && plan.price !== 'Custom' && plan.name === 'Teams' && (
                   <div className="mt-2">
                     <p className="text-sm text-green-600 font-medium">✨ Free 14-day trial</p>
                     <p className="text-xs text-gray-500 mt-1">Then ₹399 per month</p>
                   </div>
-                )}
+                )} */}
               </div>
 
               <div className="space-y-4 mb-8">
@@ -221,15 +221,15 @@ const PlansPage = () => {
 
               <button
                 onClick={async () => {
-                  // Check if user is already on Pro plan
-                  if (plan.name === 'Professional' && user?.planType === 'pro') {
-                    toast.success('You are already a Pro user! 🎉');
+                  // Check if user is already on Teams plan
+                  if (plan.name === 'Teams' && user?.planType === 'pro') {
+                    toast.success('You are already a Teams user! 🎉');
                     return;
                   }
                   
                   // If not logged in, redirect to signup with plan parameter
                   if (!user) {
-                    if (plan.name === 'Professional') {
+                    if (plan.name === 'Teams') {
                       navigate('/signup?plan=pro');
                     } else {
                       navigate('/signup');
@@ -237,22 +237,22 @@ const PlansPage = () => {
                     return;
                   }
                   
-                  // If user is logged in and clicking Professional plan, start trial
-                  if (plan.name === 'Professional') {
+                  // If user is logged in and clicking Teams plan, upgrade
+                  if (plan.name === 'Teams') {
                     setUpgrading(true);
                     try {
-                      // Start 14-day free trial (no payment)
+                      // Upgrade to Teams (free, no trial)
                       const response = await api.post('/plans/upgrade', {
                         planType: 'pro',
-                        isTrial: true
+                        isTrial: false
                       });
                       
-                      toast.success(`🎉 Welcome to Pro! Your 14-day trial starts now!\n✨ ${response.data.message}`);
+                      toast.success(`🎉 Welcome to Teams!\n✨ ${response.data.message}`);
                       // Redirect to Team page after successful upgrade
                       setTimeout(() => navigate('/team'), 1500);
                     } catch (error) {
-                      console.error('Trial activation error:', error);
-                      toast.error(error.response?.data?.error || 'Failed to activate trial');
+                      console.error('Upgrade error:', error);
+                      toast.error(error.response?.data?.error || 'Failed to upgrade');
                       setUpgrading(false);
                     }
                     return;
@@ -265,7 +265,7 @@ const PlansPage = () => {
                     : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                 } ${upgrading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                {upgrading ? 'Processing...' : (plan.name === 'Professional' && user?.planType === 'pro' ? 'Current Plan ✓' : plan.buttonText)}
+                {upgrading ? 'Processing...' : (plan.name === 'Teams' && user?.planType === 'pro' ? 'Current Plan ✓' : plan.buttonText)}
               </button>
             </div>
           ))}
@@ -286,7 +286,7 @@ const PlansPage = () => {
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-4 px-6 font-medium text-gray-900">Features</th>
                   <th className="text-center py-4 px-6 font-medium text-gray-900">Starter</th>
-                  <th className="text-center py-4 px-6 font-medium text-gray-900 bg-blue-50">Professional</th>
+                  <th className="text-center py-4 px-6 font-medium text-gray-900 bg-blue-50">Teams</th>
                   <th className="text-center py-4 px-6 font-medium text-gray-900">Enterprise</th>
                 </tr>
               </thead>
@@ -306,14 +306,14 @@ const PlansPage = () => {
                       )}
                     </td>
                     <td className="py-4 px-6 text-center bg-blue-50">
-                      {typeof feature.professional === 'boolean' ? (
-                        feature.professional ? (
+                      {typeof feature.teams === 'boolean' ? (
+                        feature.teams ? (
                           <Check className="h-5 w-5 text-green-500 mx-auto" />
                         ) : (
                           <X className="h-5 w-5 text-gray-400 mx-auto" />
                         )
                       ) : (
-                        <span className="text-gray-700 font-medium">{feature.professional}</span>
+                        <span className="text-gray-700 font-medium">{feature.teams}</span>
                       )}
                     </td>
                     <td className="py-4 px-6 text-center">
@@ -366,14 +366,14 @@ const PlansPage = () => {
           <div className="mt-12 bg-white rounded-lg p-8 border-2 border-blue-500">
             <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center">Get Started with Your Team</h3>
             <p className="text-gray-600 text-center mb-6">
-              After upgrading to Pro, you'll be able to visit the <span className="font-semibold text-blue-600">/team</span> dashboard where you can create a team, invite members, and start collaborating.
+              After upgrading to Teams, you'll be able to visit the <span className="font-semibold text-blue-600">/team</span> dashboard where you can create a team, invite members, and start collaborating.
             </p>
             <div className="text-center">
               <button
                 onClick={() => navigate('/plans')}
                 className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
               >
-                Start Your 14-Day Free Trial
+                Upgrade to Teams
               </button>
             </div>
           </div>
@@ -436,9 +436,9 @@ const PlansPage = () => {
             onClick={() => navigate('/register')}
             className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold hover:bg-gray-100 transition-colors text-lg"
           >
-            Start Your Free Trial Today
+            Get Started Today
           </button>
-          <p className="text-blue-200 mt-4 text-sm">No credit card required • 14-day free trial</p>
+          {/* <p className="text-blue-200 mt-4 text-sm">No credit card required • 14-day free trial</p> */}
         </div>
       </div>
 

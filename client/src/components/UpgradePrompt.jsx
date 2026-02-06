@@ -7,13 +7,13 @@ const UpgradePrompt = ({
   isOpen, 
   onClose, 
   feature, 
-  title = "Upgrade to Pro", 
+  title = "Upgrade to Teams", 
   description = "Unlock powerful features to grow your social media presence" 
 }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const proFeatures = [
+  const teamsFeatures = [
     "Unlimited automated posts",
     "Advanced AI content generation", 
     "Smart scheduling optimization",
@@ -56,8 +56,8 @@ const UpgradePrompt = ({
 
         {/* Features list */}
         <div className="space-y-3 mb-6">
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">Pro features include:</h3>
-          {proFeatures.slice(0, 6).map((feature, index) => (
+          <h3 className="text-sm font-semibold text-gray-900 mb-3">Teams features include:</h3>
+          {teamsFeatures.slice(0, 6).map((feature, index) => (
             <div key={index} className="flex items-start">
               <Check className="h-4 w-4 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
               <span className="text-sm text-gray-700">{feature}</span>
@@ -65,8 +65,8 @@ const UpgradePrompt = ({
           ))}
         </div>
 
-        {/* Pricing */}
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 mb-6">
+        {/* Pricing - commented out for free Teams plan */}
+        {/* <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 mb-6">
           <div className="text-center">
             <div className="flex items-baseline justify-center mb-2">
               <span className="text-3xl font-bold text-gray-900">₹399</span>
@@ -76,7 +76,7 @@ const UpgradePrompt = ({
               After 14-day trial
             </p>
           </div>
-        </div>
+        </div> */}
 
         {/* Action buttons */}
         <div className="space-y-3">
@@ -94,7 +94,7 @@ const UpgradePrompt = ({
             }}
             className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-200 flex items-center justify-center"
           >
-            {user ? 'Start 14-Day Free Trial' : 'Sign Up for Free Trial'}
+            {user ? 'Upgrade to Teams' : 'Sign Up & Upgrade to Teams'}
             <ArrowRight className="h-4 w-4 ml-2" />
           </button>
           
@@ -108,7 +108,7 @@ const UpgradePrompt = ({
 
         {/* Footer note */}
         <p className="text-xs text-gray-500 text-center mt-4">
-          No credit card required • Cancel anytime
+          Free upgrade • Instant access
         </p>
       </div>
     </div>

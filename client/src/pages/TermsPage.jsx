@@ -85,10 +85,10 @@ const TermsPage = () => {
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">6. Subscriptions and Trials</h2>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">6. Subscriptions and Plans</h2>
               <p className="text-gray-700 mb-4">
-                Pro plan trial periods are 14 days. After the trial ends, you will be asked to subscribe to continue 
-                using Pro features. You may cancel at any time during the trial period without being charged.
+                {/* Teams plan is currently free. When paid plans are introduced, trial periods may apply. */}
+                Teams plan provides full access to collaboration features. You may use the service according to the limits of your plan.
               </p>
               <p className="text-gray-700 mb-4">
                 Subscriptions automatically renew unless canceled before the renewal date. Refunds are available 
