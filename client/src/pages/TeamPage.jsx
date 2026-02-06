@@ -1,4 +1,4 @@
-// TeamPage.jsx - Pro plan team collaboration
+// TeamPage.jsx - Teams plan collaboration
 import React, { useState, useEffect } from 'react';
 import { Users, Plus, Mail, UserX, Crown, Shield, Eye, Edit, Linkedin, Twitter, ExternalLink, Globe, MessageSquare, LogOut, Trash2, RefreshCw, Building2, User } from 'lucide-react';
 import usePlanAccess from '../hooks/usePlanAccess';
@@ -463,9 +463,9 @@ const TeamPage = () => {
 
                 <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-8 text-center">
                     <Users className="h-12 w-12 text-blue-500 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Team Collaboration - Pro Feature</h3>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Team Collaboration - Teams Feature</h3>
                     <p className="text-gray-600 mb-6">
-                        Upgrade to Pro to invite up to 5 team members, share social accounts, and collaborate on content creation.
+                        Upgrade to Teams to invite up to 5 team members, share social accounts, and collaborate on content creation.
                     </p>
                     
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-left">
@@ -487,7 +487,7 @@ const TeamPage = () => {
                         onClick={() => setShowUpgrade(true)}
                         className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
                     >
-                        Upgrade to Pro Plan
+                        Upgrade to Teams Plan
                     </button>
                 </div>
 
@@ -565,7 +565,7 @@ const TeamPage = () => {
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">{team.name}</h1>
                     <p className="text-gray-600">
-                        {team.member_count} of {team.max_members} members • Pro Plan
+                        {team.member_count} of {team.max_members} members • Teams Plan
                     </p>
                 </div>
                 {team.user_role !== 'owner' && (

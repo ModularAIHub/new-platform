@@ -25,9 +25,9 @@ const PricingSection = () => {
       popular: false
     },
     {
-      name: "Professional", 
-      price: "₹399",
-      period: "per month",
+      name: "Teams", 
+      price: "Free",
+      period: "Forever",
       description: "Best for growing businesses and creators",
       features: [
         "25 social media accounts",
@@ -37,7 +37,7 @@ const PricingSection = () => {
         "Custom brand voice",
         "Team collaboration"
       ],
-      buttonText: "Start Free Trial", 
+      buttonText: "Upgrade to Teams", 
       buttonStyle: "bg-blue-600 text-white hover:bg-blue-700",
       popular: true
     },

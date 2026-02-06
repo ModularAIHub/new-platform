@@ -3,8 +3,8 @@ import { Crown, Lock } from 'lucide-react';
 const LockedFeatureOverlay = ({ 
   feature, 
   onUpgradeClick, 
-  title = "Pro Feature",
-  description = "Upgrade to Pro to unlock this feature"
+  title = "Teams Feature",
+  description = "Upgrade to Teams to unlock this feature"
 }) => {
   return (
     <div className="absolute inset-0 bg-white bg-opacity-95 flex flex-col items-center justify-center rounded-lg backdrop-blur-sm z-10">
@@ -28,7 +28,7 @@ const LockedFeatureOverlay = ({
           onClick={onUpgradeClick}
           className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 transition-all duration-200 text-sm"
         >
-          Upgrade to Pro
+          Upgrade to Teams
         </button>
       </div>
     </div>
