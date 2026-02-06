@@ -76,7 +76,7 @@ const UpgradePrompt = ({
               After 14-day trial
             </p>
           </div>
-        </div> */}
+        {/* </div> */}
 
         {/* Action buttons */}
         <div className="space-y-3">
