@@ -109,27 +109,13 @@ const RoadmapSection = () => {
 
 export default function About() {
   const teamMembers = [
-    { 
-      name: "Kanishk", 
-      role: "Developer ", 
-      bio: "Built this from personal frustration as a creator. Now shaping the vision of AI-native content tooling.", 
-  imageUrl: "/kanishk.png",
+    {
+      name: "Kanishk",
+      role: "Founder, Developer, Marketer, Everything",
+      bio: "SuiteGenie is a one-man show. Kanishk handles all development, marketing, product vision, and every aspect required for a startup. From building the platform, designing features, managing deployments, to outreach and growth, every task is done solo. If you use SuiteGenie, you’re supporting a true indie founder.",
+      imageUrl: "/kanishk.png",
       linkedinUrl: "https://www.linkedin.com/in/kanishk-saraswat"
-    },
-    { 
-      name: "Ashutosh", 
-      role: "AI & Engineering", 
-      bio: "Focuses on building and fine-tuning the AI systems that power the platform's intelligence and reliability.", 
-  imageUrl: "/ashutosh.jpg",
-  linkedinUrl: "https://www.linkedin.com/in/enterashutosh/"
-    },
-    { 
-      name: "Abhay", 
-      role: "Developer", 
-      bio: "Builds the core platform features and ensures a seamless user experience across all modules.", 
-      imageUrl: "/abhay.jpg",
-      linkedinUrl: "https://www.linkedin.com/in/abhay-bharti",
-    },
+    }
   ];
 
   return (
@@ -245,7 +231,7 @@ export default function About() {
                 <div className="h-1 w-32 bg-gradient-to-r from-blue-600 to-purple-600 mx-auto rounded-full"></div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+              <div className="grid grid-cols-1 place-items-center max-w-md mx-auto gap-10">
                 {teamMembers.map((member, index) => (
                   <div
                     key={member.name}
@@ -263,7 +249,7 @@ export default function About() {
                     </div>
                     <h3 className="text-2xl font-extrabold text-gray-900 mb-1 tracking-tight group-hover:text-blue-700 transition-colors">{member.name}</h3>
                     <p className="text-blue-600 font-semibold mb-2 text-base">{member.role}</p>
-                    <p className="text-gray-500 text-sm leading-relaxed mb-4 max-w-xs">{member.bio}</p>
+                    <p className="text-gray-500 text-sm leading-relaxed mb-4 max-w-md">{member.bio}</p>
                     <div className="flex justify-center gap-3 mt-auto">
                       {member.linkedinUrl && member.linkedinUrl !== "#" && (
                         <a

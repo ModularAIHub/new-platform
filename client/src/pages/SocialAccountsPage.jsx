@@ -1,7 +1,8 @@
 // SocialAccountsPage.jsx - Manage team's social media connections
 import React, { useState, useEffect } from 'react';
-import { Twitter, Linkedin, Plus, Trash2, Users, Shield, Crown, Edit, Eye, ExternalLink } from 'lucide-react';
+import { Twitter, Linkedin, Trash2, Users, Shield, Crown, Edit, Eye, ExternalLink } from 'lucide-react';
 import api from '../utils/api';
+import { twitterApi } from '../utils/api';
 import usePlanAccess from '../hooks/usePlanAccess';
 
 const SocialAccountsPage = () => {
@@ -66,10 +67,43 @@ const SocialAccountsPage = () => {
     const connectTwitter = async () => {
         setConnecting('twitter');
         try {
-            // Redirect to Twitter OAuth  
-            window.location.href = '/api/twitter/auth';
+            const teamId = userPermissions.team_id || (accounts[0] && accounts[0].team_id);
+            const userId = userPermissions.user_id || null;
+            const returnUrl = window.location.origin + '/team';
+            if (!teamId || !userId) {
+                alert('Missing team or user information for Twitter connection.');
+                setConnecting(null);
+                return;
+            }
+            // OAuth2 flow
+            const twitterConnectUrl = `http://localhost:3002/api/twitter/team-connect?teamId=${encodeURIComponent(teamId)}&userId=${encodeURIComponent(userId)}&returnUrl=${encodeURIComponent(returnUrl)}`;
+            window.location.href = twitterConnectUrl;
         } catch (error) {
             console.error('Twitter connection failed:', error);
+            alert(error.response?.data?.error || 'Failed to initiate Twitter connection');
+        } finally {
+            setConnecting(null);
+        }
+    };
+
+    const connectTwitterOAuth1 = async () => {
+        setConnecting('twitter-oauth1');
+        try {
+            const teamId = userPermissions.team_id || (accounts[0] && accounts[0].team_id);
+            const userId = userPermissions.user_id || null;
+            const returnUrl = window.location.origin + '/team';
+            if (!teamId || !userId) {
+                alert('Missing team or user information for Twitter connection.');
+                setConnecting(null);
+                return;
+            }
+            // OAuth1.0a flow
+            const twitterOAuth1Url = `http://localhost:3002/api/twitter/team-connect-oauth1?teamId=${encodeURIComponent(teamId)}&userId=${encodeURIComponent(userId)}&returnUrl=${encodeURIComponent(returnUrl)}`;
+            window.location.href = twitterOAuth1Url;
+        } catch (error) {
+            console.error('Twitter OAuth1.0a connection failed:', error);
+            alert(error.response?.data?.error || 'Failed to initiate Twitter OAuth1.0a connection');
+        } finally {
             setConnecting(null);
         }
     };
@@ -221,9 +255,25 @@ const SocialAccountsPage = () => {
                                         <p className="text-xs text-gray-500">
                                             Connected by {account.connected_by_name || account.connected_by_email}
                                         </p>
+                                        <div className="flex gap-2 text-xs mt-2">
+                                            {account.hasOAuth2 && (
+                                                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                                    OAuth 2.0 ✓
+                                                </span>
+                                            )}
+                                            {account.hasOAuth1 && (
+                                                <span className="bg-green-100 text-green-800 px-2 py-1 rounded">
+                                                    Media Upload ✓
+                                                </span>
+                                            )}
+                                            {!account.hasOAuth1 && account.hasOAuth2 && (
+                                                <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+                                                    Connect Media Upload
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                                
                                 <div className="flex items-center gap-2">
                                     <span className={`px-2 py-1 text-xs rounded-full ${
                                         account.is_active 
@@ -232,7 +282,6 @@ const SocialAccountsPage = () => {
                                     }`}>
                                         {account.is_active ? 'Active' : 'Inactive'}
                                     </span>
-                                    
                                     {canConnectProfiles && (
                                         <button
                                             onClick={() => disconnectAccount(account.id)}
@@ -258,7 +307,7 @@ const SocialAccountsPage = () => {
                     </div>
                     
                     <div className="p-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <button
                                 onClick={connectLinkedIn}
                                 disabled={connecting === 'linkedin'}
@@ -269,7 +318,7 @@ const SocialAccountsPage = () => {
                                     {connecting === 'linkedin' ? 'Connecting LinkedIn...' : 'Connect LinkedIn'}
                                 </span>
                             </button>
-                            
+
                             <button
                                 onClick={connectTwitter}
                                 disabled={connecting === 'twitter'}
@@ -278,6 +327,17 @@ const SocialAccountsPage = () => {
                                 <Twitter className="h-6 w-6 text-blue-400" />
                                 <span className="font-medium text-gray-900">
                                     {connecting === 'twitter' ? 'Connecting Twitter...' : 'Connect Twitter'}
+                                </span>
+                            </button>
+
+                            <button
+                                onClick={connectTwitterOAuth1}
+                                disabled={connecting === 'twitter-oauth1'}
+                                className="flex items-center justify-center gap-3 p-4 border-2 border-dashed border-yellow-300 rounded-lg hover:border-yellow-500 hover:bg-yellow-50 transition-colors disabled:opacity-50"
+                            >
+                                <Twitter className="h-6 w-6 text-yellow-500" />
+                                <span className="font-medium text-gray-900">
+                                    {connecting === 'twitter-oauth1' ? 'Connecting Twitter (Media)...' : 'Twitter (Media Upload)'}
                                 </span>
                             </button>
                         </div>

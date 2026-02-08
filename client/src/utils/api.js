@@ -16,7 +16,21 @@ export async function fetchCsrfToken() {
 }
 
 // Use relative URL in development to leverage Vite proxy, production uses absolute backend URL
-const baseURL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '/api' : 'https://api.suitegenie.in/api');
+// Dynamic baseURL selection for different platforms
+const getBaseURL = (platform) => {
+    if (platform === 'twitter') {
+        // Tweet Genie backend
+        return 'http://localhost:3002/api';
+    } else if (platform === 'linkedin') {
+        // Linkedin Genie backend
+        return 'http://localhost:3004/api';
+    } else {
+        // New Platform backend
+        return import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '/api' : 'https://api.suitegenie.in/api');
+    }
+};
+
+const baseURL = getBaseURL();
 
 // Set timeout: 45s for production, 10s for local/dev
 const isProd = window.location.hostname.includes('suitegenie.in') || import.meta.env.MODE === 'production';
@@ -27,6 +41,13 @@ const api = axios.create({
     withCredentials: true,
     timeout,
 })
+
+// Helper for Twitter-specific requests
+export const twitterApi = axios.create({
+    baseURL: getBaseURL('twitter'),
+    withCredentials: true,
+    timeout,
+});
 
 // Flag to prevent multiple refresh attempts
 let isRefreshing = false;

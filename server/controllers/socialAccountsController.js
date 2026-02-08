@@ -146,8 +146,9 @@ export const SocialAccountsController = {
             const result = await query(`
                 INSERT INTO user_social_accounts (
                     user_id, team_id, platform, account_username, account_display_name,
-                    account_id, access_token, refresh_token, token_expires_at, profile_image_url
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                    account_id, access_token, refresh_token, token_expires_at, profile_image_url,
+                    oauth1_access_token, oauth1_access_token_secret
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
                 RETURNING id
             `, [
                 userId,
@@ -159,7 +160,9 @@ export const SocialAccountsController = {
                 accountData.accessToken,
                 accountData.refreshToken || null,
                 accountData.expiresAt || null,
-                accountData.profileImage || null
+                accountData.profileImage || null,
+                accountData.oauth1AccessToken || null,
+                accountData.oauth1AccessTokenSecret || null
             ]);
 
             console.log('[CONNECT] Successfully connected', platform, 'account', accountData.username, 'for user', userId, 'with team_id:', teamId);
