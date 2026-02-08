@@ -1,4 +1,6 @@
+
 import React from "react";
+import { Helmet } from "react-helmet";
 import Footer from '../components/Footer';
 
 // A simple hook for detecting when an element is in view to trigger animations
@@ -111,15 +113,46 @@ export default function About() {
   const teamMembers = [
     {
       name: "Kanishk",
-      role: "Founder, Developer, Marketer, Everything",
-      bio: "SuiteGenie is a one-man show. Kanishk handles all development, marketing, product vision, and every aspect required for a startup. From building the platform, designing features, managing deployments, to outreach and growth, every task is done solo. If you use SuiteGenie, you’re supporting a true indie founder.",
+      role: "One for all",
+      bio: "SuiteGenie is a one-man show. I handles all development, marketing, product vision, and every aspect required for a startup. From building the platform, designing features, managing deployments, to outreach and growth, every task is done solo. If you use SuiteGenie, you’re supporting a true indie founder.",
       imageUrl: "/kanishk.png",
       linkedinUrl: "https://www.linkedin.com/in/kanishk-saraswat"
     }
   ];
 
   return (
-    <div className="min-h-screen w-full bg-white">
+    <>
+      <Helmet>
+        <title>About SuiteGenie – Indie Founder Building AI Social Media Tools</title>
+        <meta name="description" content="Learn the story behind SuiteGenie, a one‑founder AI social media automation platform built to give creators their time back with BYOK and modular tools." />
+        <link rel="canonical" href="https://suitegenie.in/about" />
+        <meta property="og:title" content="About SuiteGenie – Indie Founder Building AI Social Media Tools" />
+        <meta property="og:description" content="Learn the story behind SuiteGenie, a one‑founder AI social media automation platform built to give creators their time back with BYOK and modular tools." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://suitegenie.in/about" />
+        <meta property="og:image" content="https://suitegenie.in/og-about.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="About SuiteGenie – Indie Founder Building AI Social Media Tools" />
+        <meta name="twitter:description" content="Learn the story behind SuiteGenie, a one‑founder AI social media automation platform built to give creators their time back with BYOK and modular tools." />
+        <meta name="twitter:image" content="https://suitegenie.in/og-about.png" />
+        {/* Structured Data: Person/Organization */}
+        <script type="application/ld+json">{`
+          {
+            "@context": "https://schema.org",
+            "@type": "Person",
+            "name": "Kanishk Saraswat",
+            "jobTitle": "Founder",
+            "worksFor": {
+              "@type": "Organization",
+              "name": "SuiteGenie"
+            },
+            "sameAs": [
+              "https://www.linkedin.com/in/kanishk-saraswat"
+            ]
+          }
+        `}</script>
+      </Helmet>
+      <div className="min-h-screen w-full bg-white" role="main">
       {/* Modern Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-800">
         {/* Animated Background Elements */}
@@ -146,13 +179,7 @@ export default function About() {
                 Building the future of content creation
               </div>
               
-              <h1 className="text-5xl lg:text-7xl font-black text-white leading-tight">
-                Giving 
-                <span className="block bg-gradient-to-r from-yellow-300 via-pink-300 to-cyan-300 bg-clip-text text-transparent">
-                  Creators
-                </span>
-                Their Time Back
-              </h1>
+              <h1 className="text-4xl font-extrabold mb-4 text-white">About SuiteGenie – Indie Founder Building AI Social Media Tools</h1>
               
               <p className="text-xl lg:text-2xl text-blue-100 leading-relaxed max-w-2xl">
                 In a world overwhelmed by digital noise, consistent and intelligent content is your edge. 
@@ -192,9 +219,11 @@ export default function About() {
                   <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 via-pink-400 to-cyan-400 rounded-3xl blur-xl opacity-30 animate-pulse"></div>
                   <img 
                     src="https://images.unsplash.com/photo-1485827404703-89b55fcc595e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
-                    alt="AI Technology and Innovation" 
+                    alt="AI technology concept with abstract background" 
                     className="relative w-full h-auto rounded-3xl shadow-2xl border-2 border-white/20 backdrop-blur-sm" 
                     loading="lazy" 
+                    width="800" 
+                    height="533" 
                   />
                 </div>
                 
@@ -250,6 +279,19 @@ export default function About() {
                     <h3 className="text-2xl font-extrabold text-gray-900 mb-1 tracking-tight group-hover:text-blue-700 transition-colors">{member.name}</h3>
                     <p className="text-blue-600 font-semibold mb-2 text-base">{member.role}</p>
                     <p className="text-gray-500 text-sm leading-relaxed mb-4 max-w-md">{member.bio}</p>
+                                        {/* BYOK setup instructions moved below the card */}
+                          {/* BYOK Setup Instructions Section */}
+                          <section className="max-w-md mx-auto mt-10 mb-16 bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
+                            <h2 className="text-2xl font-bold text-primary-700 mb-4">How to set up BYOK (Bring Your Own Key)</h2>
+                            <ol className="list-decimal pl-6 text-gray-700 space-y-2 text-base">
+                              <li>Go to <span className="font-semibold">Settings &rarr; API Keys</span> in your SuiteGenie dashboard.</li>
+                              <li>Choose your provider: <span className="font-semibold">OpenAI, Perplexity, or Gemini</span>.</li>
+                              <li>Follow the link to your provider’s API dashboard and generate a new API key.</li>
+                              <li>Copy the API key (it will look like <code>sk-...</code> for OpenAI).</li>
+                              <li>Paste your API key into SuiteGenie. Your key is fully encrypted and never shared.</li>
+                              <li>Click <span className="font-semibold">Save</span>. You’re ready to use all features—no limits or restrictions.</li>
+                            </ol>
+                          </section>
                     <div className="flex justify-center gap-3 mt-auto">
                       {member.linkedinUrl && member.linkedinUrl !== "#" && (
                         <a
@@ -285,9 +327,11 @@ export default function About() {
                     <div className="absolute -inset-4 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl opacity-10 blur-xl"></div>
                     <img 
                       src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
-                      alt="Early Platform Development and Analytics" 
+                      alt="SuiteGenie early platform development and analytics dashboard" 
                       className="relative w-full h-auto rounded-2xl shadow-2xl hover:scale-105 transition-transform duration-500" 
                       loading="lazy" 
+                      width="800" 
+                      height="533" 
                     />
                   </div>
                 </div>
@@ -305,7 +349,7 @@ export default function About() {
                       This platform wasn't built in a boardroom—it came from solving a real-world problem.
                     </p>
                     <p>
-                      It began with a personal passion project: an anime website for streaming, downloading, and blogging. As the site grew, I was juggling updates, writing blog posts, and trying to keep social media channels active. The passion was there, but the process was fragmented and overwhelming.
+                      It began with a personal passion project: an anime website for streaming, downloading, and blogging. As the site grew, I was juggling updates, writing blog posts, and trying to keep social media channels active. The passion was there, but the process was fragmented and overwhelming—just like for many creators who want to do more, without limits.
                     </p>
                     <p>
                       Even at a startup, publishing content consistently was still a struggle. I tried tools like Hootsuite and Buffer, but found a market of compromises—powerful platforms were expensive, and affordable ones felt clunky and incomplete.
@@ -352,7 +396,7 @@ export default function About() {
                   { 
                     icon: "🔄", 
                     title: "Multi-AI Fallback", 
-                    desc: "Never get stuck—our system automatically switches between AI providers.",
+                    desc: "Never get stuck, our system automatically switches between AI providers.",
                     gradient: "from-purple-500 to-pink-500"
                   },
                   { 
@@ -503,5 +547,6 @@ export default function About() {
       {/* Footer */}
       <Footer />
     </div>
+    </>
   );
 }

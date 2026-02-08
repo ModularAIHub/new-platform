@@ -203,7 +203,7 @@ const LoginPage = () => {
                         </div>
                         
                         <p className="mt-6 text-primary-200 italic">
-                            Your creative journey continues. Manage, create, and grow—all in one place.
+                            Your creative journey continues. Manage, create, and grow, all in one place.
                         </p>
                     </div>
                 </div>
