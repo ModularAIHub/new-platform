@@ -80,15 +80,7 @@ const HomePage = () => {
       </Helmet>
       <main className="min-h-screen bg-white" role="main">
 
-        {/* SEO H1 and Internal Links */}
-        <div className="max-w-4xl mx-auto px-4 pt-12 pb-4 text-center">
-          <h1 className="text-4xl font-extrabold mb-4 text-primary-700">AI Social Media Automation for Creators and Founders</h1>
-          <div className="flex flex-wrap justify-center gap-4 mb-2">
-            <a href="/features" className="text-blue-600 underline font-medium">See all features</a>
-            <span className="text-gray-400">|</span>
-            <a href="/pricing" className="text-blue-600 underline font-medium">View pricing</a>
-          </div>
-        </div>
+        {/* ...existing code... */}
 
         {/* Hero Section */}
         <FadeInSection>
