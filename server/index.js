@@ -1,4 +1,5 @@
 import express from 'express';
+import Honeybadger from '@honeybadger-io/js';
 import csurf from 'csurf';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -6,6 +7,12 @@ import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 dotenv.config();
+
+// Honeybadger configuration
+Honeybadger.configure({
+    apiKey: 'hbp_A8vjKimYh8OnyV8J3djwKrpqc4OniI3a4MJg', // Replace with your real key
+    environment: process.env.NODE_ENV || 'development'
+});
 
 import apiRouter from './routes/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
@@ -15,6 +22,9 @@ import redisClient from './config/redis.js';
 import syncWorker from './workers/syncWorker.js';
 
 const app = express();
+
+// Honeybadger request handler (must be first middleware)
+app.use(Honeybadger.requestHandler);
 
 // Disable ETag to prevent 304 responses with cached CORS headers
 app.set('etag', false);
@@ -314,6 +324,10 @@ app.listen(PORT, async () => {
         console.error('❌ Failed to initialize Redis or sync worker:', error);
     }
 });
+
+
+// Honeybadger error handler (must be after all routes/middleware)
+app.use(Honeybadger.errorHandler);
 
 export default app;
 

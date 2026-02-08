@@ -11,6 +11,8 @@
         "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0"
     },
     "dependencies": {
+        "@honeybadger-io/js": "^6.12.3",
+        "@honeybadger-io/react": "^6.1.27",
         "@hookform/resolvers": "^3.3.2",
         "@tailwindcss/vite": "^4.1.12",
         "axios": "^1.6.2",

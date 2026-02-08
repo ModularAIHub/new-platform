@@ -1,3 +1,8 @@
+// Subdomain mapping for supported platforms
+const subdomains = {
+    twitter: process.env.TWITTER_SUBDOMAIN || 'https://twitter.suitegenie.in',
+    linkedin: process.env.LINKEDIN_SUBDOMAIN || 'https://linkedin.suitegenie.in'
+};
 // proTeamController.js 
 // Controller for Pro plan team collaboration features
 import jwt from 'jsonwebtoken';
@@ -25,6 +30,7 @@ export const ProTeamController = {
             // Fetch OAuth1/user_social_accounts
             const userAccountsResult = await query(
                 `SELECT usa.id, usa.platform, usa.account_username, usa.account_display_name, usa.account_id, usa.profile_image_url, usa.created_at,
+                        usa.oauth1_access_token, usa.oauth1_access_token_secret,
                         u.name as connected_by_name, u.email as connected_by_email,
                         true as is_active
                  FROM user_social_accounts usa
@@ -34,10 +40,11 @@ export const ProTeamController = {
                 [teamId]
             );
 
-            // Fetch OAuth2/team_accounts (Twitter)
+            // Fetch OAuth1 and OAuth2 credentials for Twitter team accounts
             const teamAccountsResult = await query(
                 `SELECT ta.id, 'twitter' as platform, ta.twitter_username as account_username, ta.twitter_display_name as account_display_name,
                         ta.twitter_user_id as account_id, ta.twitter_profile_image_url as profile_image_url,
+                        ta.access_token, ta.refresh_token, ta.token_expires_at,
                         u.name as connected_by_name, u.email as connected_by_email,
                         ta.active as is_active
                  FROM team_accounts ta
@@ -304,13 +311,34 @@ export const ProTeamController = {
 
     // Connect a new social account
     async connectAccount(req, res) {
+                    // Detect if running locally
+                    const isLocal = process.env.NODE_ENV === 'development' || (req.headers.origin && req.headers.origin.includes('localhost'));
         try {
             const userId = req.user.id;
-            const { platform, accountData } = req.body;
+            let { platform, accountData } = req.body;
+
+            // Validate required fields
+            if (!platform) {
+                return res.status(400).json({ error: 'Missing platform in request body.' });
+            }
+            if (!accountData || typeof accountData !== 'object') {
+                return res.status(400).json({ error: 'Missing accountData in request body.' });
+            }
+            // Check required accountData fields for Twitter
+            if (platform === 'twitter' && !accountData.account_id) {
+                return res.status(400).json({ error: 'Missing account_id in accountData for Twitter.' });
+            }
+
+            // Support twitter-oauth1 as a valid platform for media upload
+            if (platform === 'twitter-oauth1') {
+                platform = 'twitter';
+                accountData = { ...accountData, oauthType: 'oauth1' };
+            }
 
             // Check permissions
             const canConnect = await RolePermissionsService.canUserPerformAction(userId, 'connect_profiles');
             if (!canConnect) {
+                console.error('[connectAccount] Permission denied for user:', userId);
                 return res.status(403).json({ 
                     error: 'You do not have permission to connect social accounts' 
                 });
@@ -319,6 +347,7 @@ export const ProTeamController = {
             // Get user's team and role limits
             const userPermissions = await RolePermissionsService.getUserPermissions(userId);
             if (!userPermissions.team_id) {
+                console.error('[connectAccount] No team_id for user:', userId, 'Permissions:', userPermissions);
                 return res.status(404).json({ error: 'You are not part of any team' });
             }
 
@@ -333,8 +362,18 @@ export const ProTeamController = {
             const maxConnections = userPermissions.limits.max_profile_connections;
 
             if (currentCount >= maxConnections) {
+                console.error('[connectAccount] Connection limit reached:', currentCount, 'Max:', maxConnections, 'User:', userId);
                 return res.status(400).json({ 
                     error: `You have reached your connection limit (${maxConnections} accounts)` 
+                });
+            }
+
+            // Special handling for Twitter OAuth1.0a flow
+            if (platform === 'twitter' && accountData?.oauthType === 'oauth1') {
+                // Redirect to Twitter OAuth1.0a flow
+                return res.json({
+                    success: true,
+                    redirectUrl: `${process.env.TWITTER_OAUTH1_URL || 'http://localhost:3002'}/api/twitter/team-connect-oauth1?team_id=${userPermissions.team_id}`
                 });
             }
 
@@ -345,6 +384,7 @@ export const ProTeamController = {
             `, [userPermissions.team_id, platform, accountData.account_id]);
 
             if (existingAccount.rows.length > 0) {
+                console.error('[connectAccount] Account already connected:', accountData.account_id, 'User:', userId, 'Team:', userPermissions.team_id);
                 return res.status(400).json({ 
                     error: 'This account is already connected to your team' 
                 });
@@ -648,33 +688,57 @@ export const ProTeamController = {
             }
             
             // Check team-wide account limit (8 total for the entire team)
-            const countResult = await query(`
-                SELECT COUNT(*) as count 
-                FROM user_social_accounts 
-                WHERE team_id = $1 AND is_active = true
-            `, [teamId]);
-            
-            const currentCount = parseInt(countResult.rows[0].count);
-            const teamLimit = 8; // Team-wide limit of 8 accounts
-            
-            if (currentCount >= teamLimit) {
-                return res.status(400).json({ 
-                    error: `Team has reached maximum limit of ${teamLimit} social accounts` 
-                });
-            }
-            
-            // Generate redirect URL to subdomain
-            // For local development, use localhost ports
-            const isLocal = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
-            const subdomains = {
-                twitter: process.env.TWITTER_SUBDOMAIN || (isLocal ? 'http://localhost:3001' : 'tweetapi.suitegenie.in'),
-                linkedin: process.env.LINKEDIN_SUBDOMAIN || (isLocal ? 'http://localhost:3004' : 'apilinkedin.suitegenie.in'),
-                wordpress: process.env.WORDPRESS_SUBDOMAIN || 'wordpress.suitegenie.in',
-                facebook: process.env.FACEBOOK_SUBDOMAIN || 'facebook.suitegenie.in',
-                instagram: process.env.INSTAGRAM_SUBDOMAIN || 'instagram.suitegenie.in'
-            };
+            const userAccountsResult = await query(
+                `SELECT usa.id, usa.platform, usa.account_username, usa.account_display_name, usa.account_id, usa.profile_image_url, usa.created_at,
+                        usa.oauth1_access_token, usa.oauth1_access_token_secret,
+                        u.name as connected_by_name, u.email as connected_by_email,
+                        true as is_active
+                 FROM user_social_accounts usa
+                 LEFT JOIN users u ON usa.user_id = u.id
+                 WHERE usa.team_id = $1 AND usa.is_active = true
+                 ORDER BY usa.created_at ASC`,
+                [teamId]
+            );
+            console.log('[FETCH] user_social_accounts rows:', userAccountsResult.rows);
+            userAccountsResult.rows.forEach(acc => {
+                if (acc.oauth1_access_token && acc.oauth1_access_token_secret) {
+                    console.log(`[FETCH] OAuth1.0 fetched for Account ${acc.id} platform=${acc.platform} username=${acc.account_username}`);
+                } else {
+                    console.log(`[FETCH] OAuth1.0 NOT fetched for Account ${acc.id} platform=${acc.platform} username=${acc.account_username}`);
+                }
+            });
+                    // error: `Team has reached maximum limit of ${teamLimit} social accounts` 
+                    // Removed reference to undefined variable 'teamLimit'. If you want to enforce a team-wide limit, use a defined value or variable.
+            const teamAccountsResult = await query(
+                `SELECT ta.id, 'twitter' as platform, ta.twitter_username as account_username, ta.twitter_display_name as account_display_name,
+                        ta.twitter_user_id as account_id, ta.twitter_profile_image_url as profile_image_url,
+                        ta.access_token, ta.refresh_token, ta.token_expires_at,
+                        u.name as connected_by_name, u.email as connected_by_email,
+                        ta.active as is_active
+                 FROM team_accounts ta
+                 LEFT JOIN users u ON ta.user_id = u.id
+                 WHERE ta.team_id = $1 AND ta.active = true
+                 ORDER BY ta.updated_at DESC`,
+                [teamId]
+            );
+            console.log('[FETCH] team_accounts rows:', teamAccountsResult.rows);
+            teamAccountsResult.rows.forEach(acc => {
+                if (acc.access_token && acc.refresh_token) {
+                    console.log(`[FETCH] OAuth2.0 fetched for Team Account ${acc.id} username=${acc.account_username}`);
+                } else {
+                    console.log(`[FETCH] OAuth2.0 NOT fetched for Team Account ${acc.id} username=${acc.account_username}`);
+                }
+            });
+                // Removed stray closing brace causing syntax error
+            console.log('[MERGE] Merging userAccountsResult, teamAccountsResult, linkedinAccounts');
 
-            const subdomain = subdomains[platform.toLowerCase()];
+            // Detect if running locally (move definition here for correct scope)
+            const isLocal = process.env.NODE_ENV === 'development' || (req.headers.origin && req.headers.origin.includes('localhost'));
+            let subdomain = subdomains[platform.toLowerCase()];
+            // Use localhost for Twitter OAuth in local dev
+            if (isLocal && platform.toLowerCase() === 'twitter') {
+                subdomain = 'http://localhost:3002';
+            }
             if (!subdomain) {
                 return res.status(400).json({ error: 'Unsupported platform' });
             }

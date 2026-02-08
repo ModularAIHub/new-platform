@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Users, Plus, Mail, UserX, Crown, Shield, Eye, Edit, Linkedin, Twitter, ExternalLink, Globe, MessageSquare, LogOut, Trash2, RefreshCw, Building2, User } from 'lucide-react';
 import usePlanAccess from '../hooks/usePlanAccess';
 import UpgradePrompt from '../components/UpgradePrompt';
-import api from '../utils/api';
+import api, { twitterApi } from '../utils/api';
 
 const TeamPage = () => {
     const [team, setTeam] = useState(null);
@@ -39,8 +39,66 @@ const TeamPage = () => {
         if (team) {
             fetchSocialAccounts();
             fetchUserPermissions();
+            // Debug log for team info
+            console.log('[DEBUG] team:', team);
         }
     }, [team]);
+
+    const connectTwitterOAuth1 = async () => {
+    setConnecting('twitter-oauth1');
+    try {
+        // Debug logs
+        console.log('[DEBUG] connectTwitterOAuth1: team', team);
+        console.log('[DEBUG] connectTwitterOAuth1: userPermissions', userPermissions);
+        // Robust teamId/userId extraction
+        const teamId = team?.id || userPermissions?.team_id;
+        let userId = userPermissions?.user_id || team?.user_id;
+        // Fallback: try to get from team members
+        if (!userId && team?.members) {
+            const currentMember = team.members.find(m => m.role === userPermissions?.role && m.user_id);
+            userId = currentMember?.user_id || currentMember?.userid;
+        }
+        // Fallback: try to get from API if not found
+        if (!userId) {
+            try {
+                const userResponse = await api.get('/auth/me');
+                userId = userResponse.data?.id || userResponse.data?.user?.id;
+                console.log('🔍 Got userId from /auth/me:', userId);
+            } catch (err) {
+                console.error('Failed to get user from /auth/me:', err);
+            }
+        }
+        // Final fallback: try to get from localStorage
+        if (!userId) {
+            try {
+                userId = localStorage.getItem('userId');
+                if (userId) {
+                    console.log('🔍 Got userId from localStorage:', userId);
+                }
+            } catch (err) {
+                console.error('Failed to get userId from localStorage:', err);
+            }
+        }
+        const returnUrl = window.location.origin + '/team';
+        console.log('🚀 Attempting OAuth1 with:', { teamId, userId, team, userPermissions });
+        if (!teamId) {
+            alert('No team found. Please refresh the page.');
+            setConnecting(null);
+            return;
+        }
+        if (!userId) {
+            alert('Could not determine user ID. Please check console and backend logs.');
+            setConnecting(null);
+            return;
+        }
+        window.location.href = `http://localhost:3002/api/twitter/team-connect-oauth1?teamId=${encodeURIComponent(teamId)}&userId=${encodeURIComponent(userId)}&returnUrl=${encodeURIComponent(returnUrl)}`;
+    } catch (error) {
+        console.error('Twitter OAuth1.0a connection failed:', error);
+        alert('Failed to initiate Twitter OAuth1.0a connection. Please check your network and backend logs.');
+    } finally {
+        setConnecting(null);
+    }
+};
 
     // Handle OAuth callback success
     useEffect(() => {
@@ -50,14 +108,14 @@ const TeamPage = () => {
         const error = urlParams.get('error');
         const accountName = urlParams.get('accountName');
         const existingTeam = urlParams.get('existingTeam');
-        
+
         // Check for LinkedIn account selection flow
         const selectLinkedIn = urlParams.get('select_linkedin_account');
         const selectionId = urlParams.get('selectionId');
         const organizationsParam = urlParams.get('organizations');
         const personalConnected = urlParams.get('personalConnected') === 'true';
         const userName = urlParams.get('userName');
-        
+
         if (selectLinkedIn === 'true' && selectionId && organizationsParam) {
             try {
                 const organizations = JSON.parse(decodeURIComponent(organizationsParam));
@@ -75,7 +133,7 @@ const TeamPage = () => {
             }
             return;
         }
-        
+
         if (success === 'team' && username) {
             alert(`Successfully connected account: ${username}!`);
             fetchSocialAccounts(); // Refresh the accounts list
@@ -83,7 +141,6 @@ const TeamPage = () => {
             window.history.replaceState({}, '', '/team');
         } else if (error) {
             let errorMessage = '';
-            
             switch (error) {
                 case 'no_org_pages':
                     errorMessage = `Your LinkedIn account "${accountName || 'this account'}" is already connected as a personal account.\n\nTo connect a LinkedIn Organization Page (Company Page), you need to:\n\n1. Be an admin of a LinkedIn Company Page\n2. Have "Super Admin" or "Content Admin" role\n\nIf you have admin access to a Company Page and still don't see the option, LinkedIn's API may not have granted access yet.`;
@@ -94,7 +151,7 @@ const TeamPage = () => {
                 default:
                     errorMessage = `Failed to connect account: ${error}`;
             }
-            
+
             alert(errorMessage);
             // Clean up URL
             window.history.replaceState({}, '', '/team');
@@ -259,33 +316,45 @@ const TeamPage = () => {
             if (response.data.success) {
                 console.log('[FRONTEND] Setting accounts:', response.data.accounts);
                 setSocialAccounts(response.data.accounts || []);
+                // Debug log for socialAccounts
+                console.log('[DEBUG] socialAccounts:', response.data.accounts || []);
             }
         } catch (error) {
             console.error('Failed to fetch social accounts:', error);
         }
     };
-
-    const fetchUserPermissions = async () => {
-        try {
-            const response = await api.get('/pro-team/permissions');
-            if (response.data.success) {
-                setUserPermissions({
-                    role: response.data.role,
-                    permissions: response.data.permissions || [],
-                    limits: response.data.limits || { max_profile_connections: 0 }
-                });
-            }
-        } catch (error) {
-            console.error('Failed to fetch user permissions:', error);
+const fetchUserPermissions = async () => {
+    try {
+        const response = await api.get('/pro-team/permissions');
+        if (response.data.success) {
+            setUserPermissions({
+                role: response.data.role,
+                permissions: response.data.permissions || [],
+                limits: response.data.limits || { max_profile_connections: 0 },
+                user_id: response.data.user_id || response.data.userId,
+                team_id: response.data.team_id || response.data.teamId || team?.id
+            });
+            // Debug log for userPermissions
+            console.log('[DEBUG] userPermissions after fetch:', {
+                role: response.data.role,
+                user_id: response.data.user_id || response.data.userId,
+                team_id: response.data.team_id || response.data.teamId
+            });
         }
-    };
+    } catch (error) {
+        console.error('Failed to fetch user permissions:', error);
+    }
+};
 
     const connectPlatform = async (platform) => {
         setConnecting(platform);
         try {
-            const response = await api.post('/pro-team/social-accounts/connect', { platform });
+            let payload = { platform };
+            if (platform === 'twitter-oauth1') {
+                payload.accountData = { oauthType: 'oauth1' };
+            }
+            const response = await api.post('/pro-team/social-accounts/connect', payload);
             if (response.data.success) {
-                // Redirect to subdomain for OAuth
                 window.location.href = response.data.redirectUrl;
             } else {
                 alert(response.data.error || 'Failed to initiate connection');
@@ -305,7 +374,11 @@ const TeamPage = () => {
         if (!confirm('Are you sure you want to disconnect this account?')) return;
 
         try {
-            const response = await api.delete(`/pro-team/social-accounts/${accountId}`);
+            // Use twitterApi for Twitter accounts, api for others
+            const isTwitter = socialAccounts.find(acc => acc.id === accountId && acc.platform === 'twitter');
+            const response = isTwitter
+                ? await twitterApi.delete(`/pro-team/social-accounts/${accountId}`)
+                : await api.delete(`/pro-team/social-accounts/${accountId}`);
             if (response.data.success) {
                 fetchSocialAccounts();
                 alert('Account disconnected successfully');
@@ -579,28 +652,17 @@ const TeamPage = () => {
                         {leaving ? 'Leaving...' : 'Leave Team'}
                     </button>
                 )}
-                <div className="flex items-center gap-2">
+                {team.user_role === 'owner' && (
                     <button
-                        onClick={refreshPage}
-                        disabled={refreshing}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
-                        title="Refresh this page"
+                        onClick={deleteTeam}
+                        disabled={deleting}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-50"
+                        title="Delete this team"
                     >
-                        <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-                        {refreshing ? 'Refreshing...' : 'Refresh'}
+                        <Trash2 className="h-4 w-4" />
+                        {deleting ? 'Deleting...' : 'Delete Team'}
                     </button>
-                    {team.user_role === 'owner' && (
-                        <button
-                            onClick={deleteTeam}
-                            disabled={deleting}
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-50"
-                            title="Delete this team"
-                        >
-                            <Trash2 className="h-4 w-4" />
-                            {deleting ? 'Deleting...' : 'Delete Team'}
-                        </button>
-                    )}
-                </div>
+                )}
             </div>
 
             {/* Invite Section */}
@@ -817,6 +879,16 @@ const TeamPage = () => {
                                     {connecting === 'twitter' ? 'Connecting...' : 'Twitter'}
                                 </span>
                             </button>
+                                <button
+                                    onClick={connectTwitterOAuth1}
+                                    disabled={connecting === 'twitter-oauth1'}
+                                    className="flex items-center justify-center gap-3 p-4 border-2 border-dashed border-yellow-300 rounded-lg hover:border-yellow-500 hover:bg-yellow-50 transition-colors disabled:opacity-50"
+                                >
+                                    <Twitter className="h-6 w-6 text-yellow-500" />
+                                    <span className="font-medium text-gray-900">
+                                        {connecting === 'twitter-oauth1' ? 'Connecting Twitter (Media)...' : 'Twitter (Media Upload)'}
+                                    </span>
+                                </button>
 
                             <button
                                 onClick={() => connectPlatform('wordpress')}
