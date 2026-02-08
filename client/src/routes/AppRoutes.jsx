@@ -10,11 +10,17 @@ import AboutPage from '../pages/AboutPage';
 import ContactPage from '../pages/ContactPage';
 import TermsPage from '../pages/TermsPage';
 import PrivacyPage from '../pages/PrivacyPage';
+import Features from '../pages/Features';
 
+import DocsPage from '../pages/Docs';
+import PricingPage from '../pages/Pricing';
+import IntegrationsPage from '../pages/Integrations';
+import HelpPage from '../pages/Help';
 
 // Auth Pages
 import LoginPage from '../pages/LoginPage';
 import RegisterPage from '../pages/RegisterPage';
+import SignupPage from '../pages/SignupPage';
 
 // Protected Pages
 import DashboardPage from '../pages/DashboardPage';
@@ -23,7 +29,6 @@ import ApiKeysPage from '../pages/ApiKeysPage';
 import SettingsPage from '../pages/SettingsPage';
 import TeamPage from '../pages/TeamPage';
 import TeamInvitePage from '../pages/TeamInvitePage';
-
 
 // OnboardingPage import removed
 import { useEffect, useState } from 'react';
@@ -40,8 +45,12 @@ const AppRoutes = () => {
       <Route path="/plans" element={<PlansPage />} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/contact" element={<ContactPage />} />
-        <Route path="/terms" element={<TermsPage />} />
-        <Route path="/privacy" element={<PrivacyPage />} />
+      <Route path="/terms" element={<TermsPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
+      <Route path="/pricing" element={<PricingPage />} />
+      <Route path="/docs" element={<DocsPage />} />
+      <Route path="/integrations" element={<IntegrationsPage />} />
+      <Route path="/help" element={<HelpPage />} />
       
       {/* Guest routes - redirect to dashboard if already logged in */}
       <Route path="/login" element={
@@ -54,6 +63,7 @@ const AppRoutes = () => {
           <RegisterPage />
         </GuestRoute>
       } />
+      <Route path="/signup" element={<SignupPage />} />
 
       {/* Protected routes - require authentication */}
       <Route path="/dashboard" element={
@@ -96,7 +106,7 @@ const AppRoutes = () => {
         </ProtectedRoute>
       } />
 
-
+      <Route path="/features" element={<Features />} />
 
       {/* Team invitation - public route (no Layout/auth required) */}
       <Route path="/team/invite/:token" element={<TeamInvitePage />} />

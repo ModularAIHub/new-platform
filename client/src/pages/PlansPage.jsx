@@ -21,22 +21,18 @@ const PlansPage = () => {
       name: 'Starter',
       price: 'Free',
       monthlyPrice: '$0',
-      description: 'Perfect for getting started with automation',
+      description: 'For individuals and solo creators',
       features: [
+        'All core SuiteGenie features',
         '5 automated posts per month',
         '1 social platform connection',
-        'Basic analytics',
-        'Email support',
-        'Template library access',
-        'AI content suggestions'
+        'Priority support',
+        'Encrypted BYOK (OpenAI, Perplexity, Gemini)',
+        'Analytics & scheduling',
       ],
       notIncluded: [
-        'Multi-platform posting',
-        'Advanced analytics',
-        'Custom scheduling',
-        'Priority support',
-        'Team collaboration',
-        'API access'
+        'Teams mode (collaboration)',
+        'Increased monthly credits',
       ],
       buttonText: 'Start Free',
       popular: false
@@ -45,27 +41,17 @@ const PlansPage = () => {
       name: 'Teams',
       price: 'Free',
       monthlyPrice: 'Free',
-      description: 'Everything you need to scale your social presence',
+      description: 'For teams and collaborators (invite up to 5 members)',
       features: [
-        'Unlimited automated posts',
-        'All social platforms (Twitter, LinkedIn, WordPress)',
-        'Advanced AI content generation',
-        'Smart scheduling optimization',
-        'Detailed analytics & insights',
-        'Custom content templates',
-        'Bulk content generation',
+        'Everything in Starter',
+        'Teams mode: collaborate with up to 5 users',
+        'Shared content calendar',
+        'Increased monthly credits (150 platform / 300 BYOK)',
+        'Priority support',
         'Multi-account management',
-        'Team collaboration (up to 5 members)',
-        'Priority email support',
-        'Content calendar',
-        'Hashtag optimization',
-        'Engagement tracking'
       ],
       notIncluded: [
-        'White-label solution',
-        'Dedicated account manager',
-        'Custom integrations',
-        'Phone support'
+        'Enterprise/white-label features',
       ],
       buttonText: 'Upgrade to Teams',
       popular: true
@@ -99,17 +85,12 @@ const PlansPage = () => {
     { name: 'Monthly Credits (Platform)', starter: '50', teams: '150', enterprise: '500' },
     { name: 'Monthly Credits (BYOK)', starter: '100', teams: '300', enterprise: '1000' },
     { name: 'Monthly Posts', starter: '5', teams: 'Unlimited', enterprise: 'Unlimited' },
-    { name: 'Social Platforms', starter: '1', teams: 'All (3+)', enterprise: 'All (3+)' },
-    { name: 'AI Content Generation', starter: 'Basic', teams: 'Advanced', enterprise: 'Advanced' },
-    { name: 'Analytics', starter: 'Basic', teams: 'Advanced', enterprise: 'Custom' },
+    { name: 'Teams Mode (Collaboration)', starter: false, teams: true, enterprise: true },
     { name: 'Team Members', starter: '1', teams: '5', enterprise: 'Unlimited' },
-    { name: 'Support', starter: 'Email', teams: 'Priority Email', enterprise: '24/7 Phone' },
-    { name: 'Custom Templates', starter: false, teams: true, enterprise: true },
-    { name: 'Bulk Generation', starter: false, teams: true, enterprise: true },
-    { name: 'White-label', starter: false, teams: false, enterprise: true },
-    { name: 'API Access', starter: false, teams: false, enterprise: true },
-    { name: 'SSO', starter: false, teams: false, enterprise: true },
-    { name: 'Dedicated Manager', starter: false, teams: false, enterprise: true }
+    { name: 'Priority Support', starter: true, teams: true, enterprise: true },
+    { name: 'All Core Features', starter: true, teams: true, enterprise: true },
+    { name: 'Multi-Account Management', starter: false, teams: true, enterprise: true },
+    { name: 'White-label/Enterprise', starter: false, teams: false, enterprise: true },
   ];
 
   const faqs = [

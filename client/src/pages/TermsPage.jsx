@@ -159,7 +159,7 @@ const TermsPage = () => {
                 If you have any questions about these Terms, please contact us at:
               </p>
               <p className="text-gray-700">
-                Email: <a href="mailto:support@suitegenie.in" className="text-blue-600 hover:text-blue-700 underline">support@suitegenie.in</a>
+                Email: <a href="mailto:suitegenie1@gmail.com" className="text-blue-600 hover:text-blue-700 underline">suitegenie1@gmail.com</a>
               </p>
             </section>
           </div>
