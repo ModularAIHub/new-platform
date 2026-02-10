@@ -163,16 +163,23 @@ app.use(sanitizeParams);
 
 // CSRF protection for state-changing requests
 // Dynamic CSRF cookie domain logic (matches auth cookies)
+
 const isProduction = process.env.NODE_ENV === 'production';
-const isLocalhost = process.env.DOMAIN === 'localhost' || process.env.CLIENT_URL?.includes('localhost');
+const isLocalhost = (
+    process.env.DOMAIN === 'localhost' ||
+    process.env.CLIENT_URL?.includes('localhost') ||
+    process.env.NODE_ENV === 'development'
+);
 let csrfCookieOptions = {
     httpOnly: true,
-    secure: isProduction,
+    secure: false, // Always false for localhost/dev
     sameSite: isProduction ? 'none' : 'lax',
     path: '/'
 };
+// Only set domain in production and not localhost
 if (isProduction && process.env.DOMAIN && !isLocalhost) {
     csrfCookieOptions.domain = '.' + process.env.DOMAIN;
+    csrfCookieOptions.secure = true;
 }
 
 // Skip CSRF for specific API routes that need external access
