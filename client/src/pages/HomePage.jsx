@@ -18,63 +18,120 @@ const HomePage = () => {
   return (
     <>
       <Helmet>
-        <title>SuiteGenie – AI Social Media Automation for Creators</title>
-        <meta name="description" content="SuiteGenie helps solo founders and creators automate Twitter and LinkedIn with AI content generation, BYOK cost savings, analytics and bulk scheduling." />
-        <link rel="canonical" href="https://suitegenie.in/" />
-        {/* Open Graph & Twitter */}
-        <meta property="og:title" content="SuiteGenie – AI Social Media Automation for Creators" />
-        <meta property="og:description" content="Automate Twitter & LinkedIn with AI. Bulk scheduling, analytics, BYOK, and more. Save time and money with SuiteGenie." />
+        {/* Primary Meta Tags */}
+        <title>SuiteGenie - AI Social Media Automation Tool | Free BYOK Platform for Creators</title>
+        <meta name="title" content="SuiteGenie - AI Social Media Automation Tool | Free BYOK Platform for Creators" />
+        <meta name="description" content="Automate Twitter, LinkedIn & WordPress content with AI. Generate, schedule & manage posts across platforms. $0 free plan with BYOK. Built in India for creators worldwide." />
+        <meta name="keywords" content="AI social media automation, BYOK social media tool, Twitter automation, LinkedIn automation, WordPress automation, content scheduling, social media management, Buffer alternative, Hootsuite alternative" />
+        {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://suitegenie.in/" />
-        <meta property="og:image" content="https://suitegenie.in/og-home.png" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="SuiteGenie – AI Social Media Automation for Creators" />
-        <meta name="twitter:description" content="Automate Twitter & LinkedIn with AI. Bulk scheduling, analytics, BYOK, and more. Save time and money with SuiteGenie." />
-        <meta name="twitter:image" content="https://suitegenie.in/og-home.png" />
-        {/* Structured Data: Organization, Website, Product */}
+        <meta property="og:title" content="SuiteGenie - AI Social Media Automation for Creators" />
+        <meta property="og:description" content="Automate Twitter, LinkedIn & WordPress content with AI. $0 free plan with BYOK support." />
+        <meta property="og:image" content="https://suitegenie.in/og-image.jpg" />
+        <meta property="og:site_name" content="SuiteGenie" />
+        {/* Twitter */}
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:url" content="https://suitegenie.in/" />
+        <meta property="twitter:title" content="SuiteGenie - AI Social Media Automation" />
+        <meta property="twitter:description" content="Automate Twitter, LinkedIn & WordPress content with AI. $0 free plan with BYOK support." />
+        <meta property="twitter:image" content="https://suitegenie.in/twitter-card.jpg" />
+        <meta name="twitter:site" content="@Suitegenie1" />
+        <meta name="twitter:creator" content="@Suitegenie1" />
+        {/* Additional SEO Tags */}
+        <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+        <meta name="language" content="English" />
+        <meta name="author" content="Kanishk Saraswat" />
+        <meta name="geo.region" content="IN" />
+        <meta name="geo.placename" content="India" />
+        <link rel="canonical" href="https://suitegenie.in/" />
+        {/* Structured Data / Schema Markup */}
+        <script type="application/ld+json">{`
+          {
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            "name": "SuiteGenie",
+            "applicationCategory": "BusinessApplication",
+            "applicationSubCategory": "Social Media Management",
+            "operatingSystem": "Web",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "USD",
+              "priceValidUntil": "2027-12-31"
+            },
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4.8",
+              "ratingCount": "100"
+            },
+            "featureList": [
+              "AI Content Generation",
+              "Multi-platform Scheduling",
+              "Twitter Automation",
+              "LinkedIn Automation",
+              "WordPress Integration",
+              "Analytics Dashboard",
+              "BYOK Support",
+              "Multi-AI Fallback"
+            ],
+            "screenshot": "https://suitegenie.in/dashboard-screenshot.jpg",
+            "author": {
+              "@type": "Organization",
+              "name": "SuiteGenie",
+              "url": "https://suitegenie.in",
+              "logo": "https://suitegenie.in/logo.png",
+              "sameAs": [
+                "https://twitter.com/Suitegenie1",
+                "https://linkedin.com/company/suitegenie"
+              ]
+            },
+            "description": "AI-powered social media automation platform for creators. Generate, schedule, and manage content across Twitter, LinkedIn, and WordPress with BYOK support."
+          }
+        `}</script>
+        {/* Organization Schema */}
         <script type="application/ld+json">{`
           {
             "@context": "https://schema.org",
             "@type": "Organization",
             "name": "SuiteGenie",
-            "url": "https://suitegenie.in/",
+            "url": "https://suitegenie.in",
             "logo": "https://suitegenie.in/logo.png",
-            "sameAs": [
-              "https://twitter.com/suitegenieai",
-              "https://www.linkedin.com/company/suitegenie/"
-            ]
-          }
-        `}</script>
-        <script type="application/ld+json">{`
-          {
-            "@context": "https://schema.org",
-            "@type": "WebSite",
-            "url": "https://suitegenie.in/",
-            "name": "SuiteGenie",
-            "potentialAction": {
-              "@type": "SearchAction",
-              "target": "https://suitegenie.in/search?q={search_term_string}",
-              "query-input": "required name=search_term_string"
-            }
-          }
-        `}</script>
-        <script type="application/ld+json">{`
-          {
-            "@context": "https://schema.org",
-            "@type": "Product",
-            "name": "SuiteGenie",
-            "image": "https://suitegenie.in/og-home.png",
-            "description": "AI-powered social media automation for Twitter and LinkedIn. BYOK, analytics, bulk scheduling, and more.",
-            "brand": {
-              "@type": "Brand",
-              "name": "SuiteGenie"
+            "description": "AI social media automation platform for creators",
+            "foundingDate": "2024",
+            "founder": {
+              "@type": "Person",
+              "name": "Kanishk Saraswat",
+              "url": "https://linkedin.com/in/kanishk-saraswat"
             },
-            "offers": {
-              "@type": "Offer",
-              "price": "0",
-              "priceCurrency": "INR",
-              "availability": "https://schema.org/InStock"
+            "contactPoint": {
+              "@type": "ContactPoint",
+              "email": "suitegenie1@gmail.com",
+              "contactType": "Customer Support"
+            },
+            "sameAs": [
+              "https://twitter.com/Suitegenie1",
+              "https://linkedin.com/company/suitegenie"
+            ],
+            "address": {
+              "@type": "PostalAddress",
+              "addressCountry": "IN"
             }
+          }
+        `}</script>
+        {/* BreadcrumbList Schema */}
+        <script type="application/ld+json">{`
+          {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://suitegenie.in"
+              }
+            ]
           }
         `}</script>
       </Helmet>

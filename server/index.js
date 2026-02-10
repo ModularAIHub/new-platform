@@ -15,6 +15,7 @@ Honeybadger.configure({
 });
 
 import apiRouter from './routes/index.js';
+import { sanitizeBody, sanitizeQuery, sanitizeParams } from './middleware/sanitize.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 // Initialize Redis and sync worker
@@ -151,10 +152,14 @@ app.use((req, res, next) => {
 app.options('*', cors(corsOptions));
 
 // Body parsing middleware
-
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// Global input sanitization
+app.use(sanitizeBody);
+app.use(sanitizeQuery);
+app.use(sanitizeParams);
 
 // CSRF protection for state-changing requests
 // Dynamic CSRF cookie domain logic (matches auth cookies)

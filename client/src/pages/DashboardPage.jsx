@@ -476,32 +476,26 @@ const DashboardPage = () => {
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <div className="space-y-4">
-                                <RecentActivity
-                                    label="AI-powered tweet generated"
-                                    source="Twitter Genie"
-                                    time="2 hours ago"
-                                    status="published"
-                                />
-                                <RecentActivity
-                                    label="Professional post created"
-                                    source="LinkedIn Genie"
-                                    time="4 hours ago"
-                                    status="scheduled"
-                                />
-                                <RecentActivity
-                                    label="Credits purchased: +50"
-                                    source="System"
-                                    time="1 day ago"
-                                    status="completed"
-                                />
-                                <RecentActivity
-                                    label="API key updated"
-                                    source="System"
-                                    time="2 days ago"
-                                    status="completed"
-                                />
-                            </div>
+                                                        <div className="space-y-4">
+                                                                {/* TODO: Replace with real activity data from backend */}
+                                                                {Array.isArray(user?.activity) && user.activity.length > 0 ? (
+                                                                    user.activity.map((item, idx) => (
+                                                                        <RecentActivity
+                                                                            key={idx}
+                                                                            label={item.label}
+                                                                            source={item.source}
+                                                                            time={item.time}
+                                                                            status={item.status}
+                                                                        />
+                                                                    ))
+                                                                ) : (
+                                                                    <div className="text-center py-8 text-neutral-500">
+                                                                        <Calendar className="h-10 w-10 mx-auto mb-2 text-primary-200" />
+                                                                        <div className="font-semibold mb-1">No recent activity yet</div>
+                                                                        <div className="text-sm">Your latest actions and updates will appear here.</div>
+                                                                    </div>
+                                                                )}
+                                                        </div>
                         </CardContent>
                     </Card>
                 </div>
