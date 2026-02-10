@@ -25,6 +25,12 @@ router.get('/verify-token', authenticateToken, AuthController.verifyToken);
 // Get current user info (for external apps)
 router.get('/me', authenticateToken, AuthController.getCurrentUser);
 
+// Add /validate endpoint for compatibility with clients expecting it
+router.get('/validate', authenticateToken, (req, res) => {
+	// If authentication passed, return user info or a simple valid response
+	res.status(200).json({ valid: true, user: req.user || null });
+});
+
 // Refresh token
 router.post('/refresh', AuthController.refreshToken);
 
