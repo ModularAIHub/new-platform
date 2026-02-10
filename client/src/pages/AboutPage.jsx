@@ -123,18 +123,22 @@ export default function About() {
   return (
     <>
       <Helmet>
-        <title>About SuiteGenie – Indie Founder Building AI Social Media Tools</title>
-        <meta name="description" content="Learn the story behind SuiteGenie, a one‑founder AI social media automation platform built to give creators their time back with BYOK and modular tools." />
+        <title>About SuiteGenie - Indie Founder Building AI Tools | Kanishk Saraswat</title>
+        <meta name="description" content="Meet Kanishk Saraswat, indie founder of SuiteGenie. Learn how this solo developer built an AI social media automation platform to help creators. Made in India with passion." />
+        <meta name="keywords" content="Kanishk Saraswat, indie founder, solo developer, SuiteGenie founder, Indian startup founder, BYOK platform creator" />
         <link rel="canonical" href="https://suitegenie.in/about" />
-        <meta property="og:title" content="About SuiteGenie – Indie Founder Building AI Social Media Tools" />
-        <meta property="og:description" content="Learn the story behind SuiteGenie, a one‑founder AI social media automation platform built to give creators their time back with BYOK and modular tools." />
+        <meta property="og:title" content="About SuiteGenie - Indie Founder Building AI Tools | Kanishk Saraswat" />
+        <meta property="og:description" content="Meet Kanishk Saraswat, indie founder of SuiteGenie. Learn how this solo developer built an AI social media automation platform to help creators. Made in India with passion." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://suitegenie.in/about" />
         <meta property="og:image" content="https://suitegenie.in/og-about.png" />
+        <meta property="og:site_name" content="SuiteGenie" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="About SuiteGenie – Indie Founder Building AI Social Media Tools" />
-        <meta name="twitter:description" content="Learn the story behind SuiteGenie, a one‑founder AI social media automation platform built to give creators their time back with BYOK and modular tools." />
+        <meta name="twitter:title" content="About SuiteGenie - Indie Founder Building AI Tools | Kanishk Saraswat" />
+        <meta name="twitter:description" content="Meet Kanishk Saraswat, indie founder of SuiteGenie. Learn how this solo developer built an AI social media automation platform to help creators. Made in India with passion." />
         <meta name="twitter:image" content="https://suitegenie.in/og-about.png" />
+        <meta name="twitter:site" content="@Suitegenie1" />
+        <meta name="twitter:creator" content="@Suitegenie1" />
         {/* Structured Data: Person/Organization */}
         <script type="application/ld+json">{`
           {
@@ -142,12 +146,35 @@ export default function About() {
             "@type": "Person",
             "name": "Kanishk Saraswat",
             "jobTitle": "Founder",
+            "url": "https://linkedin.com/in/kanishk-saraswat",
             "worksFor": {
               "@type": "Organization",
-              "name": "SuiteGenie"
+              "name": "SuiteGenie",
+              "url": "https://suitegenie.in"
             },
             "sameAs": [
-              "https://www.linkedin.com/in/kanishk-saraswat"
+              "https://www.linkedin.com/in/kanishk-saraswat",
+              "https://twitter.com/Suitegenie1"
+            ]
+          }
+        `}</script>
+        <script type="application/ld+json">{`
+          {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://suitegenie.in"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "About",
+                "item": "https://suitegenie.in/about"
+              }
             ]
           }
         `}</script>
@@ -279,19 +306,6 @@ export default function About() {
                     <h3 className="text-2xl font-extrabold text-gray-900 mb-1 tracking-tight group-hover:text-blue-700 transition-colors">{member.name}</h3>
                     <p className="text-blue-600 font-semibold mb-2 text-base">{member.role}</p>
                     <p className="text-gray-500 text-sm leading-relaxed mb-4 max-w-md">{member.bio}</p>
-                                        {/* BYOK setup instructions moved below the card */}
-                          {/* BYOK Setup Instructions Section */}
-                          <section className="max-w-md mx-auto mt-10 mb-16 bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
-                            <h2 className="text-2xl font-bold text-primary-700 mb-4">How to set up BYOK (Bring Your Own Key)</h2>
-                            <ol className="list-decimal pl-6 text-gray-700 space-y-2 text-base">
-                              <li>Go to <span className="font-semibold">Settings &rarr; API Keys</span> in your SuiteGenie dashboard.</li>
-                              <li>Choose your provider: <span className="font-semibold">OpenAI, Perplexity, or Gemini</span>.</li>
-                              <li>Follow the link to your provider’s API dashboard and generate a new API key.</li>
-                              <li>Copy the API key (it will look like <code>sk-...</code> for OpenAI).</li>
-                              <li>Paste your API key into SuiteGenie. Your key is fully encrypted and never shared.</li>
-                              <li>Click <span className="font-semibold">Save</span>. You’re ready to use all features—no limits or restrictions.</li>
-                            </ol>
-                          </section>
                     <div className="flex justify-center gap-3 mt-auto">
                       {member.linkedinUrl && member.linkedinUrl !== "#" && (
                         <a
@@ -313,6 +327,19 @@ export default function About() {
               </div>
             </AnimatedSection>
           </div>
+        </section>
+
+        {/* BYOK Setup Instructions Section (moved out of team card) */}
+        <section className="max-w-md mx-auto mt-10 mb-16 bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
+          <h2 className="text-2xl font-bold text-primary-700 mb-4">How to set up BYOK (Bring Your Own Key)</h2>
+          <ol className="list-decimal pl-6 text-gray-700 space-y-2 text-base">
+            <li>Go to <span className="font-semibold">Settings &rarr; API Keys</span> in your SuiteGenie dashboard.</li>
+            <li>Choose your provider: <span className="font-semibold">OpenAI, Perplexity, or Gemini</span>.</li>
+            <li>Follow the link to your provider’s API dashboard and generate a new API key.</li>
+            <li>Copy the API key (it will look like <code>sk-...</code> for OpenAI).</li>
+            <li>Paste your API key into SuiteGenie. Your key is fully encrypted and never shared.</li>
+            <li>Click <span className="font-semibold">Save</span>. You’re ready to use all features—no limits or restrictions.</li>
+          </ol>
         </section>
       {/* Main Content */}
       <main className="relative">

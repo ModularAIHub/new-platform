@@ -1,9 +1,51 @@
 import { Link } from 'react-router-dom';
 import Footer from '../components/Footer';
 
+import { Helmet } from "react-helmet";
 const PrivacyPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
+      <Helmet>
+        <title>Privacy Policy – SuiteGenie</title>
+        <meta name="description" content="Read the SuiteGenie Privacy Policy. Learn how your data, API keys, and personal information are protected and used on our AI social media automation platform." />
+        <meta name="keywords" content="SuiteGenie privacy, data protection, API key security, user privacy, social media automation privacy policy" />
+        <link rel="canonical" href="https://suitegenie.in/privacy" />
+        <meta property="og:title" content="Privacy Policy – SuiteGenie" />
+        <meta property="og:description" content="Read the SuiteGenie Privacy Policy. Learn how your data, API keys, and personal information are protected and used on our AI social media automation platform." />
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content="https://suitegenie.in/privacy" />
+        <meta property="og:image" content="https://suitegenie.in/og-privacy.png" />
+        <meta property="og:site_name" content="SuiteGenie" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Privacy Policy – SuiteGenie" />
+        <meta name="twitter:description" content="Read the SuiteGenie Privacy Policy. Learn how your data, API keys, and personal information are protected and used on our AI social media automation platform." />
+        <meta name="twitter:image" content="https://suitegenie.in/og-privacy.png" />
+        <meta name="twitter:site" content="@Suitegenie1" />
+        {/* Structured Data: Privacy Policy Article */}
+        <script type="application/ld+json">{`
+          {
+            "@context": "https://schema.org",
+            "@type": "TechArticle",
+            "headline": "Privacy Policy – SuiteGenie",
+            "description": "Read the SuiteGenie Privacy Policy. Learn how your data, API keys, and personal information are protected and used on our AI social media automation platform.",
+            "datePublished": "2026-01-21",
+            "dateModified": "2026-01-21",
+            "author": {
+              "@type": "Person",
+              "name": "Kanishk Saraswat"
+            },
+            "publisher": {
+              "@type": "Organization",
+              "name": "SuiteGenie",
+              "logo": {
+                "@type": "ImageObject",
+                "url": "https://suitegenie.in/logo192.png"
+              }
+            },
+            "mainEntityOfPage": "https://suitegenie.in/privacy"
+          }
+        `}</script>
+      </Helmet>
       {/* Header */}
       <div className="bg-white border-b">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">

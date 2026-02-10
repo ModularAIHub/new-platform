@@ -1,9 +1,51 @@
 import { Link } from 'react-router-dom';
 import Footer from '../components/Footer';
 
+import { Helmet } from "react-helmet";
 const TermsPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
+      <Helmet>
+        <title>Terms of Service – SuiteGenie</title>
+        <meta name="description" content="Read the SuiteGenie Terms of Service. Understand your rights, responsibilities, and the rules for using our AI social media automation platform." />
+        <meta name="keywords" content="SuiteGenie terms, terms of service, user agreement, platform rules, social media automation terms" />
+        <link rel="canonical" href="https://suitegenie.in/terms" />
+        <meta property="og:title" content="Terms of Service – SuiteGenie" />
+        <meta property="og:description" content="Read the SuiteGenie Terms of Service. Understand your rights, responsibilities, and the rules for using our AI social media automation platform." />
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content="https://suitegenie.in/terms" />
+        <meta property="og:image" content="https://suitegenie.in/og-terms.png" />
+        <meta property="og:site_name" content="SuiteGenie" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Terms of Service – SuiteGenie" />
+        <meta name="twitter:description" content="Read the SuiteGenie Terms of Service. Understand your rights, responsibilities, and the rules for using our AI social media automation platform." />
+        <meta name="twitter:image" content="https://suitegenie.in/og-terms.png" />
+        <meta name="twitter:site" content="@Suitegenie1" />
+        {/* Structured Data: Terms Article */}
+        <script type="application/ld+json">{`
+          {
+            "@context": "https://schema.org",
+            "@type": "TechArticle",
+            "headline": "Terms of Service – SuiteGenie",
+            "description": "Read the SuiteGenie Terms of Service. Understand your rights, responsibilities, and the rules for using our AI social media automation platform.",
+            "datePublished": "2026-01-21",
+            "dateModified": "2026-01-21",
+            "author": {
+              "@type": "Person",
+              "name": "Kanishk Saraswat"
+            },
+            "publisher": {
+              "@type": "Organization",
+              "name": "SuiteGenie",
+              "logo": {
+                "@type": "ImageObject",
+                "url": "https://suitegenie.in/logo192.png"
+              }
+            },
+            "mainEntityOfPage": "https://suitegenie.in/terms"
+          }
+        `}</script>
+      </Helmet>
       {/* Header */}
       <div className="bg-white border-b">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
