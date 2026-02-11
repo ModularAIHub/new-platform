@@ -76,7 +76,8 @@ const SocialAccountsPage = () => {
                 return;
             }
             // OAuth2 flow
-            const twitterConnectUrl = `http://localhost:3002/api/twitter/team-connect?teamId=${encodeURIComponent(teamId)}&userId=${encodeURIComponent(userId)}&returnUrl=${encodeURIComponent(returnUrl)}`;
+            const apiBase = import.meta.env.VITE_TWEET_GENIE_API_URL || (import.meta.env.MODE === 'production' ? 'https://api.tweet.suitegenie.in' : 'http://localhost:3002');
+            const twitterConnectUrl = `${apiBase}/api/twitter/team-connect?teamId=${encodeURIComponent(teamId)}&userId=${encodeURIComponent(userId)}&returnUrl=${encodeURIComponent(returnUrl)}`;
             window.location.href = twitterConnectUrl;
         } catch (error) {
             console.error('Twitter connection failed:', error);
@@ -98,7 +99,8 @@ const SocialAccountsPage = () => {
                 return;
             }
             // OAuth1.0a flow
-            const twitterOAuth1Url = `http://localhost:3002/api/twitter/team-connect-oauth1?teamId=${encodeURIComponent(teamId)}&userId=${encodeURIComponent(userId)}&returnUrl=${encodeURIComponent(returnUrl)}`;
+            const apiBase = import.meta.env.VITE_TWEET_GENIE_API_URL || (import.meta.env.MODE === 'production' ? 'https://api.tweet.suitegenie.in' : 'http://localhost:3002');
+            const twitterOAuth1Url = `${apiBase}/api/twitter/team-connect-oauth1?teamId=${encodeURIComponent(teamId)}&userId=${encodeURIComponent(userId)}&returnUrl=${encodeURIComponent(returnUrl)}`;
             window.location.href = twitterOAuth1Url;
         } catch (error) {
             console.error('Twitter OAuth1.0a connection failed:', error);
