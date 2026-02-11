@@ -655,10 +655,10 @@ const fetchUserPermissions = async () => {
 
     // Has team - show team page
     return (
-        <div className="max-w-4xl mx-auto p-6">
-            <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="max-w-4xl mx-auto p-4 sm:p-6">
+            <div className="mb-6 sm:mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">{team.name}</h1>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">{team.name}</h1>
                     <p className="text-gray-600">
                         {team.member_count} of {team.max_members} members • Teams Plan
                     </p>
@@ -689,10 +689,10 @@ const fetchUserPermissions = async () => {
 
             {/* Invite Section */}
             {team.canInvite && (
-                <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+                <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 mb-6">
                     <h2 className="text-lg font-semibold text-gray-900 mb-4">Invite Team Member</h2>
                     <form onSubmit={inviteUser} className="space-y-4">
-                        <div className="flex gap-4">
+                        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                             <input
                                 type="email"
                                 value={inviteEmail}
@@ -720,7 +720,7 @@ const fetchUserPermissions = async () => {
                             </button>
                         </div>
                         <div className="text-sm text-gray-600">
-                            <div className="flex items-center gap-4">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                                 <div className="flex items-center gap-1">
                                     <Shield className="h-4 w-4 text-blue-500" />
                                     <span><strong>Admin:</strong> Can invite members and manage social accounts</span>
@@ -741,29 +741,29 @@ const fetchUserPermissions = async () => {
 
             {/* Team Members */}
             <div className="bg-white border border-gray-200 rounded-lg">
-                <div className="p-6 border-b border-gray-200">
+                <div className="p-4 sm:p-6 border-b border-gray-200">
                     <h2 className="text-lg font-semibold text-gray-900">Team Members</h2>
                 </div>
                 
                 <div className="divide-y divide-gray-200">
                     {team?.members && Array.isArray(team.members) ? (
                         team.members.map((member) => (
-                        <div key={member.id} className="p-6 flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <div key={member.id} className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            <div className="flex items-center gap-4 min-w-0 flex-1">
+                                <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
                                     <span className="text-blue-600 font-semibold">
                                         {member.user_name?.charAt(0)?.toUpperCase() || member.email.charAt(0).toUpperCase()}
                                     </span>
                                 </div>
-                                <div>
-                                    <p className="font-semibold text-gray-900">
+                                <div className="min-w-0 flex-1">
+                                    <p className="font-semibold text-gray-900 truncate">
                                         {member.user_name || member.email}
                                     </p>
-                                    <p className="text-sm text-gray-500">{member.email}</p>
+                                    <p className="text-sm text-gray-500 truncate">{member.email}</p>
                                 </div>
                             </div>
                             
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center justify-between sm:justify-end gap-4 flex-shrink-0">
                                 {/* Role Display/Selector */}
                                 {team.user_role === 'owner' && member.role !== 'owner' ? (
                                     <div className="flex items-center gap-2">
@@ -832,25 +832,25 @@ const fetchUserPermissions = async () => {
                         </div>
                     ) : (
                         socialAccounts.map((account) => (
-                            <div key={account.id} className="p-6 flex items-center justify-between">
-                                <div className="flex items-center gap-4">
+                            <div key={account.id} className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                                <div className="flex items-center gap-4 min-w-0 flex-1">
                                     <div className="flex-shrink-0">
                                         {getPlatformIcon(account.platform)}
                                     </div>
-                                    <div>
-                                        <p className="font-semibold text-gray-900">
+                                    <div className="min-w-0 flex-1">
+                                        <p className="font-semibold text-gray-900 truncate">
                                             {account.account_display_name || account.account_username}
                                         </p>
-                                        <p className="text-sm text-gray-600">
+                                        <p className="text-sm text-gray-600 truncate">
                                             @{account.account_username} • {account.platform}
                                         </p>
-                                        <p className="text-xs text-gray-500">
+                                        <p className="text-xs text-gray-500 truncate">
                                             Connected by {account.connected_by_name || account.connected_by_email}
                                         </p>
                                     </div>
                                 </div>
                                 
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center justify-between sm:justify-end gap-2 flex-shrink-0">
                                     <span className={`px-2 py-1 text-xs rounded-full ${
                                         (account.active || account.is_active) 
                                             ? 'bg-green-100 text-green-800' 
