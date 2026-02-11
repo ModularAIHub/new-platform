@@ -75,6 +75,8 @@ const SocialAccountsPage = () => {
                 setConnecting(null);
                 return;
             }
+            // Debug log for env variable
+            console.log('VITE_TWEET_GENIE_API_URL:', import.meta.env.VITE_TWEET_GENIE_API_URL, 'MODE:', import.meta.env.MODE);
             // OAuth2 flow
             const apiBase = import.meta.env.VITE_TWEET_GENIE_API_URL || (import.meta.env.MODE === 'production' ? 'https://api.tweet.suitegenie.in' : 'http://localhost:3002');
             const twitterConnectUrl = `${apiBase}/api/twitter/team-connect?teamId=${encodeURIComponent(teamId)}&userId=${encodeURIComponent(userId)}&returnUrl=${encodeURIComponent(returnUrl)}`;
@@ -98,6 +100,8 @@ const SocialAccountsPage = () => {
                 setConnecting(null);
                 return;
             }
+            // Debug log for env variable
+            console.log('VITE_TWEET_GENIE_API_URL:', import.meta.env.VITE_TWEET_GENIE_API_URL, 'MODE:', import.meta.env.MODE);
             // OAuth1.0a flow
             const apiBase = import.meta.env.VITE_TWEET_GENIE_API_URL || (import.meta.env.MODE === 'production' ? 'https://api.tweet.suitegenie.in' : 'http://localhost:3002');
             const twitterOAuth1Url = `${apiBase}/api/twitter/team-connect-oauth1?teamId=${encodeURIComponent(teamId)}&userId=${encodeURIComponent(userId)}&returnUrl=${encodeURIComponent(returnUrl)}`;
