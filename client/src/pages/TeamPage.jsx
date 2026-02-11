@@ -50,14 +50,19 @@ const TeamPage = () => {
         // Debug logs
         console.log('[DEBUG] connectTwitterOAuth1: team', team);
         console.log('[DEBUG] connectTwitterOAuth1: userPermissions', userPermissions);
+
         // Robust teamId/userId extraction
         const teamId = team?.id || userPermissions?.team_id;
         let userId = userPermissions?.user_id || team?.user_id;
+
         // Fallback: try to get from team members
         if (!userId && team?.members) {
-            const currentMember = team.members.find(m => m.role === userPermissions?.role && m.user_id);
+            const currentMember = team.members.find(
+                m => m.role === userPermissions?.role && m.user_id
+            );
             userId = currentMember?.user_id || currentMember?.userid;
         }
+
         // Fallback: try to get from API if not found
         if (!userId) {
             try {
@@ -68,6 +73,7 @@ const TeamPage = () => {
                 console.error('Failed to get user from /auth/me:', err);
             }
         }
+
         // Final fallback: try to get from localStorage
         if (!userId) {
             try {
@@ -79,8 +85,10 @@ const TeamPage = () => {
                 console.error('Failed to get userId from localStorage:', err);
             }
         }
+
         const returnUrl = window.location.origin + '/team';
         console.log('🚀 Attempting OAuth1 with:', { teamId, userId, team, userPermissions });
+
         if (!teamId) {
             alert('No team found. Please refresh the page.');
             setConnecting(null);
@@ -91,7 +99,20 @@ const TeamPage = () => {
             setConnecting(null);
             return;
         }
-        window.location.href = `http://localhost:3002/api/twitter/team-connect-oauth1?teamId=${encodeURIComponent(teamId)}&userId=${encodeURIComponent(userId)}&returnUrl=${encodeURIComponent(returnUrl)}`;
+
+        const apiBase =
+            import.meta.env.VITE_TWEET_GENIE_API_URL ||
+            (import.meta.env.MODE === 'production'
+                ? 'https://tweetapi.suitegenie.in'
+                : 'http://localhost:3002');
+
+        const twitterOAuth1Url =
+            `${apiBase}/api/twitter/team-connect-oauth1` +
+            `?teamId=${encodeURIComponent(teamId)}` +
+            `&userId=${encodeURIComponent(userId)}` +
+            `&returnUrl=${encodeURIComponent(returnUrl)}`;
+
+        window.location.href = twitterOAuth1Url;
     } catch (error) {
         console.error('Twitter OAuth1.0a connection failed:', error);
         alert('Failed to initiate Twitter OAuth1.0a connection. Please check your network and backend logs.');
@@ -99,6 +120,7 @@ const TeamPage = () => {
         setConnecting(null);
     }
 };
+
 
     // Handle OAuth callback success
     useEffect(() => {
