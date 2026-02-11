@@ -1,6 +1,6 @@
 // Subdomain mapping for supported platforms
 const subdomains = {
-    twitter: process.env.TWITTER_SUBDOMAIN || 'https://twitter.suitegenie.in',
+    twitter: process.env.TWITTER_SUBDOMAIN || 'https://tweet.suitegenie.in',
     linkedin: process.env.LINKEDIN_SUBDOMAIN || 'https://linkedin.suitegenie.in'
 };
 // proTeamController.js 
