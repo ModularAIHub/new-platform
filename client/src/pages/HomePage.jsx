@@ -82,7 +82,7 @@ const HomePage = () => {
               "url": "https://suitegenie.in",
               "logo": "https://suitegenie.in/logo.png",
               "sameAs": [
-                "https://twitter.com/Suitegenie1",
+                "https://x.com/Suitegenie",
                 "https://linkedin.com/company/suitegenie"
               ]
             },
@@ -110,7 +110,7 @@ const HomePage = () => {
               "contactType": "Customer Support"
             },
             "sameAs": [
-              "https://twitter.com/Suitegenie1",
+              "https://x.com/Suitegenie",
               "https://linkedin.com/company/suitegenie"
             ],
             "address": {
