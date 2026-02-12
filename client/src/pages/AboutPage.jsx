@@ -154,7 +154,7 @@ export default function About() {
             },
             "sameAs": [
               "https://www.linkedin.com/in/kanishk-saraswat",
-              "https://twitter.com/Suitegenie1"
+              "https://x.com/Suitegenie"
             ]
           }
         `}</script>

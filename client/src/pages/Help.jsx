@@ -54,7 +54,7 @@
 //         <h2 className="text-xl font-bold mb-3 text-primary-700">Contact Support</h2>
 //         <ul className="space-y-2">
 //           <li>Email: <strong>suitegenie1@gmail.com</strong></li>
-//           <li>Twitter/X: <a href="https://x.com/Suitegenie1" className="text-blue-600 underline font-medium" target="_blank" rel="noopener noreferrer">@Suitegenie1</a></li>
+//           <li>Twitter/X: <a href="https://x.com/Suitegenie" className="text-blue-600 underline font-medium" target="_blank" rel="noopener noreferrer">@Suitegenie</a></li>
 //         </ul>
 //         <p className="text-gray-600 mt-2">We usually reply within 24–48 hours on business days.</p>
 //       </div>
@@ -151,7 +151,7 @@ const HelpPage = () => (
         <h2 className="text-xl font-bold mb-3 text-primary-700">Contact Support</h2>
         <ul className="space-y-2">
           <li>Email: <strong>suitegenie1@gmail.com</strong></li>
-          <li>Twitter/X: <a href="https://x.com/Suitegenie1" className="text-blue-600 underline font-medium" target="_blank" rel="noopener noreferrer">@Suitegenie1</a></li>
+          <li>Twitter/X: <a href="https://x.com/Suitegenie" className="text-blue-600 underline font-medium" target="_blank" rel="noopener noreferrer">@Suitegenie</a></li>
         </ul>
         <p className="text-gray-600 mt-2">We usually reply within 24–48 hours on business days.</p>
       </div>
