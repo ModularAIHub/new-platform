@@ -1,32 +1,183 @@
 import jwt from 'jsonwebtoken';
 import { query } from '../config/database.js';
 
-// Helper function to try refreshing token
+const AUTH_DEBUG = process.env.AUTH_DEBUG === 'true';
+const AUTH_USER_CACHE_TTL_MS = Number.parseInt(process.env.AUTH_USER_CACHE_TTL_MS || '300000', 10);
+const AUTH_TEAM_CACHE_TTL_MS = Number.parseInt(process.env.AUTH_TEAM_CACHE_TTL_MS || '300000', 10);
+const AUTH_WARN_LOG_THROTTLE_MS = Number.parseInt(process.env.AUTH_WARN_LOG_THROTTLE_MS || '30000', 10);
+
+const userCache = new Map();
+const teamCache = new Map();
+const warnLogCache = new Map();
+
+const authLog = (...args) => {
+    if (AUTH_DEBUG) {
+        console.log(...args);
+    }
+};
+
+const shouldLogWarning = (key) => {
+    const now = Date.now();
+    const lastLoggedAt = warnLogCache.get(key) || 0;
+    if (now - lastLoggedAt < AUTH_WARN_LOG_THROTTLE_MS) {
+        return false;
+    }
+    warnLogCache.set(key, now);
+    return true;
+};
+
+const authWarn = (key, ...args) => {
+    if (AUTH_DEBUG || shouldLogWarning(key)) {
+        console.warn(...args);
+    }
+};
+
+const setCached = (cache, key, value, ttlMs) => {
+    cache.set(key, {
+        value,
+        expiresAt: Date.now() + ttlMs,
+    });
+};
+
+const getFreshCached = (cache, key) => {
+    const cached = cache.get(key);
+    if (!cached) return null;
+    if (cached.expiresAt > Date.now()) return cached.value;
+    cache.delete(key);
+    return null;
+};
+
+const getStaleCached = (cache, key) => {
+    const cached = cache.get(key);
+    return cached?.value || null;
+};
+
+const toNumber = (value, fallback = 0) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const isTransientDbError = (error) => {
+    const code = error?.code;
+    const message = String(error?.message || '').toLowerCase();
+
+    if (['ETIMEDOUT', 'ECONNRESET', 'ECONNREFUSED', 'ENOTFOUND', 'ECONNABORTED'].includes(code)) {
+        return true;
+    }
+
+    return (
+        message.includes('timeout') ||
+        message.includes('connection terminated') ||
+        message.includes('terminated unexpectedly') ||
+        message.includes('could not connect')
+    );
+};
+
+const buildAccessTokenPayload = (user) => ({
+    userId: user.id,
+    email: user.email,
+    name: user.name || '',
+    planType: user.plan_type || null,
+    creditsRemaining: toNumber(user.credits_remaining, 0),
+});
+
+const buildUserFromToken = (decoded) => ({
+    id: decoded.userId,
+    email: decoded.email || null,
+    name: decoded.name || '',
+    plan_type: decoded.planType || decoded.plan_type || null,
+    credits_remaining: toNumber(decoded.creditsRemaining ?? decoded.credits_remaining, 0),
+    created_at: null,
+});
+
+const setAuthCookies = (res, accessToken, refreshToken) => {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const domain = isProduction ? process.env.COOKIE_DOMAIN || '.suitegenie.in' : undefined;
+
+    const cookieOptions = {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax',
+        path: '/',
+        ...(domain && { domain }),
+    };
+
+    res.cookie('accessToken', accessToken, {
+        ...cookieOptions,
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.cookie('refreshToken', refreshToken, {
+        ...cookieOptions,
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+};
+
+const attachTeamScope = async (user) => {
+    if (!user?.id) return;
+
+    const cachedTeam = getFreshCached(teamCache, user.id);
+    if (cachedTeam) {
+        user.team_id = cachedTeam.team_id;
+        user.team_role = cachedTeam.team_role;
+        user.team_memberships = cachedTeam.team_memberships;
+        return;
+    }
+
+    try {
+        const teamResult = await query(
+            'SELECT team_id, role, status FROM team_members WHERE user_id = $1 AND status = $2',
+            [user.id, 'active']
+        );
+
+        const teamData = {
+            team_id: teamResult.rows[0]?.team_id || null,
+            team_role: teamResult.rows[0]?.role || null,
+            team_memberships: teamResult.rows || [],
+        };
+
+        setCached(teamCache, user.id, teamData, AUTH_TEAM_CACHE_TTL_MS);
+        user.team_id = teamData.team_id;
+        user.team_role = teamData.team_role;
+        user.team_memberships = teamData.team_memberships;
+    } catch (teamError) {
+        const staleTeam = getStaleCached(teamCache, user.id);
+        if (staleTeam) {
+            user.team_id = staleTeam.team_id;
+            user.team_role = staleTeam.team_role;
+            user.team_memberships = staleTeam.team_memberships;
+        } else {
+            user.team_id = null;
+            user.team_role = null;
+            user.team_memberships = [];
+        }
+
+        authWarn(
+            'auth_team_query_failed',
+            '[AUTH MIDDLEWARE] Team membership query failed, using fallback:',
+            teamError?.message || teamError
+        );
+    }
+};
+
 const tryRefreshToken = async (req, res, refreshToken) => {
     try {
-        console.log('[AUTH MIDDLEWARE] Attempting to verify refresh token...');
-        
-        // Verify refresh token
         const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-        console.log('[AUTH MIDDLEWARE] Refresh token verified for userId:', decoded.userId);
-
-        // Check if user exists
         const userResult = await query(
             'SELECT id, email, name, plan_type, credits_remaining, created_at FROM users WHERE id = $1',
             [decoded.userId]
         );
 
         if (userResult.rows.length === 0) {
-            console.error('[AUTH MIDDLEWARE] User not found in database:', decoded.userId);
+            authWarn('refresh_user_not_found', '[AUTH MIDDLEWARE] User not found while refreshing token:', decoded.userId);
             return { success: false };
         }
 
         const user = userResult.rows[0];
-        console.log('[AUTH MIDDLEWARE] User found:', user.email);
+        setCached(userCache, user.id, user, AUTH_USER_CACHE_TTL_MS);
 
-        // Generate new tokens
         const newAccessToken = jwt.sign(
-            { userId: user.id, email: user.email },
+            buildAccessTokenPayload(user),
             process.env.JWT_SECRET,
             { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
         );
@@ -37,150 +188,112 @@ const tryRefreshToken = async (req, res, refreshToken) => {
             { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
         );
 
-        // Set new cookies
         setAuthCookies(res, newAccessToken, newRefreshToken);
-
-        console.log('[AUTH MIDDLEWARE] Token refreshed successfully for user:', user.id);
-
         return { success: true, user };
     } catch (error) {
-        console.error('[AUTH MIDDLEWARE] Token refresh failed:', error.message);
-        console.error('[AUTH MIDDLEWARE] Error name:', error.name);
-        console.error('[AUTH MIDDLEWARE] Error stack:', error.stack);
-        console.error('[AUTH MIDDLEWARE] JWT_REFRESH_SECRET configured:', !!process.env.JWT_REFRESH_SECRET);
+        authWarn('refresh_failed', '[AUTH MIDDLEWARE] Token refresh failed:', error?.message || error);
         return { success: false };
     }
 };
 
-// Helper to set auth cookies
-const setAuthCookies = (res, accessToken, refreshToken) => {
-    const isProduction = process.env.NODE_ENV === 'production';
-    const domain = isProduction ? process.env.COOKIE_DOMAIN || '.suitegenie.in' : undefined;
-
-    const cookieOptions = {
-        httpOnly: true,
-        secure: isProduction,
-        sameSite: isProduction ? 'none' : 'lax',
-        path: '/',
-        ...(domain && { domain })
-    };
-
-    res.cookie('accessToken', accessToken, {
-        ...cookieOptions,
-        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-    });
-
-    res.cookie('refreshToken', refreshToken, {
-        ...cookieOptions,
-        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-    });
-
-    console.log('[AUTH MIDDLEWARE] Cookies set with options:', { domain, secure: isProduction, sameSite: cookieOptions.sameSite });
-};
-
-// Main authentication middleware
 export const authenticateToken = async (req, res, next) => {
     try {
-        // Reduce logging noise
-        // Get tokens from cookies
         let accessToken = req.cookies?.accessToken;
         const refreshToken = req.cookies?.refreshToken;
 
-        // Fallback to Authorization header
         if (!accessToken) {
-            const authHeader = req.headers['authorization'];
+            const authHeader = req.headers.authorization;
             accessToken = authHeader && authHeader.split(' ')[1];
         }
 
-        // If no access token but have refresh token, try to refresh
         if (!accessToken && refreshToken) {
             const refreshResult = await tryRefreshToken(req, res, refreshToken);
-            
             if (refreshResult.success) {
                 req.user = refreshResult.user;
+                await attachTeamScope(req.user);
                 return next();
-            } else {
-                return res.status(401).json({ error: 'Authentication required', code: 'AUTH_REQUIRED' });
             }
+            return res.status(401).json({ error: 'Authentication required', code: 'AUTH_REQUIRED' });
         }
 
-        // If no tokens at all
         if (!accessToken) {
             return res.status(401).json({ error: 'Authentication required', code: 'AUTH_REQUIRED' });
         }
 
-        // Verify access token
         let decoded;
         try {
             decoded = jwt.verify(accessToken, process.env.JWT_SECRET);
         } catch (jwtError) {
-            // If token expired and we have refresh token, try to refresh
             if (jwtError.name === 'TokenExpiredError' && refreshToken) {
                 const refreshResult = await tryRefreshToken(req, res, refreshToken);
-                
                 if (refreshResult.success) {
                     req.user = refreshResult.user;
+                    await attachTeamScope(req.user);
                     return next();
                 }
             }
 
-            return res.status(401).json({ 
-                error: 'Invalid or expired token', 
-                code: jwtError.name === 'TokenExpiredError' ? 'TOKEN_EXPIRED' : 'INVALID_TOKEN' 
+            return res.status(401).json({
+                error: 'Invalid or expired token',
+                code: jwtError.name === 'TokenExpiredError' ? 'TOKEN_EXPIRED' : 'INVALID_TOKEN',
             });
         }
 
-        // Get user from database
-        const userResult = await query(
-            'SELECT id, email, name, plan_type, credits_remaining, created_at FROM users WHERE id = $1',
-            [decoded.userId]
-        );
+        let user = getFreshCached(userCache, decoded.userId);
+        let userSource = user ? 'cache' : 'db';
 
-        if (userResult.rows.length === 0) {
-            console.error('[AUTH MIDDLEWARE] User not found:', decoded.userId);
-            return res.status(401).json({ error: 'User not found', code: 'USER_NOT_FOUND' });
-        }
+        if (!user) {
+            try {
+                const userResult = await query(
+                    'SELECT id, email, name, plan_type, credits_remaining, created_at FROM users WHERE id = $1',
+                    [decoded.userId]
+                );
 
-        req.user = userResult.rows[0];
+                if (userResult.rows.length === 0) {
+                    return res.status(401).json({ error: 'User not found', code: 'USER_NOT_FOUND' });
+                }
 
-        // Get team memberships
-        try {
-            const teamResult = await query(
-                'SELECT team_id, role, status FROM team_members WHERE user_id = $1 AND status = $2',
-                [req.user.id, 'active']
-            );
+                user = userResult.rows[0];
+                setCached(userCache, user.id, user, AUTH_USER_CACHE_TTL_MS);
+                userSource = 'db';
+            } catch (userError) {
+                if (!isTransientDbError(userError)) {
+                    throw userError;
+                }
 
-            if (teamResult.rows.length > 0) {
-                req.user.team_id = teamResult.rows[0].team_id;
-                req.user.team_role = teamResult.rows[0].role;
-                req.user.team_memberships = teamResult.rows;
-            } else {
-                req.user.team_id = null;
-                req.user.team_role = null;
-                req.user.team_memberships = [];
+                const staleUser = getStaleCached(userCache, decoded.userId);
+                if (staleUser) {
+                    user = staleUser;
+                    userSource = 'stale-cache';
+                } else {
+                    user = buildUserFromToken(decoded);
+                    userSource = 'token-fallback';
+                }
+
+                authWarn(
+                    'auth_user_query_failed',
+                    '[AUTH MIDDLEWARE] User query failed, using fallback user:',
+                    userError?.message || userError
+                );
             }
-        } catch (teamError) {
-            console.error('[AUTH MIDDLEWARE] Error fetching team memberships:', teamError);
-            req.user.team_id = null;
-            req.user.team_role = null;
-            req.user.team_memberships = [];
         }
 
-        next();
+        req.user = user;
+        await attachTeamScope(req.user);
+        authLog('[AUTH MIDDLEWARE] Auth resolved', { userId: req.user?.id, source: userSource });
+        return next();
     } catch (error) {
-        console.error('[AUTH MIDDLEWARE] Unexpected error:', error);
-        res.status(500).json({ error: 'Authentication error', code: 'AUTH_ERROR' });
+        authWarn('auth_unexpected_error', '[AUTH MIDDLEWARE] Unexpected error:', error?.message || error);
+        return res.status(500).json({ error: 'Authentication error', code: 'AUTH_ERROR' });
     }
 };
 
-// Optional authentication middleware (doesn't fail if not authenticated)
 export const optionalAuth = async (req, res, next) => {
     try {
         await authenticateToken(req, res, () => {
             next();
         });
     } catch (error) {
-        // If authentication fails, continue without user
         req.user = null;
         next();
     }

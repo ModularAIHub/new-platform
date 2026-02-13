@@ -17,7 +17,24 @@ import {
     validatePassword
 } from '../utils/validation.js';
 
+const AUTH_DEBUG = process.env.AUTH_DEBUG === 'true';
+const authDebug = (...args) => {
+    if (AUTH_DEBUG) {
+        console.log(...args);
+    }
+};
+
 class AuthController {
+    static buildAccessTokenPayload(user) {
+        return {
+            userId: user.id,
+            email: user.email,
+            name: user.name || '',
+            planType: user.plan_type || null,
+            creditsRemaining: Number(user.credits_remaining || 0)
+        };
+    }
+
     // Helper function to set secure cookies
     static setAuthCookies(res, accessToken, refreshToken) {
         // Environment-based cookie configuration
@@ -137,7 +154,7 @@ class AuthController {
 
             // Generate tokens to auto-login the user
             const accessToken = jwt.sign(
-                { userId: user.id, email: user.email },
+                AuthController.buildAccessTokenPayload(user),
                 process.env.JWT_SECRET,
                 { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
             );
@@ -176,12 +193,12 @@ class AuthController {
     // Login user
     static async login(req, res) {
         try {
-            console.log('[LOGIN] Login attempt for email:', req.body.email);
+            authDebug('[LOGIN] Login attempt for email:', req.body.email);
             
             // Validate login data
             const validation = validateLoginData(req.body);
             if (!validation.isValid) {
-                console.log('[LOGIN] Validation failed:', validation.errors);
+                authDebug('[LOGIN] Validation failed:', validation.errors);
                 return res.status(400).json({
                     error: 'Validation failed',
                     details: validation.errors,
@@ -198,7 +215,7 @@ class AuthController {
             );
 
             if (result.rows.length === 0) {
-                console.log('[LOGIN] User not found:', email);
+                authDebug('[LOGIN] User not found:', email);
                 return res.status(401).json({
                     error: 'Invalid email or password',
                     code: 'INVALID_CREDENTIALS'
@@ -206,25 +223,25 @@ class AuthController {
             }
 
             const user = result.rows[0];
-            console.log('[LOGIN] User found:', user.email, 'ID:', user.id);
+            authDebug('[LOGIN] User found:', user.email, 'ID:', user.id);
 
             // Verify password
             const isValidPassword = await comparePassword(password, user.password_hash);
-            console.log('[LOGIN] Password valid:', isValidPassword);
+            authDebug('[LOGIN] Password valid:', isValidPassword);
             
             if (!isValidPassword) {
-                console.log('[LOGIN] Invalid password for user:', email);
+                authDebug('[LOGIN] Invalid password for user:', email);
                 return res.status(401).json({
                     error: 'Invalid email or password',
                     code: 'INVALID_CREDENTIALS'
                 });
             }
 
-            console.log('[LOGIN] Generating tokens for user:', user.id);
+            authDebug('[LOGIN] Generating tokens for user:', user.id);
             
             // Generate tokens
             const accessToken = jwt.sign(
-                { userId: user.id, email: user.email },
+                AuthController.buildAccessTokenPayload(user),
                 process.env.JWT_SECRET,
                 { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
             );
@@ -238,7 +255,7 @@ class AuthController {
             // Set cookies
             AuthController.setAuthCookies(res, accessToken, refreshToken);
 
-            console.log('[LOGIN] Login successful for:', user.email);
+            authDebug('[LOGIN] Login successful for:', user.email);
             
             res.json({
                 message: 'Login successful',
@@ -251,8 +268,7 @@ class AuthController {
                 }
             });
         } catch (error) {
-            console.error('[LOGIN] Login error:', error);
-            console.error('[LOGIN] Error stack:', error.stack);
+            console.error('[LOGIN] Login error:', error?.message || error);
             res.status(500).json({
                 error: 'Login failed',
                 code: 'LOGIN_ERROR',
@@ -302,7 +318,7 @@ class AuthController {
 
             // Generate tokens
             const accessToken = jwt.sign(
-                { userId: user.id, email: user.email },
+                AuthController.buildAccessTokenPayload(user),
                 process.env.JWT_SECRET,
                 { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
             );
@@ -314,8 +330,8 @@ class AuthController {
             );
 
             // Debug: Log tokens after generation
-            console.log('[LOGIN REDIRECT] accessToken:', accessToken);
-            console.log('[LOGIN REDIRECT] refreshToken:', refreshToken);
+            authDebug('[LOGIN REDIRECT] accessToken generated');
+            authDebug('[LOGIN REDIRECT] refreshToken generated');
 
             // Set cookies for platform
             AuthController.setAuthCookies(res, accessToken, refreshToken);
@@ -889,8 +905,6 @@ class AuthController {
             const { email, purpose } = validation.sanitized;
 
             // Check rate limiting - prevent spam
-                // Debug: About to generate accessToken
-                console.log('[LOGIN REDIRECT] About to generate accessToken');
             const rateLimitKey = `otp_rate_limit:${email}`;
             const attempts = await redisClient.get(rateLimitKey);
             if (attempts && parseInt(attempts) >= 3) {
@@ -1105,7 +1119,7 @@ class AuthController {
 
             // Check if user exists
             const result = await query(
-                'SELECT id, email FROM users WHERE id = $1',
+                'SELECT id, email, name, plan_type, credits_remaining FROM users WHERE id = $1',
                 [decoded.userId]
             );
 
@@ -1120,7 +1134,7 @@ class AuthController {
 
             // Generate new tokens
             const newAccessToken = jwt.sign(
-                { userId: user.id, email: user.email },
+                AuthController.buildAccessTokenPayload(user),
                 process.env.JWT_SECRET,
                 { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
             );
@@ -1138,7 +1152,10 @@ class AuthController {
                 message: 'Token refreshed successfully',
                 user: {
                     id: user.id,
-                    email: user.email
+                    email: user.email,
+                    name: user.name,
+                    planType: user.plan_type,
+                    creditsRemaining: user.credits_remaining
                 }
             });
         } catch (error) {

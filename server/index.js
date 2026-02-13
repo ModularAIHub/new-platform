@@ -23,6 +23,20 @@ import redisClient from './config/redis.js';
 import syncWorker from './workers/syncWorker.js';
 
 const app = express();
+const REQUEST_DEBUG = process.env.REQUEST_DEBUG === 'true';
+const SECURITY_DEBUG = process.env.SECURITY_DEBUG === 'true';
+
+const reqLog = (...args) => {
+    if (REQUEST_DEBUG) {
+        console.log(...args);
+    }
+};
+
+const securityLog = (...args) => {
+    if (SECURITY_DEBUG) {
+        console.error(...args);
+    }
+};
 
 // Honeybadger request handler (must be first middleware)
 app.use(Honeybadger.requestHandler);
@@ -36,7 +50,7 @@ const PORT = process.env.PORT || 3000;
 
 // Request logger (lightweight) to surface failing calls
 app.use((req, res, next) => {
-    console.log(`[REQ] ${req.method} ${req.originalUrl} origin=${req.headers.origin || 'n/a'} referer=${req.headers.referer || 'n/a'}`);
+    reqLog(`[REQ] ${req.method} ${req.originalUrl} origin=${req.headers.origin || 'n/a'} referer=${req.headers.referer || 'n/a'}`);
     next();
 });
 
@@ -105,7 +119,7 @@ const corsOptions = {
             return callback(null, true); // Allow the origin
         }
 
-        console.log('CORS blocked origin:', origin);
+        reqLog('CORS blocked origin:', origin);
         return callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
@@ -182,23 +196,43 @@ if (isProduction && process.env.DOMAIN && !isLocalhost) {
     csrfCookieOptions.secure = true;
 }
 
-// Skip CSRF for specific API routes that need external access
-const csrfProtection = csurf({ 
+const csrfProtection = csurf({
     cookie: csrfCookieOptions,
     ignoreMethods: ['GET', 'HEAD', 'OPTIONS'],
-    skip: (req) => {
-        // Skip CSRF for refresh token endpoint
-        if (req.path === '/api/auth/refresh') return true;
-        // Skip CSRF for SSO token generation (used by other services)
-        if (req.path === '/api/team/sso-token') return true;
-        // Skip CSRF for webhook endpoints
-        if (req.path.startsWith('/api/webhooks/')) return true;
-        // Skip CSRF for team social accounts endpoints in development
-        if (process.env.NODE_ENV === 'development' && req.path.startsWith('/pro-team/social-accounts')) return true;
-        return false;
-    }
 });
-app.use(csrfProtection);
+
+const shouldSkipCsrf = (req) => {
+    const requestPath = req.path || req.originalUrl || '';
+
+    // Skip CSRF for refresh token endpoint used by downstream services
+    if (requestPath === '/api/auth/refresh' || requestPath.startsWith('/api/auth/refresh?')) {
+        return true;
+    }
+
+    // Skip CSRF for SSO token generation (used by other services)
+    if (requestPath === '/api/team/sso-token' || requestPath.startsWith('/api/team/sso-token?')) {
+        return true;
+    }
+
+    // Skip CSRF for webhook endpoints
+    if (requestPath.startsWith('/api/webhooks/')) {
+        return true;
+    }
+
+    // Skip CSRF for team social accounts endpoints in development
+    if (process.env.NODE_ENV === 'development' && requestPath.startsWith('/pro-team/social-accounts')) {
+        return true;
+    }
+
+    return false;
+};
+
+app.use((req, res, next) => {
+    if (shouldSkipCsrf(req)) {
+        return next();
+    }
+    return csrfProtection(req, res, next);
+});
 
 // CSRF token endpoint for frontend to fetch token
 app.get('/api/csrf-token', (req, res) => {
@@ -250,12 +284,11 @@ app.use((err, req, res, next) => {
             }
         }
         
-        console.error('[CSRF ERROR]', {
+        securityLog('[CSRF ERROR]', {
             path: req.originalUrl,
             method: req.method,
             origin: req.headers.origin,
             referer: req.headers.referer,
-            cookies: req.headers.cookie,
             csrfHeader: req.headers['x-csrf-token'],
         });
         return res.status(403).json({ error: 'Invalid CSRF token' });
@@ -287,7 +320,7 @@ app.use((err, req, res, next) => {
             }
         }
 
-        console.error('[REQUEST ERROR]', {
+        securityLog('[REQUEST ERROR]', {
             path: req.originalUrl,
             method: req.method,
             origin: req.headers.origin,
@@ -312,34 +345,28 @@ app.use(errorHandler);
 
 // Start server
 app.listen(PORT, async () => {
-    console.log(`🚀 Autoverse Hub Server running on port ${PORT}`);
-    console.log(`📊 Environment: ${process.env.NODE_ENV}`);
-    console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+    console.log(`Autoverse Hub Server running on port ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV}`);
+    console.log(`Health check: http://localhost:${PORT}/health`);
 
     try {
-        // Initialize Redis
-
-        // Upstash Redis does not require connect()
-        // Test Upstash Redis connection
         try {
             const pong = await redisClient.ping();
-            console.log('Redis ping:', pong);
+            reqLog('Redis ping:', pong);
         } catch (err) {
-            console.error('Redis ping test failed:', err);
+            console.error('Redis ping test failed:', err?.message || err);
         }
 
-        // Start sync worker
         syncWorker.start();
-
-        console.log('✅ Redis and sync worker initialized');
+        console.log('Redis and sync worker initialized');
     } catch (error) {
-        console.error('❌ Failed to initialize Redis or sync worker:', error);
+        console.error('Failed to initialize Redis or sync worker:', error?.message || error);
     }
 });
-
 
 // Honeybadger error handler (must be after all routes/middleware)
 app.use(Honeybadger.errorHandler);
 
 export default app;
+
 

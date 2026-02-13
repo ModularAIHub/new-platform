@@ -1,22 +1,21 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+import { useState, useEffect, useRef } from 'react';
+import api from '../utils/api';
 
 export const usePlanAccess = () => {
   const [userPlan, setUserPlan] = useState(null);
   const [planLimits, setPlanLimits] = useState(null);
   const [loading, setLoading] = useState(true);
+  const hasFetchedRef = useRef(false);
 
   useEffect(() => {
+    if (hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
     fetchPlanInfo();
   }, []);
 
   const fetchPlanInfo = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/plans/limits`, {
-        withCredentials: true
-      });
+      const response = await api.get('/plans/limits');
       
       setUserPlan(response.data.currentPlan);
       setPlanLimits(response.data.limits);
@@ -56,10 +55,8 @@ export const usePlanAccess = () => {
 
   const upgradeToPro = async () => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/plans/upgrade`, {
+      const response = await api.post('/plans/upgrade', {
         planType: 'pro'
-      }, {
-        withCredentials: true
       });
       
       // Refresh plan info after upgrade

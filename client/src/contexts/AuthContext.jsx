@@ -69,7 +69,8 @@ export const AuthProvider = ({ children }) => {
     const login = async (email, password, redirectUrl = null) => {
         try {
             // Always use regular login
-            const response = await api.post('/auth/login', { email, password });
+            const loginTimeout = Number.parseInt(import.meta.env.VITE_LOGIN_TIMEOUT_MS || '30000', 10);
+            const response = await api.post('/auth/login', { email, password }, { timeout: loginTimeout });
             
             setUser(response.data.user)
             toast.success('Login successful!')
@@ -122,7 +123,9 @@ export const AuthProvider = ({ children }) => {
             return response.data
         } catch (error) {
             let message
-            if (error.response?.status === 429) {
+            if (error.code === 'ECONNABORTED') {
+                message = 'Login is taking too long. Please retry in a few seconds.'
+            } else if (error.response?.status === 429) {
                 message = 'Too many requests. Please wait a few minutes before trying again.'
             } else {
                 message = error.response?.data?.error || 'Unable to login right now. Please try again later.'

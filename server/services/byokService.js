@@ -3,6 +3,13 @@
 import { query } from '../config/database.js';
 import { UserApiKeyModel } from '../models/userApiKeyModel.js';
 import { encrypt, decrypt } from '../utils/encryption.js';
+const BYOK_DEBUG = process.env.BYOK_DEBUG === 'true';
+
+const byokLog = (...args) => {
+  if (BYOK_DEBUG) {
+    console.log(...args);
+  }
+};
 
 // Credit allocation based on plan and API preference
 // Free: 50 (platform) / 100 (BYOK 2x)
@@ -25,11 +32,11 @@ function getCreditsForPlan(planType, apiPreference) {
 export const ByokService = {
 
   async setPreference(userId, preference) {
-    console.log('[BYOK SERVICE] setPreference called with userId:', userId, 'preference:', preference);
+    byokLog('[BYOK SERVICE] setPreference called with userId:', userId, 'preference:', preference);
     
     // Get current user preference, lock status, AND plan_type
     const user = await query('SELECT api_key_preference, byok_locked_until, plan_type FROM users WHERE id = $1', [userId]);
-    console.log('[BYOK SERVICE] User query result:', user.rows[0]);
+    byokLog('[BYOK SERVICE] User query result:', user.rows[0]);
     
     const now = new Date();
     const planType = user.rows[0].plan_type || 'free';
@@ -37,7 +44,7 @@ export const ByokService = {
     // Strict lock enforcement - user cannot make ANY preference changes while locked
     if (user.rows[0].byok_locked_until && new Date(user.rows[0].byok_locked_until) > now) {
       const lockUntilDate = new Date(user.rows[0].byok_locked_until).toLocaleDateString();
-      console.log('[BYOK SERVICE] User is locked until:', user.rows[0].byok_locked_until);
+      byokLog('[BYOK SERVICE] User is locked until:', user.rows[0].byok_locked_until);
       throw new Error(`Preference is locked until ${lockUntilDate}. You cannot make any changes during the 3-month lock period.`);
     }
     let byokLockedUntil = null;
@@ -56,7 +63,7 @@ export const ByokService = {
     // Set credits based on BOTH plan_type and preference
     const credits = getCreditsForPlan(planType, preference);
     await query('UPDATE users SET credits_remaining = $1, last_credit_reset = NOW() WHERE id = $2', [credits, userId]);
-    console.log(`[BYOK SERVICE] Updated user ${userId} credits to ${credits} (${planType} plan, ${preference} mode)`);
+    byokLog(`[BYOK SERVICE] Updated user ${userId} credits to ${credits} (${planType} plan, ${preference} mode)`);
     return { preference, credits, byokLockedUntil };
   },
 
@@ -112,7 +119,7 @@ export const ByokService = {
       lockPeriod.setDate(lockPeriod.getDate() + LOCK_PERIOD_DAYS);
       
       await query('UPDATE users SET byok_locked_until = $1 WHERE id = $2', [lockPeriod, userId]);
-      console.log('[BYOK SERVICE] First API key submitted - locking BYOK user until:', lockPeriod);
+      byokLog('[BYOK SERVICE] First API key submitted - locking BYOK user until:', lockPeriod);
     }
     
     // Encrypt key

@@ -4,6 +4,25 @@ import { Redis } from '@upstash/redis';
 import dotenv from 'dotenv';
 dotenv.config();
 
+const REDIS_DEBUG = process.env.REDIS_DEBUG === 'true';
+const REDIS_ERROR_LOG_THROTTLE_MS = Number.parseInt(process.env.REDIS_ERROR_LOG_THROTTLE_MS || '30000', 10);
+let lastRedisErrorAt = 0;
+
+function logRedisError(...args) {
+    const now = Date.now();
+    if (now - lastRedisErrorAt < REDIS_ERROR_LOG_THROTTLE_MS) {
+        return;
+    }
+    lastRedisErrorAt = now;
+    console.error(...args);
+}
+
+function logRedisDebug(...args) {
+    if (REDIS_DEBUG) {
+        console.log(...args);
+    }
+}
+
 const client = new Redis({
     url: process.env.UPSTASH_REDIS_REST_URL,
     token: process.env.UPSTASH_REDIS_REST_TOKEN,
@@ -16,7 +35,7 @@ const redisClient = {
             const credits = await client.get(`credits:${userId}`);
             return credits ? parseFloat(credits) : null;
         } catch (error) {
-            console.error('Upstash getCredits error:', error);
+            logRedisError('Upstash getCredits error:', error?.message || error);
             return null;
         }
     },
@@ -26,7 +45,7 @@ const redisClient = {
             await client.set(`credits:${userId}`, credits.toString());
             return true;
         } catch (error) {
-            console.error('Upstash setCredits error:', error);
+            logRedisError('Upstash setCredits error:', error?.message || error);
             return false;
         }
     },
@@ -37,7 +56,7 @@ const redisClient = {
             const result = await client.incrbyfloat(`credits:${userId}`, -Math.abs(amount));
             return result;
         } catch (error) {
-            console.error('Upstash deductCredits error:', error);
+            logRedisError('Upstash deductCredits error:', error?.message || error);
             return null;
         }
     },
@@ -47,7 +66,7 @@ const redisClient = {
             const result = await client.incrbyfloat(`credits:${userId}`, Math.abs(amount));
             return result;
         } catch (error) {
-            console.error('Upstash addCredits error:', error);
+            logRedisError('Upstash addCredits error:', error?.message || error);
             return null;
         }
     },
@@ -57,7 +76,7 @@ const redisClient = {
         try {
             return await client.get(`plan:${userId}`);
         } catch (error) {
-            console.error('Upstash getPlan error:', error);
+            logRedisError('Upstash getPlan error:', error?.message || error);
             return null;
         }
     },
@@ -67,7 +86,7 @@ const redisClient = {
             await client.set(`plan:${userId}`, plan);
             return true;
         } catch (error) {
-            console.error('Upstash setPlan error:', error);
+            logRedisError('Upstash setPlan error:', error?.message || error);
             return false;
         }
     },
@@ -78,7 +97,7 @@ const redisClient = {
             await client.sadd('dirty_users', userId);
             return true;
         } catch (error) {
-            console.error('Upstash addDirtyUser error:', error);
+            logRedisError('Upstash addDirtyUser error:', error?.message || error);
             return false;
         }
     },
@@ -87,7 +106,7 @@ const redisClient = {
         try {
             return await client.smembers('dirty_users');
         } catch (error) {
-            console.error('Upstash getDirtyUsers error:', error);
+            logRedisError('Upstash getDirtyUsers error:', error?.message || error);
             return [];
         }
     },
@@ -97,7 +116,7 @@ const redisClient = {
             await client.srem('dirty_users', userId);
             return true;
         } catch (error) {
-            console.error('Upstash removeDirtyUser error:', error);
+            logRedisError('Upstash removeDirtyUser error:', error?.message || error);
             return false;
         }
     },
@@ -106,9 +125,10 @@ const redisClient = {
     async ping() {
         try {
             const result = await client.ping();
+            logRedisDebug('Upstash ping result:', result);
             return result === 'PONG';
         } catch (error) {
-            console.error('Upstash ping error:', error);
+            logRedisError('Upstash ping error:', error?.message || error);
             return false;
         }
     },
@@ -118,7 +138,7 @@ const redisClient = {
         try {
             return await client.get(key);
         } catch (error) {
-            console.error('Upstash get error:', error);
+            logRedisError('Upstash get error:', error?.message || error);
             return null;
         }
     },
@@ -130,7 +150,7 @@ const redisClient = {
             await client.expire(key, seconds);
             return true;
         } catch (error) {
-            console.error('Upstash setEx error:', error);
+            logRedisError('Upstash setEx error:', error?.message || error);
             return false;
         }
     },
@@ -140,7 +160,7 @@ const redisClient = {
             await client.del(key);
             return true;
         } catch (error) {
-            console.error('Upstash del error:', error);
+            logRedisError('Upstash del error:', error?.message || error);
             return false;
         }
     },

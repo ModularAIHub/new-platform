@@ -1,5 +1,12 @@
 import { Resend } from 'resend';
 import { v4 as uuidv4 } from 'uuid';
+const EMAIL_DEBUG = process.env.EMAIL_DEBUG === 'true';
+
+const emailLog = (...args) => {
+    if (EMAIL_DEBUG) {
+        console.log(...args);
+    }
+};
 
 class EmailService {
     constructor() {
@@ -14,8 +21,8 @@ class EmailService {
         this.platformName = process.env.PLATFORM_NAME || 'SuiteGenie';
         this.baseUrl = process.env.CLIENT_URL || process.env.BASE_URL || 'https://suitegenie.in';
         
-        console.log('📧 Resend EmailService initialized');
-        console.log('🔑 API Key loaded:', process.env.RESEND_API_KEY.substring(0, 10) + '...');
+        emailLog('Resend EmailService initialized');
+        emailLog('Resend API key configured');
     }
 
     /**
@@ -56,10 +63,10 @@ class EmailService {
                 platformName: this.platformName
             });
 
-            console.log('📧 Sending team invitation email via Resend...');
-            console.log('📧 To:', recipientEmail);
-            console.log('📧 Team:', teamName);
-            console.log('📧 Role:', role);
+            emailLog('Sending team invitation email via Resend...');
+            emailLog('Invitation recipient:', recipientEmail);
+            emailLog('Invitation team:', teamName);
+            emailLog('Invitation role:', role);
 
             const { data, error } = await this.resend.emails.send({
                 from: `${this.platformName} <${this.fromEmail}>`,
@@ -74,10 +81,10 @@ class EmailService {
                 throw new Error(`Resend API error: ${error.message}`);
             }
 
-            console.log('✅ Team invitation email sent successfully!');
-            console.log('📧 Email ID:', data.id);
-            console.log('📧 Recipient:', recipientEmail);
-            console.log('📧 Team:', teamName);
+            emailLog('Team invitation email sent successfully');
+            emailLog('Email ID:', data.id);
+            emailLog('Recipient:', recipientEmail);
+            emailLog('Invitation team:', teamName);
 
             return {
                 success: true,
@@ -119,7 +126,7 @@ class EmailService {
                 platformName: this.platformName
             });
 
-            console.log('📧 Sending invitation reminder via Resend...');
+            emailLog('Sending invitation reminder via Resend...');
 
             const { data, error } = await this.resend.emails.send({
                 from: `${this.platformName} <${this.fromEmail}>`,
@@ -133,8 +140,8 @@ class EmailService {
                 throw new Error(`Resend API error: ${error.message}`);
             }
 
-            console.log('✅ Invitation reminder sent successfully!');
-            console.log('📧 Email ID:', data.id);
+            emailLog('Invitation reminder sent successfully');
+            emailLog('Email ID:', data.id);
 
             return {
                 success: true,
@@ -326,8 +333,8 @@ Don't recognize ${inviterName}? You can safely ignore this email.
     async testEmailConfiguration() {
         try {
             // Test Resend connection by sending a test email to a safe address
-            console.log('📧 Testing Resend configuration...');
-            console.log('🔑 API Key present:', !!process.env.RESEND_API_KEY);
+            emailLog('Testing Resend configuration...');
+            emailLog('API key present:', !!process.env.RESEND_API_KEY);
             
             // For now, just check if API key is present and Resend instance exists
             if (!process.env.RESEND_API_KEY) {
@@ -338,7 +345,7 @@ Don't recognize ${inviterName}? You can safely ignore this email.
                 throw new Error('Resend instance not initialized');
             }
             
-            console.log('✅ Resend email service is configured correctly');
+            emailLog('Resend email service is configured correctly');
             return { 
                 success: true, 
                 provider: 'resend',

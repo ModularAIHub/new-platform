@@ -28,6 +28,22 @@ const PLAN_LIMITS = {
     }
 };
 
+function isTransientDbError(error) {
+    const code = error?.code;
+    const message = String(error?.message || '').toLowerCase();
+
+    if (['ETIMEDOUT', 'ECONNRESET', 'ECONNREFUSED', 'ENOTFOUND', 'ECONNABORTED'].includes(code)) {
+        return true;
+    }
+
+    return (
+        message.includes('timeout') ||
+        message.includes('connection terminated') ||
+        message.includes('terminated unexpectedly') ||
+        message.includes('could not connect')
+    );
+}
+
 function getRequiredPlanForFeature(featureName) {
     const featurePlanMap = {
         team_collaboration: 'enterprise',
@@ -107,7 +123,45 @@ class PlansController {
                 }))
             });
         } catch (error) {
-            console.error('Get plan limits error:', error);
+            if (isTransientDbError(error)) {
+                const fallbackPlanType = req.user?.plan_type || req.user?.planType || 'free';
+                const planConfig = PLAN_LIMITS[fallbackPlanType] || PLAN_LIMITS.free;
+
+                return res.json({
+                    currentPlan: {
+                        type: fallbackPlanType,
+                        name: fallbackPlanType.charAt(0).toUpperCase() + fallbackPlanType.slice(1),
+                        creditsRemaining: Number(req.user?.credits_remaining || req.user?.creditsRemaining || 0),
+                        effectiveCredits: planConfig.credits,
+                        hasOwnKeys: false,
+                        individualPlan: fallbackPlanType,
+                        teamPlan: null,
+                        hasTeamAccess: false,
+                        degraded: true
+                    },
+                    limits: {
+                        profilesPerPlatform: planConfig.profilesPerPlatform,
+                        totalSocialAccounts: planConfig.totalSocialAccounts,
+                        teamMembers: planConfig.teamMembers || 0
+                    },
+                    features: planConfig.features,
+                    support: planConfig.support,
+                    availablePlans: Object.keys(PLAN_LIMITS).map((planType) => ({
+                        type: planType,
+                        name: planType.charAt(0).toUpperCase() + planType.slice(1),
+                        credits: PLAN_LIMITS[planType].credits,
+                        bonusCredits: planType === 'pro' ? 250 : planType === 'enterprise' ? 750 : 25,
+                        profilesPerPlatform: PLAN_LIMITS[planType].profilesPerPlatform,
+                        totalSocialAccounts: PLAN_LIMITS[planType].totalSocialAccounts,
+                        features: PLAN_LIMITS[planType].features,
+                        support: PLAN_LIMITS[planType].support,
+                        teamMembers: PLAN_LIMITS[planType].teamMembers || 0,
+                        price: planType === 'free' ? 0 : planType === 'pro' ? 399 : 1100
+                    }))
+                });
+            }
+
+            console.error('Get plan limits error:', error?.message || error);
             res.status(500).json({ error: 'Failed to get plan limits', code: 'PLAN_LIMITS_ERROR' });
         }
     }
