@@ -64,9 +64,14 @@ const isSupabaseConnection = databaseUrl.includes('supabase.com');
 const sslEnabled =
   process.env.DB_SSL === 'true' ||
   (process.env.DB_SSL !== 'false' && (process.env.NODE_ENV === 'production' || isSupabaseConnection));
-const rejectUnauthorizedSsl =
-  process.env.DB_SSL_REJECT_UNAUTHORIZED === 'true' ||
-  (process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false' && process.env.NODE_ENV === 'production');
+
+// For Supabase and cloud databases, default to not reject unauthorized certs
+const rejectUnauthorizedSsl = process.env.DB_SSL_REJECT_UNAUTHORIZED === 'true' 
+  ? true 
+  : process.env.DB_SSL_REJECT_UNAUTHORIZED === 'false' 
+  ? false 
+  : !isSupabaseConnection; // Default: false for Supabase, true for others
+
 const dbSslCaRaw = process.env.DB_SSL_CA || '';
 const dbSslCa = dbSslCaRaw ? dbSslCaRaw.replace(/\\n/g, '\n') : null;
 const sslConfig = sslEnabled

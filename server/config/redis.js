@@ -2,7 +2,11 @@
 
 import { Redis } from '@upstash/redis';
 import dotenv from 'dotenv';
-dotenv.config();
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const REDIS_DEBUG = process.env.REDIS_DEBUG === 'true';
 const REDIS_ERROR_LOG_THROTTLE_MS = Number.parseInt(process.env.REDIS_ERROR_LOG_THROTTLE_MS || '30000', 10);
