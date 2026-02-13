@@ -37,6 +37,9 @@ export const ByokService = {
     // Get current user preference, lock status, AND plan_type
     const user = await query('SELECT api_key_preference, byok_locked_until, plan_type FROM users WHERE id = $1', [userId]);
     byokLog('[BYOK SERVICE] User query result:', user.rows[0]);
+    if (!user.rows[0]) {
+      throw new Error('User not found');
+    }
     
     const now = new Date();
     const planType = user.rows[0].plan_type || 'free';

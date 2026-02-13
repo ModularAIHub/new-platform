@@ -124,6 +124,7 @@ class PlansController {
             });
         } catch (error) {
             if (isTransientDbError(error)) {
+                console.warn('Transient DB error in getLimits, returning degraded response:', error?.message || error);
                 const fallbackPlanType = req.user?.plan_type || req.user?.planType || 'free';
                 const planConfig = PLAN_LIMITS[fallbackPlanType] || PLAN_LIMITS.free;
 

@@ -22,7 +22,8 @@ const dbDebug = (...args) => {
   }
 };
 
-const dbError = (...args) => {
+
+const throttledIdleError = (...args) => {
   const now = Date.now();
   if (now - lastIdleErrorAt < IDLE_ERROR_LOG_THROTTLE_MS) {
     return;
@@ -30,7 +31,6 @@ const dbError = (...args) => {
   lastIdleErrorAt = now;
   console.error(...args);
 };
-
 const isTransientDbError = (error) => {
   const code = error?.code;
   const message = String(error?.message || '').toLowerCase();
@@ -54,13 +54,22 @@ const isSupabaseConnection = databaseUrl.includes('supabase.com');
 const sslEnabled =
   process.env.DB_SSL === 'true' ||
   (process.env.DB_SSL !== 'false' && (process.env.NODE_ENV === 'production' || isSupabaseConnection));
+const rejectUnauthorizedSsl = process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false';
+const dbSslCaRaw = process.env.DB_SSL_CA || '';
+const dbSslCa = dbSslCaRaw ? dbSslCaRaw.replace(/\\n/g, '\n') : null;
+const sslConfig = sslEnabled
+  ? {
+      rejectUnauthorized: rejectUnauthorizedSsl,
+      ...(dbSslCa ? { ca: dbSslCa } : {}),
+    }
+  : false;
 const dbConnectTimeoutMs = Number.parseInt(process.env.DB_CONNECT_TIMEOUT_MS || '5000', 10);
 const dbStatementTimeoutMs = Number.parseInt(process.env.DB_STATEMENT_TIMEOUT_MS || '10000', 10);
 const dbQueryTimeoutMs = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS || '10000', 10);
 
 const pool = new Pool({
   connectionString: databaseUrl,
-  ssl: sslEnabled ? { rejectUnauthorized: false } : false,
+  ssl: sslConfig,
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: dbConnectTimeoutMs,
@@ -76,7 +85,7 @@ pool.on('connect', () => {
 
 pool.on('error', (err) => {
   // Non-fatal. Avoid crashing server on transient DNS/network pool errors.
-  dbError('PostgreSQL idle client error (non-fatal):', err?.message || err);
+  throttledIdleError('PostgreSQL idle client error (non-fatal):', err?.message || err);
 });
 
 async function query(text, params) {
@@ -89,12 +98,12 @@ async function query(text, params) {
     } catch (error) {
       const shouldRetry = isTransientDbError(error) && attempt < DB_QUERY_RETRY_COUNT;
       if (!shouldRetry) {
-        dbError('Database query error:', error?.message || error);
+        console.error('Database query error:', error?.message || error);
         throw error;
       }
 
       attempt += 1;
-      dbError(`Database transient error (retry ${attempt}/${DB_QUERY_RETRY_COUNT}):`, error?.message || error);
+      console.error(`Database transient error (retry ${attempt}/${DB_QUERY_RETRY_COUNT}):`, error?.message || error);
       await sleep(DB_QUERY_RETRY_DELAY_MS);
     }
   }

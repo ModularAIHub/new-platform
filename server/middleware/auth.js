@@ -1,14 +1,55 @@
 import jwt from 'jsonwebtoken';
 import { query } from '../config/database.js';
 
+const parsePositiveInt = (value, fallback) => {
+    const parsed = Number.parseInt(String(value ?? ''), 10);
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+};
+
 const AUTH_DEBUG = process.env.AUTH_DEBUG === 'true';
-const AUTH_USER_CACHE_TTL_MS = Number.parseInt(process.env.AUTH_USER_CACHE_TTL_MS || '300000', 10);
-const AUTH_TEAM_CACHE_TTL_MS = Number.parseInt(process.env.AUTH_TEAM_CACHE_TTL_MS || '300000', 10);
-const AUTH_WARN_LOG_THROTTLE_MS = Number.parseInt(process.env.AUTH_WARN_LOG_THROTTLE_MS || '30000', 10);
+const AUTH_USER_CACHE_TTL_MS = parsePositiveInt(process.env.AUTH_USER_CACHE_TTL_MS, 300000);
+const AUTH_TEAM_CACHE_TTL_MS = parsePositiveInt(process.env.AUTH_TEAM_CACHE_TTL_MS, 300000);
+const AUTH_WARN_LOG_THROTTLE_MS = parsePositiveInt(process.env.AUTH_WARN_LOG_THROTTLE_MS, 30000);
+const AUTH_USER_CACHE_MAX_SIZE = parsePositiveInt(process.env.AUTH_USER_CACHE_MAX_SIZE, 5000);
+const AUTH_TEAM_CACHE_MAX_SIZE = parsePositiveInt(process.env.AUTH_TEAM_CACHE_MAX_SIZE, 5000);
+const AUTH_WARN_LOG_CACHE_MAX_SIZE = parsePositiveInt(process.env.AUTH_WARN_LOG_CACHE_MAX_SIZE, 200);
+const AUTH_CACHE_CLEANUP_INTERVAL_MS = parsePositiveInt(process.env.AUTH_CACHE_CLEANUP_INTERVAL_MS, 300000);
 
 const userCache = new Map();
 const teamCache = new Map();
 const warnLogCache = new Map();
+
+const isPositiveInt = (value) => Number.isInteger(value) && value > 0;
+
+const evictOldestIfNeeded = (cache, key, maxSize) => {
+    if (!isPositiveInt(maxSize)) return;
+    if (cache.has(key)) return;
+
+    while (cache.size >= maxSize) {
+        const oldestKey = cache.keys().next().value;
+        if (oldestKey === undefined) {
+            break;
+        }
+        cache.delete(oldestKey);
+    }
+};
+
+const cleanupExpiringCache = (cache, now = Date.now()) => {
+    for (const [key, entry] of cache.entries()) {
+        if (!entry || !isPositiveInt(entry.expiresAt) || entry.expiresAt <= now) {
+            cache.delete(key);
+        }
+    }
+};
+
+const cleanupWarnLogCache = (now = Date.now()) => {
+    const cutoff = now - AUTH_WARN_LOG_THROTTLE_MS;
+    for (const [key, lastLoggedAt] of warnLogCache.entries()) {
+        if (!isPositiveInt(lastLoggedAt) || lastLoggedAt < cutoff) {
+            warnLogCache.delete(key);
+        }
+    }
+};
 
 const authLog = (...args) => {
     if (AUTH_DEBUG) {
@@ -22,6 +63,7 @@ const shouldLogWarning = (key) => {
     if (now - lastLoggedAt < AUTH_WARN_LOG_THROTTLE_MS) {
         return false;
     }
+    evictOldestIfNeeded(warnLogCache, key, AUTH_WARN_LOG_CACHE_MAX_SIZE);
     warnLogCache.set(key, now);
     return true;
 };
@@ -32,7 +74,8 @@ const authWarn = (key, ...args) => {
     }
 };
 
-const setCached = (cache, key, value, ttlMs) => {
+const setCached = (cache, key, value, ttlMs, maxSize) => {
+    evictOldestIfNeeded(cache, key, maxSize);
     cache.set(key, {
         value,
         expiresAt: Date.now() + ttlMs,
@@ -51,6 +94,19 @@ const getStaleCached = (cache, key) => {
     const cached = cache.get(key);
     return cached?.value || null;
 };
+
+if (isPositiveInt(AUTH_CACHE_CLEANUP_INTERVAL_MS)) {
+    const cleanupTimer = setInterval(() => {
+        const now = Date.now();
+        cleanupExpiringCache(userCache, now);
+        cleanupExpiringCache(teamCache, now);
+        cleanupWarnLogCache(now);
+    }, AUTH_CACHE_CLEANUP_INTERVAL_MS);
+
+    if (typeof cleanupTimer.unref === 'function') {
+        cleanupTimer.unref();
+    }
+}
 
 const toNumber = (value, fallback = 0) => {
     const parsed = Number(value);
@@ -136,7 +192,7 @@ const attachTeamScope = async (user) => {
             team_memberships: teamResult.rows || [],
         };
 
-        setCached(teamCache, user.id, teamData, AUTH_TEAM_CACHE_TTL_MS);
+        setCached(teamCache, user.id, teamData, AUTH_TEAM_CACHE_TTL_MS, AUTH_TEAM_CACHE_MAX_SIZE);
         user.team_id = teamData.team_id;
         user.team_role = teamData.team_role;
         user.team_memberships = teamData.team_memberships;
@@ -174,7 +230,7 @@ const tryRefreshToken = async (req, res, refreshToken) => {
         }
 
         const user = userResult.rows[0];
-        setCached(userCache, user.id, user, AUTH_USER_CACHE_TTL_MS);
+        setCached(userCache, user.id, user, AUTH_USER_CACHE_TTL_MS, AUTH_USER_CACHE_MAX_SIZE);
 
         const newAccessToken = jwt.sign(
             buildAccessTokenPayload(user),
@@ -254,7 +310,7 @@ export const authenticateToken = async (req, res, next) => {
                 }
 
                 user = userResult.rows[0];
-                setCached(userCache, user.id, user, AUTH_USER_CACHE_TTL_MS);
+                setCached(userCache, user.id, user, AUTH_USER_CACHE_TTL_MS, AUTH_USER_CACHE_MAX_SIZE);
                 userSource = 'db';
             } catch (userError) {
                 if (!isTransientDbError(userError)) {

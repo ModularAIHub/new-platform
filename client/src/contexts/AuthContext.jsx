@@ -69,7 +69,8 @@ export const AuthProvider = ({ children }) => {
     const login = async (email, password, redirectUrl = null) => {
         try {
             // Always use regular login
-            const loginTimeout = Number.parseInt(import.meta.env.VITE_LOGIN_TIMEOUT_MS || '30000', 10);
+            const parsedTimeout = Number.parseInt(import.meta.env.VITE_LOGIN_TIMEOUT_MS, 10);
+            const loginTimeout = Number.isNaN(parsedTimeout) || parsedTimeout <= 0 ? 30000 : parsedTimeout;
             const response = await api.post('/auth/login', { email, password }, { timeout: loginTimeout });
             
             setUser(response.data.user)

@@ -133,12 +133,20 @@ const DashboardPage = () => {
                 setShowPrefModal(false)
             }
         } catch (e) {
-            const isTransient = e?.code === 'ECONNABORTED' || e?.response?.status >= 500;
+            const transientErrorCodes = ['ECONNABORTED', 'ERR_NETWORK', 'ENOTFOUND', 'ECONNRESET', 'ECONNREFUSED', 'ETIMEDOUT']
+            const isTransient =
+                transientErrorCodes.includes(e?.code) ||
+                !e?.response || // Network/transport failures without HTTP response
+                e?.response?.status >= 500
             console.error('Error fetching /byok/preference:', e?.message || e);
 
             if (isTransient) {
-                // Keep the previous UI state for transient backend failures.
-                setShowPrefModal(false);
+                // Keep prior state, but don't hide required modal for first-time users.
+                if (!preference) {
+                    setShowPrefModal(true)
+                }
+                // Allow retry after remount when transient failure occurred.
+                hasFetchedPreferenceRef.current = false
             } else {
                 setPreference(null)
                 setCreditTier(0)
