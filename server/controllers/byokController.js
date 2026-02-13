@@ -59,7 +59,10 @@ export const ByokController = {
 
   async addOrUpdateKey(req, res) {
     try {
-      const userId = req.user.id;
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
       const { provider, keyName, apiKey } = req.body;
       const key = await ByokService.validateAndStoreKey(userId, provider, keyName, apiKey);
       return res.json({ success: true, key });
@@ -89,4 +92,3 @@ export const ByokController = {
     }
   },
 };
-

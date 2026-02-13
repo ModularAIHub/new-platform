@@ -32,7 +32,7 @@ const getBaseURL = (platform) => {
 
 const baseURL = getBaseURL();
 
-// Set timeout: 45s for production, 10s for local/dev
+// Set timeout: 45s for production, 20s for local/dev
 const isProd = window.location.hostname.includes('suitegenie.in') || import.meta.env.MODE === 'production';
 const timeoutFromEnv = Number.parseInt(import.meta.env.VITE_API_TIMEOUT_MS || '', 10);
 const timeout = Number.isFinite(timeoutFromEnv) && timeoutFromEnv > 0

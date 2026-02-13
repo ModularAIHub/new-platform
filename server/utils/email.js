@@ -34,7 +34,6 @@ export async function sendMail({ to, subject, html, text }) {
     return data;
   } catch (error) {
     console.error('Email send failed:', error?.message || error);
-    return { messageId: `mock-${Date.now()}` };
+    throw error;
   }
 }
-

@@ -24,7 +24,7 @@ import syncWorker from './workers/syncWorker.js';
 
 const app = express();
 const REQUEST_DEBUG = process.env.REQUEST_DEBUG === 'true';
-const SECURITY_DEBUG = process.env.SECURITY_DEBUG === 'true';
+const SECURITY_DEBUG = process.env.SECURITY_DEBUG !== 'false';
 
 const reqLog = (...args) => {
     if (REQUEST_DEBUG) {
@@ -220,7 +220,7 @@ const shouldSkipCsrf = (req) => {
     }
 
     // Skip CSRF for team social accounts endpoints in development
-    if (process.env.NODE_ENV === 'development' && requestPath.startsWith('/pro-team/social-accounts')) {
+    if (process.env.NODE_ENV === 'development' && requestPath.startsWith('/api/pro-team/social-accounts')) {
         return true;
     }
 
