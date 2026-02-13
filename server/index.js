@@ -24,7 +24,7 @@ import syncWorker from './workers/syncWorker.js';
 
 const app = express();
 const REQUEST_DEBUG = process.env.REQUEST_DEBUG === 'true';
-const SECURITY_DEBUG = process.env.SECURITY_DEBUG !== 'false';
+const SECURITY_DEBUG = process.env.SECURITY_DEBUG === 'true';
 
 const reqLog = (...args) => {
     if (REQUEST_DEBUG) {
