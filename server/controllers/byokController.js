@@ -1,72 +1,70 @@
-// (removed duplicate top-level onboarding function)
-// byokController.js
-// Controller for BYOK preference and key management
 import { ByokService } from '../services/byokService.js';
+
+const BYOK_DEBUG = process.env.BYOK_DEBUG === 'true';
+
+const byokLog = (...args) => {
+  if (BYOK_DEBUG) {
+    console.log(...args);
+  }
+};
+
+const byokWarn = (...args) => {
+  if (BYOK_DEBUG) {
+    console.warn(...args);
+  }
+};
 
 export const ByokController = {
   async setPreference(req, res) {
     try {
-      console.log('[BYOK CONTROLLER] setPreference called');
-      console.log('[BYOK CONTROLLER] req.user:', req.user);
-      console.log('[BYOK CONTROLLER] req.body:', req.body);
-      
-      const userId = req.user.id;
-      const { preference } = req.body;
-      
-      console.log('[BYOK CONTROLLER] userId:', userId);
-      console.log('[BYOK CONTROLLER] preference:', preference);
-      
+      const userId = req.user?.id;
+      const preference = req.body?.preference;
+
+      if (!userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
       if (!['platform', 'byok'].includes(preference)) {
-        console.log('[BYOK CONTROLLER] Invalid preference:', preference);
         return res.status(400).json({ error: 'Invalid preference' });
       }
-      
-      console.log('[BYOK CONTROLLER] Calling ByokService.setPreference...');
+
+      byokLog('[BYOK] setPreference', { userId, preference });
       const result = await ByokService.setPreference(userId, preference);
-      console.log('[BYOK CONTROLLER] Service result:', result);
-      
-      res.json({ success: true, ...result });
+      return res.json({ success: true, ...result });
     } catch (error) {
-      console.error('[BYOK CONTROLLER] Error in setPreference:', error);
-      res.status(400).json({ error: error.message });
+      byokWarn('[BYOK] setPreference failed:', error?.message || error);
+      return res.status(400).json({ error: error.message });
     }
   },
 
   async getPreference(req, res) {
     try {
-      if (!req.user) {
-        console.error('[DEBUG] /byok/preference: No req.user object', { cookies: req.cookies });
-        return res.status(401).json({ error: 'No user object in request. Check authentication middleware.' });
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
       }
-      if (!req.user.id) {
-        console.error('[DEBUG] /byok/preference: req.user.id missing', { user: req.user });
-        return res.status(401).json({ error: 'User ID missing in session. Check token parsing.' });
-      }
-      const userId = req.user.id;
-      console.log('[DEBUG] /byok/preference: userId', userId);
+
       const result = await ByokService.getPreference(userId);
       if (!result) {
-        console.error('[DEBUG] /byok/preference: No result from DB for user', userId);
-        return res.status(404).json({ error: 'User not found in database.' });
+        return res.status(404).json({ error: 'User not found' });
       }
-      console.log('[DEBUG] /byok/preference: result', result);
-      res.json({ success: true, ...result });
+
+      byokLog('[BYOK] getPreference', { userId });
+      return res.json({ success: true, ...result });
     } catch (error) {
-      console.error('[DEBUG] /byok/preference error:', error);
-      res.status(400).json({ error: error.message, stack: error.stack, fullError: error });
+      byokWarn('[BYOK] getPreference failed:', error?.message || error);
+      return res.status(400).json({ error: error.message });
     }
   },
-
-// onboarding endpoint removed
 
   async addOrUpdateKey(req, res) {
     try {
       const userId = req.user.id;
       const { provider, keyName, apiKey } = req.body;
       const key = await ByokService.validateAndStoreKey(userId, provider, keyName, apiKey);
-      res.json({ success: true, key });
+      return res.json({ success: true, key });
     } catch (error) {
-      res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: error.message });
     }
   },
 
@@ -74,9 +72,9 @@ export const ByokController = {
     try {
       const userId = req.user.id;
       const keys = await ByokService.getUserKeys(userId);
-      res.json({ success: true, keys });
+      return res.json({ success: true, keys });
     } catch (error) {
-      res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: error.message });
     }
   },
 
@@ -85,9 +83,10 @@ export const ByokController = {
       const userId = req.user.id;
       const { keyId } = req.body;
       await ByokService.deleteKey(userId, keyId);
-      res.json({ success: true });
+      return res.json({ success: true });
     } catch (error) {
-      res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: error.message });
     }
-  }
+  },
 };
+

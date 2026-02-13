@@ -1,44 +1,40 @@
-
 import { Resend } from 'resend';
 
-// Debug: Show which API key is loaded (first 10 chars only)
+const EMAIL_DEBUG = process.env.EMAIL_DEBUG === 'true';
+
 if (!process.env.RESEND_API_KEY) {
-    console.error('❌ RESEND_API_KEY not found in environment variables');
-    process.exit(1);
+  console.error('RESEND_API_KEY not found in environment variables');
+  process.exit(1);
 }
-console.log('🔑 Current API Key:', process.env.RESEND_API_KEY.substring(0, 10) + '...');
-console.log('🔑 Expected Autoverse Key starts with: re_EN7Lckbi...');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+const emailDebug = (...args) => {
+  if (EMAIL_DEBUG) {
+    console.log(...args);
+  }
+};
+
 export async function sendMail({ to, subject, html, text }) {
-    console.log('📧 Sending email...');
-    console.log('From: Suitegenie <noreply@suitegenie.in>');
-    console.log('To:', to);
-    try {
-        const { data, error } = await resend.emails.send({
-            from: 'suitegenie <noreply@suitegenie.in>',
-            to,
-            subject,
-            html,
-            text,
-        });
-        if (error) {
-            console.error('📧 Resend API Error:', error);
-            throw error;
-        }
-        console.log('✅ Email sent successfully!');
-        console.log('📧 Email ID:', data.id);
-        return data;
-    } catch (error) {
-        console.error('❌ Email Error Details:');
-        console.error('- Name:', error.name);
-        console.error('- Message:', error.message);
-        console.error('- Status:', error.status);
-        // Fallback logging
-        console.log('📧 MOCK EMAIL (due to error):');
-        console.log(`To: ${to}`);
-        console.log(`Subject: ${subject}`);
-        return { messageId: 'mock-' + Date.now() };
+  emailDebug('Sending email', { to, subject });
+  try {
+    const { data, error } = await resend.emails.send({
+      from: 'suitegenie <noreply@suitegenie.in>',
+      to,
+      subject,
+      html,
+      text,
+    });
+
+    if (error) {
+      throw error;
     }
+
+    emailDebug('Email sent successfully', { messageId: data?.id });
+    return data;
+  } catch (error) {
+    console.error('Email send failed:', error?.message || error);
+    return { messageId: `mock-${Date.now()}` };
+  }
 }
+

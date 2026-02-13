@@ -34,7 +34,10 @@ const baseURL = getBaseURL();
 
 // Set timeout: 45s for production, 10s for local/dev
 const isProd = window.location.hostname.includes('suitegenie.in') || import.meta.env.MODE === 'production';
-const timeout = isProd ? 45000 : 10000;
+const timeoutFromEnv = Number.parseInt(import.meta.env.VITE_API_TIMEOUT_MS || '', 10);
+const timeout = Number.isFinite(timeoutFromEnv) && timeoutFromEnv > 0
+    ? timeoutFromEnv
+    : (isProd ? 45000 : 20000);
 
 const api = axios.create({
     baseURL,

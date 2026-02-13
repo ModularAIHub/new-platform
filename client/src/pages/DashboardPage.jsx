@@ -1,7 +1,7 @@
 
 import { useAuth } from '../contexts/AuthContext'
 import { CreditCard, Key, Settings, ExternalLink, Lock, TrendingUp, Calendar, BarChart3, Zap, Crown, Users } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import api from '../utils/api'
 import { useNavigate } from 'react-router-dom'
 import { URLS, TOOLS, getToolUrl } from '../config/urls'
@@ -37,6 +37,7 @@ const DashboardPage = () => {
     const [statsLoading, setStatsLoading] = useState(true)
     const [showUpgradePrompt, setShowUpgradePrompt] = useState(false)
     const [upgradeFeature, setUpgradeFeature] = useState(null)
+    const hasFetchedPreferenceRef = useRef(false)
     const navigate = useNavigate()
     const { userPlan, hasFeatureAccess, canAddMoreAccounts } = usePlanAccess()
 
@@ -73,6 +74,8 @@ const DashboardPage = () => {
     }
 
     useEffect(() => {
+        if (hasFetchedPreferenceRef.current) return
+        hasFetchedPreferenceRef.current = true
         fetchPreference()
     }, [])
 
@@ -106,10 +109,8 @@ const DashboardPage = () => {
         setPrefLoading(true)
         try {
             const res = await api.get('/byok/preference')
-            console.log('[DEBUG] /byok/preference response:', res.data);
             // Always treat null/undefined as unset
             if (!res.data.api_key_preference) {
-                console.warn('[DEBUG] No api_key_preference found for user:', res.data);
                 setPreference(null)
                 setCreditTier(0)
                 setShowPrefModal(true)
@@ -124,22 +125,28 @@ const DashboardPage = () => {
                 // Always show actual available credits as the current credit tier
                 try {
                     const creditsRes = await api.get('/credits/balance');
-                    console.log('[DEBUG] /credits/balance response:', creditsRes.data);
                     setCreditTier(creditsRes.data.creditsRemaining || 0);
                 } catch (err) {
-                    console.error('[DEBUG] Error fetching credits:', err);
+                    console.error('Error fetching credits:', err?.message || err);
                     setCreditTier(0);
                 }
                 setShowPrefModal(false)
             }
         } catch (e) {
-            console.error('[DEBUG] Error fetching /byok/preference:', e);
-            setPreference(null)
-            setCreditTier(0)
-            setShowPrefModal(true)
-            setLockUntil(null)
-            setLocked(false)
-            setLockMessage(null)
+            const isTransient = e?.code === 'ECONNABORTED' || e?.response?.status >= 500;
+            console.error('Error fetching /byok/preference:', e?.message || e);
+
+            if (isTransient) {
+                // Keep the previous UI state for transient backend failures.
+                setShowPrefModal(false);
+            } else {
+                setPreference(null)
+                setCreditTier(0)
+                setShowPrefModal(true)
+                setLockUntil(null)
+                setLocked(false)
+                setLockMessage(null)
+            }
         } finally {
             setPrefLoading(false)
         }
