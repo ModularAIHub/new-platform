@@ -1,7 +1,10 @@
 // Subdomain mapping for supported platforms
 const subdomains = {
     twitter: process.env.TWITTER_SUBDOMAIN || 'https://tweet.suitegenie.in',
-    linkedin: process.env.LINKEDIN_SUBDOMAIN || 'https://linkedin.suitegenie.in'
+    linkedin:
+        process.env.LINKEDIN_API_URL ||
+        process.env.LINKEDIN_SUBDOMAIN ||
+        'https://apilinkedin.suitegenie.in'
 };
 // proTeamController.js 
 // Controller for Pro plan team collaboration features
@@ -734,9 +737,20 @@ export const ProTeamController = {
 
             // Detect if running locally (move definition here for correct scope)
             const isLocal = process.env.NODE_ENV === 'development' || (req.headers.origin && req.headers.origin.includes('localhost'));
-            let subdomain = subdomains[platform.toLowerCase()];
+            const platformKey = platform.toLowerCase();
+            let subdomain = subdomains[platformKey];
+
+            // Guard against old config pointing to LinkedIn frontend instead of API host.
+            const normalizedHost =
+                typeof subdomain === 'string'
+                    ? subdomain.replace(/^https?:\/\//i, '').split('/')[0].toLowerCase()
+                    : '';
+            if (platformKey === 'linkedin' && normalizedHost === 'linkedin.suitegenie.in') {
+                subdomain = process.env.LINKEDIN_API_URL || 'https://apilinkedin.suitegenie.in';
+            }
+
             // Use localhost for Twitter OAuth in local dev
-            if (isLocal && platform.toLowerCase() === 'twitter') {
+            if (isLocal && platformKey === 'twitter') {
                 subdomain = 'http://localhost:3002';
             }
             if (!subdomain) {

@@ -186,7 +186,11 @@ const TeamPage = () => {
         
         setSelectingAccount(true);
         try {
-            const linkedinApiUrl = import.meta.env.VITE_LINKEDIN_API_URL || 'http://localhost:3004';
+            const linkedinApiUrl = import.meta.env.VITE_LINKEDIN_API_URL || (
+                import.meta.env.MODE === 'production'
+                    ? 'https://apilinkedin.suitegenie.in'
+                    : 'http://localhost:3004'
+            );
             const response = await fetch(`${linkedinApiUrl}/api/oauth/linkedin/complete-team-selection`, {
                 method: 'POST',
                 headers: {
