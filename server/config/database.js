@@ -15,6 +15,7 @@ const DB_QUERY_RETRY_DELAY_MS = Number.parseInt(process.env.DB_QUERY_RETRY_DELAY
 
 let hasLoggedConnect = false;
 let lastIdleErrorAt = 0;
+let lastTransientErrorAt = 0;
 
 const dbDebug = (...args) => {
   if (DB_DEBUG) {
@@ -29,6 +30,15 @@ const throttledIdleError = (...args) => {
     return;
   }
   lastIdleErrorAt = now;
+  console.error(...args);
+};
+
+const throttledTransientError = (...args) => {
+  const now = Date.now();
+  if (now - lastTransientErrorAt < IDLE_ERROR_LOG_THROTTLE_MS) {
+    return;
+  }
+  lastTransientErrorAt = now;
   console.error(...args);
 };
 const isTransientDbError = (error) => {
@@ -54,7 +64,9 @@ const isSupabaseConnection = databaseUrl.includes('supabase.com');
 const sslEnabled =
   process.env.DB_SSL === 'true' ||
   (process.env.DB_SSL !== 'false' && (process.env.NODE_ENV === 'production' || isSupabaseConnection));
-const rejectUnauthorizedSsl = process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false';
+const rejectUnauthorizedSsl =
+  process.env.DB_SSL_REJECT_UNAUTHORIZED === 'true' ||
+  (process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false' && process.env.NODE_ENV === 'production');
 const dbSslCaRaw = process.env.DB_SSL_CA || '';
 const dbSslCa = dbSslCaRaw ? dbSslCaRaw.replace(/\\n/g, '\n') : null;
 const sslConfig = sslEnabled
@@ -103,7 +115,10 @@ async function query(text, params) {
       }
 
       attempt += 1;
-      console.error(`Database transient error (retry ${attempt}/${DB_QUERY_RETRY_COUNT}):`, error?.message || error);
+      throttledTransientError(
+        `Database transient error (retry ${attempt}/${DB_QUERY_RETRY_COUNT}):`,
+        error?.message || error
+      );
       await sleep(DB_QUERY_RETRY_DELAY_MS);
     }
   }
