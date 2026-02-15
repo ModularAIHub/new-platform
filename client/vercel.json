@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "routes": [
     {
-      "src": "^/blogs$",
+      "src": "^/blog$",
       "dest": "https://clenvor-proxy.com/",
       "transforms": [
         {
@@ -14,7 +14,7 @@
       ]
     },
     {
-      "src": "^/blogs/(.*)$",
+      "src": "^/blog/(.*)$",
       "dest": "https://clenvor-proxy.com/$1",
       "transforms": [
         {

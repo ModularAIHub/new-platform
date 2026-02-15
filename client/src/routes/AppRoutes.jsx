@@ -16,6 +16,10 @@ import DocsPage from '../pages/Docs';
 import PricingPage from '../pages/Pricing';
 import IntegrationsPage from '../pages/Integrations';
 import HelpPage from '../pages/Help';
+import BlogPage from '../pages/Blog';
+import BlogPostPage from '../pages/BlogPost';
+import BlogCategoryPage from '../pages/BlogCategory';
+import BlogSearchPage from '../pages/BlogSearch';
 
 // Auth Pages
 import LoginPage from '../pages/LoginPage';
@@ -51,6 +55,10 @@ const AppRoutes = () => {
       <Route path="/docs" element={<DocsPage />} />
       <Route path="/integrations" element={<IntegrationsPage />} />
       <Route path="/help" element={<HelpPage />} />
+      <Route path="/blogs" element={<BlogPage />} />
+      <Route path="/blogs/search" element={<BlogSearchPage />} />
+      <Route path="/blogs/category/:name" element={<BlogCategoryPage />} />
+      <Route path="/blogs/:category/:slug" element={<BlogPostPage />} />
       
       {/* Guest routes - redirect to dashboard if already logged in */}
       <Route path="/login" element={

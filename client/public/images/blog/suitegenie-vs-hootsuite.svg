@@ -1,0 +1,40 @@
+﻿<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1600" y2="900" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#111827"/>
+      <stop offset="1" stop-color="#4C1D95"/>
+    </linearGradient>
+    <linearGradient id="left" x1="0" y1="0" x2="560" y2="520" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2563EB"/>
+      <stop offset="1" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <linearGradient id="right" x1="0" y1="0" x2="560" y2="520" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7C3AED"/>
+      <stop offset="1" stop-color="#C026D3"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" rx="36" fill="url(#bg)"/>
+  <circle cx="1320" cy="110" r="220" fill="#A78BFA" fill-opacity="0.2"/>
+  <circle cx="240" cy="780" r="260" fill="#60A5FA" fill-opacity="0.14"/>
+
+  <rect x="120" y="150" width="1360" height="600" rx="30" fill="white" fill-opacity="0.08" stroke="white" stroke-opacity="0.24"/>
+  <rect x="220" y="230" width="520" height="440" rx="24" fill="url(#left)"/>
+  <rect x="860" y="230" width="520" height="440" rx="24" fill="url(#right)"/>
+
+  <text x="340" y="310" fill="white" font-family="Arial, sans-serif" font-size="56" font-weight="700">SuiteGenie</text>
+  <text x="1000" y="310" fill="white" font-family="Arial, sans-serif" font-size="56" font-weight="700">Hootsuite</text>
+
+  <g fill="#DBEAFE" font-family="Arial, sans-serif" font-size="30">
+    <text x="280" y="390">AI-first workflows</text>
+    <text x="280" y="445">Bulk generation speed</text>
+    <text x="280" y="500">Usage cost visibility</text>
+    <text x="280" y="555">Built for lean agencies</text>
+  </g>
+
+  <g fill="#F5D0FE" font-family="Arial, sans-serif" font-size="30">
+    <text x="920" y="390">Legacy enterprise focus</text>
+    <text x="920" y="445">Heavier setup</text>
+    <text x="920" y="500">Plan-heavy pricing</text>
+    <text x="920" y="555">Broad but complex stack</text>
+  </g>
+</svg>
