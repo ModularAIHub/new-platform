@@ -73,6 +73,12 @@ const Navbar = () => {
             >
               About
             </Link>
+            <Link
+              to="/blogs"
+              className="px-3 py-2 text-sm font-medium text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-lg transition-all duration-200"
+            >
+              Blog
+            </Link>
             <Link 
               to="/contact" 
               className="px-3 py-2 text-sm font-medium text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-lg transition-all duration-200"
@@ -220,6 +226,13 @@ const Navbar = () => {
                 onClick={closeMenu}
               >
                 Contact
+              </Link>
+              <Link
+                to="/blogs"
+                className="block px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-lg font-medium transition-all duration-200"
+                onClick={closeMenu}
+              >
+                Blog
               </Link>
               <div className="border-t border-neutral-200 pt-4 mt-4">
                 {isAuthenticated ? (
