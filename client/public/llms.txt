@@ -1,0 +1,29 @@
+# SuiteGenie
+
+> AI-powered social media automation platform for agencies and creators. Manage publishing workflows, credits, team access, integrations, and support resources in one place.
+
+SuiteGenie helps teams streamline social media operations with guided setup, automation tools, and account-level controls across connected products.
+
+## Product Overview
+
+- [Homepage](https://suitegenie.in/): Main overview of SuiteGenie and core value proposition.
+- [Features](https://suitegenie.in/features): Feature breakdown across automation, collaboration, and workflows.
+- [Pricing](https://suitegenie.in/pricing): Current pricing options and plan details.
+- [Plans](https://suitegenie.in/plans): Plan-focused experience and account upgrade paths.
+
+## Getting Started
+
+- [Docs](https://suitegenie.in/docs): Product documentation and onboarding guidance.
+- [Help](https://suitegenie.in/help): Help center and practical support resources.
+- [Integrations](https://suitegenie.in/integrations): Available product and platform integrations.
+
+## Company
+
+- [About](https://suitegenie.in/about): Company background and product mission.
+- [Contact](https://suitegenie.in/contact): Contact options for sales and support.
+
+## Policies
+
+- [Terms](https://suitegenie.in/terms): Terms of service.
+- [Privacy](https://suitegenie.in/privacy): Privacy policy and data handling details.
+

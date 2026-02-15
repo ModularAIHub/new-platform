@@ -1,6 +1,7 @@
 User-agent: *
 Allow: /
 Sitemap: https://suitegenie.in/sitemap.xml
+Sitemap: https://suitegenie.in/sitemap-blog.xml
 Crawl-delay: 1
 Disallow: /api/
 Disallow: /admin/
