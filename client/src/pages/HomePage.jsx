@@ -19,22 +19,22 @@ const HomePage = () => {
     <>
       <Helmet>
         {/* Primary Meta Tags */}
-        <title>SuiteGenie - AI Social Media Automation Tool | Free BYOK Platform for Creators</title>
-        <meta name="title" content="SuiteGenie - AI Social Media Automation Tool | Free BYOK Platform for Creators" />
-        <meta name="description" content="Automate Twitter, LinkedIn & WordPress content with AI. Generate, schedule & manage posts across platforms. $0 free plan with BYOK. Built in India for creators worldwide." />
-        <meta name="keywords" content="AI social media automation, BYOK social media tool, Twitter automation, LinkedIn automation, WordPress automation, content scheduling, social media management, Buffer alternative, Hootsuite alternative" />
+        <title>SuiteGenie - Social media automation for agencies and creators</title>
+        <meta name="title" content="SuiteGenie - Social media automation for agencies and creators" />
+        <meta name="description" content="Automate Twitter, LinkedIn and WordPress with AI. SuiteGenie helps agencies and creators generate, schedule, and manage content across platforms." />
+        <meta name="keywords" content="social media automation for agencies, social media automation for creators, Twitter automation, LinkedIn automation, WordPress automation, AI content scheduling, social media management platform, Buffer alternative, Hootsuite alternative" />
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://suitegenie.in/" />
-        <meta property="og:title" content="SuiteGenie - AI Social Media Automation for Creators" />
-        <meta property="og:description" content="Automate Twitter, LinkedIn & WordPress content with AI. $0 free plan with BYOK support." />
+        <meta property="og:title" content="SuiteGenie - Social media automation for agencies and creators" />
+        <meta property="og:description" content="Automate Twitter, LinkedIn and WordPress with AI. Built for agencies and creators to scale content and scheduling." />
         <meta property="og:image" content="https://suitegenie.in/og-image.jpg" />
         <meta property="og:site_name" content="SuiteGenie" />
         {/* Twitter */}
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:url" content="https://suitegenie.in/" />
-        <meta property="twitter:title" content="SuiteGenie - AI Social Media Automation" />
-        <meta property="twitter:description" content="Automate Twitter, LinkedIn & WordPress content with AI. $0 free plan with BYOK support." />
+        <meta property="twitter:title" content="SuiteGenie - Social media automation for agencies and creators" />
+        <meta property="twitter:description" content="Automate Twitter, LinkedIn and WordPress with AI. Built for agencies and creators to scale content and scheduling." />
         <meta property="twitter:image" content="https://suitegenie.in/twitter-card.jpg" />
         <meta name="twitter:site" content="@Suitegenie1" />
         <meta name="twitter:creator" content="@Suitegenie1" />
@@ -86,7 +86,7 @@ const HomePage = () => {
                 "https://linkedin.com/company/suitegenie"
               ]
             },
-            "description": "AI-powered social media automation platform for creators. Generate, schedule, and manage content across Twitter, LinkedIn, and WordPress with BYOK support."
+            "description": "Social media automation platform for agencies and creators. Generate, schedule, and manage content across Twitter, LinkedIn, and WordPress."
           }
         `}</script>
         {/* Organization Schema */}
@@ -97,7 +97,7 @@ const HomePage = () => {
             "name": "SuiteGenie",
             "url": "https://suitegenie.in",
             "logo": "https://suitegenie.in/logo.png",
-            "description": "AI social media automation platform for creators",
+            "description": "Social media automation platform for agencies and creators",
             "foundingDate": "2024",
             "founder": {
               "@type": "Person",

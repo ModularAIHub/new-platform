@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { CreditCard, Plus, History, Loader2, RefreshCw, Zap, TrendingUp } from 'lucide-react'
 import api from '../utils/api'
 import Loader from '../components/Loader'
 import { loadRazorpayScript } from '../utils/payment'
 import { useAuth } from '../contexts/AuthContext'
+import toast from 'react-hot-toast'
 import { 
     Button, 
     Card, 
@@ -82,7 +83,7 @@ const CreditsPage = () => {
             // Load Razorpay script
             const isScriptLoaded = await loadRazorpayScript()
             if (!isScriptLoaded) {
-                alert('Failed to load payment gateway. Please try again.')
+                toast.error('Failed to load payment gateway. Please try again.')
                 return
             }
 
@@ -110,14 +111,14 @@ const CreditsPage = () => {
                         razorpaySignature: 'demo_signature'
                     })
 
-                    alert(`Demo Payment Successful!\n\n${verifyResponse.data.creditsAdded} credits added to your account.\n\nTotal Credits: ${verifyResponse.data.creditsRemaining}`)
+                    toast.success(`Demo payment successful. ${verifyResponse.data.creditsAdded} credits added.`)
                     
                     // Refresh data
                     await fetchData()
                     return
                 } catch (error) {
                     console.error('Demo payment verification failed:', error)
-                    alert('Demo payment verification failed. Please try again.')
+                    toast.error('Demo payment verification failed. Please try again.')
                     return
                 }
             }
@@ -125,12 +126,21 @@ const CreditsPage = () => {
             // Initialize Razorpay
 
             // Fetch the Razorpay key from the backend (expose it via an endpoint or include in orderResponse)
-            const razorpayKey = orderResponse.data.razorpayKey || process.env.REACT_APP_RAZORPAY_KEY_ID || '';
+            const razorpayKey = orderResponse.data.razorpayKey || import.meta.env.VITE_RAZORPAY_KEY_ID || '';
+            if (!razorpayKey) {
+                toast.error('Payment configuration is incomplete. Please contact support.')
+                return
+            }
+
+            if (!window.Razorpay) {
+                toast.error('Payment gateway failed to initialize. Please refresh and try again.')
+                return
+            }
             const options = {
                 key: razorpayKey,
                 amount: amount,
                 currency: currency,
-                name: 'New Platform',
+                name: 'SuiteGenie',
                 description: description,
                 order_id: orderId,
                 handler: async (response) => {
@@ -145,23 +155,23 @@ const CreditsPage = () => {
                         // Show success message with bonus credits if applicable
                         const bonusCredits = verifyResponse.data.bonusCredits;
                         if (bonusCredits > 0) {
-                            alert(`🎉 Payment successful!\n\n✨ ${verifyResponse.data.planName || 'Plan'} activated!\n💰 ${bonusCredits} bonus credits added to your account!`)
+                            toast.success(`${verifyResponse.data.planName || 'Plan'} activated. ${bonusCredits} bonus credits added.`)
                         } else if (verifyResponse.data.creditsAdded) {
-                            alert(`Payment successful! ${verifyResponse.data.creditsAdded} credits added to your account.`)
+                            toast.success(`Payment successful. ${verifyResponse.data.creditsAdded} credits added.`)
                         } else {
-                            alert('Payment successful! Your plan has been upgraded.')
+                            toast.success('Payment successful! Your plan has been upgraded.')
                         }
                         
                         // Refresh data
                         await fetchData()
                     } catch (error) {
                         console.error('Payment verification failed:', error)
-                        alert('Payment verification failed. Please contact support.')
+                        toast.error(error.response?.data?.error || 'Payment verification failed. Please contact support.')
                     }
                 },
                 prefill: {
-                    name: 'User',
-                    email: 'user@example.com'
+                    name: user?.name || 'SuiteGenie User',
+                    email: user?.email || undefined
                 },
                 theme: {
                     color: '#2563eb'
@@ -173,7 +183,7 @@ const CreditsPage = () => {
 
         } catch (error) {
             console.error('Purchase failed:', error)
-            alert('Purchase failed. Please try again.')
+            toast.error(error.response?.data?.error || 'Purchase failed. Please try again.')
         } finally {
             setPurchasing(null)
         }
@@ -210,11 +220,11 @@ const CreditsPage = () => {
                         <h3 className="text-lg font-semibold mb-2">Test Pack</h3>
                         <div className="text-4xl font-bold text-primary-600 mb-1">5</div>
                         <div className="text-gray-500 mb-2">credits</div> */}
-                        {/* <div className="text-2xl font-bold mb-4">₹1</div>
+                        {/* <div className="text-2xl font-bold mb-4">&#8377;1</div>
                         <ul className="mb-6 space-y-1 text-sm text-gray-600 text-left">
-                            <li>✔ For live payment test</li>
-                            <li>✔ No commitment</li>
-                            <li>✔ Get 5 credits for ₹1</li>
+                            <li>&#10003; For live payment test</li>
+                            <li>&#10003; No commitment</li>
+                            <li>&#10003; Get 5 credits for &#8377;1</li>
                         </ul>
                         <button 
                             onClick={() => handlePurchase('1rs-test')}
@@ -232,15 +242,15 @@ const CreditsPage = () => {
                     </div> */}
                     {/* Starter Pack */}
                     <div className="relative bg-white border rounded-xl p-6 flex flex-col items-center shadow hover:shadow-lg transition">
-                        <div className="absolute top-4 right-4 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Save ₹0</div>
+                        <div className="absolute top-4 right-4 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Save &#8377;0</div>
                         <h3 className="text-lg font-semibold mb-2">Starter Pack</h3>
                         <div className="text-4xl font-bold text-primary-600 mb-1">{packages['25']?.credits || 25}</div>
                         <div className="text-gray-500 mb-2">credits</div>
-                        <div className="text-2xl font-bold mb-4">₹{packages['25']?.price || 45}</div>
+                        <div className="text-2xl font-bold mb-4">&#8377;{packages['25']?.price || 45}</div>
                         <ul className="mb-6 space-y-1 text-sm text-gray-600 text-left">
-                            <li>✔ Perfect for testing</li>
-                            <li>✔ No commitment</li>
-                            <li>✔ Instant delivery</li>
+                            <li>&#10003; Perfect for testing</li>
+                            <li>&#10003; No commitment</li>
+                            <li>&#10003; Instant delivery</li>
                         </ul>
                         <button 
                             onClick={() => handlePurchase('25')}
@@ -258,15 +268,15 @@ const CreditsPage = () => {
                     </div>
                     {/* Creator Pack */}
                     <div className="relative bg-white border rounded-xl p-6 flex flex-col items-center shadow hover:shadow-lg transition">
-                        <div className="absolute top-4 right-4 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Save ₹15</div>
+                        <div className="absolute top-4 right-4 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Save &#8377;15</div>
                         <h3 className="text-lg font-semibold mb-2">Creator Pack</h3>
                         <div className="text-4xl font-bold text-primary-600 mb-1">{packages['50']?.credits || 50}</div>
                         <div className="text-gray-500 mb-2">credits</div>
-                        <div className="text-2xl font-bold mb-4">₹{packages['50']?.price || 75}</div>
+                        <div className="text-2xl font-bold mb-4">&#8377;{packages['50']?.price || 75}</div>
                         <ul className="mb-6 space-y-1 text-sm text-gray-600 text-left">
-                            <li>✔ Most popular choice</li>
-                            <li>✔ Better value</li>
-                            <li>✔ Priority support</li>
+                            <li>&#10003; Most popular choice</li>
+                            <li>&#10003; Better value</li>
+                            <li>&#10003; Priority support</li>
                         </ul>
                         <button 
                             onClick={() => handlePurchase('50')}
@@ -284,16 +294,16 @@ const CreditsPage = () => {
                     </div>
                     {/* Pro Pack */}
                     <div className="relative bg-blue-50 border-2 border-blue-600 rounded-xl p-6 flex flex-col items-center shadow-lg">
-                        <div className="absolute top-4 right-4 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Save ₹40</div>
+                        <div className="absolute top-4 right-4 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Save &#8377;40</div>
                         <div className="absolute top-4 left-4 text-xs bg-blue-600 text-white px-2 py-1 rounded">Most Popular</div>
                         <h3 className="text-lg font-semibold mb-2">Pro Pack</h3>
                         <div className="text-4xl font-bold text-blue-700 mb-1">{packages['80']?.credits || 80}</div>
                         <div className="text-gray-500 mb-2">credits</div>
-                        <div className="text-2xl font-bold mb-4">₹{packages['80']?.price || 100}</div>
+                        <div className="text-2xl font-bold mb-4">&#8377;{packages['80']?.price || 100}</div>
                         <ul className="mb-6 space-y-1 text-sm text-gray-600 text-left">
-                            <li>✔ Best value</li>
-                            <li>✔ Bulk discount</li>
-                            <li>✔ Team features</li>
+                            <li>&#10003; Best value</li>
+                            <li>&#10003; Bulk discount</li>
+                            <li>&#10003; Team features</li>
                         </ul>
                         <button 
                             onClick={() => handlePurchase('80')}
@@ -348,7 +358,7 @@ const CreditsPage = () => {
                                         {transaction.type === 'purchase' ? '+' : '-'}{transaction.creditsAmount} credits
                                     </p>
                                     {transaction.costInRupees && (
-                                        <p className="text-xs text-gray-500">₹{transaction.costInRupees}</p>
+                                        <p className="text-xs text-gray-500">&#8377;{transaction.costInRupees}</p>
                                     )}
                                 </div>
                             </div>
@@ -361,3 +371,4 @@ const CreditsPage = () => {
 }
 
 export default CreditsPage
+
