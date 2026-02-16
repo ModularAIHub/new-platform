@@ -12,6 +12,7 @@ const TeamPage = () => {
     const [inviteRole, setInviteRole] = useState('editor');
     const [teamName, setTeamName] = useState('');
     const [isInviting, setIsInviting] = useState(false);
+    const [inviteErrorMessage, setInviteErrorMessage] = useState('');
     const [leaving, setLeaving] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
@@ -287,6 +288,7 @@ const TeamPage = () => {
         if (!inviteEmail.trim()) return;
 
         setIsInviting(true);
+        setInviteErrorMessage('');
         try {
             const response = await api.post('/pro-team/invite', { 
                 email: inviteEmail,
@@ -300,12 +302,20 @@ const TeamPage = () => {
                 setInviteEmail('');
                 setInviteRole('editor');
                 fetchTeam(); // Refresh team data
+            } else if (data.code === 'ALREADY_IN_ANOTHER_TEAM') {
+                // Show inline prompt to the inviter (user X)
+                setInviteErrorMessage(data.error || 'The user is already a member of another team and cannot be invited.');
             } else {
                 alert(data.error || 'Failed to send invitation');
             }
         } catch (error) {
             console.error('Failed to invite user:', error);
-            alert('Failed to send invitation');
+            const code = error.response?.data?.code;
+            if (code === 'ALREADY_IN_ANOTHER_TEAM') {
+                setInviteErrorMessage(error.response.data?.error || 'The user is already a member of another team and cannot be invited.');
+            } else {
+                alert('Failed to send invitation');
+            }
         } finally {
             setIsInviting(false);
         }
@@ -739,6 +749,11 @@ const fetchUserPermissions = async () => {
                                 </div>
                             </div>
                         </div>
+                        {inviteErrorMessage && (
+                            <div className="mt-2 text-sm text-red-600" role="alert">
+                                {inviteErrorMessage}
+                            </div>
+                        )}
                     </form>
                 </div>
             )}

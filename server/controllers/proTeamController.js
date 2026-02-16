@@ -208,7 +208,7 @@ export const ProTeamController = {
             const message = invitation.isResend 
                 ? `Invitation resent to ${email} as ${role || 'editor'}` 
                 : `Invitation sent to ${email} as ${role || 'editor'}`;
-            
+
             res.json({ 
                 success: true, 
                 message,
@@ -222,7 +222,15 @@ export const ProTeamController = {
             });
         } catch (error) {
             console.error('[inviteUser] Error:', error);
-            res.status(400).json({ error: error.message || 'Failed to invite user' });
+            // Map specific service errors to API error codes for frontend handling
+            const msg = error.message || 'Failed to invite user';
+            const resp = { success: false, error: msg };
+            if (msg.includes('already a member of another team')) {
+                resp.code = 'ALREADY_IN_ANOTHER_TEAM';
+            } else if (msg.includes('already invited')) {
+                resp.code = 'ALREADY_INVITED';
+            }
+            res.status(400).json(resp);
         }
     },
 

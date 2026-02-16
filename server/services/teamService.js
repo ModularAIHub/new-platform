@@ -153,13 +153,29 @@ export const TeamService = {
         }
 
         // Check if user is already a team member
-        const existingMember = await query(
-            `SELECT 1 FROM team_members WHERE team_id = $1 AND email = $2 AND status = 'active'`,
-            [teamId, inviteEmail]
+        // Check if inviteEmail corresponds to a registered user
+        const inviteUserRes = await query('SELECT id FROM users WHERE email = $1', [inviteEmail]);
+        const inviteUserId = inviteUserRes.rows[0]?.id || null;
+
+        // Check membership across ANY team by email OR user_id
+        const existingAny = await query(
+            `SELECT team_id, status FROM team_members
+             WHERE (email = $1 OR (user_id IS NOT NULL AND user_id = $2))
+             LIMIT 1`,
+            [inviteEmail, inviteUserId]
         );
 
-        if (existingMember.rows.length > 0) {
-            throw new Error('User is already a member of this team');
+        if (existingAny.rows.length > 0) {
+            const existing = existingAny.rows[0];
+            if (String(existing.team_id) === String(teamId)) {
+                if (existing.status === 'pending') {
+                    throw new Error('User already invited');
+                }
+                throw new Error('User is already a member of this team');
+            }
+
+            // User belongs to another team — block invite
+            throw new Error('The user is already a member of another team and cannot be invited.');
         }
 
         // Check for existing pending invitations
@@ -408,6 +424,39 @@ export const TeamService = {
             [memberUserId, teamId]
         );
 
+        // Delete any user_social_accounts entries for this user on the team
+        try {
+            const deleted = await query(
+                `DELETE FROM user_social_accounts WHERE team_id = $1 AND user_id = $2`,
+                [teamId, memberUserId]
+            );
+            console.log(`   ✓ Deleted ${deleted.rowCount} user social accounts for member ${memberUserId}`);
+        } catch (err) {
+            console.warn('   ⚠️ Failed to delete user_social_accounts for member:', err.message);
+        }
+
+        // Delete any team_accounts entries created by this user for this team
+        try {
+            const deletedTeamAcc = await query(
+                `DELETE FROM team_accounts WHERE team_id = $1 AND user_id = $2`,
+                [teamId, memberUserId]
+            );
+            console.log(`   ✓ Deleted ${deletedTeamAcc.rowCount} team_accounts for member ${memberUserId}`);
+        } catch (err) {
+            console.log('   ⓘ team_accounts table may not exist or deletion failed (skipped)');
+        }
+
+        // Delete any linkedin_team_accounts entries created by this user for this team
+        try {
+            const deletedLinkedin = await query(
+                `DELETE FROM linkedin_team_accounts WHERE team_id = $1 AND user_id = $2`,
+                [teamId, memberUserId]
+            );
+            console.log(`   ✓ Deleted ${deletedLinkedin.rowCount} linkedin_team_accounts for member ${memberUserId}`);
+        } catch (err) {
+            console.log('   ⓘ linkedin_team_accounts table may not exist or deletion failed (skipped)');
+        }
+
         return { success: true };
     },
 
@@ -567,6 +616,14 @@ export const TeamService = {
             } catch (error) {
                 // Table might not exist, ignore error
                 console.log('   ⓘ team_accounts table not found (skipped)');
+            }
+
+            // 3b. Delete linkedin_team_accounts entries (if table exists)
+            try {
+                const linkedinTeamResult = await query('DELETE FROM linkedin_team_accounts WHERE team_id = $1', [teamId]);
+                console.log(`   ✓ Deleted ${linkedinTeamResult.rowCount} linkedin team account entries`);
+            } catch (error) {
+                console.log('   ⓘ linkedin_team_accounts table not found (skipped)');
             }
 
             // 4. Clear current_team_id for all users pointing to this team

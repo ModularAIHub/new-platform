@@ -1,11 +1,9 @@
 import { query, pool } from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
-import EmailService from '../services/emailService.js';
 
 class TeamController {
     // Invite a team member (Owner/Admin only)
     static async invite(req, res) {
-        const emailService = new EmailService();
         
         try {
             const { teamId } = req.params;
@@ -62,24 +60,34 @@ class TeamController {
                 });
             }
             
-            // Check if user is already invited or a member
-            const existingResult = await query(`
-                SELECT status FROM team_members 
-                WHERE team_id = $1 AND email = $2
-            `, [teamId, email]);
-            
-            if (existingResult.rows.length > 0) {
-                const status = existingResult.rows[0].status;
-                return res.status(400).json({ 
-                    error: status === 'pending' ? 'User already invited' : 'User is already a team member',
-                    code: 'ALREADY_INVITED' 
-                });
-            }
-            
-            // Check if user exists
+            // Check if user exists (registered user)
             const userResult = await query('SELECT id, name FROM users WHERE email = $1', [email]);
             const userId = userResult.rows.length > 0 ? userResult.rows[0].id : null;
             const userName = userResult.rows.length > 0 ? userResult.rows[0].name : null;
+
+            // Check if user is already invited or a member in ANY team (match by email OR user_id)
+            const existingResult = await query(`
+                SELECT team_id, status FROM team_members 
+                WHERE email = $1 OR (user_id IS NOT NULL AND user_id = $2)
+            `, [email, userId]);
+
+            if (existingResult.rows.length > 0) {
+                // If any membership belongs to the same team, keep previous behaviour
+                const sameTeam = existingResult.rows.find(r => String(r.team_id) === String(teamId));
+                if (sameTeam) {
+                    const status = sameTeam.status;
+                    return res.status(400).json({ 
+                        error: status === 'pending' ? 'User already invited' : 'User is already a team member',
+                        code: 'ALREADY_INVITED' 
+                    });
+                }
+
+                // Otherwise, the user is in another team
+                return res.status(400).json({
+                    error: 'The user is already a member of another team and cannot be invited.',
+                    code: 'ALREADY_IN_ANOTHER_TEAM'
+                });
+            }
             
             // Generate invitation token and expiration
             const invitationToken = uuidv4();
@@ -98,24 +106,7 @@ class TeamController {
                 VALUES ($1, $2, $3, $4, 'pending', NOW(), $5)
             `, [teamId, userId, email, selectedRole, req.user.id]);
             
-            // Send invitation email
-            try {
-                await emailService.sendTeamInvitation({
-                    recipientEmail: email,
-                    recipientName: userName,
-                    inviterName: inviterName,
-                    inviterEmail: inviterEmail,
-                    teamName: teamName,
-                    role: selectedRole,
-                    invitationToken: invitationToken,
-                    expiresAt: expiresAt
-                });
-                
-                console.log('✅ Invitation email sent to:', email);
-            } catch (emailError) {
-                console.error('⚠️ Email sending failed, but invitation created:', emailError.message);
-                // Don't fail the entire request if email fails
-            }
+            // (Email sending handled separately by mailer service; removed here to avoid dependency)
 
             res.status(201).json({
                 message: 'Team member invited successfully',
