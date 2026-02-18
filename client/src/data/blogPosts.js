@@ -889,6 +889,461 @@ If your team needs immediate execution and simplicity, start with built-in keys 
         },
       ],
     },
+
+  },
+  {
+    id: 'linkedin-cross-posting-tweet-genie',
+    title: 'Cross-Post to LinkedIn Directly from Tweet Genie — Now Live on SuiteGenie',
+    slug: 'linkedin-cross-posting-from-tweet-genie',
+    category: 'updates',
+    tags: ['tweet-genie', 'linkedin', 'cross-posting', 'suitegenie'],
+    excerpt:
+      "Tweet once, publish to LinkedIn automatically — Tweet Genie's new LinkedIn toggle makes cross-posting seamless.",
+    content: `# Cross-Post to LinkedIn Directly from Tweet Genie — Now Live on SuiteGenie
+
+**Your content just got twice as powerful.**
+
+We're excited to announce one of the most requested features since SuiteGenie launched — **LinkedIn cross-posting from Tweet Genie**. Write once, publish everywhere. One toggle, two platforms, zero extra effort.
+
+SuiteGenie is the only social media tool that lets you manage Twitter/X and LinkedIn from a single unified workspace — and today, those two platforms just got connected.
+
+---
+
+## What Is LinkedIn Cross-Posting?
+
+LinkedIn cross-posting means publishing the same content to LinkedIn automatically when you post a tweet on Twitter/X — without switching apps, copying text, or doing anything manually. SuiteGenie's Tweet Genie now does this in one click.
+
+When you compose a tweet on [Tweet Genie](https://tweet.suitegenie.in/compose), you'll see a **"Post to"** panel on the right side of the composer. If you've connected your LinkedIn account through [LinkedIn Genie](https://linkedin.suitegenie.in/settings), a LinkedIn toggle appears. Flip it on before hitting Post Tweet, and your content goes live on both Twitter/X and LinkedIn simultaneously.
+
+That's it. No copy-pasting. No switching tabs. No reformatting.
+
+---
+
+## How to Cross-Post from Twitter to LinkedIn Using SuiteGenie
+
+*Step-by-step guide for getting started in under 2 minutes:*
+
+**Step 1 — Connect LinkedIn Genie**
+Head to [LinkedIn Genie Settings](https://linkedin.suitegenie.in/settings) and connect your LinkedIn account. This is a one-time OAuth connection — SuiteGenie never stores your LinkedIn password.
+
+**Step 2 — Open Tweet Genie Composer**
+Go to the [Compose page](https://tweet.suitegenie.in/compose) and write your tweet as usual.
+
+**Step 3 — Toggle LinkedIn On**
+In the "Post to" sidebar, flip the LinkedIn toggle to blue. It only appears enabled if your LinkedIn account is connected.
+
+**Step 4 — Hit Post Tweet**
+Your tweet posts to Twitter/X and the same content publishes to your LinkedIn profile automatically — at the same moment.
+
+The toggle is smart. If LinkedIn isn't connected yet, it shows as disabled with a direct link to connect it. No confusion, no failed posts, no guesswork.
+
+---
+
+## Why Cross-Posting Twitter to LinkedIn Saves You Hours Every Week
+
+### The Copy-Paste Tax Is Real
+Creators and founders managing multiple platforms know the pain — write a tweet, copy it, open LinkedIn, paste it, tweak the formatting, post it. That's 2-3 minutes per post. If you're posting daily, that's over **15 hours a year** spent on copy-paste. With SuiteGenie's cross-posting, those minutes go back to you instantly.
+
+### Two Platforms, Two Completely Different Audiences
+Your Twitter/X followers and your LinkedIn network are not the same people. A single piece of content — an insight, a win, a lesson learned — resonates with both. Professionals on LinkedIn who'd never find you on Twitter now see your work. Your Twitter audience gets the real-time, conversational you. Both grow from the same post.
+
+### Consistency Builds Audience Trust
+The most common reason creators struggle to grow on LinkedIn is inconsistency. They post on Twitter because it's fast, but LinkedIn gets neglected. Cross-posting removes that friction — you stay active on LinkedIn without it feeling like extra work. Show up everywhere, effort of one.
+
+### Built for Founders, Marketers, and Creators
+Whether you're building in public, sharing industry insights, or announcing product updates — cross-posting means your message reaches decision-makers on LinkedIn and your community on Twitter simultaneously, from a single workflow inside SuiteGenie.
+
+---
+---
+
+## How SuiteGenie Cross-Posting Works Behind the Scenes
+
+When you hit Post Tweet with the LinkedIn toggle on, SuiteGenie's systems do the following in sequence:
+
+1. Your tweet posts to Twitter/X via the Twitter API
+2. SuiteGenie's Tweet Genie backend securely contacts LinkedIn Genie's backend with your content
+3. LinkedIn Genie uses your stored OAuth token to publish to your LinkedIn profile
+4. Both posts go live at the same moment
+5. You get a confirmation showing both platforms published successfully
+
+The entire flow is server-to-server — fast, private, and secure. Your content never touches a third-party service.
+
+---
+
+## What's Coming Next for SuiteGenie Cross-Posting
+
+This is just the beginning of SuiteGenie's cross-platform vision. Here's what's on the roadmap:
+
+- **LinkedIn Carousels** — create swipeable carousel posts directly from SuiteGenie's composer
+- **Scheduled cross-posting** — schedule once, publish to both platforms at the right time automatically
+- **Per-platform content** — write a short tweet and a longer LinkedIn version in the same composer window
+- **Cross-platform analytics** — see how your content performs on Twitter and LinkedIn side by side in one dashboard
+
+SuiteGenie is building the one place where your entire content workflow lives — from ideation to scheduling to analytics, across every platform that matters.
+
+---
+
+## Start Cross-Posting Today
+
+You're one toggle away from doubling your content reach without doubling your effort.
+
+→ [Connect your LinkedIn account](https://linkedin.suitegenie.in/settings)
+→ [Open the Tweet Genie Composer](https://tweet.suitegenie.in/compose)
+→ [Explore all SuiteGenie features](https://suitegenie.in)
+
+Already connected? Head straight to the composer — the LinkedIn toggle is live and waiting.
+
+---
+
+*Have feedback or a feature request? We'd love to hear from you — reach out through the SuiteGenie dashboard or find us on [Twitter/X](https://twitter.com/suitegenie).* 
+
+*— The SuiteGenie Team*
+
+---
+
+### Related Posts
+- [How to Schedule Tweets with Tweet Genie](https://suitegenie.in/blog/schedule-tweets)
+- [Getting Started with LinkedIn Genie](https://suitegenie.in/blog/linkedin-genie-guide)
+- [Building in Public with SuiteGenie](https://suitegenie.in/blog/building-in-public)
+`,
+    featuredImage: {
+      url: '/images/blog/linkedin-cross-posting-hero.svg',
+      alt: 'Tweet Genie composer with LinkedIn cross-post toggle',
+    },
+    author: {
+      name: 'Kanishk Saraswat',
+      avatar: '/kanishk.png',
+      bio: 'Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.',
+      social: {
+        linkedin: 'kanishk-saraswat',
+        twitter: 'kanishksaraswat',
+      },
+    },
+    publishDate: '2026-02-19T10:00:00+05:30',
+    lastModified: '2026-02-19T10:00:00+05:30',
+    readTime: 5,
+    featured: true,
+    status: 'published',
+    seo: {
+      metaTitle:
+        'LinkedIn Cross-Posting from Tweet Genie — Post to LinkedIn and Twitter at Once',
+      metaDescription:
+        'Announcing LinkedIn cross-posting in Tweet Genie — post to Twitter/X and LinkedIn simultaneously with one toggle. Connect via LinkedIn Genie and save time.',
+      keywords: ['linkedin cross-posting', 'tweet genie', 'suitegenie', 'post to linkedin', 'social media cross-posting'],
+      canonicalUrl:
+        'https://suitegenie.in/blogs/updates/linkedin-cross-posting-from-tweet-genie',
+      geo: {
+        region: 'IN',
+        placename: 'India',
+        latitude: '20.5937',
+        longitude: '78.9629',
+      },
+    },
+    schema: {
+      type: 'Article',
+      faq: [
+        {
+          question: 'What is the best tool to cross-post from Twitter to LinkedIn?',
+          answer:
+            "SuiteGenie's Tweet Genie is built specifically for this. It combines Twitter/X scheduling and composing with direct LinkedIn cross-posting through a single toggle — no third-party tools, no Zapier automations needed.",
+        },
+        {
+          question: 'Does SuiteGenie automatically post to LinkedIn when I tweet?',
+          answer:
+            "Yes, when the LinkedIn toggle is enabled in the composer. It's opt-in per post — you choose which tweets cross-post and which stay Twitter-only.",
+        },
+        {
+          question: 'Does it reformat the content for LinkedIn?',
+          answer:
+            'The same text posts to LinkedIn as-is. LinkedIn supports longer content so your tweet fits perfectly. Per-platform content customization — where you write different versions for each platform — is coming soon.',
+        },
+        {
+          question: 'Will Twitter threads cross-post to LinkedIn?',
+          answer:
+            'Yes. If you write a thread in Tweet Genie, the full thread combines into a single LinkedIn post with each tweet separated by a line break — which works perfectly for LinkedIn\'s longer-form format.',
+        },
+        {
+          question: 'What if the LinkedIn post fails?',
+          answer:
+            "Your tweet still goes live on Twitter/X regardless. LinkedIn cross-posting is completely non-blocking — a LinkedIn error never stops your tweet from posting. You'll see a notification if the LinkedIn post didn't go through.",
+        },
+        {
+          question: 'Is cross-posting available for scheduled tweets?',
+          answer:
+            'Currently cross-posting works for immediate posts. Scheduled cross-posting is on our roadmap and coming soon.',
+        },
+        {
+          question: 'Do I need a LinkedIn Genie account to use cross-posting?',
+          answer:
+            'Yes — LinkedIn cross-posting requires a LinkedIn Genie account connected to the same SuiteGenie workspace. Both are part of the SuiteGenie suite and use the same login.',
+        },
+        {
+          question: 'Is my LinkedIn data safe with SuiteGenie?',
+          answer:
+            'SuiteGenie uses official LinkedIn OAuth — we never see or store your LinkedIn password. Your access token is encrypted and only used to post on your behalf when you explicitly trigger it.',
+        },
+      ],
+    },
+  },
+  {
+    id: 'from-content-chaos-to-system',
+    title: 'From Content Chaos to System: Why We Built SuiteGenie This Way',
+    slug: 'from-content-chaos-to-system-why-we-built-suitegenie',
+    category: 'story',
+    tags: [
+      'founder story',
+      'product',
+      'strategy',
+      'byok',
+      'bulk scheduling',
+    ],
+    excerpt:
+      "From an anime passion project to a full AI-powered social media platform — here's the real story behind SuiteGenie and why we built it the way we did.",
+    content: `From Content Chaos to System: Why We Built SuiteGenie This Way
+By Kanishk Saraswat — Founder @ SuiteGenie | Published Feb 14, 2026 | 8 min read
+
+Most social media tools were built for someone else's workflow.
+
+They were built for enterprise marketing teams with dedicated budgets, or stripped-down tools duct-taped together for creators who couldn't afford better. Nobody had built something in between — unified, intelligent, and actually affordable.
+
+This is the story of how that gap became SuiteGenie.
+
+How It Started: A Passion Project Became a Platform
+This platform wasn't born in a boardroom. It was born from a very personal frustration.
+
+Before SuiteGenie, I was running an anime website — a passion project built around streaming, downloading, and blogging about anime. As the site grew, so did the demands: pushing new episode updates, writing blog posts, staying active on social media, engaging with a growing community. The passion was absolutely there. The process was completely broken.
+
+I was manually updating channels, writing posts in scattered docs, copy-pasting between platforms, and losing hours every week to tasks that had nothing to do with the actual content. It felt like building a house while also being the architect, contractor, plumber, and electrician — simultaneously.
+
+So I turned to tools. I tried Hootsuite. I tried Buffer. I explored nearly everything in the market. And what I found was a market of compromises: the powerful platforms were expensive and built for agency teams with big retainers, while the affordable ones felt clunky, incomplete, and ultimately just as frustrating as doing it manually.
+
+That's when it clicked.
+
+The problem wasn't just the manual effort. It was that nobody had built a truly unified, intelligent, and affordable platform designed for the modern creator — someone who wears every hat and needs a system that keeps up.
+
+So I stopped waiting for someone else to solve it. I built the platform I always wished existed — one designed to empower creators and agencies to focus on what actually matters: sharing ideas, not fighting tools.
+
+That platform is SuiteGenie.
+
+What Broke Repeatedly: The 4 Patterns Behind Every Content Struggle
+Before writing a single line of product code, we mapped the recurring failure patterns across solo creators and agency teams. The same four problems surfaced every time.
+
+1. Random Content Ideas Without Strategic Grounding
+Ideas were being generated in isolation — disconnected from brand goals, audience intent, or campaign context. The result was a feed that looked active but performed inconsistently. Volume without direction is just noise.
+
+2. Long Scheduling Queues That Aged Badly
+A 90-day content queue sounds productive — until week 6 arrives and those posts are already irrelevant. Static, massive queues create a false sense of security while killing your team's ability to respond to trends, moments, or audience feedback in real time.
+
+3. Team Handoffs With Unclear Ownership
+Who wrote it? Who approved it? Who was supposed to post it? In any team environment — even a team of two — unclear ownership means quality degradation at every handoff. In agency settings, it doesn't just slow things down. It ships bad content to real clients.
+
+4. Analytics Checks That Happened Too Late
+Post-mortem analytics are only useful if they inform the next batch of content before it's already locked and scheduled. Most teams were reviewing numbers after the fact and making no structural changes — just repeating the same cycle with slightly different copy.
+
+Product Decisions We Made (And the Reasoning Behind Each)
+Every feature in SuiteGenie traces directly back to one of these four failure patterns. Here is what we built and why.
+
+Strategy Builder: Context Before Creation
+The Strategy Builder sits at the very top of the SuiteGenie workflow — before any post is drafted, any caption is generated, or any calendar slot is filled. This is intentional.
+
+Good content starts with a clear answer to: What are we trying to achieve? For whom? On which platform? And why now? Without those answers, AI generation is just fast randomness.
+
+By anchoring generation to strategic context, every output becomes a decision — not a guess.
+
+Toggle Your Strategy from Google Docs
+Not everyone builds their content strategy inside a product dashboard. Many teams already have strategy documents, brand guidelines, and audience briefs living in Google Docs. SuiteGenie supports this natively.
+
+You can toggle your strategy input directly from a Google Doc — pulling in your existing brief, campaign context, or brand voice document — and use it as the foundation for AI-generated content without rewriting everything from scratch. Your strategy lives where it already lives. SuiteGenie connects to it.
+
+→ Internal link: How to connect your Google Docs strategy to SuiteGenie's workflow
+
+Bulk Scheduling and Bulk Generation: Scale Without Chaos
+One of the most requested capabilities from agencies and high-volume creators was simple: do more, faster, without sacrificing control.
+
+SuiteGenie supports both bulk content generation and bulk scheduling from a single workflow.
+
+Bulk Generation: Brief the Strategy Builder once, set your parameters, and generate a week's (or month's) worth of content in one pass — captions, platform variations, and formats all at once.
+
+Bulk Scheduling: Review, adjust, and schedule all generated content across multiple platforms and time slots without opening each post individually.
+
+This is not about automating blindly. It is about compressing the time between strategic intent and published content without inserting new points of failure. You still review. You still approve. You just do it at scale.
+
+→ Internal link: Using Bulk Scheduling in SuiteGenie — step-by-step guide
+
+BYOK (Bring Your Own Key): Full Control Over Your AI Usage
+One of the most significant decisions we made — and one that directly reflects our founding philosophy — is BYOK: Bring Your Own Key.
+
+SuiteGenie allows you to connect your own OpenAI (or compatible) API key to power the AI generation features. Here's why this matters:
+
+Cost control: You pay for exactly what you use, at API rates, with no hidden markup or generation credit system.
+
+Privacy: Your content, strategy briefs, and brand data are processed through your own API key — not pooled through a shared system.
+
+No artificial limits: There are no generation caps tied to a pricing tier. Your limits are defined by your own API usage, not by a SuiteGenie paywall.
+
+For agencies managing multiple client accounts, this is a significant operational advantage. For solo creators on a budget, this makes enterprise-grade AI generation genuinely accessible.
+
+"Affordable doesn't have to mean limited. With BYOK, we hand control back to the creator."
+
+→ Internal link: How to set up BYOK in SuiteGenie — API key integration guide
+
+Short Planning Windows: Iteration Over Accumulation
+SuiteGenie is deliberately designed around shorter, high-quality planning windows rather than massive static queues. Regular iteration cycles — weekly or bi-weekly — keep your content calendar responsive and your team agile.
+
+When your industry shifts, when a trend emerges, or when your audience signals something new — you are not locked into six weeks of irrelevant content. You adapt, regenerate, and move forward.
+
+Approval and Team Safety: Protecting Publishing Quality
+In any team or agency environment, one unapproved post can damage months of brand trust. SuiteGenie includes role-based approval workflows that create a clear chain of ownership from draft to publish.
+
+Every post has a creator, a reviewer, and a defined approval status. Clients can preview and approve content without accessing live settings. Internal team notes stay private. This is team-aware publishing — not just shared access.
+
+→ Internal link: Setting up team roles and approval workflows in SuiteGenie
+
+Data Hygiene by Default: History That Helps
+Analytics are only as useful as the data beneath them. SuiteGenie introduces structured deletion and retention policies so your performance history reflects real publishing behavior — not test drafts, abandoned campaigns, or irrelevant legacy content.
+
+Clean data leads to better decisions. Your top-performing posts become replicable templates. Your underperformers get analyzed with proper context. The loop between publish and learn becomes genuinely useful.
+
+The Full SuiteGenie Workflow at a Glance
+Stage\tCommon Problem\tSuiteGenie Solution
+Strategy\tNo context before creation\tStrategy Builder + Google Docs toggle
+Generation\tSlow, one-by-one content creation\tBulk Generation with AI
+Scheduling\tManual, platform-by-platform posting\tBulk Scheduling across channels
+AI Cost & Control\tExpensive credits, capped tiers\tBYOK — your own API key
+Team Handoff\tUnclear ownership\tRole-based approval workflows
+Analysis\tNoisy, cluttered historical data\tBuilt-in data hygiene & retention
+
+Who SuiteGenie Is Built For
+SuiteGenie was designed with two primary users in mind — and the product is a direct reflection of both:
+
+Creators and passion-project builders who are managing content across multiple platforms while also producing the actual work they love — writing, streaming, making, sharing. People exactly like I was when this started.
+
+Digital agencies managing multiple client accounts who need approval workflows, brand separation, bulk publishing capability, and cost-efficient AI generation at scale — without paying enterprise pricing.
+
+If you are currently using a combination of Notion, Google Docs, a scheduler, and a separate analytics tool — SuiteGenie consolidates this into one intelligent, connected system.
+
+The Philosophy: Automation That Elevates Judgment
+There is a tempting but dangerous narrative in the AI tools space: that automation should replace human thinking.
+
+We built SuiteGenie on the opposite belief: automation should sharpen and accelerate human judgment — not bypass it.
+
+The Strategy Builder doesn't write your strategy. It helps you articulate it. The approval system doesn't decide what gets published. Your team does. The analytics don't tell you how to feel about your content. They tell you what happened, so you can make a better decision next time.
+
+"Automation should improve judgment, not replace it. SuiteGenie is designed as a system for better decisions at higher speed."
+
+Frequently Asked Questions
+(Structured for AEO — featured snippets, voice search, and AI answer engine optimization)
+
+What is SuiteGenie and who is it for?
+SuiteGenie is an AI-powered social media automation platform built for digital agencies and independent creators. It provides a structured, strategy-first workflow covering content generation, bulk scheduling, team approvals, and analytics — all in one system.
+
+What does BYOK mean in SuiteGenie?
+BYOK stands for Bring Your Own Key. It allows you to connect your own OpenAI API key to SuiteGenie, giving you full control over AI generation costs, usage limits, and data privacy — without relying on platform-managed credits.
+
+Can I import my content strategy from Google Docs into SuiteGenie?
+Yes. SuiteGenie supports toggling your strategy input directly from a Google Doc, so you can use existing brand briefs, campaign documents, or audience guidelines as the foundation for AI content generation.
+
+Does SuiteGenie support bulk content scheduling?
+Yes. SuiteGenie supports both bulk content generation and bulk scheduling, allowing teams to generate and schedule large volumes of content across multiple platforms in a single workflow — without losing approval control.
+
+How is SuiteGenie different from Hootsuite or Buffer?
+SuiteGenie is built with a strategy-first workflow, built-in team approvals, BYOK AI integration, and bulk generation capabilities — at a price point accessible to independent creators, not just enterprise teams.
+
+Is SuiteGenie suitable for solo creators or only agencies?
+Both. Solo creators benefit from the strategy builder, BYOK cost control, and fast bulk scheduling. Agencies benefit from team collaboration tools, client approval workflows, and multi-account management.
+
+Build the System. Reclaim the Time. Focus on What You Love.
+The story of SuiteGenie started with an anime website and a creator who was doing too much manually. It grew into a platform because that problem turned out to be universal.
+
+Whether you are running a personal brand, a creative project, or a full-service digital agency — the work you care about deserves a system that gets out of the way and lets you do it.
+
+→ Start your free trial on SuiteGenie
+→ Explore the Strategy Builder
+→ Set up BYOK — connect your API key
+→ Learn how Bulk Scheduling works
+
+`,
+    featuredImage: {
+      url: '/images/blog/from-content-chaos-hero.svg',
+      alt: 'From content chaos to system — SuiteGenie founder story',
+    },
+    author: {
+      name: 'Kanishk Saraswat',
+      avatar: '/kanishk.png',
+      bio: 'Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.',
+      social: {
+        linkedin: 'kanishk-saraswat',
+        twitter: 'kanishksaraswat',
+      },
+    },
+    publishDate: '2026-02-14T09:00:00+05:30',
+    lastModified: '2026-02-14T09:00:00+05:30',
+    readTime: 8,
+    featured: false,
+    status: 'published',
+    seo: {
+      metaTitle:
+        'From Content Chaos to System: Why We Built SuiteGenie This Way | SuiteGenie Blog',
+      metaDescription:
+        "From an anime passion project to a full AI-powered social media platform — here's the real story behind SuiteGenie and why we built it the way we did.",
+      keywords: [
+        'AI social media automation',
+        'social media content management system',
+        'bulk scheduling social media',
+        'BYOK AI platform',
+        'content chaos to system',
+      ],
+      canonicalUrl:
+        'https://suitegenie.in/blogs/story/from-content-chaos-to-system',
+    },
+    schema: {
+      type: 'Article',
+      faq: [
+        {
+          question: 'What is SuiteGenie and who is it for?',
+          answer:
+            'SuiteGenie is an AI-powered social media automation platform built for digital agencies and independent creators. It provides a structured, strategy-first workflow covering content generation, bulk scheduling, team approvals, and analytics — all in one system.',
+        },
+        {
+          question: 'What does BYOK mean in SuiteGenie?',
+          answer:
+            'BYOK stands for Bring Your Own Key. It allows you to connect your own OpenAI API key to SuiteGenie, giving you full control over AI generation costs, usage limits, and data privacy — without relying on platform-managed credits.',
+        },
+        {
+          question: 'Can I import my content strategy from Google Docs into SuiteGenie?',
+          answer:
+            'Yes. SuiteGenie supports toggling your strategy input directly from a Google Doc, so you can use existing brand briefs, campaign documents, or audience guidelines as the foundation for AI content generation.',
+        },
+        {
+          question: 'Does SuiteGenie support bulk content scheduling?',
+          answer:
+            'Yes. SuiteGenie supports both bulk content generation and bulk scheduling, allowing teams to generate and schedule large volumes of content across multiple platforms in a single workflow — without losing approval control.',
+        },
+        {
+          question: 'How is SuiteGenie different from Hootsuite or Buffer?',
+          answer:
+            'SuiteGenie is built with a strategy-first workflow, built-in team approvals, BYOK AI integration, and bulk generation capabilities — at a price point accessible to independent creators, not just enterprise teams.',
+        },
+        {
+          question: 'Is SuiteGenie suitable for solo creators or only agencies?',
+          answer:
+            'Both. Solo creators benefit from the strategy builder, BYOK cost control, and fast bulk scheduling. Agencies benefit from team collaboration tools, client approval workflows, and multi-account management.',
+        },
+      ],
+      breadcrumb: {
+        type: 'BreadcrumbList',
+        itemListElement: [
+          { position: 1, name: 'Home', item: 'https://suitegenie.in' },
+          { position: 2, name: 'Blog', item: 'https://suitegenie.in/blogs' },
+          { position: 3, name: 'From Content Chaos to System', item: 'https://suitegenie.in/blogs/story/from-content-chaos-to-system' },
+        ],
+      },
+      organization: {
+        name: 'SuiteGenie',
+        url: 'https://suitegenie.in',
+        logo: 'https://suitegenie.in/images/logo.svg',
+      },
+    },
   },
 ];
 
