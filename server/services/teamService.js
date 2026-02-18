@@ -424,39 +424,6 @@ export const TeamService = {
             [memberUserId, teamId]
         );
 
-        // Delete any user_social_accounts entries for this user on the team
-        try {
-            const deleted = await query(
-                `DELETE FROM user_social_accounts WHERE team_id = $1 AND user_id = $2`,
-                [teamId, memberUserId]
-            );
-            console.log(`   ✓ Deleted ${deleted.rowCount} user social accounts for member ${memberUserId}`);
-        } catch (err) {
-            console.warn('   ⚠️ Failed to delete user_social_accounts for member:', err.message);
-        }
-
-        // Delete any team_accounts entries created by this user for this team
-        try {
-            const deletedTeamAcc = await query(
-                `DELETE FROM team_accounts WHERE team_id = $1 AND user_id = $2`,
-                [teamId, memberUserId]
-            );
-            console.log(`   ✓ Deleted ${deletedTeamAcc.rowCount} team_accounts for member ${memberUserId}`);
-        } catch (err) {
-            console.log('   ⓘ team_accounts table may not exist or deletion failed (skipped)');
-        }
-
-        // Delete any linkedin_team_accounts entries created by this user for this team
-        try {
-            const deletedLinkedin = await query(
-                `DELETE FROM linkedin_team_accounts WHERE team_id = $1 AND user_id = $2`,
-                [teamId, memberUserId]
-            );
-            console.log(`   ✓ Deleted ${deletedLinkedin.rowCount} linkedin_team_accounts for member ${memberUserId}`);
-        } catch (err) {
-            console.log('   ⓘ linkedin_team_accounts table may not exist or deletion failed (skipped)');
-        }
-
         return { success: true };
     },
 
@@ -616,14 +583,6 @@ export const TeamService = {
             } catch (error) {
                 // Table might not exist, ignore error
                 console.log('   ⓘ team_accounts table not found (skipped)');
-            }
-
-            // 3b. Delete linkedin_team_accounts entries (if table exists)
-            try {
-                const linkedinTeamResult = await query('DELETE FROM linkedin_team_accounts WHERE team_id = $1', [teamId]);
-                console.log(`   ✓ Deleted ${linkedinTeamResult.rowCount} linkedin team account entries`);
-            } catch (error) {
-                console.log('   ⓘ linkedin_team_accounts table not found (skipped)');
             }
 
             // 4. Clear current_team_id for all users pointing to this team

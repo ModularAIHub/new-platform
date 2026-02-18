@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import { query } from '../config/database.js';
 import redisClient from '../config/redis.js';
@@ -377,7 +378,7 @@ class AuthController {
             }
             
             // Generate a secure session ID (no sensitive data)
-            const sessionId = require('crypto').randomBytes(32).toString('hex');
+            const sessionId = crypto.randomBytes(32).toString('hex');
             
             // Store session data securely in memory/Redis (expires in 5 minutes)
             const sessionData = {
