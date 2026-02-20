@@ -6,20 +6,18 @@ const PricingPage = () => (
     
     <Helmet>
        <title>Pricing – SuiteGenie Social Media Automation</title>
-       <meta name="description" content="SuiteGenie is free to use with your own OpenAI API key (BYOK). Pay only for API usage instead of ₹5,000+ per month for legacy social media tools."/>
+       <meta name="description" content="Choose between Free BYOK plan or Pro plan with credits and advanced features. Affordable social media automation for creators and teams."/>
        <meta name="keywords" content="SuiteGenie pricing, BYOK pricing, social media automation cost, Twitter automation pricing, LinkedIn automation pricing"/>
        <link rel="canonical" href="https://suitegenie.in/pricing" />
-       {/* Open Graph & Twitter */}
        <meta property="og:title" content="Pricing – SuiteGenie Social Media Automation" />
-       <meta property="og:description" content="SuiteGenie is free to use with your own OpenAI API key (BYOK). Pay only for API usage instead of ₹5,000+ per month for legacy social media tools." />
+       <meta property="og:description" content="Choose between Free BYOK plan or Pro plan with credits and advanced features. Affordable social media automation for creators and teams." />
        <meta property="og:type" content="website" />
        <meta property="og:url" content="https://suitegenie.in/pricing" />
        <meta property="og:image" content="https://suitegenie.in/og-pricing.png" />
        <meta name="twitter:card" content="summary_large_image" />
        <meta name="twitter:title" content="Pricing – SuiteGenie Social Media Automation" />
-       <meta name="twitter:description" content="SuiteGenie is free to use with your own OpenAI API key (BYOK). Pay only for API usage instead of ₹5,000+ per month for legacy social media tools." />
+       <meta name="twitter:description" content="Choose between Free BYOK plan or Pro plan with credits and advanced features. Affordable social media automation for creators and teams." />
        <meta name="twitter:image" content="https://suitegenie.in/og-pricing.png" />
-       {/* Structured Data: Offer */}
        <script type="application/ld+json">{`
          {
            "@context": "https://schema.org",
@@ -36,71 +34,93 @@ const PricingPage = () => (
        `}</script>
     </Helmet>
 
-    <div className="max-w-3xl mx-auto p-8" role="main">
-      <h1 className="text-3xl font-bold mb-4">SuiteGenie Pricing – Affordable AI Social Media Automation with BYOK</h1>
+    <div className="max-w-4xl mx-auto p-8" role="main">
+      <h1 className="text-3xl font-bold mb-4">SuiteGenie Pricing – Choose Your Plan</h1>
       <div className="flex flex-wrap gap-4 mb-6">
-        <a href="/features" className="text-blue-600 underline font-medium">Not sure what’s included? Explore the full feature list.</a>
+        <a href="/features" className="text-blue-600 underline font-medium">Not sure what's included? Explore the full feature list.</a>
         <span className="text-gray-400">|</span>
         <a href="/docs" className="text-blue-600 underline font-medium">See how to get started in minutes.</a>
       </div>
       <p className="mb-6 text-gray-700">
-        SuiteGenie is built so solo founders, creators and small teams can automate Twitter and LinkedIn without paying enterprise tool prices. Use the platform free and bring your own OpenAI API key (BYOK), or join the upcoming Pro Plan for teams.
+        Choose the plan that fits your needs. Start free with BYOK or upgrade to Pro for credits, strategy tools, and team collaboration.
       </p>
       <hr className="my-8" />
-      {/* BYOK Solo Plan */}
+      
+      {/* Free Plan */}
       <section className="mb-10">
-        <h2 className="text-2xl font-bold mb-2">🌱 BYOK Solo Plan – Live Today</h2>
-        <h3 className="text-lg font-semibold mb-2">Free platform + your OpenAI API usage</h3>
-        <p className="mb-4 text-gray-700">If you’re a solo founder, indie hacker or creator, this is all you need right now.</p>
-        <div className="mb-2 font-semibold">You get the full SuiteGenie product:</div>
+        <h2 className="text-2xl font-bold mb-2">🌱 Free Plan - $0</h2>
+        <h3 className="text-lg font-semibold mb-2">All core SuiteGenie features</h3>
+        <p className="mb-4 text-gray-700">Perfect for solo creators who want full-featured social media automation.</p>
+        <div className="mb-2 font-semibold">What's Included:</div>
         <ul className="list-disc pl-6 mb-4 text-gray-600">
-          <li>Tweet Genie for Twitter/X content and scheduling</li>
-          <li>LinkedIn posting and scheduling</li>
-          <li>Content and image generation with AI</li>
-          <li>Engagement analytics and history</li>
-          <li>Bulk scheduling and content calendar</li>
-          <li>Access to new features as we ship them</li>
+          <li>All core SuiteGenie features</li>
+          <li>Content generation with AI (text only, no image generation)</li>
+          <li>Tweet Genie for Twitter/X content posting</li>
+          <li>LinkedIn posting (personal profiles)</li>
+          <li>Cross-platform posting</li>
+          <li>Smart scheduling with calendar view</li>
+          <li>Bulk scheduling for already generated content</li>
+          <li>Basic analytics and history</li>
+          <li>Connect up to 3 social accounts</li>
+          <li>Encrypted BYOK (OpenAI, Perplexity, Gemini)</li>
+          <li>Priority support</li>
         </ul>
-        <div className="mb-2 font-semibold">What you pay for:</div>
+        <div className="mb-2 font-semibold">Credits:</div>
+        <ul className="list-disc pl-6 mb-4 text-gray-600">
+          <li><strong>0 credits in platform mode</strong> (must use BYOK)</li>
+          <li><strong>75 credits per month in BYOK mode</strong> (use your own API key)</li>
+        </ul>
+        <div className="mb-2 font-semibold">What you pay:</div>
         <ul className="list-disc pl-6 mb-4 text-gray-600">
           <li>SuiteGenie platform: <strong>₹0 / $0 per month</strong></li>
-          <li>OpenAI usage: billed directly by OpenAI based on how much you generate</li>
+          <li>OpenAI/Perplexity/Gemini API: billed directly by provider (typically ₹300-₹1,500/month)</li>
         </ul>
-        <div className="mb-2 font-semibold">Typical usage costs:</div>
-        <p className="mb-4 text-gray-700">SuiteGenie is dramatically more affordable than traditional social tools, which often charge ₹5,000–₹20,000 per month for AI + scheduling bundles.</p>
         <a href="/auth" className="inline-block mt-2 text-blue-600 font-semibold underline">Start Free with BYOK →</a>
       </section>
+      
       <hr className="my-8" />
+      
       {/* Pro Plan */}
       <section className="mb-10">
-        <h2 className="text-2xl font-bold mb-2">👥 SuiteGenie Pro Plan – Coming Soon</h2>
-        <h3 className="text-lg font-semibold mb-2">Built for teams and agencies</h3>
-        <p className="mb-4 text-gray-700">We’re actively building SuiteGenie Pro, designed for teams who need collaboration, multiple social accounts and shared analytics.</p>
-        <div className="mb-2 font-semibold">Planned highlights:</div>
+        <h2 className="text-2xl font-bold mb-2">⚡ Pro Plan – Live Now</h2>
+        <h3 className="text-lg font-semibold mb-2">Best for individual creators and small teams with multiple accounts</h3>
+        <p className="mb-4 text-gray-700">Get more credits, strategy tools, team collaboration, and manage multiple accounts from one place.</p>
+        <div className="mb-2 font-semibold">Everything in Free Plan, plus:</div>
         <ul className="list-disc pl-6 mb-4 text-gray-600">
-          <li>Team collaboration and shared workspace</li>
-          <li>Role-based access control (Admin, Editor, Viewer)</li>
-          <li>Connect and manage multiple social profiles</li>
-          <li>Shared content calendar across all clients</li>
-          <li>Centralized analytics dashboard for all accounts</li>
+          <li><strong>Image generation with AI</strong></li>
+          <li><strong>Bulk Content Generation</strong> (AI-powered batch content creation)</li>
+          <li><strong>Content Strategy Builder</strong> for planning your content strategy</li>
+          <li>Invite up to 5 team members</li>
+          <li>Connect up to 8 social accounts (any mix: 2 Twitter + 3 LinkedIn, or all different platforms)</li>
+          <li>Role-based access control (Owner, Admin, Editor, Viewer)</li>
+          <li>Complete analytics with advanced insights</li>
+          <li>Team workspace with centralized management</li>
+          <li>Priority support</li>
         </ul>
-        <div className="mb-2 font-semibold">Planned pricing (subject to final launch):</div>
+        <div className="mb-2 font-semibold">Credits:</div>
         <ul className="list-disc pl-6 mb-4 text-gray-600">
-          <li><strong>₹499/month per team</strong> (introductory pricing)</li>
-          <li>Flexible user and account management</li>
-          <li>BYOK or “platform keys” option for teams that don’t want to manage OpenAI billing themselves</li>
+          <li><strong>100 credits in platform mode</strong> (no API key needed)</li>
+          <li><strong>200 credits in BYOK mode</strong> (use your own API key for more credits)</li>
         </ul>
-        <a href="/pro-waitlist" className="inline-block mt-2 text-blue-600 font-semibold underline">Join Pro Plan Waitlist →</a>
+        <div className="mb-2 font-semibold">Pricing:</div>
+        <ul className="list-disc pl-6 mb-4 text-gray-600">
+          <li><strong>₹399/month</strong> (introductory pricing)</li>
+          <li>Choose between platform mode or BYOK mode</li>
+          <li>All team members can use connected accounts</li>
+        </ul>
+        <a href="/team" className="inline-block mt-2 text-blue-600 font-semibold underline">Upgrade to Pro Plan →</a>
       </section>
+      
       <hr className="my-8" />
+      
       {/* Why BYOK Is Cheaper */}
       <section className="mb-10">
         <h2 className="text-2xl font-bold mb-2">💸 Why BYOK Is Cheaper Than Traditional Tools</h2>
         <p className="mb-4 text-gray-700">Most social media platforms charge a flat subscription that bundles AI, scheduling and analytics together.</p>
         <ul className="list-disc pl-6 mb-4 text-gray-600">
-          <li>You <strong>don’t</strong> pay us for tokens or AI calls.</li>
-          <li>You pay OpenAI directly at raw cost.</li>
-          <li>We focus on building the best automation and analytics layer on top.</li>
+          <li>With BYOK, you <strong>don't</strong> pay us for tokens or AI calls</li>
+          <li>You pay OpenAI/Perplexity/Gemini directly at raw cost</li>
+          <li>We focus on building the best automation and analytics layer on top</li>
         </ul>
         <div className="mb-2 font-semibold">Rough comparison:</div>
         <table className="w-full text-left border mt-4 mb-4">
@@ -126,28 +146,33 @@ const PricingPage = () => (
               <td className="border px-2 py-1">₹2,000–₹6,000</td>
             </tr>
             <tr>
-              <td className="border px-2 py-1 font-bold">SuiteGenie (BYOK)</td>
+              <td className="border px-2 py-1 font-bold">SuiteGenie (Free BYOK)</td>
               <td className="border px-2 py-1 font-bold">₹0</td>
-              <td className="border px-2 py-1 font-bold">Direct OpenAI billing (your key)</td>
-              <td className="border px-2 py-1 font-bold">₹300–₹2,500 approx.</td>
+              <td className="border px-2 py-1 font-bold">Direct API billing</td>
+              <td className="border px-2 py-1 font-bold">₹300–₹1,500</td>
+            </tr>
+            <tr>
+              <td className="border px-2 py-1 font-bold">SuiteGenie (Pro)</td>
+              <td className="border px-2 py-1 font-bold">₹399</td>
+              <td className="border px-2 py-1 font-bold">Platform credits or BYOK</td>
+              <td className="border px-2 py-1 font-bold">₹399–₹1,899</td>
             </tr>
           </tbody>
         </table>
-        {/* OpenAI usage is billed directly by OpenAI. */}
       </section>
+      
       <hr className="my-8" />
-      {/* Example: What You’d Actually Pay */}
-      <section className="mb-10">
-        <h2 className="text-2xl font-bold mb-2">🧮 Example: What You’d Actually Pay</h2>
-        <p className="mb-4 text-gray-700">Your OpenAI usage cost depends on how much content you generate, but SuiteGenie itself remains free. If you pause your content, your OpenAI cost drops close to zero. There is no fixed platform subscription to “waste.”</p>
-      </section>
-      <hr className="my-8" />
+      
       {/* FAQ */}
       <section className="mb-10">
         <h2 className="text-2xl font-bold mb-2">🙋 Frequently Asked Questions</h2>
         <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-2">Is SuiteGenie really free?</h3>
-          <p className="mb-4 text-gray-700">Yes! The platform is free for solo users. You only pay OpenAI for the content you generate, billed directly to your own API key. No hidden fees or subscriptions.</p>
+          <h3 className="text-lg font-semibold mb-2">What are credits?</h3>
+          <p className="mb-4 text-gray-700">Credits are used to generate content with AI. Each post generation uses credits. In BYOK mode, you use your own API key and get more credits. In platform mode, we handle the AI for you.</p>
+        </div>
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold mb-2">Is the Free plan really free?</h3>
+          <p className="mb-4 text-gray-700">Yes! The platform is free. You only pay your AI provider (OpenAI/Perplexity/Gemini) directly for content generation. No hidden fees or subscriptions.</p>
         </div>
         <div className="mb-6">
           <h3 className="text-lg font-semibold mb-2">How do I get an OpenAI API key?</h3>
@@ -156,26 +181,27 @@ const PricingPage = () => (
             <li>Add a payment method</li>
             <li>Generate an API key and paste it into SuiteGenie settings</li>
           </ul>
-          <p className="mb-4 text-gray-700">Setup takes just a few minutes. We never see or store your key.</p>
+          <p className="mb-4 text-gray-700">Setup takes just a few minutes. Your key is encrypted and never shared.</p>
         </div>
         <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-2">Is there a free trial?</h3>
-          <p className="mb-4 text-gray-700">You don’t need one. SuiteGenie is free to use; you only pay OpenAI for what you generate. Start small and scale as you see results.</p>
+          <h3 className="text-lg font-semibold mb-2">What's the difference between platform mode and BYOK mode?</h3>
+          <p className="mb-4 text-gray-700">Platform mode: We handle the AI for you (100 credits/month in Pro). BYOK mode: You use your own API key and get more credits (75 in Free, 200 in Pro).</p>
         </div>
         <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-2">Will pricing change later?</h3>
-          <p className="mb-4 text-gray-700">We may add optional paid plans for teams or managed keys in the future, but solo BYOK will remain free and affordable for indie builders and small teams.</p>
-          <p className="mb-4 text-gray-700">Early users keep access to our most generous terms as we evolve.</p>
+          <h3 className="text-lg font-semibold mb-2">Can I switch between Free and Pro?</h3>
+          <p className="mb-4 text-gray-700">Yes! Upgrade to Pro anytime to unlock Strategy Builder, team collaboration, and more credits. Downgrade anytime without losing your data.</p>
         </div>
       </section>
+      
       <hr className="my-8" />
+      
       {/* Call to Action */}
       <section className="mb-10 text-center">
-        <h2 className="text-2xl font-bold mb-2">🚀 Ready to Try SuiteGenie?</h2>
+        <h2 className="text-2xl font-bold mb-2">🚀 Ready to Get Started?</h2>
         <ol className="list-decimal pl-6 mb-4 text-gray-600 text-left inline-block">
           <li>Create your SuiteGenie account</li>
-          <li>Add your OpenAI API key</li>
-          <li>Generate and schedule your first week of posts in under 30 minutes</li>
+          <li>Choose your plan (Free or Pro)</li>
+          <li>Start generating and scheduling content in minutes</li>
         </ol>
         <a href="/auth" className="inline-block mt-2 text-blue-600 font-semibold underline">Create Free Account →</a>
       </section>

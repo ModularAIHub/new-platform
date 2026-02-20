@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { CreditCard, Plus, History, Loader2, RefreshCw, Zap, TrendingUp } from 'lucide-react'
 import api from '../utils/api'
 import Loader from '../components/Loader'

@@ -583,7 +583,7 @@ const fetchUserPermissions = async () => {
                             <p className="text-sm text-gray-600">Invite up to 5 team members to collaborate</p>
                         </div>
                         <div className="bg-white p-4 rounded-lg">
-                            <h4 className="font-semibold text-gray-900 mb-2">ðŸ”— Shared Accounts</h4>
+                            <h4 className="font-semibold text-gray-900 mb-2">ðŸ”.  Shared Accounts</h4>
                             <p className="text-sm text-gray-600">Connect up to 8 social accounts for the team</p>
                         </div>
                         <div className="bg-white p-4 rounded-lg">

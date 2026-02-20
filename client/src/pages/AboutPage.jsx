@@ -210,7 +210,7 @@ export default function About() {
               
               <p className="text-xl lg:text-2xl text-blue-100 leading-relaxed max-w-2xl">
                 In a world overwhelmed by digital noise, consistent and intelligent content is your edge. 
-                We believe great ideas deserve to be shared—without friction.
+                We believe great ideas deserve to be shared without friction.
               </p>
               
               <div className="flex flex-col sm:flex-row gap-6 pt-4">
@@ -329,18 +329,6 @@ export default function About() {
           </div>
         </section>
 
-        {/* BYOK Setup Instructions Section (moved out of team card) */}
-        <section className="max-w-md mx-auto mt-10 mb-16 bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
-          <h2 className="text-2xl font-bold text-primary-700 mb-4">How to set up BYOK (Bring Your Own Key)</h2>
-          <ol className="list-decimal pl-6 text-gray-700 space-y-2 text-base">
-            <li>Go to <span className="font-semibold">Settings &rarr; API Keys</span> in your SuiteGenie dashboard.</li>
-            <li>Choose your provider: <span className="font-semibold">OpenAI, Perplexity, or Gemini</span>.</li>
-            <li>Follow the link to your provider’s API dashboard and generate a new API key.</li>
-            <li>Copy the API key (it will look like <code>sk-...</code> for OpenAI).</li>
-            <li>Paste your API key into SuiteGenie. Your key is fully encrypted and never shared.</li>
-            <li>Click <span className="font-semibold">Save</span>. You’re ready to use all features—no limits or restrictions.</li>
-          </ol>
-        </section>
       {/* Main Content */}
       <main className="relative">
         
@@ -373,23 +361,23 @@ export default function About() {
                   
                   <div className="space-y-6 text-lg text-gray-700 leading-relaxed">
                     <p>
-                      This platform wasn't built in a boardroom—it came from solving a real-world problem.
+                      This platform wasn't built in a boardroom. It came from solving a real-world problem.
                     </p>
                     <p>
-                      It began with a personal passion project: an anime website for streaming, downloading, and blogging. As the site grew, I was juggling updates, writing blog posts, and trying to keep social media channels active. The passion was there, but the process was fragmented and overwhelming—just like for many creators who want to do more, without limits.
+                      It began with a personal passion project: an anime website for streaming, downloading, and blogging. As the site grew, I was juggling updates, writing blog posts, and trying to keep social media channels active. The passion was there, but the process was fragmented and overwhelming, just like for many creators who want to do more without limits.
                     </p>
                     <p>
-                      Even at a startup, publishing content consistently was still a struggle. I tried tools like Hootsuite and Buffer, but found a market of compromises—powerful platforms were expensive, and affordable ones felt clunky and incomplete.
+                      Even at a startup, publishing content consistently was still a struggle. I tried tools like Hootsuite and Buffer, but found a market of compromises: powerful platforms were expensive, and affordable ones felt clunky and incomplete.
                     </p>
                     
                     <div className="relative pl-6 py-6 border-l-4 border-blue-500 bg-gradient-to-r from-blue-50 to-purple-50 rounded-r-2xl">
                       <p className="text-blue-800 font-semibold text-xl italic">
-                        That's when it clicked: the problem wasn't just the manual work—it was that no one had built a truly unified and affordable platform for the modern creator.
+                        That's when it clicked: the problem wasn't just the manual work. It was that no one had built a truly unified and affordable platform for the modern creator.
                       </p>
                     </div>
                     
                     <p className="text-gray-600">
-                      So I decided to stop waiting for a solution and build the one I always wished I had—empowering creators to focus on what matters: sharing their ideas, not fighting their tools.
+                      So I decided to stop waiting for a solution and build the one I always wished I had: empowering creators to focus on what matters, sharing their ideas instead of fighting their tools.
                     </p>
                   </div>
                 </div>
@@ -483,7 +471,7 @@ export default function About() {
                     <div className="text-4xl mb-4">🎯</div>
                     <h3 className="text-3xl font-bold text-gray-900 mb-4">Mission</h3>
                     <p className="text-lg text-gray-700 italic leading-relaxed">
-                      Empower creators with AI-powered modules that simplify and amplify content creation—on your terms.
+                      Empower creators with AI-powered modules that simplify and amplify content creation on your terms.
                     </p>
                   </div>
                 </div>
@@ -535,7 +523,7 @@ export default function About() {
                 <div className="h-1 w-32 bg-gradient-to-r from-orange-500 to-green-500 mx-auto rounded-full mb-8"></div>
               </div>
               <blockquote className="text-2xl text-gray-300 italic leading-relaxed">
-                "Built with pride, passion, and innovation in India — for creators everywhere."
+                "Built with pride, passion, and innovation in India for creators everywhere."
               </blockquote>
             </AnimatedSection>
           </div>
@@ -558,7 +546,7 @@ export default function About() {
           <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
             <AnimatedSection>
               <h2 className="text-4xl lg:text-6xl font-bold text-white mb-8 leading-tight">
-                Let AI do the heavy lifting—You focus on strategy, creativity, and growth.
+                Let AI do the heavy lifting. You focus on strategy, creativity, and growth.
               </h2>
               <a 
                 href="/register" 

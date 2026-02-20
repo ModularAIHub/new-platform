@@ -279,7 +279,7 @@ const DashboardPage = () => {
                                         onClick={() => setShowByokInfo(false)}
                                         className="text-neutral-400 hover:text-neutral-700"
                                     >
-                                        Ã—
+                                        Ã. 
                                     </Button>
                                 </div>
                             </CardHeader>

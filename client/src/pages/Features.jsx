@@ -5,8 +5,8 @@ const Features = () => (
   <>
     <Helmet>
       <title>Features – AI Social Media Automation | SuiteGenie</title>
-      <meta name="description" content="Automate Twitter & LinkedIn with AI. Bulk scheduling, engagement analytics, image generation, and BYOK. Save up to 80% using your own OpenAI, Perplexity, or Gemini API key. All keys and tokens are fully encrypted for your safety. SuiteGenie is the modern, affordable social media automation platform for founders and teams." />
-      <meta name="keywords" content="social media automation, AI tweet generator, LinkedIn automation, BYOK, bulk scheduling, engagement analytics, SuiteGenie features" />
+      <meta name="description" content="Automate Twitter & LinkedIn with AI. Content strategy, bulk generation, team collaboration, and BYOK. Save up to 80% using your own OpenAI, Perplexity, or Gemini API key. All keys and tokens are fully encrypted for your safety. SuiteGenie is the modern, affordable social media automation platform for founders and teams." />
+      <meta name="keywords" content="social media automation, AI tweet generator, LinkedIn automation, BYOK, bulk generation, content strategy, team collaboration, engagement analytics, SuiteGenie features" />
       <link rel="canonical" href="https://suitegenie.in/features" />
       {/* Open Graph / Facebook */}
       <meta property="og:title" content="Features – AI Social Media Automation | SuiteGenie" />
@@ -107,8 +107,7 @@ const Features = () => (
       <section className="mb-10">
         <h2 className="text-2xl font-bold mb-2">🔑 BYOK (Bring Your Own Keys)</h2>
         <h3 className="text-lg font-semibold mb-2">Keep Control, Cut Tool Costs</h3>
-        <p className="mb-4 text-gray-700">Traditional social media tools bundle in AI and charge steep monthly fees. With SuiteGenie’s BYOK model, you can plug in your own <strong>OpenAI, Perplexity, or Gemini API key</strong>—all keys and tokens are fully encrypted and only used for your content generation. You pay the provider directly at raw cost, often 70–80% cheaper than “AI included” plans.</p>
-          <p className="mb-4 text-gray-700">Traditional social media tools bundle in AI and charge steep monthly fees. With SuiteGenie’s BYOK model, you can plug in your own <strong>OpenAI, Perplexity, or Gemini API key</strong>, all keys and tokens are fully encrypted and only used for your content generation. You pay the provider directly at raw cost, often 70–80% cheaper than “AI included” plans.</p>
+        <p className="mb-4 text-gray-700">Traditional social media tools bundle in AI and charge steep monthly fees. With SuiteGenie's BYOK model, you can plug in your own <strong>OpenAI, Perplexity, or Gemini API key</strong>, all keys and tokens are fully encrypted and only used for your content generation. You pay the provider directly at raw cost, often 70-80% cheaper than "AI included" plans.</p>
         <div className="mb-2 font-semibold">Why BYOK Is a Game-Changer:</div>
         <ul className="list-disc pl-6 mb-4 text-gray-600">
           <li>No hidden AI markups or usage padding</li>
@@ -128,25 +127,50 @@ const Features = () => (
 
       <hr className="my-8" />
 
-      {/* Bulk Scheduling */}
+      {/* Strategy Builder */}
       <section className="mb-10">
-        <h2 className="text-2xl font-bold mb-2">📅 Bulk Scheduling</h2>
-        <h3 className="text-lg font-semibold mb-2">Turn One Work Session Into a Full Week of Content</h3>
-        <p className="mb-4 text-gray-700">Plan and schedule dozens of posts at once so you can get off the hamster wheel of daily posting.</p>
-        <div className="mb-2 font-semibold">Bulk Scheduling Superpowers:</div>
+        <h2 className="text-2xl font-bold mb-2">🎯 Content Strategy Builder</h2>
+        <h3 className="text-lg font-semibold mb-2">Plan Your Content Strategy Like a Pro</h3>
+        <p className="mb-4 text-gray-700">Create data-driven content strategies that align with your goals and audience. No more guessing what to post.</p>
+        <div className="mb-2 font-semibold">Strategic Planning Features:</div>
         <ul className="list-disc pl-6 mb-4 text-gray-600">
-          <li>Generate batches of tweets and LinkedIn posts in one go</li>
-          <li>Schedule everything across days or weeks in a single flow</li>
-          <li>Drag-and-drop posts on a visual calendar to adjust timing</li>
-          <li>Avoid overlap and accidental spamming with spacing rules</li>
+          <li>Define content pillars and themes for consistent messaging</li>
+          <li>Set posting frequency and optimal times based on your audience</li>
+          <li>Plan content mix across different formats (threads, carousels, videos)</li>
+          <li>Track strategy performance and adjust based on analytics</li>
         </ul>
-        <div className="mb-2 font-semibold">Smart Timing:</div>
+        <div className="mb-2 font-semibold">Why Strategy Matters:</div>
         <ul className="list-disc pl-6 mb-4 text-gray-600">
-          <li>Suggests posting windows when engagement tends to be highest</li>
-          <li>Handles time zones so global audiences still see you at the right time</li>
-          <li>Supports both “fill my calendar” mode and precise, manual scheduling</li>
+          <li>Maintain consistent brand voice across all platforms</li>
+          <li>Balance promotional, educational, and engaging content</li>
+          <li>Align social media with business objectives</li>
+          <li>Save time with pre-planned content frameworks</li>
         </ul>
-        <a href="/signup" className="inline-block mt-2 text-blue-600 font-semibold underline">Plan Your Week in Minutes →</a>
+        <a href="/signup" className="inline-block mt-2 text-blue-600 font-semibold underline">Build Your Strategy →</a>
+      </section>
+
+      <hr className="my-8" />
+
+      {/* Bulk Generation */}
+      <section className="mb-10">
+        <h2 className="text-2xl font-bold mb-2">⚡ Bulk Content Generation</h2>
+        <h3 className="text-lg font-semibold mb-2">Create a Week's Worth of Content in Minutes</h3>
+        <p className="mb-4 text-gray-700">Generate multiple posts at once and schedule them across your calendar. Perfect for batch content creation.</p>
+        <div className="mb-2 font-semibold">Bulk Generation Power:</div>
+        <ul className="list-disc pl-6 mb-4 text-gray-600">
+          <li>Generate 10, 20, or 50+ posts in a single session</li>
+          <li>Apply consistent themes and tones across all generated content</li>
+          <li>Mix different content types (tips, questions, stories, threads)</li>
+          <li>Review, edit, and approve before scheduling</li>
+        </ul>
+        <div className="mb-2 font-semibold">Smart Scheduling:</div>
+        <ul className="list-disc pl-6 mb-4 text-gray-600">
+          <li>Auto-distribute posts across optimal time slots</li>
+          <li>Avoid posting conflicts and maintain proper spacing</li>
+          <li>Schedule across multiple platforms simultaneously</li>
+          <li>Adjust timing with drag-and-drop calendar interface</li>
+        </ul>
+        <a href="/signup" className="inline-block mt-2 text-blue-600 font-semibold underline">Start Bulk Creating →</a>
       </section>
 
       <hr className="my-8" />
@@ -165,6 +189,30 @@ const Features = () => (
 
       <hr className="my-8" />
 
+      {/* Team Collaboration */}
+      <section className="mb-10">
+        <h2 className="text-2xl font-bold mb-2">👥 Team Collaboration</h2>
+        <h3 className="text-lg font-semibold mb-2">Work Together, Scale Faster</h3>
+        <p className="mb-4 text-gray-700">Invite team members, assign roles, and collaborate on content creation without sharing passwords.</p>
+        <div className="mb-2 font-semibold">Team Features:</div>
+        <ul className="list-disc pl-6 mb-4 text-gray-600">
+          <li>Invite up to 5 team members with role-based access</li>
+          <li>Connect up to 8 social accounts shared across the team</li>
+          <li>Owner, Admin, Editor, and Viewer roles with granular permissions</li>
+          <li>Shared content calendar and analytics dashboard</li>
+        </ul>
+        <div className="mb-2 font-semibold">Role Permissions:</div>
+        <ul className="list-disc pl-6 mb-4 text-gray-600">
+          <li>Owner: Full control, team management, billing</li>
+          <li>Admin: Invite members, connect accounts, manage content</li>
+          <li>Editor: Create and schedule content on connected accounts</li>
+          <li>Viewer: View team content and analytics (read-only)</li>
+        </ul>
+        <a href="/signup" className="inline-block mt-2 text-blue-600 font-semibold underline">Start Collaborating →</a>
+      </section>
+
+      <hr className="my-8" />
+
       {/* One Dashboard for Twitter & LinkedIn */}
       <section className="mb-10">
         <h2 className="text-2xl font-bold mb-2">🌐 One Dashboard for Twitter & LinkedIn</h2>
@@ -173,8 +221,9 @@ const Features = () => (
           <li>Connect Twitter/X via OAuth in a few clicks</li>
           <li>Connect LinkedIn for personal profiles and business pages</li>
           <li>See all scheduled posts together in one calendar view</li>
+          <li>Support for WordPress, Facebook, and Instagram coming soon</li>
         </ul>
-        <p className="mb-4 text-gray-700">Future channels (like WordPress, Instagram, etc.) can plug into the same layout later without changing how you work.</p>
+        <p className="mb-4 text-gray-700">Future channels can plug into the same layout without changing how you work.</p>
       </section>
 
       <hr className="my-8" />
@@ -186,8 +235,7 @@ const Features = () => (
         <ul className="list-disc pl-6 mb-4 text-gray-600">
           <li>OAuth-based connections for Twitter and LinkedIn</li>
           <li>Encrypted storage for all your API keys and tokens (OpenAI, Perplexity, Gemini, etc.)</li>
-          <li>All tokens and keys are encrypted at rest and in transit—your data is never exposed</li>
-            <li>All tokens and keys are encrypted at rest and in transit, your data is never exposed</li>
+          <li>All tokens and keys are encrypted at rest and in transit. Your data is never exposed</li>
           <li>HTTPS everywhere and modern infrastructure practices</li>
         </ul>
         <p className="mb-4 text-gray-700">You can revoke access or rotate keys any time from your own dashboards.</p>
@@ -210,3 +258,4 @@ const Features = () => (
 );
 
 export default Features;
+

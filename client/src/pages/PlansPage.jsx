@@ -18,62 +18,61 @@ const PlansPage = () => {
 
   const plans = [
     {
-      name: 'Starter',
+      name: 'Free',
       price: 'Free',
       monthlyPrice: '$0',
-      description: 'For individuals and solo creators',
+      description: 'Perfect for solo creators',
       features: [
         'All core SuiteGenie features',
-        '5 automated posts per month',
-        '1 social platform connection',
-        'Priority support',
+        'Content generation with AI (text only, no image generation)',
+        'Basic analytics & scheduling',
+        'Cross-platform posting',
+        'Bulk scheduling for already generated content',
+        'Connect up to 3 social accounts',
         'Encrypted BYOK (OpenAI, Perplexity, Gemini)',
-        'Analytics & scheduling',
+        'Priority support',
+        '75 credits per month (BYOK mode)',
+        '0 credits in platform mode',
       ],
-      notIncluded: [
-        'Teams mode (collaboration)',
-        'Increased monthly credits',
-      ],
+      notIncluded: [],
       buttonText: 'Start Free',
       popular: false
     },
     {
-      name: 'Teams',
-      price: 'Free',
-      monthlyPrice: 'Free',
-      description: 'For teams and collaborators (invite up to 5 members)',
+      name: 'Pro',
+      price: '₹399',
+      monthlyPrice: '₹399',
+      description: 'Best for individual creators and small teams with multiple accounts',
       features: [
-        'Everything in Starter',
-        'Teams mode: collaborate with up to 5 users',
-        'Shared content calendar',
-        'Increased monthly credits (150 platform / 300 BYOK)',
+        'Everything in Free',
+        'Image generation with AI',
+        'Bulk Content Generation (AI-powered)',
+        'Content Strategy Builder',
+        'Teams mode: collaborate with up to 5 members',
+        'Connect up to 8 social accounts (any mix: Twitter, LinkedIn, etc.)',
+        'Role-based access control (Owner, Admin, Editor, Viewer)',
+        'Complete analytics with advanced insights',
+        '100 credits in platform mode',
+        '200 credits in BYOK mode',
         'Priority support',
-        'Multi-account management',
       ],
-      notIncluded: [
-        'Enterprise/white-label features',
-      ],
-      buttonText: 'Upgrade to Teams',
+      notIncluded: [],
+      buttonText: 'Upgrade to Pro',
       popular: true
     },
     {
       name: 'Enterprise',
       price: 'Custom',
       monthlyPrice: 'Contact Us',
-      description: 'Advanced features for large teams and agencies',
+      description: 'For large teams and agencies',
       features: [
-        'Everything in Professional',
+        'Everything in Pro',
         'Unlimited team members',
-        'White-label solution',
-        'Custom integrations',
+        'Custom credit limits',
         'Dedicated account manager',
-        '24/7 phone support',
-        'Custom reporting',
-        'API access',
-        'Single sign-on (SSO)',
+        'Priority support & onboarding',
+        'Custom integrations',
         'Advanced security features',
-        'Custom training sessions',
-        'Priority feature requests'
       ],
       notIncluded: [],
       buttonText: 'Contact Sales',
@@ -82,21 +81,24 @@ const PlansPage = () => {
   ];
 
   const comparisonFeatures = [
-    { name: 'Monthly Credits (Platform)', starter: '50', teams: '150', enterprise: '500' },
-    { name: 'Monthly Credits (BYOK)', starter: '100', teams: '300', enterprise: '1000' },
-    { name: 'Monthly Posts', starter: '5', teams: 'Unlimited', enterprise: 'Unlimited' },
-    { name: 'Teams Mode (Collaboration)', starter: false, teams: true, enterprise: true },
-    { name: 'Team Members', starter: '1', teams: '5', enterprise: 'Unlimited' },
-    { name: 'Priority Support', starter: true, teams: true, enterprise: true },
-    { name: 'All Core Features', starter: true, teams: true, enterprise: true },
-    { name: 'Multi-Account Management', starter: false, teams: true, enterprise: true },
-    { name: 'White-label/Enterprise', starter: false, teams: false, enterprise: true },
+    { name: 'Monthly Credits (Platform)', free: '0', pro: '100' },
+    { name: 'Monthly Credits (BYOK)', free: '75', pro: '200' },
+    { name: 'Social Accounts', free: '3', pro: '8 (any mix)' },
+    { name: 'Analytics', free: 'Basic', pro: 'Complete' },
+    { name: 'Image Generation', free: false, pro: true },
+    { name: 'Bulk Content Generation (AI)', free: false, pro: true },
+    { name: 'Bulk Scheduling', free: 'Already generated', pro: 'Already generated' },
+    { name: 'Content Strategy Builder', free: false, pro: true },
+    { name: 'Teams Mode (Collaboration)', free: false, pro: true },
+    { name: 'Team Members', free: '1', pro: '5' },
+    { name: 'Priority Support', free: true, pro: true },
+    { name: 'All Core Features', free: true, pro: true },
   ];
 
   const faqs = [
     {
-      question: 'How do I upgrade to Teams?',
-      answer: 'Simply click \'Upgrade to Teams\' and your account will be upgraded instantly. No credit card required.'
+      question: 'How do I upgrade to Pro?',
+      answer: 'Simply click \'Upgrade to Pro\' and your account will be upgraded instantly for ₹399/month.'
     },
     {
       question: 'Can I change plans at any time?',
@@ -104,7 +106,7 @@ const PlansPage = () => {
     },
     {
       question: 'What social platforms do you support?',
-      answer: 'We currently support Twitter, LinkedIn, and WordPress with more platforms coming soon. Our Teams and Enterprise plans include access to all supported platforms.'
+      answer: 'We currently support Twitter, LinkedIn, and WordPress with more platforms coming soon. Both Free and Pro plans include access to all supported platforms.'
     },
     {
       question: 'Is there a setup fee or contract?',
@@ -118,17 +120,14 @@ const PlansPage = () => {
       question: 'Can I get a refund if I\'m not satisfied?',
       answer: 'We offer a 30-day money-back guarantee for all paid plans. If you\'re not completely satisfied, contact our support team for a full refund.'
     }, */
-    {
-      question: 'Do you offer custom integrations for Enterprise customers?',
-      answer: 'Yes! Enterprise customers can request custom integrations with their existing tools and workflows. Our development team will work with you to create tailored solutions.'
-    },
+
     {
       question: 'What kind of support do you provide?',
-      answer: 'Starter users get email support, Teams users get priority email support, and Enterprise customers receive dedicated 24/7 phone support with a dedicated account manager.'
+      answer: 'Both Free and Pro users get priority email support to help you succeed with your social media automation.'
     },
     {
-      question: 'Where do I manage my team after upgrading to Teams?',
-      answer: 'After upgrading to Teams, you can visit the /team page on your dashboard to create or manage your team. You\'ll be able to invite members, manage social accounts, and collaborate with your team on content creation.'
+      question: 'Where do I manage my team after upgrading to Pro?',
+      answer: 'After upgrading to Pro, you can visit the /team page on your dashboard to create or manage your team. You\'ll be able to invite members, manage social accounts, and collaborate with your team on content creation.'
     }
   ];
 
@@ -202,33 +201,41 @@ const PlansPage = () => {
 
               <button
                 onClick={async () => {
-                  // Check if user is already on Teams plan
-                  if (plan.name === 'Teams' && user?.planType === 'pro') {
-                    toast.success('You are already a Teams user! 🎉');
+                  // Check if user is already on Pro plan
+                  if (plan.name === 'Pro' && user?.planType === 'pro') {
+                    toast.success('You are already a Pro user! 🎉');
                     return;
                   }
                   
                   // If not logged in, redirect to signup with plan parameter
                   if (!user) {
-                    if (plan.name === 'Teams') {
+                    if (plan.name === 'Pro') {
                       navigate('/signup?plan=pro');
+                    } else if (plan.name === 'Enterprise') {
+                      navigate('/contact');
                     } else {
                       navigate('/signup');
                     }
                     return;
                   }
                   
-                  // If user is logged in and clicking Teams plan, upgrade
-                  if (plan.name === 'Teams') {
+                  // If Enterprise, redirect to contact
+                  if (plan.name === 'Enterprise') {
+                    navigate('/contact');
+                    return;
+                  }
+                  
+                  // If user is logged in and clicking Pro plan, upgrade
+                  if (plan.name === 'Pro') {
                     setUpgrading(true);
                     try {
-                      // Upgrade to Teams (free, no trial)
+                      // Upgrade to Pro
                       const response = await api.post('/plans/upgrade', {
                         planType: 'pro',
                         isTrial: false
                       });
                       
-                      toast.success(`🎉 Welcome to Teams!\n✨ ${response.data.message}`);
+                      toast.success(`🎉 Welcome to Pro!\n✨ ${response.data.message}`);
                       // Redirect to Team page after successful upgrade
                       setTimeout(() => navigate('/team'), 1500);
                     } catch (error) {
@@ -246,7 +253,7 @@ const PlansPage = () => {
                     : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                 } ${upgrading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                {upgrading ? 'Processing...' : (plan.name === 'Teams' && user?.planType === 'pro' ? 'Current Plan ✓' : plan.buttonText)}
+                {upgrading ? 'Processing...' : (plan.name === 'Pro' && user?.planType === 'pro' ? 'Current Plan ✓' : plan.buttonText)}
               </button>
             </div>
           ))}
@@ -266,9 +273,8 @@ const PlansPage = () => {
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-4 px-6 font-medium text-gray-900">Features</th>
-                  <th className="text-center py-4 px-6 font-medium text-gray-900">Starter</th>
-                  <th className="text-center py-4 px-6 font-medium text-gray-900 bg-blue-50">Teams</th>
-                  <th className="text-center py-4 px-6 font-medium text-gray-900">Enterprise</th>
+                  <th className="text-center py-4 px-6 font-medium text-gray-900">Free</th>
+                  <th className="text-center py-4 px-6 font-medium text-gray-900 bg-blue-50">Pro</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -276,36 +282,25 @@ const PlansPage = () => {
                   <tr key={index} className="hover:bg-gray-50">
                     <td className="py-4 px-6 text-gray-900">{feature.name}</td>
                     <td className="py-4 px-6 text-center">
-                      {typeof feature.starter === 'boolean' ? (
-                        feature.starter ? (
+                      {typeof feature.free === 'boolean' ? (
+                        feature.free ? (
                           <Check className="h-5 w-5 text-green-500 mx-auto" />
                         ) : (
                           <X className="h-5 w-5 text-gray-400 mx-auto" />
                         )
                       ) : (
-                        <span className="text-gray-700">{feature.starter}</span>
+                        <span className="text-gray-700">{feature.free}</span>
                       )}
                     </td>
                     <td className="py-4 px-6 text-center bg-blue-50">
-                      {typeof feature.teams === 'boolean' ? (
-                        feature.teams ? (
+                      {typeof feature.pro === 'boolean' ? (
+                        feature.pro ? (
                           <Check className="h-5 w-5 text-green-500 mx-auto" />
                         ) : (
                           <X className="h-5 w-5 text-gray-400 mx-auto" />
                         )
                       ) : (
-                        <span className="text-gray-700 font-medium">{feature.teams}</span>
-                      )}
-                    </td>
-                    <td className="py-4 px-6 text-center">
-                      {typeof feature.enterprise === 'boolean' ? (
-                        feature.enterprise ? (
-                          <Check className="h-5 w-5 text-green-500 mx-auto" />
-                        ) : (
-                          <X className="h-5 w-5 text-gray-400 mx-auto" />
-                        )
-                      ) : (
-                        <span className="text-gray-700">{feature.enterprise}</span>
+                        <span className="text-gray-700 font-medium">{feature.pro}</span>
                       )}
                     </td>
                   </tr>
@@ -332,7 +327,7 @@ const PlansPage = () => {
             </div>
 
             <div className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-              <div className="text-4xl mb-4">🔗</div>
+              <div className="text-4xl mb-4">�. </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Shared Accounts</h3>
               <p className="text-gray-600">Connect and share up to 8 social media accounts with your team. Everyone can create content together.</p>
             </div>
@@ -347,14 +342,14 @@ const PlansPage = () => {
           <div className="mt-12 bg-white rounded-lg p-8 border-2 border-blue-500">
             <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center">Get Started with Your Team</h3>
             <p className="text-gray-600 text-center mb-6">
-              After upgrading to Teams, you'll be able to visit the <span className="font-semibold text-blue-600">/team</span> dashboard where you can create a team, invite members, and start collaborating.
+              After upgrading to Pro, you'll be able to visit the <span className="font-semibold text-blue-600">/team</span> dashboard where you can create a team, invite members, and start collaborating.
             </p>
             <div className="text-center">
               <button
                 onClick={() => navigate('/plans')}
                 className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
               >
-                Upgrade to Teams
+                Upgrade to Pro
               </button>
             </div>
           </div>
