@@ -95,6 +95,11 @@ const getStaleCached = (cache, key) => {
     return cached?.value || null;
 };
 
+export const invalidateAuthUserCache = (userId) => {
+    if (!userId) return;
+    userCache.delete(String(userId));
+};
+
 if (isPositiveInt(AUTH_CACHE_CLEANUP_INTERVAL_MS)) {
     const cleanupTimer = setInterval(() => {
         const now = Date.now();

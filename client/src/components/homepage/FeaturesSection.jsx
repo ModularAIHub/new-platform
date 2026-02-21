@@ -51,7 +51,7 @@ const FeaturesSection = () => {
             How SuiteGenie Works
           </h2>
           <p className="text-xl text-neutral-600 max-w-3xl mx-auto leading-relaxed">
-            Automate your content creation, scheduling, and publishing across all your favorite platforms—without losing your creative touch.
+            Automate your content creation, scheduling, and publishing across all your favorite platforms without losing your creative touch.
           </p>
         </div>
 

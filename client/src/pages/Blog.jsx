@@ -7,7 +7,7 @@ import BlogHero from '../components/blog/BlogHero';
 import SearchBar from '../components/blog/SearchBar';
 import CategoryFilter from '../components/blog/CategoryFilter';
 import BlogGrid from '../components/blog/BlogGrid';
-import { BLOG_CATEGORY_META, getPublishedBlogPosts } from '../data/blogPosts';
+import { BLOG_CATEGORY_META, getPublishedBlogPosts } from '../data/blogIndex.generated';
 import { formatDate, getPostUrl, paginatePosts, searchPosts } from '../utils/blogHelpers';
 
 const ALL_POSTS = getPublishedBlogPosts();

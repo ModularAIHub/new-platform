@@ -1,9 +1,12 @@
-// TeamPage.jsx - Teams plan collaboration
+// TeamPage.jsx - Pro plan team collaboration
 import React, { useState, useEffect } from 'react';
 import { Users, Plus, Mail, UserX, Crown, Shield, Eye, Edit, Linkedin, Twitter, ExternalLink, Globe, MessageSquare, LogOut, Trash2, RefreshCw, Building2, User } from 'lucide-react';
 import usePlanAccess from '../hooks/usePlanAccess';
 import UpgradePrompt from '../components/UpgradePrompt';
 import api, { twitterApi } from '../utils/api';
+import { useAuth } from '../contexts/AuthContext';
+import toast from 'react-hot-toast';
+import { loadRazorpayScript } from '../utils/payment';
 
 const TeamPage = () => {
     const [team, setTeam] = useState(null);
@@ -18,11 +21,13 @@ const TeamPage = () => {
     const [refreshing, setRefreshing] = useState(false);
     const [isCreatingTeam, setIsCreatingTeam] = useState(false);
     const [showUpgrade, setShowUpgrade] = useState(false);
+    const [upgrading, setUpgrading] = useState(false);
     const [socialAccounts, setSocialAccounts] = useState([]);
     const [socialAccountsApiResponse, setSocialAccountsApiResponse] = useState(null);
     const [userPermissions, setUserPermissions] = useState({ role: null, permissions: [], limits: null });
     const [connecting, setConnecting] = useState(null);
     const { hasFeatureAccess, userPlan, refreshPlanInfo, loading: planLoading } = usePlanAccess();
+    const { user, refreshUser } = useAuth();
     const [hasRetriedCreate, setHasRetriedCreate] = useState(false);
     
     // LinkedIn account selection modal state
@@ -31,6 +36,156 @@ const TeamPage = () => {
     const [selectingAccount, setSelectingAccount] = useState(false);
 
     const hasTeamAccess = hasFeatureAccess('team_collaboration');
+
+    const handleTeamUpgradeCheckout = async () => {
+        if (upgrading) {
+            return;
+        }
+
+        if (!user) {
+            window.location.href = '/signup?plan=pro';
+            return;
+        }
+
+        const latestPlan = await refreshPlanInfo();
+        const authoritativePlanType = String(
+            latestPlan?.individualPlan ||
+            latestPlan?.type ||
+            userPlan?.individualPlan ||
+            userPlan?.type ||
+            user?.planType ||
+            user?.plan_type ||
+            'free'
+        ).toLowerCase();
+
+        if (authoritativePlanType === 'pro') {
+            toast.success('You are already a Pro user!');
+            await refreshPlanInfo();
+            await fetchTeam();
+            setShowUpgrade(false);
+            return;
+        }
+
+        if (authoritativePlanType === 'enterprise') {
+            toast.success('You are already on Enterprise.');
+            await refreshPlanInfo();
+            await fetchTeam();
+            setShowUpgrade(false);
+            return;
+        }
+
+        setUpgrading(true);
+        try {
+            const isScriptLoaded = await loadRazorpayScript();
+            if (!isScriptLoaded) {
+                toast.error('Failed to load payment gateway. Please try again.');
+                return;
+            }
+
+            const orderResponse = await api.post('/payments/create-order', {
+                type: 'plan',
+                package: 'pro',
+            });
+
+            const { orderId, amount, currency, description, demo } = orderResponse.data || {};
+
+            if (!orderId) {
+                toast.error('Failed to initialize checkout. Please try again.');
+                return;
+            }
+
+            if (demo) {
+                const confirmDemo = window.confirm(
+                    'DEMO MODE: This is a simulated Pro upgrade payment. Continue?'
+                );
+
+                if (!confirmDemo) {
+                    return;
+                }
+
+                const verifyResponse = await api.post('/payments/verify', {
+                    razorpayOrderId: orderId,
+                    razorpayPaymentId: 'demo_payment_id',
+                    razorpaySignature: 'demo_signature',
+                });
+
+                await refreshUser();
+                await refreshPlanInfo();
+                await fetchTeam();
+                toast.success(verifyResponse.data?.message || 'Pro plan activated successfully.');
+                setShowUpgrade(false);
+                return;
+            }
+
+            const razorpayKey = orderResponse.data.razorpayKey || import.meta.env.VITE_RAZORPAY_KEY_ID || '';
+            if (!razorpayKey) {
+                toast.error('Payment configuration is incomplete. Please contact support.');
+                return;
+            }
+
+            if (!window.Razorpay) {
+                toast.error('Payment gateway failed to initialize. Please refresh and try again.');
+                return;
+            }
+
+            await new Promise((resolve, reject) => {
+                const razorpay = new window.Razorpay({
+                    key: razorpayKey,
+                    amount,
+                    currency,
+                    name: 'SuiteGenie',
+                    description,
+                    order_id: orderId,
+                    handler: async (response) => {
+                        try {
+                            const verifyResponse = await api.post('/payments/verify', {
+                                razorpayOrderId: response.razorpay_order_id,
+                                razorpayPaymentId: response.razorpay_payment_id,
+                                razorpaySignature: response.razorpay_signature,
+                            });
+
+                            await refreshUser();
+                            await refreshPlanInfo();
+                            await fetchTeam();
+                            toast.success(verifyResponse.data?.message || 'Pro plan activated successfully.');
+                            resolve(verifyResponse.data);
+                        } catch (verificationError) {
+                            reject(verificationError);
+                        }
+                    },
+                    prefill: {
+                        name: user?.name || 'SuiteGenie User',
+                        email: user?.email || undefined,
+                    },
+                    theme: {
+                        color: '#2563eb',
+                    },
+                    modal: {
+                        ondismiss: () => {
+                            reject(new Error('CHECKOUT_DISMISSED'));
+                        },
+                    },
+                });
+
+                razorpay.on('payment.failed', (failure) => {
+                    const reason = failure?.error?.description || 'Payment failed. Please try again.';
+                    reject(new Error(reason));
+                });
+
+                razorpay.open();
+            });
+
+            setShowUpgrade(false);
+        } catch (error) {
+            if (error?.message === 'CHECKOUT_DISMISSED') {
+                toast.error('Payment was cancelled.');
+            } else {
+                toast.error(error?.response?.data?.error || error?.message || 'Failed to upgrade to Pro.');
+            }
+        } finally {
+            setUpgrading(false);
+        }
+    };
 
     useEffect(() => {
         fetchTeam();
@@ -69,7 +224,7 @@ const TeamPage = () => {
             try {
                 const userResponse = await api.get('/auth/me');
                 userId = userResponse.data?.id || userResponse.data?.user?.id;
-                console.log('🔍 Got userId from /auth/me:', userId);
+                console.log('[debug] Got userId from /auth/me:', userId);
             } catch (err) {
                 console.error('Failed to get user from /auth/me:', err);
             }
@@ -80,7 +235,7 @@ const TeamPage = () => {
             try {
                 userId = localStorage.getItem('userId');
                 if (userId) {
-                    console.log('🔍 Got userId from localStorage:', userId);
+                    console.log('[debug] Got userId from localStorage:', userId);
                 }
             } catch (err) {
                 console.error('Failed to get userId from localStorage:', err);
@@ -88,7 +243,7 @@ const TeamPage = () => {
         }
 
         const returnUrl = window.location.origin + '/team';
-        console.log('🚀 Attempting OAuth1 with:', { teamId, userId, team, userPermissions });
+        console.log('[debug] Attempting OAuth1 with:', { teamId, userId, team, userPermissions });
 
         if (!teamId) {
             alert('No team found. Please refresh the page.');
@@ -572,22 +727,22 @@ const fetchUserPermissions = async () => {
 
                 <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-8 text-center">
                     <Users className="h-12 w-12 text-blue-500 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Team Collaboration - Teams Feature</h3>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Team Collaboration - Pro Feature</h3>
                     <p className="text-gray-600 mb-6">
-                        Upgrade to Teams to invite up to 5 team members, share social accounts, and collaborate on content creation.
+                        Upgrade to Pro to invite up to 5 team members, share social accounts, and collaborate on content creation.
                     </p>
                     
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-left">
                         <div className="bg-white p-4 rounded-lg">
-                            <h4 className="font-semibold text-gray-900 mb-2">👥 Team Members</h4>
+                            <h4 className="font-semibold text-gray-900 mb-2">Team Members</h4>
                             <p className="text-sm text-gray-600">Invite up to 5 team members to collaborate</p>
                         </div>
                         <div className="bg-white p-4 rounded-lg">
-                            <h4 className="font-semibold text-gray-900 mb-2">�.  Shared Accounts</h4>
+                            <h4 className="font-semibold text-gray-900 mb-2">Shared Accounts</h4>
                             <p className="text-sm text-gray-600">Connect up to 8 social accounts for the team</p>
                         </div>
                         <div className="bg-white p-4 rounded-lg">
-                            <h4 className="font-semibold text-gray-900 mb-2">📊 Shared Analytics</h4>
+                            <h4 className="font-semibold text-gray-900 mb-2">Shared Analytics</h4>
                             <p className="text-sm text-gray-600">View performance across all team accounts</p>
                         </div>
                     </div>
@@ -596,7 +751,7 @@ const fetchUserPermissions = async () => {
                         onClick={() => setShowUpgrade(true)}
                         className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
                     >
-                        Upgrade to Teams Plan
+                        Upgrade to Pro Plan
                     </button>
                 </div>
 
@@ -610,7 +765,11 @@ const fetchUserPermissions = async () => {
                         "Shared content calendar",
                         "Team analytics dashboard"
                     ]}
-                    onClose={() => setShowUpgrade(false)}
+                    onUpgrade={handleTeamUpgradeCheckout}
+                    isUpgrading={upgrading}
+                    onClose={() => {
+                        if (!upgrading) setShowUpgrade(false);
+                    }}
                 />
             </div>
         );
@@ -674,7 +833,7 @@ const fetchUserPermissions = async () => {
                 <div>
                     <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">{team.name}</h1>
                     <p className="text-gray-600">
-                        {team.member_count} of {team.max_members} members • Teams Plan
+                        {team.member_count} of {team.max_members} members - Pro Plan
                     </p>
                 </div>
                 {team.user_role !== 'owner' && (
@@ -861,7 +1020,7 @@ const fetchUserPermissions = async () => {
                                             {account.account_display_name || account.account_username}
                                         </p>
                                         <p className="text-sm text-gray-600 truncate">
-                                            @{account.account_username} • {account.platform}
+                                            @{account.account_username} - {account.platform}
                                         </p>
                                         <p className="text-xs text-gray-500 truncate">
                                             Connected by {account.connected_by_name || account.connected_by_email}
@@ -977,11 +1136,11 @@ const fetchUserPermissions = async () => {
                             <h4 className="font-medium text-gray-900 mb-2">Team Social Accounts</h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                                 <div>
-                                    <p className="font-medium text-blue-600">� Team Limit: 8 accounts total</p>
+                                    <p className="font-medium text-blue-600">Team Limit: 8 accounts total</p>
                                     <p className="text-gray-600">Shared across all team members</p>
                                 </div>
                                 <div>
-                                    <p className="font-medium text-orange-600">🔒 Connection Access:</p>
+                                    <p className="font-medium text-orange-600">Connection Access:</p>
                                     <p className="text-gray-600">Only Owner & Admin can connect/disconnect</p>
                                 </div>
                             </div>
@@ -995,6 +1154,7 @@ const fetchUserPermissions = async () => {
 
             {showUpgrade && (
                 <UpgradePrompt
+                    isOpen={showUpgrade}
                     feature="Team Collaboration"
                     description="Enhance your team collaboration with more features"
                     benefits={[
@@ -1003,7 +1163,11 @@ const fetchUserPermissions = async () => {
                         "Team analytics dashboard",
                         "Priority support"
                     ]}
-                    onClose={() => setShowUpgrade(false)}
+                    onUpgrade={handleTeamUpgradeCheckout}
+                    isUpgrading={upgrading}
+                    onClose={() => {
+                        if (!upgrading) setShowUpgrade(false);
+                    }}
                 />
             )}
             
@@ -1096,3 +1260,4 @@ const fetchUserPermissions = async () => {
 };
 
 export default TeamPage;
+

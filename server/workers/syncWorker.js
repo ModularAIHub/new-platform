@@ -1,6 +1,7 @@
 import { query } from '../config/database.js';
 import redisClient from '../config/redis.js';
 import CreditService from '../services/creditService.js';
+import { CREDIT_TIERS } from '../utils/creditTiers.js';
 
 class SyncWorker {
     constructor() {
@@ -52,18 +53,18 @@ class SyncWorker {
                     console.log(`🔄 Performing monthly credit reset for ${utcMonth + 1}/${utcYear}...`);
                     
                     // Update credits based on BOTH plan_type and api_key_preference
-                    // Free: 50 (platform) / 100 (BYOK)
-                    // Pro: 150 (platform) / 300 (BYOK)
+                    // Free: 15 (platform) / 75 (BYOK)
+                    // Pro: 100 (platform) / 200 (BYOK)
                     // Enterprise: 500 (platform) / 1000 (BYOK)
                     const updateResult = await query(`
                         UPDATE users 
                         SET credits_remaining = CASE 
-                            WHEN COALESCE(plan_type, 'free') = 'free' AND api_key_preference = 'platform' THEN 50
-                            WHEN COALESCE(plan_type, 'free') = 'free' AND api_key_preference = 'byok' THEN 100
-                            WHEN plan_type = 'pro' AND api_key_preference = 'platform' THEN 150
-                            WHEN plan_type = 'pro' AND api_key_preference = 'byok' THEN 300
-                            WHEN plan_type = 'enterprise' AND api_key_preference = 'platform' THEN 500
-                            WHEN plan_type = 'enterprise' AND api_key_preference = 'byok' THEN 1000
+                            WHEN COALESCE(plan_type, 'free') = 'free' AND api_key_preference = 'platform' THEN ${CREDIT_TIERS.free.platform}
+                            WHEN COALESCE(plan_type, 'free') = 'free' AND api_key_preference = 'byok' THEN ${CREDIT_TIERS.free.byok}
+                            WHEN plan_type = 'pro' AND api_key_preference = 'platform' THEN ${CREDIT_TIERS.pro.platform}
+                            WHEN plan_type = 'pro' AND api_key_preference = 'byok' THEN ${CREDIT_TIERS.pro.byok}
+                            WHEN plan_type = 'enterprise' AND api_key_preference = 'platform' THEN ${CREDIT_TIERS.enterprise.platform}
+                            WHEN plan_type = 'enterprise' AND api_key_preference = 'byok' THEN ${CREDIT_TIERS.enterprise.byok}
                             ELSE 0 
                         END,
                         last_credit_reset = NOW()
@@ -111,12 +112,12 @@ class SyncWorker {
                     console.log(`✅ Monthly credit reset completed successfully!`);
                     console.log(`📈 Database updates: ${updateResult.rowCount}, Redis updates: ${redisUpdates}`);
                     console.log(`💰 Credit allocation by tier:`);
-                    console.log(`   Free+Platform (50): ${statsByTier['free-platform']} users`);
-                    console.log(`   Free+BYOK (100): ${statsByTier['free-byok']} users`);
-                    console.log(`   Pro+Platform (150): ${statsByTier['pro-platform']} users`);
-                    console.log(`   Pro+BYOK (300): ${statsByTier['pro-byok']} users`);
-                    console.log(`   Enterprise+Platform (500): ${statsByTier['enterprise-platform']} users`);
-                    console.log(`   Enterprise+BYOK (1000): ${statsByTier['enterprise-byok']} users`);
+                    console.log(`   Free+Platform (${CREDIT_TIERS.free.platform}): ${statsByTier['free-platform']} users`);
+                    console.log(`   Free+BYOK (${CREDIT_TIERS.free.byok}): ${statsByTier['free-byok']} users`);
+                    console.log(`   Pro+Platform (${CREDIT_TIERS.pro.platform}): ${statsByTier['pro-platform']} users`);
+                    console.log(`   Pro+BYOK (${CREDIT_TIERS.pro.byok}): ${statsByTier['pro-byok']} users`);
+                    console.log(`   Enterprise+Platform (${CREDIT_TIERS.enterprise.platform}): ${statsByTier['enterprise-platform']} users`);
+                    console.log(`   Enterprise+BYOK (${CREDIT_TIERS.enterprise.byok}): ${statsByTier['enterprise-byok']} users`);
                     
                     // TEAM CREDIT RESET - Reset team credits based on owner's plan
                     console.log(`🔄 Resetting team credits...`);
@@ -124,11 +125,11 @@ class SyncWorker {
                         UPDATE teams t
                         SET 
                           credits_remaining = CASE 
-                            WHEN u.plan_type = 'pro' AND u.api_key_preference = 'platform' THEN 150
-                            WHEN u.plan_type = 'pro' AND u.api_key_preference = 'byok' THEN 300
-                            WHEN u.plan_type = 'enterprise' AND u.api_key_preference = 'platform' THEN 500
-                            WHEN u.plan_type = 'enterprise' AND u.api_key_preference = 'byok' THEN 1000
-                            ELSE 150
+                            WHEN u.plan_type = 'pro' AND u.api_key_preference = 'platform' THEN ${CREDIT_TIERS.pro.platform}
+                            WHEN u.plan_type = 'pro' AND u.api_key_preference = 'byok' THEN ${CREDIT_TIERS.pro.byok}
+                            WHEN u.plan_type = 'enterprise' AND u.api_key_preference = 'platform' THEN ${CREDIT_TIERS.enterprise.platform}
+                            WHEN u.plan_type = 'enterprise' AND u.api_key_preference = 'byok' THEN ${CREDIT_TIERS.enterprise.byok}
+                            ELSE ${CREDIT_TIERS.pro.platform}
                           END,
                           plan_type = COALESCE(u.plan_type, 'pro'),
                           last_credit_reset = NOW()

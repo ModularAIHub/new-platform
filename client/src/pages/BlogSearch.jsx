@@ -5,7 +5,7 @@ import Footer from '../components/Footer';
 import BlogHero from '../components/blog/BlogHero';
 import SearchBar from '../components/blog/SearchBar';
 import BlogGrid from '../components/blog/BlogGrid';
-import { getPublishedBlogPosts } from '../data/blogPosts';
+import { getPublishedBlogPosts } from '../data/blogIndex.generated';
 import { paginatePosts, searchPosts } from '../utils/blogHelpers';
 
 const ALL_POSTS = getPublishedBlogPosts();
@@ -15,6 +15,7 @@ const BlogSearchPage = () => {
   const urlQuery = searchParams.get('q') || '';
   const pageParam = Number(searchParams.get('page') || 1);
   const [searchInput, setSearchInput] = useState(urlQuery);
+  const [searchIndex, setSearchIndex] = useState([]);
 
   useEffect(() => {
     setSearchInput(urlQuery);
@@ -38,7 +39,30 @@ const BlogSearchPage = () => {
     return () => clearTimeout(timeout);
   }, [searchInput, searchParams, setSearchParams, urlQuery]);
 
-  const results = useMemo(() => searchPosts(urlQuery, ALL_POSTS), [urlQuery]);
+  useEffect(() => {
+    let ignore = false;
+
+    const loadSearchIndex = async () => {
+      try {
+        const response = await fetch('/blog/search-index.json', { cache: 'force-cache' });
+        if (!response.ok) return;
+        const payload = await response.json();
+        if (!ignore && Array.isArray(payload)) {
+          setSearchIndex(payload);
+        }
+      } catch (error) {
+        console.error('Failed to load blog search index:', error);
+      }
+    };
+
+    loadSearchIndex();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  const results = useMemo(() => searchPosts(urlQuery, ALL_POSTS, searchIndex), [urlQuery, searchIndex]);
   const paginated = useMemo(() => paginatePosts(results, pageParam), [results, pageParam]);
 
   const updatePage = (page) => {

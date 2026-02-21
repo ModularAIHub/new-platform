@@ -69,7 +69,14 @@ const Layout = ({ children }) => {
                                 <User className="h-8 w-8 text-gray-400" />
                             </div>
                             <div className="ml-3">
-                                <p className="text-sm font-medium text-gray-700">{user?.name}</p>
+                                <div className="flex items-center gap-2">
+                                    <p className="text-sm font-medium text-gray-700">{user?.name}</p>
+                                    {user?.planType === 'pro' && (
+                                        <span className="px-2 py-0.5 text-[10px] font-semibold bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-full">
+                                            PRO
+                                        </span>
+                                    )}
+                                </div>
                                 <p className="text-xs text-gray-500">{user?.email}</p>
                             </div>
                         </div>
@@ -114,7 +121,14 @@ const Layout = ({ children }) => {
                                 <User className="h-8 w-8 text-gray-400" />
                             </div>
                             <div className="ml-3">
-                                <p className="text-sm font-medium text-gray-700">{user?.name}</p>
+                                <div className="flex items-center gap-2">
+                                    <p className="text-sm font-medium text-gray-700">{user?.name}</p>
+                                    {user?.planType === 'pro' && (
+                                        <span className="px-2 py-0.5 text-[10px] font-semibold bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-full">
+                                            PRO
+                                        </span>
+                                    )}
+                                </div>
                                 <p className="text-xs text-gray-500">{user?.email}</p>
                             </div>
                         </div>
@@ -143,8 +157,15 @@ const Layout = ({ children }) => {
                     <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
                         <div className="flex flex-1"></div>
                         <div className="flex items-center gap-x-4 lg:gap-x-6">
-                            <div className="text-sm text-gray-500">
-                                Credits: <span className="font-medium text-gray-900">{user?.creditsRemaining || 0}</span>
+                            <div className="text-sm text-gray-500 flex items-center gap-3">
+                                <span>
+                                    Credits: <span className="font-medium text-gray-900">{user?.creditsRemaining || 0}</span>
+                                </span>
+                                {user?.planType === 'pro' && (
+                                    <span className="px-2 py-0.5 text-xs font-semibold bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-full">
+                                        PRO
+                                    </span>
+                                )}
                             </div>
                         </div>
                     </div>

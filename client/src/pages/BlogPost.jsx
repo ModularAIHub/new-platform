@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { CalendarDays, ChevronRight, Clock3 } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
@@ -8,7 +8,7 @@ import TableOfContents from '../components/blog/TableOfContents';
 import ShareButtons from '../components/blog/ShareButtons';
 import AuthorBio from '../components/blog/AuthorBio';
 import RelatedPosts from '../components/blog/RelatedPosts';
-import { BLOG_CATEGORY_META, getPublishedBlogPosts } from '../data/blogPosts';
+import { BLOG_CATEGORY_META, getPublishedBlogPosts } from '../data/blogIndex.generated';
 import {
   calculateReadTime,
   formatDate,
@@ -21,25 +21,78 @@ const ALL_POSTS = getPublishedBlogPosts();
 
 const BlogPostPage = () => {
   const { category, slug } = useParams();
-  const post = ALL_POSTS.find((entry) => entry.category === category && entry.slug === slug);
+
+  const postMeta = useMemo(
+    () => ALL_POSTS.find((entry) => entry.category === category && entry.slug === slug),
+    [category, slug]
+  );
+
+  const [post, setPost] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(null);
+
+  useEffect(() => {
+    let ignore = false;
+
+    const loadPost = async () => {
+      if (!postMeta?.contentPath) {
+        setPost(null);
+        setLoadError(null);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      setLoadError(null);
+
+      try {
+        const response = await fetch(postMeta.contentPath, { cache: 'force-cache' });
+        if (!response.ok) {
+          throw new Error(`Failed to fetch blog post (${response.status})`);
+        }
+
+        const payload = await response.json();
+        if (!ignore) {
+          setPost(payload);
+        }
+      } catch (error) {
+        console.error('Failed to load blog post payload:', error);
+        if (!ignore) {
+          setPost(null);
+          setLoadError(error);
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadPost();
+
+    return () => {
+      ignore = true;
+    };
+  }, [postMeta?.contentPath]);
 
   const postHtml = useMemo(() => (post ? markdownToHTML(post.content) : ''), [post]);
   const tocItems = useMemo(() => (post ? generateTableOfContents(post.content) : []), [post]);
   const schemas = useMemo(() => (post ? generateSchema(post) : []), [post]);
 
   const relatedPosts = useMemo(() => {
-    if (!post) return [];
-    return ALL_POSTS.filter((entry) => entry.id !== post.id)
+    if (!postMeta) return [];
+
+    return ALL_POSTS.filter((entry) => entry.id !== postMeta.id)
       .sort((a, b) => {
-        const aBoost = a.category === post.category ? 1 : 0;
-        const bBoost = b.category === post.category ? 1 : 0;
+        const aBoost = a.category === postMeta.category ? 1 : 0;
+        const bBoost = b.category === postMeta.category ? 1 : 0;
         if (aBoost !== bBoost) return bBoost - aBoost;
         return new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime();
       })
       .slice(0, 3);
-  }, [post]);
+  }, [postMeta]);
 
-  if (!post) {
+  if (!postMeta) {
     return (
       <>
         <main className="min-h-screen bg-slate-50 px-4 py-20">
@@ -59,7 +112,41 @@ const BlogPostPage = () => {
     );
   }
 
-  const categoryMeta = BLOG_CATEGORY_META[post.category];
+  if (loading && !post) {
+    return (
+      <>
+        <main className="min-h-screen bg-slate-50 px-4 py-20">
+          <div className="mx-auto max-w-2xl rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+            <h1 className="text-3xl font-extrabold text-slate-900">Loading post...</h1>
+            <p className="mt-3 text-slate-600">Preparing article content.</p>
+          </div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
+
+  if (loadError || !post) {
+    return (
+      <>
+        <main className="min-h-screen bg-slate-50 px-4 py-20">
+          <div className="mx-auto max-w-2xl rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+            <h1 className="text-3xl font-extrabold text-slate-900">Unable to load post</h1>
+            <p className="mt-3 text-slate-600">Please refresh and try again.</p>
+            <Link
+              to="/blogs"
+              className="mt-6 inline-flex rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+            >
+              Back to Blog
+            </Link>
+          </div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
+
+  const categoryMeta = BLOG_CATEGORY_META[post.category] || BLOG_CATEGORY_META.all;
   const canonicalUrl = post.seo?.canonicalUrl || `https://suitegenie.in/blogs/${post.category}/${post.slug}`;
   const hasFaq = Boolean(post.schema?.faq?.length);
   const readTime = post.readTime || calculateReadTime(post.content);

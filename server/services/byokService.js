@@ -3,6 +3,7 @@
 import { query } from '../config/database.js';
 import { UserApiKeyModel } from '../models/userApiKeyModel.js';
 import { encrypt, decrypt } from '../utils/encryption.js';
+import { getCreditsForPlan } from '../utils/creditTiers.js';
 const BYOK_DEBUG = process.env.BYOK_DEBUG === 'true';
 
 const byokLog = (...args) => {
@@ -11,23 +12,7 @@ const byokLog = (...args) => {
   }
 };
 
-// Credit allocation based on plan and API preference
-// Free: 50 (platform) / 100 (BYOK 2x)
-// Pro: 150 (platform) / 300 (BYOK 2x)
-const CREDIT_TIERS = {
-  free: { platform: 50, byok: 100 },
-  pro: { platform: 150, byok: 300 },
-  enterprise: { platform: 500, byok: 1000 }
-};
-
 const LOCK_PERIOD_DAYS = 90;
-
-// Helper function to get credits based on plan and preference
-function getCreditsForPlan(planType, apiPreference) {
-  const plan = planType || 'free';
-  const pref = apiPreference || 'platform';
-  return CREDIT_TIERS[plan]?.[pref] || CREDIT_TIERS.free.platform;
-}
 
 export const ByokService = {
 

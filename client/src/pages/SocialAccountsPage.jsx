@@ -165,18 +165,18 @@ const SocialAccountsPage = () => {
                     <p className="text-gray-600 mb-8">Connect and manage your social media accounts for team collaboration</p>
                     
                     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-8 max-w-2xl mx-auto">
-                        <h3 className="text-lg font-semibold text-blue-900 mb-4">🚀 Upgrade to Teams for Social Accounts</h3>
+                        <h3 className="text-lg font-semibold text-blue-900 mb-4">Upgrade to Pro for Social Accounts</h3>
                         <p className="text-blue-700 mb-6">
                             Connect up to 8 social media accounts and collaborate with your team on content creation and scheduling.
                         </p>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                             <div className="bg-white rounded-lg p-4 border border-blue-100">
-                                <h4 className="font-semibold text-gray-900 mb-2">📱 Multiple Platforms</h4>
+                                <h4 className="font-semibold text-gray-900 mb-2">Multiple Platforms</h4>
                                 <p className="text-sm text-gray-600">Connect LinkedIn, Twitter, and more platforms</p>
                             </div>
                             <div className="bg-white rounded-lg p-4 border border-blue-100">
-                                <h4 className="font-semibold text-gray-900 mb-2">👥 Team Collaboration</h4>
+                                <h4 className="font-semibold text-gray-900 mb-2">Team Collaboration</h4>
                                 <p className="text-sm text-gray-600">Share accounts with team members based on roles</p>
                             </div>
                         </div>
@@ -185,7 +185,7 @@ const SocialAccountsPage = () => {
                             onClick={() => window.location.href = '/plans'}
                             className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
                         >
-                            Upgrade to Teams
+                            Upgrade to Pro
                         </button>
                     </div>
                 </div>
@@ -256,7 +256,7 @@ const SocialAccountsPage = () => {
                                             {account.account_display_name || account.account_username}
                                         </p>
                                         <p className="text-sm text-gray-600">
-                                            @{account.account_username} • {account.platform}
+                                            @{account.account_username} - {account.platform}
                                         </p>
                                         <p className="text-xs text-gray-500">
                                             Connected by {account.connected_by_name || account.connected_by_email}
@@ -264,12 +264,12 @@ const SocialAccountsPage = () => {
                                         <div className="flex gap-2 text-xs mt-2">
                                             {account.hasOAuth2 && (
                                                 <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                                                    OAuth 2.0 ✓
+                                                    OAuth 2.0 Connected
                                                 </span>
                                             )}
                                             {account.hasOAuth1 && (
                                                 <span className="bg-green-100 text-green-800 px-2 py-1 rounded">
-                                                    Media Upload ✓
+                                                    Media Upload Connected
                                                 </span>
                                             )}
                                             {!account.hasOAuth1 && account.hasOAuth2 && (
@@ -352,11 +352,11 @@ const SocialAccountsPage = () => {
                             <h4 className="font-medium text-gray-900 mb-2">Role-based Access</h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                                 <div>
-                                    <p className="font-medium text-blue-600">👑 Owner & 🛡️ Admin: 8 accounts</p>
+                                    <p className="font-medium text-blue-600">Owner & Admin: 8 accounts</p>
                                     <p className="text-gray-600">Can connect all available social platforms</p>
                                 </div>
                                 <div>
-                                    <p className="font-medium text-green-600">✏️ Editor: 2 accounts</p>
+                                    <p className="font-medium text-green-600">Editor: 2 accounts</p>
                                     <p className="text-gray-600">Limited connections for content creation</p>
                                 </div>
                             </div>

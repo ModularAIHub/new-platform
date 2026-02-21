@@ -20,9 +20,11 @@ export const usePlanAccess = () => {
       setUserPlan(response.data.currentPlan);
       setPlanLimits(response.data.limits);
       setLoading(false);
+      return response.data.currentPlan || null;
     } catch (error) {
       console.error('Failed to fetch plan info:', error);
       setLoading(false);
+      return null;
     }
   };
 
@@ -32,6 +34,7 @@ export const usePlanAccess = () => {
     const featureMap = {
       'bulk_scheduling': userPlan.type !== 'free',
       'advanced_analytics': userPlan.type !== 'free', 
+      'image_generation': userPlan.type !== 'free',
       'multi_accounts': userPlan.type !== 'free',
       'priority_support': userPlan.type !== 'free',
       'team_collaboration': userPlan.type === 'pro' || userPlan.type === 'enterprise',
@@ -54,18 +57,9 @@ export const usePlanAccess = () => {
   };
 
   const upgradeToPro = async () => {
-    try {
-      const response = await api.post('/plans/upgrade', {
-        planType: 'pro'
-      });
-      
-      // Refresh plan info after upgrade
-      await fetchPlanInfo();
-      return response.data;
-    } catch (error) {
-      console.error('Failed to upgrade plan:', error);
-      throw error;
-    }
+    const paymentRequiredError = new Error('Direct upgrades are disabled. Use the paid checkout flow to upgrade.');
+    paymentRequiredError.code = 'PAYMENT_REQUIRED';
+    throw paymentRequiredError;
   };
 
   return {

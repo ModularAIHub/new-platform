@@ -1,0 +1,58 @@
+{
+  "id": "suitegenie-feature-roundup-feb-2026",
+  "title": "SuiteGenie Feature Roundup: What We Shipped and Why It Matters",
+  "slug": "suitegenie-feature-roundup-feb-2026",
+  "category": "updates",
+  "tags": [
+    "suitegenie updates",
+    "tweet genie",
+    "linkedin genie",
+    "strategy builder",
+    "bulk scheduling",
+    "team collaboration"
+  ],
+  "excerpt": "A complete roundup of SuiteGenie features shipped across Twitter, LinkedIn, teams, bulk workflows, analytics, and reliability.",
+  "content": "## Quick Answer\n\nSuiteGenie now gives teams one practical workflow to generate, review, schedule, and analyze content across Twitter and LinkedIn with fewer moving parts.\n\n## What We Shipped\n\n### 1. Tweet Genie and LinkedIn Genie in One Operating System\n- Create posts for both channels from one dashboard\n- Keep account context clear while switching channels\n- Maintain tone consistency without duplicating setup\n\n### 2. Strategy Builder for Better Inputs\n- Build niche, audience, and content-goal context once\n- Generate reusable prompt banks from strategy context\n- Reduce random content and improve message consistency\n\n### 3. Bulk Generation and Bulk Scheduling Controls\n- Bulk generation optimized for predictable batches\n- Scheduling window focused on near-term execution\n- Strong recommendation: generate up to 14 days, then review and refresh\n\n### 4. Team Mode and Approval Workflows\n- Team-aware account context for safer collaboration\n- Role-based operations to reduce accidental posting\n- Approval pipeline for higher-quality publishing\n\n### 5. Credit and Usage Clarity\n- Better visibility into available credits and usage\n- Cleaner feedback loops during AI generation actions\n- More transparent limits and operational guardrails\n\n### 6. Reliability and Data Hygiene\n- Better handling for deleted content states\n- Retention-first cleanup model for safer history behavior\n- Improved service cleanup when accounts are removed\n\n## Why These Updates Matter\n\nMost social teams do not fail on strategy. They fail on execution quality at scale. These updates are built to reduce operational drag, not add new dashboard complexity.\n\n## Who Benefits Most\n- Agencies running multi-account calendars\n- Creators publishing across multiple formats each week\n- Startup teams needing output quality with limited headcount\n",
+  "featuredImage": {
+    "url": "/images/blog/suitegenie-launch-hero.svg",
+    "alt": "SuiteGenie product update board with shipped features list"
+  },
+  "author": {
+    "name": "Kanishk Saraswat",
+    "avatar": "/kanishk.png",
+    "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+    "social": {
+      "linkedin": "kanishk-saraswat",
+      "twitter": "kanishksaraswat"
+    }
+  },
+  "publishDate": "2026-02-15T09:45:00+05:30",
+  "lastModified": "2026-02-15T09:45:00+05:30",
+  "readTime": 7,
+  "featured": true,
+  "status": "published",
+  "seo": {
+    "metaTitle": "SuiteGenie Feature Roundup (Feb 2026): Twitter, LinkedIn, Teams, Strategy",
+    "metaDescription": "Explore everything shipped in SuiteGenie: Tweet Genie, LinkedIn Genie, Strategy Builder, team workflows, bulk scheduling controls, and reliability improvements.",
+    "keywords": [
+      "suitegenie feature roundup",
+      "tweet genie updates",
+      "linkedin genie updates",
+      "social media automation release notes"
+    ],
+    "canonicalUrl": "https://suitegenie.in/blogs/updates/suitegenie-feature-roundup-feb-2026"
+  },
+  "schema": {
+    "type": "Article",
+    "faq": [
+      {
+        "question": "What is the best planning window for bulk content?",
+        "answer": "Use 7 to 14 days for bulk plans, then revisit strategy and refresh prompts based on new performance signals."
+      },
+      {
+        "question": "Can teams review and approve before publishing?",
+        "answer": "Yes. Team workflows support role-based collaboration and approval checkpoints to reduce publishing mistakes."
+      }
+    ]
+  }
+}

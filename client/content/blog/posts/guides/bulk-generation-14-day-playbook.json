@@ -1,0 +1,74 @@
+{
+  "id": "bulk-generation-14-day-playbook",
+  "title": "Bulk Generation Playbook: Plan 14 Days, Not 60",
+  "slug": "bulk-generation-14-day-playbook",
+  "category": "guides",
+  "tags": [
+    "bulk generation",
+    "scheduling",
+    "twitter",
+    "linkedin",
+    "content operations"
+  ],
+  "excerpt": "An in-depth guide to running high-quality bulk generation and scheduling in 14-day cycles for better performance and lower breakage.",
+  "content": "## Why 14 Days Works Better\n\nLong-range bulk plans often break because trends shift, priorities change, and quality drops. A 14-day cycle keeps plans fresh while still saving time.\n\n## Step 1: Start with One Strategy Theme\n- Pick one core campaign objective\n- Define 3 to 5 content angles\n- Keep language and CTA style consistent\n\n## Step 2: Generate a Focused Batch\n- Generate a practical set of prompts, not endless drafts\n- Remove weak drafts immediately\n- Keep only posts that match audience intent\n\n## Step 3: Build a Balanced 14-Day Mix\n- Educational posts\n- Story-led posts\n- Proof and outcomes posts\n- Conversion-oriented posts\n\n## Step 4: Schedule for Twitter and LinkedIn Separately\n- Use platform-specific tone and length\n- Keep posting windows consistent per platform\n- Avoid duplicating the same copy everywhere\n\n## Step 5: Review Mid-Cycle\n- Check engagement and response quality after 7 days\n- Replace weak posts for week two\n- Feed winning patterns back into prompt inputs\n\n## Operating Guardrails\n- Keep queue size manageable\n- Avoid over-automating without review\n- Prefer predictable cadence over random bursts\n\n## Result\n\nYou get strong content velocity with lower operational risk and better learning loops.\n",
+  "featuredImage": {
+    "url": "/images/blog/twitter-automation-guide.svg",
+    "alt": "14-day bulk content planning board for Twitter and LinkedIn"
+  },
+  "author": {
+    "name": "Kanishk Saraswat",
+    "avatar": "/kanishk.png",
+    "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+    "social": {
+      "linkedin": "kanishk-saraswat",
+      "twitter": "kanishksaraswat"
+    }
+  },
+  "publishDate": "2026-02-15T08:15:00+05:30",
+  "lastModified": "2026-02-15T08:15:00+05:30",
+  "readTime": 8,
+  "featured": false,
+  "status": "published",
+  "seo": {
+    "metaTitle": "Bulk Generation Playbook: Why 14-Day Scheduling Beats Long Queues",
+    "metaDescription": "Learn how to run bulk generation and scheduling in 14-day cycles across Twitter and LinkedIn to improve quality, reliability, and execution speed.",
+    "keywords": [
+      "bulk generation social media",
+      "14 day content planning",
+      "twitter linkedin scheduling strategy"
+    ],
+    "canonicalUrl": "https://suitegenie.in/blogs/guides/bulk-generation-14-day-playbook"
+  },
+  "schema": {
+    "type": "HowTo",
+    "steps": [
+      {
+        "name": "Choose one strategy theme",
+        "text": "Define one objective and clear audience intent before generating content."
+      },
+      {
+        "name": "Generate a focused batch",
+        "text": "Create a manageable draft set and remove weak prompts early."
+      },
+      {
+        "name": "Plan a 14-day mix",
+        "text": "Balance education, story, proof, and conversion posts."
+      },
+      {
+        "name": "Schedule per platform",
+        "text": "Adapt format and cadence for Twitter and LinkedIn separately."
+      },
+      {
+        "name": "Review and refresh at day 7",
+        "text": "Replace low-performing posts and improve week-two output."
+      }
+    ],
+    "faq": [
+      {
+        "question": "Why not schedule two months in advance?",
+        "answer": "Long queues reduce flexibility and quality. A 14-day cycle keeps content aligned with current trends and feedback."
+      }
+    ]
+  }
+}

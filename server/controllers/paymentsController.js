@@ -2,6 +2,8 @@ import { query, pool } from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
+import { getCreditsForPlan } from '../utils/creditTiers.js';
+import { invalidateAuthUserCache } from '../middleware/auth.js';
 
 const hasRazorpay = Boolean(process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET && process.env.RAZORPAY_KEY_ID !== 'rzp_test_your_key_id_here');
 const isDemoMode = !hasRazorpay;
@@ -186,6 +188,7 @@ class PaymentsController {
                         );
                         
                         await client.query('COMMIT');
+                        invalidateAuthUserCache(req.user.id);
                         
                         const balanceResult = await query('SELECT credits_remaining FROM users WHERE id = $1', [req.user.id]);
                         
@@ -287,6 +290,7 @@ class PaymentsController {
                         [transactionId, req.user.id, 'purchase', credits, costInRupees, razorpayOrderId, razorpayPaymentId, razorpaySignature, `Credit top-up: ${credits} credits`]
                     );
                     await client.query('COMMIT');
+                    invalidateAuthUserCache(req.user.id);
                     const balanceResult = await query('SELECT credits_remaining FROM users WHERE id = $1', [req.user.id]);
                     return res.json({ message: 'Payment verified and credits added successfully', creditsAdded: credits, creditsRemaining: balanceResult.rows[0].credits_remaining, transactionId });
                 } else if (orderType === 'plan') {
@@ -297,23 +301,42 @@ class PaymentsController {
                     }
                     const costInRupees = order.amount / 100;
                     const planName = order.notes.name || PLAN_PACKAGES[planType].name;
-                    
-                    // Award 150 bonus credits for Pro plan upgrade
-                    const bonusCredits = planType === 'pro' ? 150 : 0;
-                    if (bonusCredits > 0) {
-                        await client.query('UPDATE users SET plan_type = $1, credits_remaining = credits_remaining + $2, updated_at = NOW() WHERE id = $3', [planType, bonusCredits, req.user.id]);
-                    } else {
-                        await client.query('UPDATE users SET plan_type = $1, updated_at = NOW() WHERE id = $2', [planType, req.user.id]);
+
+                    const userStateResult = await client.query(
+                        'SELECT credits_remaining, api_key_preference FROM users WHERE id = $1 FOR UPDATE',
+                        [req.user.id]
+                    );
+                    if (userStateResult.rows.length === 0) {
+                        await client.query('ROLLBACK');
+                        return res.status(404).json({ error: 'User not found', code: 'USER_NOT_FOUND' });
                     }
+
+                    const currentCredits = Number(userStateResult.rows[0].credits_remaining) || 0;
+                    const apiPreference = userStateResult.rows[0].api_key_preference || null;
+                    const targetCredits = getCreditsForPlan(planType, apiPreference, { defaultToPlatform: false });
+                    const newCredits = apiPreference ? Math.max(currentCredits, targetCredits) : currentCredits;
+                    const bonusCredits = Math.max(0, newCredits - currentCredits);
+
+                    await client.query(
+                        'UPDATE users SET plan_type = $1, credits_remaining = $2, updated_at = NOW() WHERE id = $3',
+                        [planType, newCredits, req.user.id]
+                    );
                     
                     const transactionId = uuidv4();
                     await client.query(
                         `INSERT INTO credit_transactions (id, user_id, type, credits_amount, cost_in_rupees, razorpay_order_id, razorpay_payment_id, razorpay_signature, description, created_at)
                          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW())`,
-                        [transactionId, req.user.id, 'purchase', bonusCredits, costInRupees, razorpayOrderId, razorpayPaymentId, razorpaySignature, `Plan upgrade: ${planName}${bonusCredits > 0 ? ` (+${bonusCredits} bonus credits)` : ''}`]
+                        [transactionId, req.user.id, 'purchase', bonusCredits, costInRupees, razorpayOrderId, razorpayPaymentId, razorpaySignature, `Plan upgrade: ${planName}${bonusCredits > 0 ? ` (+${bonusCredits} plan credits)` : ''}`]
                     );
                     await client.query('COMMIT');
-                    return res.json({ message: 'Payment verified and plan upgraded successfully', newPlan: planType, planName, bonusCredits });
+                    invalidateAuthUserCache(req.user.id);
+                    return res.json({
+                        message: 'Payment verified and plan upgraded successfully',
+                        newPlan: planType,
+                        planName,
+                        bonusCredits,
+                        creditsRemaining: newCredits
+                    });
                 }
 
                 await client.query('ROLLBACK');

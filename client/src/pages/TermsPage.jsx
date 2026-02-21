@@ -129,8 +129,7 @@ const TermsPage = () => {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">6. Subscriptions and Plans</h2>
               <p className="text-gray-700 mb-4">
-                {/* Teams plan is currently free. When paid plans are introduced, trial periods may apply. */}
-                Teams plan provides full access to collaboration features. You may use the service according to the limits of your plan.
+                Free and Pro plans provide different usage limits and feature access. Team collaboration features are available on Pro and above.
               </p>
               <p className="text-gray-700 mb-4">
                 Subscriptions automatically renew unless canceled before the renewal date. Refunds are available 

@@ -264,8 +264,8 @@ const ContactPage = () => {
                 </div>
                 
                 <div>
-                  <h4 className="font-semibold text-neutral-900 mb-2">Is the Teams plan free?</h4>
-                  <p className="text-neutral-600 text-sm">Yes! The Teams plan is currently free. You can upgrade and access all team collaboration features without any payment.</p>
+                  <h4 className="font-semibold text-neutral-900 mb-2">Is team collaboration included in Free?</h4>
+                  <p className="text-neutral-600 text-sm">No. Team collaboration is part of the Pro plan. Free users can still use core features and BYOK mode.</p>
                 </div>
               </div>
             </Card>

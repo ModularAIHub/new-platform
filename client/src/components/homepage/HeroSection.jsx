@@ -1,13 +1,19 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Card } from '../ui';
-import { Zap, Users, TrendingUp, Star } from 'lucide-react';
+import { Zap, Users, TrendingUp, Star, PlayCircle } from 'lucide-react';
+import { Twitter, Linkedin, Instagram, Youtube } from 'lucide-react';
 
 const HeroSection = () => {
   const navigate = useNavigate();
 
   const handleGetStarted = () => {
     navigate('/register');
+  };
+
+  const handleWatchDemo = () => {
+    // Redirect to docs/getting started
+    navigate('/docs');
   };
 
 
@@ -23,7 +29,7 @@ const HeroSection = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           {/* Left Content */}
           <div className="text-center lg:text-left animate-fade-in">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-neutral-900 mb-4 leading-tight animate-fade-in animate-stagger-2">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-neutral-900 mb-4 leading-tight animate-fade-in animate-stagger-2">
               Social media automation for agencies and creators with{' '}
               <span className="bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">
                 SuiteGenie
@@ -39,7 +45,7 @@ const HeroSection = () => {
               The all-in-one AI suite for agencies, creators, marketers, and teams. Effortlessly generate, schedule, and manage content across every platform so you can focus on growing your brand.
             </p>
 
-            <div className="flex justify-center lg:justify-start mb-6">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-6">
               <Button
                 variant="primary"
                 size="xl"
@@ -49,6 +55,16 @@ const HeroSection = () => {
                 iconPosition="left"
               >
                 Start Creating for Free
+              </Button>
+              <Button
+                variant="outline"
+                size="xl"
+                onClick={handleWatchDemo}
+                className="border-2 border-primary-600 text-primary-600 hover:bg-primary-50 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                icon={<PlayCircle className="w-5 h-5" />}
+                iconPosition="left"
+              >
+                See How It Works
               </Button>
             </div>
 
@@ -62,7 +78,7 @@ const HeroSection = () => {
                     </div>
                   ))}
                 </div>
-                <span className="text-sm font-medium text-neutral-600 ml-3">Join creators worldwide</span>
+                <span className="text-sm font-medium text-neutral-600 ml-3">Join 100+ creators worldwide</span>
               </div>
               <p className="text-sm text-neutral-500">Trusted by creators, marketers, and growing businesses worldwide</p>
             </div>
@@ -88,6 +104,22 @@ const HeroSection = () => {
                     <div className="flex items-center gap-1">
                       <div className="w-2 h-2 bg-success-500 rounded-full animate-pulse"></div>
                       <span className="text-xs text-success-600 font-medium">Live</span>
+                    </div>
+                  </div>
+
+                  {/* Platform Icons */}
+                  <div className="flex items-center justify-center gap-3 py-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-primary-100">
+                    <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center shadow-sm hover:scale-110 transition-transform">
+                      <Twitter className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-sm hover:scale-110 transition-transform">
+                      <Linkedin className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center shadow-sm hover:scale-110 transition-transform">
+                      <Instagram className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center shadow-sm hover:scale-110 transition-transform">
+                      <Youtube className="w-4 h-4 text-white" />
                     </div>
                   </div>
 
@@ -118,7 +150,7 @@ const HeroSection = () => {
                       <span className="text-sm font-bold text-primary-600">87%</span>
                     </div>
                     <div className="w-full bg-neutral-200 rounded-full h-2">
-                      <div className="bg-gradient-to-r from-primary-500 to-purple-500 h-2 rounded-full transition-all duration-1000" style={{width: '87%'}}></div>
+                      <div className="bg-gradient-to-r from-primary-500 to-purple-500 h-2 rounded-full transition-all duration-1000 animate-pulse" style={{width: '87%'}}></div>
                     </div>
                   </div>
                 </div>

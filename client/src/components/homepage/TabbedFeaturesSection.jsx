@@ -14,7 +14,7 @@ const TabbedFeaturesSection = () => {
       content: (
         <>
           <h3 className="text-3xl font-extrabold mb-4 text-blue-400">Content & Image Generation</h3>
-          <p className="text-lg text-gray-200 mb-2">Generate engaging posts and stunning images for all your channels. SuiteGenie helps you create scroll-stopping content and visuals in seconds—no design or writing skills needed.</p>
+          <p className="text-lg text-gray-200 mb-2">Generate engaging posts and stunning images for all your channels. SuiteGenie helps you create scroll-stopping content and visuals in seconds. No design or writing skills needed.</p>
         </>
       )
     },
@@ -28,7 +28,21 @@ const TabbedFeaturesSection = () => {
       content: (
         <>
           <h3 className="text-3xl font-extrabold mb-4 text-green-400">Engagement Analytics</h3>
-          <p className="text-lg text-gray-200 mb-2">Track likes, comments, and engagement for every post. See what works, when your audience is most active, and optimize your strategy with real data—no guesswork. Discover the best times to post based on real engagement, so you always publish at the perfect moment.</p>
+          <p className="text-lg text-gray-200 mb-2">Track likes, comments, and engagement for every post. See what works, when your audience is most active, and optimize your strategy with real data. No guesswork. Discover the best times to post based on real engagement, so you always publish at the perfect moment.</p>
+        </>
+      )
+    },
+    {
+      id: 'strategy',
+      label: 'Strategy Builder',
+      desc: 'AI-powered content strategies based on your analytics.',
+      icon: (
+        <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+      ),
+      content: (
+        <>
+          <h3 className="text-3xl font-extrabold mb-4 text-purple-400">Strategy Builder</h3>
+          <p className="text-lg text-gray-200 mb-2">AI analyzes your performance data and generates personalized content strategies. Get custom prompts, optimal posting times, and content recommendations based on what actually works for your audience.</p>
         </>
       )
     },
@@ -51,12 +65,12 @@ const TabbedFeaturesSection = () => {
       label: 'Bulk Scheduling',
       desc: 'Plan and schedule dozens of posts in one go.',
       icon: (
-        <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
+        <svg className="w-6 h-6 text-pink-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
       ),
       content: (
         <>
-          <h3 className="text-3xl font-extrabold mb-4 text-purple-400">Bulk Scheduling</h3>
-          <p className="text-lg text-gray-200 mb-2">Create and schedule dozens of posts in one go. SuiteGenie makes it easy to plan campaigns, fill your calendar, and stay consistent—no more manual posting.</p>
+          <h3 className="text-3xl font-extrabold mb-4 text-pink-400">Bulk Scheduling</h3>
+          <p className="text-lg text-gray-200 mb-2">Create and schedule dozens of posts in one go. SuiteGenie makes it easy to plan campaigns, fill your calendar, and stay consistent. No more manual posting.</p>
         </>
       )
     }
@@ -76,24 +90,29 @@ const TabbedFeaturesSection = () => {
             Explore What SuiteGenie Can Do
           </h2>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
-            Everything you need to create, analyze, and schedule content—faster and smarter than ever before.
+            Everything you need to create, analyze, and schedule content faster and smarter than ever before.
           </p>
         </div>
 
         {/* Tab Navigation */}
         <div className="flex justify-center mb-12">
-          <div className="bg-gray-800/80 backdrop-blur-sm p-3 rounded-2xl border border-gray-600/50 shadow-2xl w-full max-w-4xl">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="bg-gray-800/80 backdrop-blur-sm p-3 rounded-2xl border border-gray-600/50 shadow-2xl w-full max-w-6xl">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-3 px-4 py-4 rounded-xl font-medium transition-all duration-200 text-left group focus:outline-none focus:ring-2 focus:ring-blue-400
+                  className={`flex items-center gap-3 px-4 py-4 rounded-xl font-medium transition-all duration-200 text-left group focus:outline-none focus:ring-2 focus:ring-blue-400 relative
                     ${activeTab === tab.id
                       ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg transform scale-[1.02]'
                       : 'text-gray-300 hover:text-white hover:bg-gray-700/50 hover:transform hover:scale-[1.01]'}
                   `}
                 >
+                  {tab.badge && (
+                    <span className="absolute -top-2 -right-2 px-2 py-0.5 bg-yellow-500 text-yellow-900 text-[10px] font-bold rounded-full">
+                      {tab.badge}
+                    </span>
+                  )}
                   <div className={`p-2 rounded-lg transition-colors ${activeTab === tab.id ? 'bg-white/20' : 'bg-gray-700/50 group-hover:bg-gray-600/50'}`}>
                     {tab.icon}
                   </div>
@@ -160,6 +179,26 @@ const TabbedFeaturesSection = () => {
                   </>
                 )}
                 
+                {activeTab === 'strategy' && (
+                  <>
+                    <div className="bg-purple-500/10 rounded-xl p-4 border border-purple-500/20">
+                      <div className="text-2xl mb-2">🧠</div>
+                      <div className="text-sm font-medium text-purple-300">Analytics-Based Insights</div>
+                      <div className="text-xs text-gray-400 mt-1">AI learns from your data</div>
+                    </div>
+                    <div className="bg-purple-500/10 rounded-xl p-4 border border-purple-500/20">
+                      <div className="text-2xl mb-2">✍️</div>
+                      <div className="text-sm font-medium text-purple-300">Custom Content Prompts</div>
+                      <div className="text-xs text-gray-400 mt-1">Tailored to your audience</div>
+                    </div>
+                    <div className="bg-purple-500/10 rounded-xl p-4 border border-purple-500/20">
+                      <div className="text-2xl mb-2">🚀</div>
+                      <div className="text-sm font-medium text-purple-300">Performance Optimization</div>
+                      <div className="text-xs text-gray-400 mt-1">Data-driven recommendations</div>
+                    </div>
+                  </>
+                )}
+                
                 {activeTab === 'byok' && (
                   <>
                     <div className="bg-orange-500/10 rounded-xl p-4 border border-orange-500/20">
@@ -182,19 +221,19 @@ const TabbedFeaturesSection = () => {
                 
                 {activeTab === 'bulk' && (
                   <>
-                    <div className="bg-purple-500/10 rounded-xl p-4 border border-purple-500/20">
+                    <div className="bg-pink-500/10 rounded-xl p-4 border border-pink-500/20">
                       <div className="text-2xl mb-2">🚀</div>
-                      <div className="text-sm font-medium text-purple-300">Bulk Power</div>
+                      <div className="text-sm font-medium text-pink-300">Bulk Power</div>
                       <div className="text-xs text-gray-400 mt-1">Create dozens at once</div>
                     </div>
-                    <div className="bg-purple-500/10 rounded-xl p-4 border border-purple-500/20">
+                    <div className="bg-pink-500/10 rounded-xl p-4 border border-pink-500/20">
                       <div className="text-2xl mb-2">📋</div>
-                      <div className="text-sm font-medium text-purple-300">Campaign Ready</div>
+                      <div className="text-sm font-medium text-pink-300">Campaign Ready</div>
                       <div className="text-xs text-gray-400 mt-1">Plan entire campaigns</div>
                     </div>
-                    <div className="bg-purple-500/10 rounded-xl p-4 border border-purple-500/20">
+                    <div className="bg-pink-500/10 rounded-xl p-4 border border-pink-500/20">
                       <div className="text-2xl mb-2">⏰</div>
-                      <div className="text-sm font-medium text-purple-300">Time Saver</div>
+                      <div className="text-sm font-medium text-pink-300">Time Saver</div>
                       <div className="text-xs text-gray-400 mt-1">Hours of work in minutes</div>
                     </div>
                   </>

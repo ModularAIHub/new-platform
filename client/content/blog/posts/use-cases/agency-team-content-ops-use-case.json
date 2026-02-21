@@ -1,0 +1,51 @@
+{
+  "id": "team-content-ops-use-case",
+  "title": "How Agency Teams Use SuiteGenie for Multi-Account Content Ops",
+  "slug": "agency-team-content-ops-use-case",
+  "category": "use-cases",
+  "tags": [
+    "agency workflow",
+    "team collaboration",
+    "approval workflow",
+    "multi-account"
+  ],
+  "excerpt": "See a practical agency workflow for planning, approvals, bulk generation, and scheduling across multiple client accounts.",
+  "content": "## The Real Agency Problem\n\nTeams rarely fail because they cannot write. They fail because approvals, context switching, and scheduling handoffs create daily bottlenecks.\n\n## A Practical Team Workflow\n\n### Stage 1: Strategy and Prompt Setup\n- Set audience and positioning in Strategy Builder\n- Create reusable prompt sets by client niche\n\n### Stage 2: Batch Generation\n- Generate a controlled content batch\n- Split drafts by campaign and funnel stage\n\n### Stage 3: Internal Review\n- Reviewer checks message clarity and brand fit\n- Team lead approves final queue\n\n### Stage 4: Scheduling Execution\n- Assign platform-specific timing for Twitter and LinkedIn\n- Keep a 14-day operating window for flexibility\n\n### Stage 5: Weekly Performance Review\n- Keep what performs\n- Rewrite what underperforms\n- Update prompt templates with observed winners\n\n## Why This Model Scales\n- Lower coordination overhead\n- Fewer accidental posts\n- Faster turnaround for client campaigns\n\n## Best Fit\n- Agencies managing multiple clients\n- Small teams that need predictable publishing velocity\n",
+  "featuredImage": {
+    "url": "/images/blog/suitegenie-launch-hero.svg",
+    "alt": "Agency team content operations board with approvals and scheduling lanes"
+  },
+  "author": {
+    "name": "Kanishk Saraswat",
+    "avatar": "/kanishk.png",
+    "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+    "social": {
+      "linkedin": "kanishk-saraswat",
+      "twitter": "kanishksaraswat"
+    }
+  },
+  "publishDate": "2026-02-15T07:20:00+05:30",
+  "lastModified": "2026-02-15T07:20:00+05:30",
+  "readTime": 7,
+  "featured": false,
+  "status": "published",
+  "seo": {
+    "metaTitle": "Agency Team Workflow: Multi-Account Content Ops with SuiteGenie",
+    "metaDescription": "A complete use-case guide for agencies using SuiteGenie to run strategy, approvals, bulk generation, and scheduling across client accounts.",
+    "keywords": [
+      "agency social media workflow",
+      "multi account content operations",
+      "team approval social media"
+    ],
+    "canonicalUrl": "https://suitegenie.in/blogs/use-cases/agency-team-content-ops-use-case"
+  },
+  "schema": {
+    "type": "Article",
+    "faq": [
+      {
+        "question": "How often should agencies review generated content?",
+        "answer": "Run at least one weekly review cycle and one mid-cycle quality check to keep messaging sharp."
+      }
+    ]
+  }
+}

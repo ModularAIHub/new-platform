@@ -26,6 +26,15 @@ const migrations = [
     `
   },
   {
+    version: 13,
+    name: 'drop_two_factor_columns',
+    sql: `
+      ALTER TABLE users
+        DROP COLUMN IF EXISTS two_factor_enabled,
+        DROP COLUMN IF EXISTS two_factor_secret;
+    `
+  },
+  {
     version: 2,
     name: 'create_users_table',
     sql: `
@@ -35,10 +44,8 @@ const migrations = [
         password_hash VARCHAR(255) NOT NULL,
         name VARCHAR(255) NOT NULL,
         plan_type VARCHAR(50) DEFAULT 'free' CHECK (plan_type IN ('free', 'pro', 'enterprise')),
-  credits_remaining NUMERIC(10,2) DEFAULT 0,
+        credits_remaining NUMERIC(10,2) DEFAULT 0,
         notification_email_enabled BOOLEAN DEFAULT true,
-        two_factor_enabled BOOLEAN DEFAULT false,
-        two_factor_secret TEXT,
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
       );
@@ -186,6 +193,92 @@ const migrations = [
       CREATE INDEX IF NOT EXISTS idx_social_accounts_workspace ON social_accounts(workspace_id);
       CREATE INDEX IF NOT EXISTS idx_social_accounts_platform ON social_accounts(platform);
       CREATE UNIQUE INDEX IF NOT EXISTS idx_social_accounts_unique ON social_accounts(workspace_id, platform, account_id) WHERE is_active = true;
+    `
+  },
+  {
+    version: 18,
+    name: 'restructure_credit_tiers_and_cleanup_two_factor_columns',
+    sql: `
+      -- Safety: some environments may not have all prior credit migrations.
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS last_credit_reset TIMESTAMP;
+      ALTER TABLE teams ADD COLUMN IF NOT EXISTS credits_remaining INTEGER DEFAULT 0;
+      ALTER TABLE teams ADD COLUMN IF NOT EXISTS last_credit_reset TIMESTAMP;
+      ALTER TABLE teams ADD COLUMN IF NOT EXISTS plan_type VARCHAR(50) DEFAULT 'pro';
+
+      -- Normalize legacy null plan types so free-tier users are explicitly marked.
+      UPDATE users
+      SET
+        plan_type = 'free',
+        updated_at = NOW()
+      WHERE plan_type IS NULL;
+
+      UPDATE users
+      SET
+        credits_remaining = CASE
+          WHEN plan_type = 'free' AND api_key_preference = 'platform' THEN 15
+          WHEN plan_type = 'free' AND api_key_preference = 'byok' THEN 75
+          WHEN plan_type = 'pro' AND api_key_preference = 'platform' THEN 100
+          WHEN plan_type = 'pro' AND api_key_preference = 'byok' THEN 200
+          WHEN plan_type = 'enterprise' AND api_key_preference = 'platform' THEN 500
+          WHEN plan_type = 'enterprise' AND api_key_preference = 'byok' THEN 1000
+          ELSE credits_remaining
+        END,
+        last_credit_reset = NOW(),
+        updated_at = NOW()
+      WHERE api_key_preference IS NOT NULL;
+
+      UPDATE teams t
+      SET
+        credits_remaining = CASE
+          WHEN u.plan_type = 'pro' AND u.api_key_preference = 'platform' THEN 100
+          WHEN u.plan_type = 'pro' AND u.api_key_preference = 'byok' THEN 200
+          WHEN u.plan_type = 'enterprise' AND u.api_key_preference = 'platform' THEN 500
+          WHEN u.plan_type = 'enterprise' AND u.api_key_preference = 'byok' THEN 1000
+          ELSE COALESCE(t.credits_remaining, 0)
+        END,
+        plan_type = COALESCE(u.plan_type, t.plan_type, 'pro'),
+        last_credit_reset = NOW(),
+        updated_at = NOW()
+      FROM users u
+      WHERE t.owner_id = u.id;
+
+      ALTER TABLE users
+        DROP COLUMN IF EXISTS two_factor_enabled,
+        DROP COLUMN IF EXISTS two_factor_secret;
+    `
+  },
+  {
+    version: 19,
+    name: 'increase_free_platform_credits_to_15',
+    sql: `
+      UPDATE users
+      SET
+        plan_type = COALESCE(plan_type, 'free'),
+        credits_remaining = CASE
+          WHEN COALESCE(plan_type, 'free') = 'free' AND api_key_preference = 'platform' THEN 15
+          WHEN COALESCE(plan_type, 'free') = 'free' AND api_key_preference = 'byok' THEN 75
+          ELSE credits_remaining
+        END,
+        last_credit_reset = NOW(),
+        updated_at = NOW()
+      WHERE api_key_preference IN ('platform', 'byok');
+
+      UPDATE teams t
+      SET
+        credits_remaining = CASE
+          WHEN COALESCE(u.plan_type, 'free') = 'free' AND u.api_key_preference = 'platform' THEN 15
+          WHEN COALESCE(u.plan_type, 'free') = 'free' AND u.api_key_preference = 'byok' THEN 75
+          WHEN u.plan_type = 'pro' AND u.api_key_preference = 'platform' THEN 100
+          WHEN u.plan_type = 'pro' AND u.api_key_preference = 'byok' THEN 200
+          WHEN u.plan_type = 'enterprise' AND u.api_key_preference = 'platform' THEN 500
+          WHEN u.plan_type = 'enterprise' AND u.api_key_preference = 'byok' THEN 1000
+          ELSE COALESCE(t.credits_remaining, 0)
+        END,
+        plan_type = COALESCE(u.plan_type, t.plan_type, 'pro'),
+        last_credit_reset = NOW(),
+        updated_at = NOW()
+      FROM users u
+      WHERE t.owner_id = u.id AND u.api_key_preference IN ('platform', 'byok');
     `
   }
 ];

@@ -1,0 +1,46 @@
+{
+  "id": "suitegenie-launch-2026",
+  "title": "Introducing SuiteGenie: AI-Powered Social Media Automation",
+  "slug": "introducing-suitegenie-ai-powered-social-media-automation",
+  "category": "updates",
+  "tags": [
+    "suitegenie",
+    "product update",
+    "social media automation",
+    "launch"
+  ],
+  "excerpt": "SuiteGenie is now live. Learn how our AI-first platform helps teams ship better content, faster, with automation that actually scales.",
+  "content": "## Why We Built SuiteGenie\n\nSocial media teams are expected to publish more, respond faster, and prove ROI every week. Most tools still force teams to piece everything together manually.\n\nSuiteGenie was built to remove that friction. Our goal is simple: help agencies and creators produce high-quality social content without spending their entire week in dashboards.\n\n## What You Can Do Today\n\n- Generate platform-specific post ideas in minutes\n- Schedule content in bulk across your workflow\n- Manage team access and collaboration safely\n- Track engagement with clear performance views\n- Use BYOK or platform-managed AI credits based on your plan\n\n## Product Pillars\n\n### 1. Content Velocity Without Quality Loss\nYou can generate draft sets quickly, then edit and schedule with human oversight.\n\n### 2. Operational Clarity\nYour team sees exactly what is going live, who owns it, and what is pending approval.\n\n### 3. Practical Cost Control\nCredits, plan tiers, and usage are visible so teams can forecast and scale confidently.\n\n## Who We Built This For\n\n- Digital marketing agencies managing multiple clients\n- Content creators running lean publishing systems\n- Startup growth teams with tight resources\n\n## What Is Next\n\nOver the next releases we are focused on:\n\n1. Deeper analytics and trend-based recommendations\n2. Better team collaboration workflows\n3. Faster publishing pipelines for multi-account teams\n\nIf you are already using SuiteGenie, thank you. If not, this is the best time to start. We are shipping fast and building with user feedback every week.",
+  "featuredImage": {
+    "url": "/images/blog/suitegenie-launch-hero.svg",
+    "alt": "SuiteGenie launch banner with social media automation dashboard"
+  },
+  "author": {
+    "name": "Kanishk Saraswat",
+    "avatar": "/kanishk.png",
+    "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+    "social": {
+      "linkedin": "kanishk-saraswat",
+      "twitter": "kanishksaraswat"
+    }
+  },
+  "publishDate": "2026-02-14T20:00:00+05:30",
+  "lastModified": "2026-02-14T20:00:00+05:30",
+  "readTime": 6,
+  "featured": true,
+  "status": "published",
+  "seo": {
+    "metaTitle": "Introducing SuiteGenie: AI-Powered Social Media Automation",
+    "metaDescription": "SuiteGenie is live. See how agencies and creators automate social publishing, scheduling, and collaboration with AI-powered workflows.",
+    "keywords": [
+      "suitegenie launch",
+      "social media automation platform",
+      "ai social media management"
+    ],
+    "canonicalUrl": "https://suitegenie.in/blogs/updates/introducing-suitegenie-ai-powered-social-media-automation"
+  },
+  "schema": {
+    "type": "Article",
+    "faq": []
+  }
+}

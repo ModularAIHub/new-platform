@@ -1,28 +1,32 @@
 import { query } from '../config/database.js';
+import { CREDIT_TIERS, getCreditsForPlan } from '../utils/creditTiers.js';
+import { invalidateAuthUserCache } from '../middleware/auth.js';
 
 // Plan configurations
-// Credits: Platform API / BYOK (2x multiplier)
 const PLAN_LIMITS = {
     free: {
-        credits: 50, // 100 with BYOK (2x)
+        platformCredits: CREDIT_TIERS.free.platform,
+        byokCredits: CREDIT_TIERS.free.byok,
         profilesPerPlatform: 1,
         totalSocialAccounts: 2,
         features: ['basic_ai_generation', 'built_in_keys', 'own_keys'],
         support: 'community'
     },
     pro: {
-        credits: 150, // 300 with BYOK (2x)
+        platformCredits: CREDIT_TIERS.pro.platform,
+        byokCredits: CREDIT_TIERS.pro.byok,
         profilesPerPlatform: 8,
         totalSocialAccounts: 8,
-        features: ['basic_ai_generation', 'built_in_keys', 'own_keys', 'team_collaboration', 'bulk_scheduling', 'advanced_analytics', 'priority_email_support'],
+        features: ['basic_ai_generation', 'image_generation', 'built_in_keys', 'own_keys', 'team_collaboration', 'bulk_scheduling', 'advanced_analytics', 'priority_email_support'],
         support: 'priority_email',
         teamMembers: 5 // max team size including owner
     },
     enterprise: {
-        credits: 500, // 1000 with BYOK (2x)
+        platformCredits: CREDIT_TIERS.enterprise.platform,
+        byokCredits: CREDIT_TIERS.enterprise.byok,
         profilesPerPlatform: 15,
         totalSocialAccounts: 25,
-        features: ['basic_ai_generation', 'built_in_keys', 'own_keys', 'team_collaboration', 'bulk_scheduling', 'advanced_analytics', 'priority_support', 'custom_integrations'],
+        features: ['basic_ai_generation', 'image_generation', 'built_in_keys', 'own_keys', 'team_collaboration', 'bulk_scheduling', 'advanced_analytics', 'priority_support', 'custom_integrations'],
         support: 'priority',
         teamMembers: 15
     }
@@ -46,26 +50,60 @@ function isTransientDbError(error) {
 
 function getRequiredPlanForFeature(featureName) {
     const featurePlanMap = {
-        team_collaboration: 'enterprise',
-        priority_support: 'enterprise',
+        team_collaboration: 'pro',
+        priority_support: 'pro',
         email_support: 'pro',
+        image_generation: 'pro',
         bulk_scheduling: 'pro',
         advanced_analytics: 'pro'
     };
     return featurePlanMap[featureName] || 'free';
 }
 
+function getPlanPrice(planType) {
+    if (planType === 'free') return 0;
+    if (planType === 'pro') return 399;
+    return 1100;
+}
+
+function toNumber(value, fallback = 0) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function buildPlanPayload(planType) {
+    const planConfig = PLAN_LIMITS[planType] || PLAN_LIMITS.free;
+
+    return {
+        type: planType,
+        name: planType.charAt(0).toUpperCase() + planType.slice(1),
+        credits: planConfig.platformCredits,
+        platformCredits: planConfig.platformCredits,
+        byokCredits: planConfig.byokCredits,
+        bonusCredits: planConfig.byokCredits,
+        profilesPerPlatform: planConfig.profilesPerPlatform,
+        totalSocialAccounts: planConfig.totalSocialAccounts,
+        features: planConfig.features,
+        support: planConfig.support,
+        teamMembers: planConfig.teamMembers || 0,
+        price: getPlanPrice(planType)
+    };
+}
+
 class PlansController {
     static async getLimits(req, res) {
         try {
-            const result = await query('SELECT plan_type, credits_remaining, current_team_id FROM users WHERE id = $1', [req.user.id]);
+            const result = await query(
+                'SELECT plan_type, credits_remaining, current_team_id, api_key_preference FROM users WHERE id = $1',
+                [req.user.id]
+            );
             if (result.rows.length === 0) {
                 return res.status(404).json({ error: 'User not found', code: 'USER_NOT_FOUND' });
             }
 
             const user = result.rows[0];
             // Default to 'free' if plan_type is null
-            let userPlanType = user.plan_type || 'free';
+            const userPlanType = PLAN_LIMITS[user.plan_type] ? user.plan_type : 'free';
             
             // Check if user is part of a Pro/Enterprise team
             let teamPlanType = null;
@@ -85,19 +123,18 @@ class PlansController {
 
             const apiKeysResult = await query('SELECT COUNT(*) as key_count FROM user_api_keys WHERE user_id = $1 AND is_active = true', [req.user.id]);
             const hasOwnKeys = parseInt(apiKeysResult.rows[0].key_count) > 0;
-            let effectiveCredits = planConfig.credits;
-            if (hasOwnKeys && effectivePlanType !== 'free') {
-                if (effectivePlanType === 'pro') effectiveCredits = 250;
-                else if (effectivePlanType === 'enterprise') effectiveCredits = 750;
-            }
+            const effectiveCredits = getCreditsForPlan(effectivePlanType, user.api_key_preference, { defaultToPlatform: false });
 
             res.json({
                 currentPlan: {
                     type: effectivePlanType,
                     name: effectivePlanType.charAt(0).toUpperCase() + effectivePlanType.slice(1),
-                    creditsRemaining: user.credits_remaining,
+                    creditsRemaining: toNumber(user.credits_remaining, 0),
                     effectiveCredits,
+                    platformCredits: planConfig.platformCredits,
+                    byokCredits: planConfig.byokCredits,
                     hasOwnKeys,
+                    apiKeyPreference: user.api_key_preference || null,
                     individualPlan: userPlanType,
                     teamPlan: teamPlanType,
                     hasTeamAccess: teamPlanType && (teamPlanType === 'pro' || teamPlanType === 'enterprise')
@@ -109,32 +146,26 @@ class PlansController {
                 },
                 features: planConfig.features,
                 support: planConfig.support,
-                availablePlans: Object.keys(PLAN_LIMITS).map((planType) => ({
-                    type: planType,
-                    name: planType.charAt(0).toUpperCase() + planType.slice(1),
-                    credits: PLAN_LIMITS[planType].credits,
-                    bonusCredits: planType === 'pro' ? 250 : planType === 'enterprise' ? 750 : 25,
-                    profilesPerPlatform: PLAN_LIMITS[planType].profilesPerPlatform,
-                    totalSocialAccounts: PLAN_LIMITS[planType].totalSocialAccounts,
-                    features: PLAN_LIMITS[planType].features,
-                    support: PLAN_LIMITS[planType].support,
-                    teamMembers: PLAN_LIMITS[planType].teamMembers || 0,
-                    price: planType === 'free' ? 0 : planType === 'pro' ? 399 : 1100
-                }))
+                availablePlans: Object.keys(PLAN_LIMITS).map((planType) => buildPlanPayload(planType))
             });
         } catch (error) {
             if (isTransientDbError(error)) {
                 console.warn('Transient DB error in getLimits, returning degraded response:', error?.message || error);
-                const fallbackPlanType = req.user?.plan_type || req.user?.planType || 'free';
+                const rawFallbackPlanType = req.user?.plan_type || req.user?.planType || 'free';
+                const fallbackPlanType = PLAN_LIMITS[rawFallbackPlanType] ? rawFallbackPlanType : 'free';
                 const planConfig = PLAN_LIMITS[fallbackPlanType] || PLAN_LIMITS.free;
+                const fallbackPreference = req.user?.api_key_preference || req.user?.apiKeyPreference || null;
 
                 return res.json({
                     currentPlan: {
                         type: fallbackPlanType,
                         name: fallbackPlanType.charAt(0).toUpperCase() + fallbackPlanType.slice(1),
-                        creditsRemaining: Number(req.user?.credits_remaining || req.user?.creditsRemaining || 0),
-                        effectiveCredits: planConfig.credits,
+                        creditsRemaining: toNumber(req.user?.credits_remaining || req.user?.creditsRemaining, 0),
+                        effectiveCredits: getCreditsForPlan(fallbackPlanType, fallbackPreference, { defaultToPlatform: false }),
+                        platformCredits: planConfig.platformCredits,
+                        byokCredits: planConfig.byokCredits,
                         hasOwnKeys: false,
+                        apiKeyPreference: fallbackPreference,
                         individualPlan: fallbackPlanType,
                         teamPlan: null,
                         hasTeamAccess: false,
@@ -147,18 +178,7 @@ class PlansController {
                     },
                     features: planConfig.features,
                     support: planConfig.support,
-                    availablePlans: Object.keys(PLAN_LIMITS).map((planType) => ({
-                        type: planType,
-                        name: planType.charAt(0).toUpperCase() + planType.slice(1),
-                        credits: PLAN_LIMITS[planType].credits,
-                        bonusCredits: planType === 'pro' ? 250 : planType === 'enterprise' ? 750 : 25,
-                        profilesPerPlatform: PLAN_LIMITS[planType].profilesPerPlatform,
-                        totalSocialAccounts: PLAN_LIMITS[planType].totalSocialAccounts,
-                        features: PLAN_LIMITS[planType].features,
-                        support: PLAN_LIMITS[planType].support,
-                        teamMembers: PLAN_LIMITS[planType].teamMembers || 0,
-                        price: planType === 'free' ? 0 : planType === 'pro' ? 399 : 1100
-                    }))
+                    availablePlans: Object.keys(PLAN_LIMITS).map((planType) => buildPlanPayload(planType))
                 });
             }
 
@@ -170,16 +190,30 @@ class PlansController {
     static async upgradePlan(req, res) {
         try {
             const { planType, isTrial } = req.body;
-            const currentResult = await query('SELECT plan_type, credits_remaining, trial_ends_at FROM users WHERE id = $1', [req.user.id]);
+            if (!PLAN_LIMITS[planType]) {
+                return res.status(400).json({ error: 'Invalid plan type', code: 'INVALID_PLAN_TYPE' });
+            }
+            if (!isTrial) {
+                return res.status(402).json({
+                    error: 'Direct upgrades are disabled. Please complete payment to upgrade your plan.',
+                    code: 'PAYMENT_REQUIRED'
+                });
+            }
+
+            const currentResult = await query(
+                'SELECT plan_type, credits_remaining, trial_ends_at, api_key_preference FROM users WHERE id = $1',
+                [req.user.id]
+            );
             if (currentResult.rows.length === 0) {
                 return res.status(404).json({ error: 'User not found', code: 'USER_NOT_FOUND' });
             }
-            const currentPlan = currentResult.rows[0].plan_type;
-            const currentCredits = Number(currentResult.rows[0].credits_remaining);
+            const currentPlan = currentResult.rows[0].plan_type || 'free';
+            const currentCredits = toNumber(currentResult.rows[0].credits_remaining, 0);
+            const currentPreference = currentResult.rows[0].api_key_preference || null;
             const existingTrialEndsAt = currentResult.rows[0].trial_ends_at;
             
             // Don't allow upgrade if already on enterprise
-            if (currentPlan === 'enterprise') {
+            if (currentPlan === 'enterprise' && planType === 'enterprise') {
                 return res.status(400).json({ error: 'Already on highest plan', code: 'ALREADY_HIGHEST_PLAN' });
             }
             
@@ -189,11 +223,9 @@ class PlansController {
             }
             
             const newPlanConfig = PLAN_LIMITS[planType];
-            let bonusCredits = 0;
-            if (planType === 'pro' && isTrial) bonusCredits = 150; // Pro trial gets 150 credits
-            else if (planType === 'pro' && !isTrial) bonusCredits = 150; // Paid Pro upgrade gets 150 credits
-            else if (planType === 'enterprise') bonusCredits = 500;
-            const newCredits = currentCredits + bonusCredits;
+            const targetCredits = getCreditsForPlan(planType, currentPreference, { defaultToPlatform: false });
+            const newCredits = currentPreference ? Math.max(currentCredits, targetCredits) : currentCredits;
+            const bonusCredits = Math.max(0, newCredits - currentCredits);
             
             // Set trial end date if this is a trial upgrade
             let trialEndsAt = existingTrialEndsAt;
@@ -211,6 +243,7 @@ class PlansController {
                 await query('UPDATE users SET plan_type = $1, credits_remaining = $2, updated_at = NOW() WHERE id = $3', 
                     [planType, newCredits, req.user.id]);
             }
+            invalidateAuthUserCache(req.user.id);
             
             res.json({
                 message: isTrial ? 'Pro trial activated successfully' : 'Plan upgraded successfully',
@@ -219,6 +252,8 @@ class PlansController {
                     name: planType.charAt(0).toUpperCase() + planType.slice(1),
                     creditsRemaining: newCredits,
                     bonusCredits,
+                    platformCredits: newPlanConfig.platformCredits,
+                    byokCredits: newPlanConfig.byokCredits,
                     features: newPlanConfig.features,
                     support: newPlanConfig.support,
                     isTrial: isTrial || false,
@@ -240,9 +275,11 @@ class PlansController {
                 return {
                     type: planType,
                     name: planType.charAt(0).toUpperCase() + planType.slice(1),
-                    price: planType === 'free' ? 0 : planType === 'pro' ? 399 : 1100,
-                    credits: plan.credits,
-                    bonusCredits: planType === 'pro' ? 250 : planType === 'enterprise' ? 750 : 25,
+                    price: getPlanPrice(planType),
+                    credits: plan.platformCredits,
+                    platformCredits: plan.platformCredits,
+                    byokCredits: plan.byokCredits,
+                    bonusCredits: plan.byokCredits,
                     profilesPerPlatform: plan.profilesPerPlatform,
                     totalSocialAccounts: plan.totalSocialAccounts,
                     features: plan.features,
@@ -266,7 +303,7 @@ class PlansController {
             if (result.rows.length === 0) {
                 return res.status(404).json({ error: 'User not found', code: 'USER_NOT_FOUND' });
             }
-            const planType = result.rows[0].plan_type;
+            const planType = PLAN_LIMITS[result.rows[0].plan_type] ? result.rows[0].plan_type : 'free';
             const planConfig = PLAN_LIMITS[planType] || PLAN_LIMITS.free;
             const hasAccess = planConfig.features.includes(featureName);
             res.json({ feature: featureName, hasAccess, planType, requiredPlan: hasAccess ? planType : getRequiredPlanForFeature(featureName) });

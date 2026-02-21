@@ -50,29 +50,6 @@ const DashboardPage = () => {
         }
     }
 
-    // Test function to upgrade to Teams plan
-    const handleTestUpgrade = async () => {
-        if (userPlan?.type === 'pro') {
-            alert('You are already on Teams plan!');
-            return;
-        }
-        
-        try {
-            setSubmitting(true);
-            const response = await api.post('/plans/upgrade', { planType: 'pro' });
-            if (response.data) {
-                alert(`Successfully upgraded to ${response.data.newPlan.name} plan! You now have ${response.data.newPlan.creditsRemaining} credits.`);
-                // Refresh the page to show updated plan
-                window.location.reload();
-            }
-        } catch (error) {
-            console.error('Upgrade error:', error);
-            alert('Upgrade failed: ' + (error.response?.data?.error || error.message));
-        } finally {
-            setSubmitting(false);
-        }
-    }
-
     useEffect(() => {
         if (hasFetchedPreferenceRef.current) return
         hasFetchedPreferenceRef.current = true
@@ -165,9 +142,9 @@ const DashboardPage = () => {
         try {
             if (pref === 'platform') {
                 if (window.confirm('Are you sure you want to use Platform Keys? This choice will be locked for 3 months.')) {
-                    await api.post('/byok/preference', { preference: pref })
+                    const response = await api.post('/byok/preference', { preference: pref })
                     setPreference(pref)
-                    setCreditTier(25)
+                    setCreditTier(response?.data?.credits ?? 0)
                     setShowPrefModal(false)
                     window.location.reload(); // Force reload to reflect mode and unlock navigation
                 } else {
@@ -230,12 +207,12 @@ const DashboardPage = () => {
                             <CardHeader className="text-center">
                                 <CardTitle className="text-2xl text-primary-900">Choose Your AI Key Mode</CardTitle>
                                 <CardDescription className="text-base">
-                                    Select how you want to use AI features. You can use platform keys (50 Free / 150 Teams) or bring your own (BYOK with 2x credits: 100 Free / 300 Teams, <strong>3-month lock</strong>). This cannot be skipped.
+                                    Select how you want to use AI features. You can use platform keys (15 Free / 100 Pro) or BYOK (75 Free / 200 Pro, <strong>3-month lock</strong>). This cannot be skipped.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-yellow-900 text-sm text-left">
-                                    <strong>Note:</strong> Image generation is currently more reliable with BYOK (OpenAI or Gemini). Using platform keys may result in rate limits or errors for image generation. We’re working to improve this soon!
+                                    <strong>Note:</strong> Image generation is currently more reliable with BYOK (OpenAI or Gemini). Using platform keys may result in rate limits or errors for image generation. We're working to improve this soon!
                                 </div>
                                 <div className="space-y-3">
                                     <Button
@@ -279,17 +256,17 @@ const DashboardPage = () => {
                                         onClick={() => setShowByokInfo(false)}
                                         className="text-neutral-400 hover:text-neutral-700"
                                     >
-                                        �. 
+                                        Close
                                     </Button>
                                 </div>
                             </CardHeader>
                             <CardContent>
                                 <ul className="list-disc pl-6 text-neutral-700 space-y-2 mb-4">
                                     <li><strong>BYOK</strong> (Bring Your Own Key) lets you use your own API keys for OpenAI, Gemini, or Perplexity.</li>
-                                    <li>When you switch to BYOK, your account is <strong>locked for 30 days</strong> (cannot switch back to platform keys).</li>
-                                    <li>BYOK gives you <strong>2x credits</strong> (Free: 100, Teams: 300 vs Platform's Free: 50, Teams: 150).</li>
+                                    <li>When you switch to BYOK, your account is <strong>locked for 90 days</strong> (cannot switch back to platform keys).</li>
+                                    <li>Monthly credits: Platform (Free: 15, Pro: 100) and BYOK (Free: 75, Pro: 200).</li>
                                     <li>You must add at least one valid API key for each provider you want to use.</li>
-                                    <li>After 30 days, you can switch back to platform keys if you wish.</li>
+                                    <li>After 90 days, you can switch back to platform keys if you wish.</li>
                                     <li>Active keys are used for all AI requests for that provider.</li>
                                 </ul>
                                 <div className="bg-primary-50 border border-primary-200 rounded-lg p-4 text-primary-800 text-sm">
@@ -310,7 +287,7 @@ const DashboardPage = () => {
                                     AI Key Preference
                                 </CardTitle>
                                 <CardDescription>
-                                    Select how you want to use AI features. You can use platform keys (50 Free / 150 Teams) or bring your own (BYOK with 2x: 100 Free / 300 Teams, <strong>3-month lock</strong>).
+                                    Select how you want to use AI features. Platform: 15 credits (Free) / 100 (Pro). BYOK: 75 (Free) / 200 (Pro), <strong>3-month lock</strong>.
                                 </CardDescription>
                             </div>
                             <Button
@@ -332,7 +309,7 @@ const DashboardPage = () => {
                                 disabled={locked}
                                 onClick={() => handleSetPreference('platform')}
                             >
-                                Use Platform Keys (50 Free / 150 Pro)
+                                Use Platform Keys (15 Free / 100 Pro)
                             </Button>
                             <Button
                                 variant={preference === 'byok' ? 'success' : 'outline'}
@@ -342,7 +319,7 @@ const DashboardPage = () => {
                                 disabled={locked}
                                 onClick={() => handleSetPreference('byok')}
                             >
-                                Bring Your Own Key (100 Free / 300 Pro)
+                                Bring Your Own Key (75 Free / 200 Pro)
                             </Button>
                         </div>
 
@@ -373,7 +350,7 @@ const DashboardPage = () => {
                 {/* Welcome Header */}
                 <div className="mb-8 animate-fade-in">
                     <h1 className="text-3xl font-bold text-neutral-900 mb-2">
-                        Welcome back{user?.name ? `, ${user.name}` : ''}! 👋
+                        Welcome back{user?.name ? `, ${user.name}` : ''}!
                     </h1>
                     <p className="text-lg text-neutral-600">
                         Here's what's happening with your AI-powered content creation.
@@ -391,10 +368,10 @@ const DashboardPage = () => {
                 <StatsCard 
                     title="Plan Type" 
                     value={userPlan?.name || 'Free'} 
-                    subtitle={userPlan?.type === 'free' ? "Upgrade to Teams" : "Active"} 
+                    subtitle={userPlan?.type === 'free' ? "Upgrade to Pro" : "Active"} 
                     icon={userPlan?.type === 'free' ? <Crown className="h-6 w-6 text-yellow-500" /> : <Key className="h-6 w-6 text-green-500" />}
                     onClick={userPlan?.type === 'free' ? () => {
-                        setUpgradeFeature('Teams Plan Access');
+                        setUpgradeFeature('Pro Plan Access');
                         setShowUpgradePrompt(true);
                     } : null}
                     isClickable={userPlan?.type === 'free'}
@@ -430,7 +407,7 @@ const DashboardPage = () => {
                                 />
                                 {userPlan?.type === 'pro' && (
                                     <QuickAction
-                                        label="👥 Team Collaboration"
+                                        label="Team Collaboration"
                                         description="Manage your team members"
                                         icon={<Users className="w-5 h-5" />}
                                         color="primary"
@@ -468,12 +445,11 @@ const DashboardPage = () => {
                                 />
                                 {userPlan?.type === 'free' && (
                                     <QuickAction
-                                        label="🚀 Test Upgrade to Teams"
-                                        description="Instantly upgrade to Teams plan (for testing)"
+                                        label="Upgrade to Pro Plan"
+                                        description="Complete secure checkout for Rs 399/month"
                                         icon={<Crown className="w-5 h-5" />}
                                         color="warning"
-                                        onClick={handleTestUpgrade}
-                                        disabled={submitting}
+                                        onClick={() => navigate('/plans?intent=pro')}
                                     />
                                 )}
                             </div>
@@ -529,8 +505,8 @@ const DashboardPage = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                             <AiToolCard name="Tweet Genie" status="Active" />
                             <AiToolCard name="LinkedIn Genie" status="Active" />
+                            <AiToolCard name="Social Genie" status="Coming Soon" description="YouTube, Facebook & Instagram" />
                             <AiToolCard name="WordPress Writer" status="Coming Soon" />
-                            <AiToolCard name="Custom LLM" status="Coming Soon" />
                         </div>
                     </CardContent>
                 </Card>
@@ -580,7 +556,7 @@ const DashboardPage = () => {
                 isOpen={showUpgradePrompt}
                 onClose={() => setShowUpgradePrompt(false)}
                 feature={upgradeFeature}
-                title="Upgrade to Teams Plan"
+                title="Upgrade to Pro Plan"
                 description="Unlock powerful features to supercharge your content creation"
             />
         </div>
@@ -673,7 +649,7 @@ function RecentActivity({ label, source, time, status }) {
         <div className="flex items-center justify-between p-3 rounded-lg hover:bg-neutral-50 transition-colors duration-200">
             <div className="flex-1">
                 <div className="font-medium text-sm text-neutral-900 mb-1">{label}</div>
-                <div className="text-xs text-neutral-500">{source} • {time}</div>
+                <div className="text-xs text-neutral-500">{source} - {time}</div>
             </div>
             <span className={`${statusMap[status]} ml-3 flex-shrink-0`}>
                 {status}
@@ -683,7 +659,7 @@ function RecentActivity({ label, source, time, status }) {
 }
 
 // AI tool card
-function AiToolCard({ name, status }) {
+function AiToolCard({ name, status, description }) {
     const statusMap = {
         Active: 'badge-success',
         'Coming Soon': 'badge-warning',
@@ -703,6 +679,10 @@ function AiToolCard({ name, status }) {
                 <div className="flex items-center justify-center h-16 mb-4 bg-gradient-to-br from-primary-50 to-primary-100 rounded-lg">
                     <Zap className="w-8 h-8 text-primary-600" />
                 </div>
+
+                {description && (
+                    <p className="text-sm text-neutral-600 mb-3 text-center">{description}</p>
+                )}
 
                 {status === 'Active' ? (
                     <Button

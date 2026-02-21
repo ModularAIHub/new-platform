@@ -54,8 +54,6 @@ router.get('/csrf-token', (req, res) => {
 	res.json({ csrfToken: req.csrfToken() });
 });
 
-router.post('/notifications', authenticateToken, AuthController.updateNotifications);
-router.post('/two-factor', authenticateToken, AuthController.toggleTwoFactor);
 router.delete('/delete-account', authenticateToken, AuthController.deleteAccount);
 
 export default router;

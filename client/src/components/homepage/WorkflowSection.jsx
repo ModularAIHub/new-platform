@@ -8,7 +8,7 @@ const WorkflowSection = () => {
         </svg>
       ),
       title: "Content & Image Generation",
-      description: "Generate engaging posts and stunning images for all your channels. SuiteGenie helps you create scroll-stopping content and visuals in seconds—no design or writing skills needed.",
+      description: "Generate engaging posts and stunning images for all your channels. SuiteGenie helps you create scroll-stopping content and visuals in seconds. No design or writing skills needed.",
       bgColor: "bg-blue-100",
       reverse: false
     },
@@ -19,7 +19,7 @@ const WorkflowSection = () => {
         </svg>
       ),
       title: "Engagement Analytics",
-      description: "Track likes, comments, and engagement for every post. See what works, when your audience is most active, and optimize your strategy with real data—no guesswork. Discover the best times to post based on real engagement, so you always publish at the perfect moment.",
+      description: "Track likes, comments, and engagement for every post. See what works, when your audience is most active, and optimize your strategy with real data. No guesswork. Discover the best times to post based on real engagement, so you always publish at the perfect moment.",
       bgColor: "bg-green-100",
       reverse: true
     },
@@ -30,7 +30,7 @@ const WorkflowSection = () => {
         </svg>
       ),
       title: "Bulk Generation & Scheduling",
-      description: "Create and schedule dozens of posts in one go. SuiteGenie makes it easy to plan campaigns, fill your calendar, and stay consistent—no more manual posting.",
+      description: "Create and schedule dozens of posts in one go. SuiteGenie makes it easy to plan campaigns, fill your calendar, and stay consistent. No more manual posting.",
       bgColor: "bg-purple-100",
       reverse: true
     }
@@ -41,7 +41,7 @@ const WorkflowSection = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-extrabold text-gray-900 mb-4 tracking-tight">How SuiteGenie Works</h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">Automate your content creation, scheduling, and publishing across all your favorite platforms—without losing your creative touch.</p>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">Automate your content creation, scheduling, and publishing across all your favorite platforms without losing your creative touch.</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {workflows.map((workflow, index) => (

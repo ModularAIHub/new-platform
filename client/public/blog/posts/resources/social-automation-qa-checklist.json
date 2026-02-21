@@ -1,0 +1,51 @@
+{
+  "id": "social-automation-qa-checklist",
+  "title": "Social Automation QA Checklist: Ship Faster Without Quality Drops",
+  "slug": "social-automation-qa-checklist",
+  "category": "resources",
+  "tags": [
+    "qa checklist",
+    "content operations",
+    "social media quality",
+    "resources"
+  ],
+  "excerpt": "A practical pre-publish QA checklist for teams using automation across Twitter and LinkedIn.",
+  "content": "## Why You Need a QA Layer\n\nAutomation increases output. QA protects trust. Without review checkpoints, teams scale mistakes instead of outcomes.\n\n## Pre-Publish QA Checklist\n\n### Message and Positioning\n- Is the core point clear in the first two lines?\n- Does this match the intended audience and funnel stage?\n- Is the call to action specific?\n\n### Platform Fit\n- Is this phrasing optimized for Twitter or LinkedIn?\n- Is post length practical for the platform?\n- Are hashtags relevant and minimal?\n\n### Brand and Risk\n- Is tone aligned with brand voice?\n- Any overclaims or vague statements?\n- Any compliance-sensitive language to review?\n\n### Scheduling Quality\n- Is this in the right time slot?\n- Does this collide with another similar post?\n- Is this still relevant for the scheduled day?\n\n### Performance Loop\n- What metric defines success for this post?\n- Is this tied to a current campaign objective?\n- How will this inform next-week prompts?\n\n## Operating Recommendation\n\nUse this checklist during batch review and again 24 hours before scheduled publication.\n",
+  "featuredImage": {
+    "url": "/images/blog/twitter-automation-guide.svg",
+    "alt": "Social media quality assurance checklist before scheduling posts"
+  },
+  "author": {
+    "name": "Kanishk Saraswat",
+    "avatar": "/kanishk.png",
+    "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+    "social": {
+      "linkedin": "kanishk-saraswat",
+      "twitter": "kanishksaraswat"
+    }
+  },
+  "publishDate": "2026-02-14T20:40:00+05:30",
+  "lastModified": "2026-02-14T20:40:00+05:30",
+  "readTime": 6,
+  "featured": false,
+  "status": "published",
+  "seo": {
+    "metaTitle": "Social Automation QA Checklist for Twitter and LinkedIn Teams",
+    "metaDescription": "Use this practical QA checklist to improve social media automation quality, reduce publishing errors, and keep team execution consistent.",
+    "keywords": [
+      "social media qa checklist",
+      "content quality checklist",
+      "twitter linkedin publishing workflow"
+    ],
+    "canonicalUrl": "https://suitegenie.in/blogs/resources/social-automation-qa-checklist"
+  },
+  "schema": {
+    "type": "Article",
+    "faq": [
+      {
+        "question": "How many QA checks are enough for small teams?",
+        "answer": "A focused checklist with 10 to 15 key checks is enough for most teams if done consistently before scheduling."
+      }
+    ]
+  }
+}

@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Crown, Check, ArrowRight, Sparkles } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -7,13 +6,16 @@ const UpgradePrompt = ({
   isOpen, 
   onClose, 
   feature, 
-  title = "Upgrade to Teams", 
-  description = "Unlock powerful features to grow your social media presence" 
+  title = "Upgrade to Pro", 
+  description = "Unlock powerful features to grow your social media presence",
+  benefits = null,
+  onUpgrade = null,
+  isUpgrading = false,
 }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const teamsFeatures = [
+  const proFeatures = [
     "Unlimited automated posts",
     "Advanced AI content generation", 
     "Smart scheduling optimization",
@@ -21,8 +23,9 @@ const UpgradePrompt = ({
     "Multi-account management (up to 8)",
     "Bulk content generation",
     "Priority email support",
-    "150 credits (300 with BYOK)"
+    "100 platform credits (200 with BYOK)"
   ];
+  const displayFeatures = Array.isArray(benefits) && benefits.length > 0 ? benefits : proFeatures;
 
   if (!isOpen) return null;
 
@@ -56,8 +59,8 @@ const UpgradePrompt = ({
 
         {/* Features list */}
         <div className="space-y-3 mb-6">
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">Teams features include:</h3>
-          {teamsFeatures.slice(0, 6).map((feature, index) => (
+          <h3 className="text-sm font-semibold text-gray-900 mb-3">Pro features include:</h3>
+          {displayFeatures.slice(0, 6).map((feature, index) => (
             <div key={index} className="flex items-start">
               <Check className="h-4 w-4 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
               <span className="text-sm text-gray-700">{feature}</span>
@@ -65,11 +68,11 @@ const UpgradePrompt = ({
           ))}
         </div>
 
-        {/* Pricing - commented out for free Teams plan */}
+        {/* Pricing */}
         {/* <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 mb-6">
           <div className="text-center">
             <div className="flex items-baseline justify-center mb-2">
-              <span className="text-3xl font-bold text-gray-900">₹399</span>
+              <span className="text-3xl font-bold text-gray-900">Rs 399</span>
               <span className="text-gray-500 ml-1">/month</span>
             </div>
             <p className="text-sm text-gray-600">
@@ -81,20 +84,27 @@ const UpgradePrompt = ({
         {/* Action buttons */}
         <div className="space-y-3">
           <button
-            onClick={() => {
+            onClick={async () => {
               // If not logged in, redirect to signup page with plan parameter
               if (!user) {
                 navigate('/signup?plan=pro');
                 onClose();
                 return;
               }
+
+              if (typeof onUpgrade === 'function') {
+                await onUpgrade();
+                return;
+              }
+
               // If logged in, go to plans page
-              navigate('/plans');
+              navigate('/plans?intent=pro');
               onClose();
             }}
+            disabled={isUpgrading}
             className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-200 flex items-center justify-center"
           >
-            {user ? 'Upgrade to Teams' : 'Sign Up & Upgrade to Teams'}
+            {isUpgrading ? 'Opening Checkout...' : user ? 'Upgrade to Pro' : 'Sign Up & Upgrade to Pro'}
             <ArrowRight className="h-4 w-4 ml-2" />
           </button>
           
@@ -108,7 +118,7 @@ const UpgradePrompt = ({
 
         {/* Footer note */}
         <p className="text-xs text-gray-500 text-center mt-4">
-          Free upgrade • Instant access
+          Instant access after upgrade
         </p>
       </div>
     </div>
@@ -116,3 +126,5 @@ const UpgradePrompt = ({
 };
 
 export default UpgradePrompt;
+
+

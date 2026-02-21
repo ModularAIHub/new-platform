@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { Settings, User, Shield, Bell, X, Lock, AlertTriangle } from 'lucide-react'
+import { User, Shield, X, Lock, AlertTriangle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { validatePassword, validatePasswordMatch } from '../utils/validation'
 import api from '../utils/api'
@@ -15,7 +15,7 @@ import {
 } from '../components/ui'
 
 const SettingsPage = () => {
-    const { user, refreshUser, sendOTP, changePassword, updateNotifications, toggleTwoFactor } = useAuth()
+    const { user, sendOTP, changePassword } = useAuth()
     const [loading, setLoading] = useState(false)
 
     // Change Password Flow States
@@ -31,11 +31,6 @@ const SettingsPage = () => {
     // Delete Account States
     const [showDeleteAccount, setShowDeleteAccount] = useState(false)
     const [deleteConfirmation, setDeleteConfirmation] = useState('')
-
-    // Other Settings States
-    const [twoFactorEnabled, setTwoFactorEnabled] = useState(user?.two_factor_enabled ?? false)
-    const [emailNotifications, setEmailNotifications] = useState(user?.notification_email_enabled ?? true)
-    const [creditAlerts, setCreditAlerts] = useState(user?.credit_alerts_enabled ?? false)
 
     // Refs for input focus
     const deleteInputRef = useRef(null)
@@ -165,34 +160,6 @@ const SettingsPage = () => {
         setPasswordErrors({})
     }
 
-    // Handle notification settings
-    const handleEmailNotificationToggle = async () => {
-        setLoading(true)
-        try {
-            const newValue = !emailNotifications
-            await updateNotifications(newValue)
-            setEmailNotifications(newValue)
-        } catch (error) {
-            // Error handled by auth context
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    // Handle two-factor authentication toggle
-    const handleTwoFactorToggle = async () => {
-        setLoading(true)
-        try {
-            const newValue = !twoFactorEnabled
-            await toggleTwoFactor(newValue)
-            setTwoFactorEnabled(newValue)
-        } catch (error) {
-            // Error handled by auth context
-        } finally {
-            setLoading(false)
-        }
-    }
-
     // Delete Account Flow
     const handleDeleteAccount = async () => {
         if (deleteConfirmation !== 'DELETE') {
@@ -307,88 +274,12 @@ const SettingsPage = () => {
                                     </Button>
                                 </div>
 
-                                {/* Two-Factor Authentication */}
-                                <div className="flex items-center justify-between p-4 border border-neutral-200 rounded-lg">
-                                    <div className="flex items-center space-x-3">
-                                        <div className="w-8 h-8 bg-warning-100 rounded-lg flex items-center justify-center">
-                                            <Shield className="h-4 w-4 text-warning-600" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-sm font-medium text-neutral-900">Two-Factor Authentication</h3>
-                                            <p className="text-xs text-neutral-500">Add an extra layer of security to your account</p>
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={handleTwoFactorToggle}
-                                        disabled={loading}
-                                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 ${twoFactorEnabled ? 'bg-primary-600' : 'bg-neutral-200'}`}
-                                    >
-                                        <span className={`${twoFactorEnabled ? 'translate-x-5' : 'translate-x-0'} inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}></span>
-                                    </button>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Notification Settings */}
-                    <Card variant="elevated" className="animate-fade-in animate-stagger-3">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                    <Bell className="h-5 w-5 text-blue-600" />
-                                </div>
-                                Notification Preferences
-                            </CardTitle>
-                            <CardDescription>
-                                Control how and when you receive notifications from us
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-6">
-                                {/* Email Notifications */}
-                                <div className="flex items-center justify-between p-4 border border-neutral-200 rounded-lg">
-                                    <div className="flex items-center space-x-3">
-                                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                                            <Bell className="h-4 w-4 text-blue-600" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-sm font-medium text-neutral-900">Email Notifications</h3>
-                                            <p className="text-xs text-neutral-500">Receive important updates about your account via email</p>
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={handleEmailNotificationToggle}
-                                        disabled={loading}
-                                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 ${emailNotifications ? 'bg-primary-600' : 'bg-neutral-200'}`}
-                                    >
-                                        <span className={`${emailNotifications ? 'translate-x-5' : 'translate-x-0'} inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}></span>
-                                    </button>
-                                </div>
-
-                                {/* Credit Alerts */}
-                                <div className="flex items-center justify-between p-4 border border-neutral-200 rounded-lg">
-                                    <div className="flex items-center space-x-3">
-                                        <div className="w-8 h-8 bg-warning-100 rounded-lg flex items-center justify-center">
-                                            <AlertTriangle className="h-4 w-4 text-warning-600" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-sm font-medium text-neutral-900">Credit Alerts</h3>
-                                            <p className="text-xs text-neutral-500">Get notified when your credit balance is running low</p>
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={() => setCreditAlerts(!creditAlerts)}
-                                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${creditAlerts ? 'bg-primary-600' : 'bg-neutral-200'}`}
-                                    >
-                                        <span className={`${creditAlerts ? 'translate-x-5' : 'translate-x-0'} inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}></span>
-                                    </button>
-                                </div>
                             </div>
                         </CardContent>
                     </Card>
 
                     {/* Danger Zone */}
-                    <Card variant="elevated" className="border-error-200 animate-fade-in animate-stagger-4">
+                    <Card variant="elevated" className="border-error-200 animate-fade-in animate-stagger-3">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-3 text-error-900">
                                 <div className="w-10 h-10 bg-error-100 rounded-lg flex items-center justify-center">

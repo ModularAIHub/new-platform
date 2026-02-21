@@ -276,7 +276,7 @@ const CreditsPage = () => {
                         <ul className="mb-6 space-y-1 text-sm text-gray-600 text-left">
                             <li>&#10003; Most popular choice</li>
                             <li>&#10003; Better value</li>
-                            <li>&#10003; Priority support</li>
+                            <li>&#10003; Great for weekly posting</li>
                         </ul>
                         <button 
                             onClick={() => handlePurchase('50')}
@@ -303,7 +303,7 @@ const CreditsPage = () => {
                         <ul className="mb-6 space-y-1 text-sm text-gray-600 text-left">
                             <li>&#10003; Best value</li>
                             <li>&#10003; Bulk discount</li>
-                            <li>&#10003; Team features</li>
+                            <li>&#10003; Great for high-volume generation</li>
                         </ul>
                         <button 
                             onClick={() => handlePurchase('80')}
@@ -371,4 +371,3 @@ const CreditsPage = () => {
 }
 
 export default CreditsPage
-

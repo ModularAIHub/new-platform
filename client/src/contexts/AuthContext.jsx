@@ -209,30 +209,6 @@ export const AuthProvider = ({ children }) => {
         }
     }
 
-    const updateNotifications = async (emailEnabled) => {
-        try {
-            const response = await api.post('/auth/notifications', { emailEnabled })
-            toast.success('Notification preferences updated!')
-            return response.data
-        } catch (error) {
-            let message = error.response?.data?.error || 'Failed to update notification preferences.'
-            toast.error(message)
-            throw error
-        }
-    }
-
-    const toggleTwoFactor = async (enabled) => {
-        try {
-            const response = await api.post('/auth/two-factor', { enabled })
-            toast.success(`Two-factor authentication ${enabled ? 'enabled' : 'disabled'}!`)
-            return response.data
-        } catch (error) {
-            let message = error.response?.data?.error || 'Failed to update two-factor authentication.'
-            toast.error(message)
-            throw error
-        }
-    }
-
     const logout = async () => {
         try {
             await api.post('/auth/logout')
@@ -275,8 +251,6 @@ export const AuthProvider = ({ children }) => {
         verifyOTP,
         changePassword,
         resetPassword,
-        updateNotifications,
-        toggleTwoFactor,
         logout,
         refreshUser,
         clearUser,

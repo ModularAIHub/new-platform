@@ -130,23 +130,33 @@ const Features = () => (
       {/* Strategy Builder */}
       <section className="mb-10">
         <h2 className="text-2xl font-bold mb-2">🎯 Content Strategy Builder</h2>
-        <h3 className="text-lg font-semibold mb-2">Plan Your Content Strategy Like a Pro</h3>
-        <p className="mb-4 text-gray-700">Create data-driven content strategies that align with your goals and audience. No more guessing what to post.</p>
+        <h3 className="text-lg font-semibold mb-2">AI-Powered Strategy Generation Based on Your Analytics</h3>
+        <p className="mb-4 text-gray-700">Let AI analyze your performance data and generate a personalized content strategy tailored to your goals. Get custom prompts and recommendations based on what actually works for your audience.</p>
+        <div className="mb-2 font-semibold">How It Works:</div>
+        <ul className="list-disc pl-6 mb-4 text-gray-600">
+          <li>AI analyzes your past performance and engagement patterns</li>
+          <li>Generate complete content strategies based on your goals (growth, engagement, conversions)</li>
+          <li>Get personalized content prompts tailored to your audience and niche</li>
+          <li>Receive recommendations on optimal posting times and content mix</li>
+          <li>Adapt strategy dynamically based on real-time analytics</li>
+        </ul>
         <div className="mb-2 font-semibold">Strategic Planning Features:</div>
         <ul className="list-disc pl-6 mb-4 text-gray-600">
           <li>Define content pillars and themes for consistent messaging</li>
-          <li>Set posting frequency and optimal times based on your audience</li>
+          <li>Set posting frequency and optimal times based on your audience data</li>
           <li>Plan content mix across different formats (threads, carousels, videos)</li>
-          <li>Track strategy performance and adjust based on analytics</li>
+          <li>Track strategy performance and get AI suggestions for improvement</li>
+          <li>Generate weeks of content ideas based on your strategy</li>
         </ul>
-        <div className="mb-2 font-semibold">Why Strategy Matters:</div>
+        <div className="mb-2 font-semibold">Why AI-Powered Strategy Matters:</div>
         <ul className="list-disc pl-6 mb-4 text-gray-600">
+          <li>Stop guessing what to post - let data guide your content decisions</li>
           <li>Maintain consistent brand voice across all platforms</li>
-          <li>Balance promotional, educational, and engaging content</li>
-          <li>Align social media with business objectives</li>
-          <li>Save time with pre-planned content frameworks</li>
+          <li>Balance promotional, educational, and engaging content automatically</li>
+          <li>Align social media with business objectives using AI insights</li>
+          <li>Save hours with AI-generated content frameworks and prompts</li>
         </ul>
-        <a href="/signup" className="inline-block mt-2 text-blue-600 font-semibold underline">Build Your Strategy →</a>
+        <a href="/signup" className="inline-block mt-2 text-blue-600 font-semibold underline">Build Your AI Strategy →</a>
       </section>
 
       <hr className="my-8" />

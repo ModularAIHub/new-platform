@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import { query } from '../config/database.js';
 import redisClient from '../config/redis.js';
+import { invalidateAuthUserCache } from '../middleware/auth.js';
 import { encrypt, decrypt } from '../utils/encryption.js';
 import { sendMail } from '../utils/email.js';
 import { comparePassword, hashPassword } from '../utils/bcrypt.js';
@@ -13,8 +14,6 @@ import {
     validateOTPVerification,
     validatePasswordChange,
     validatePasswordReset,
-    validateNotificationPreferences,
-    validateTwoFactorSettings,
     validatePassword
 } from '../utils/validation.js';
 
@@ -91,6 +90,38 @@ class AuthController {
         // For testing purposes, use a fixed OTP
         // return '123456';
         return Math.floor(100000 + Math.random() * 900000).toString();
+    }
+
+    static async getFreshUserSnapshot(reqUser) {
+        if (!reqUser?.id) {
+            return null;
+        }
+
+        try {
+            const result = await query(
+                'SELECT id, email, name, plan_type, credits_remaining FROM users WHERE id = $1 LIMIT 1',
+                [reqUser.id]
+            );
+
+            if (!result.rows.length) {
+                return null;
+            }
+
+            const freshUser = result.rows[0];
+            const stalePlan = String(reqUser.plan_type || '') !== String(freshUser.plan_type || '');
+            const staleCredits =
+                Number(reqUser.credits_remaining || 0) !== Number(freshUser.credits_remaining || 0);
+            const staleEmail = String(reqUser.email || '') !== String(freshUser.email || '');
+            const staleName = String(reqUser.name || '') !== String(freshUser.name || '');
+
+            if (stalePlan || staleCredits || staleEmail || staleName) {
+                invalidateAuthUserCache(reqUser.id);
+            }
+
+            return freshUser;
+        } catch (error) {
+            return reqUser;
+        }
     }
 
     // Register user - single method with email verification
@@ -603,76 +634,6 @@ class AuthController {
         }
     }
 
-    // Update notification preferences
-    static async updateNotifications(req, res) {
-        try {
-            // Validate notification preferences data
-            const validation = validateNotificationPreferences(req.body);
-            if (!validation.isValid) {
-                return res.status(400).json({
-                    error: 'Validation failed',
-                    details: validation.errors,
-                    code: 'VALIDATION_ERROR'
-                });
-            }
-
-            const { emailEnabled } = validation.sanitized;
-            const userId = req.user.id;
-
-            await query(
-                'UPDATE users SET notification_email_enabled = $1, updated_at = NOW() WHERE id = $2',
-                [emailEnabled, userId]
-            );
-
-            res.json({ 
-                message: 'Notification preferences updated successfully',
-                preferences: {
-                    emailEnabled
-                }
-            });
-        } catch (error) {
-            console.error('Update notifications error:', error);
-            res.status(500).json({ 
-                error: 'Failed to update notification preferences',
-                code: 'NOTIFICATION_UPDATE_ERROR'
-            });
-        }
-    }
-
-    // Toggle two-factor authentication
-    static async toggleTwoFactor(req, res) {
-        try {
-            // Validate two-factor settings data
-            const validation = validateTwoFactorSettings(req.body);
-            if (!validation.isValid) {
-                return res.status(400).json({
-                    error: 'Validation failed',
-                    details: validation.errors,
-                    code: 'VALIDATION_ERROR'
-                });
-            }
-
-            const { enabled } = validation.sanitized;
-            const userId = req.user.id;
-
-            await query(
-                'UPDATE users SET two_factor_enabled = $1, updated_at = NOW() WHERE id = $2',
-                [enabled, userId]
-            );
-
-            res.json({ 
-                message: `Two-factor authentication ${enabled ? 'enabled' : 'disabled'} successfully`,
-                twoFactorEnabled: enabled
-            });
-        } catch (error) {
-            console.error('Toggle 2FA error:', error);
-            res.status(500).json({ 
-                error: 'Failed to update two-factor authentication settings',
-                code: 'TWO_FACTOR_UPDATE_ERROR'
-            });
-        }
-    }
-
     // Delete account
     static async deleteAccount(req, res) {
         try {
@@ -1063,13 +1024,25 @@ class AuthController {
     // Verify token (for modules)
     static async verifyToken(req, res) {
         try {
+            const user = await AuthController.getFreshUserSnapshot(req.user);
+
+            if (!user) {
+                return res.status(404).json({
+                    error: 'User not found',
+                    code: 'USER_NOT_FOUND'
+                });
+            }
+
             res.json({
                 valid: true,
                 user: {
-                    id: req.user.id,
-                    email: req.user.email,
-                    planType: req.user.plan_type,
-                    creditsRemaining: req.user.credits_remaining
+                    id: user.id,
+                    email: user.email,
+                    name: user.name,
+                    planType: user.plan_type || 'free',
+                    plan_type: user.plan_type || 'free',
+                    creditsRemaining: Number(user.credits_remaining || 0),
+                    credits_remaining: Number(user.credits_remaining || 0)
                 }
             });
         } catch (error) {
@@ -1084,14 +1057,25 @@ class AuthController {
     // Get current user info (for external apps like Tweet Genie)
     static async getCurrentUser(req, res) {
         try {
+            const user = await AuthController.getFreshUserSnapshot(req.user);
+
+            if (!user) {
+                return res.status(404).json({
+                    error: 'User not found',
+                    code: 'USER_NOT_FOUND'
+                });
+            }
+
             res.json({
                 success: true,
                 user: {
-                    id: req.user.id,
-                    email: req.user.email,
-                    name: req.user.name,
-                    planType: req.user.plan_type,
-                    creditsRemaining: req.user.credits_remaining
+                    id: user.id,
+                    email: user.email,
+                    name: user.name,
+                    planType: user.plan_type || 'free',
+                    plan_type: user.plan_type || 'free',
+                    creditsRemaining: Number(user.credits_remaining || 0),
+                    credits_remaining: Number(user.credits_remaining || 0)
                 }
             });
         } catch (error) {

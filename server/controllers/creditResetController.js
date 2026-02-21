@@ -2,6 +2,7 @@
 // Controller for manual credit reset operations (admin only)
 import { query } from '../config/database.js';
 import redisClient from '../config/redis.js';
+import { CREDIT_TIERS } from '../utils/creditTiers.js';
 
 export const CreditResetController = {
   // Manual trigger for monthly credit reset (admin only)
@@ -10,16 +11,16 @@ export const CreditResetController = {
       console.log('[CREDIT RESET] Manual monthly reset triggered by admin');
       
       // Update credits based on BOTH plan_type and api_key_preference
-      // Free: 50 (platform) / 100 (BYOK) | Pro: 150 (platform) / 300 (BYOK) | Enterprise: 500 (platform) / 1000 (BYOK)
+      // Free: 15 (platform) / 75 (BYOK) | Pro: 100 (platform) / 200 (BYOK) | Enterprise: 500 (platform) / 1000 (BYOK)
       const updateResult = await query(`
         UPDATE users 
         SET credits_remaining = CASE 
-            WHEN COALESCE(plan_type, 'free') = 'free' AND api_key_preference = 'platform' THEN 50
-            WHEN COALESCE(plan_type, 'free') = 'free' AND api_key_preference = 'byok' THEN 100
-            WHEN plan_type = 'pro' AND api_key_preference = 'platform' THEN 150
-            WHEN plan_type = 'pro' AND api_key_preference = 'byok' THEN 300
-            WHEN plan_type = 'enterprise' AND api_key_preference = 'platform' THEN 500
-            WHEN plan_type = 'enterprise' AND api_key_preference = 'byok' THEN 1000
+            WHEN COALESCE(plan_type, 'free') = 'free' AND api_key_preference = 'platform' THEN ${CREDIT_TIERS.free.platform}
+            WHEN COALESCE(plan_type, 'free') = 'free' AND api_key_preference = 'byok' THEN ${CREDIT_TIERS.free.byok}
+            WHEN plan_type = 'pro' AND api_key_preference = 'platform' THEN ${CREDIT_TIERS.pro.platform}
+            WHEN plan_type = 'pro' AND api_key_preference = 'byok' THEN ${CREDIT_TIERS.pro.byok}
+            WHEN plan_type = 'enterprise' AND api_key_preference = 'platform' THEN ${CREDIT_TIERS.enterprise.platform}
+            WHEN plan_type = 'enterprise' AND api_key_preference = 'byok' THEN ${CREDIT_TIERS.enterprise.byok}
             ELSE 0 
         END,
         last_credit_reset = NOW()
@@ -130,9 +131,9 @@ export const CreditResetController = {
             }
           },
           creditAmounts: {
-            free: { platform: 50, byok: 100 },
-            pro: { platform: 150, byok: 300 },
-            enterprise: { platform: 500, byok: 1000 }
+            free: { platform: CREDIT_TIERS.free.platform, byok: CREDIT_TIERS.free.byok },
+            pro: { platform: CREDIT_TIERS.pro.platform, byok: CREDIT_TIERS.pro.byok },
+            enterprise: { platform: CREDIT_TIERS.enterprise.platform, byok: CREDIT_TIERS.enterprise.byok }
           }
         }
       });

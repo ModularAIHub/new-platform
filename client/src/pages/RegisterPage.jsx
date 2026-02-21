@@ -6,7 +6,6 @@ import { validateRegistrationData, validateOTPRequest, formatValidationErrors } 
 import toast from 'react-hot-toast';
 import { Button, Input, Card, CardContent } from '../components/ui';
 import { User, Mail, Lock, Eye, EyeOff } from 'lucide-react';
-import api from '../utils/api';
 
 const RegisterPage = () => {
 	const [name, setName] = useState('');
@@ -16,7 +15,7 @@ const RegisterPage = () => {
 	const [loading, setLoading] = useState(false);
 	const [showOTPModal, setShowOTPModal] = useState(false);
 	const [validationErrors, setValidationErrors] = useState({});
-	const { register, sendOTP, login } = useAuth();
+	const { register, sendOTP } = useAuth();
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
 	const planType = searchParams.get('plan');
@@ -87,37 +86,14 @@ const RegisterPage = () => {
 				toast.error('Registration failed. Please try again.');
 				return;
 			}
-			
-			// If plan=pro, upgrade to Teams
+			// If user selected Pro during signup, send them to paid checkout.
 			if (planType === 'pro') {
-				console.log('Starting Teams upgrade flow...');
-				try {
-					// User is already logged in from register response, just upgrade
-					console.log('Calling upgrade API...');
-					
-					// Upgrade to Teams
-					const upgradeResponse = await api.post('/plans/upgrade', {
-						planType: 'pro',
-						isTrial: false
-					});
-					console.log('Upgrade API response:', upgradeResponse.data);
-					
-					const bonusCredits = upgradeResponse.data.newPlan?.bonusCredits || 150;
-					console.log('Showing success toast...');
-					toast.success(
-						`🎉 Welcome to Teams!\n\n✨ You now have:\n• Unlimited posts\n• All platforms unlocked\n• ${bonusCredits.toLocaleString()} bonus credits!`,
-						{ duration: 5000 }
-					);
-				} catch (error) {
-					console.error('Teams upgrade error:', error);
-					console.error('Error details:', error.response?.data);
-					toast.error('Account created but failed to upgrade to Teams. Please contact support.');
-				}
-			} else {
-				toast.success('🎉 Account created! Welcome to SuiteGenie!');
+				toast.success('Account created. Complete payment to activate Pro.');
+				navigate('/plans?intent=pro');
+				return;
 			}
-			
-			// Navigate to dashboard (user is now logged in)
+
+			toast.success('Account created! Welcome to SuiteGenie!');
 			navigate('/dashboard');
 		} catch (error) {
 			console.error('Register error:', error);
@@ -334,3 +310,4 @@ const RegisterPage = () => {
 };
 
 export default RegisterPage;
+

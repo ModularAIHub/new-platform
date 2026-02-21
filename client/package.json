@@ -5,7 +5,9 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "prebuild": "node scripts/generateBlogSitemap.mjs",
+        "predev": "node scripts/buildBlogData.mjs",
+        "prebuild": "node scripts/buildBlogData.mjs",
+        "blog:sync": "node scripts/buildBlogData.mjs",
         "dev": "vite",
         "build": "vite build",
         "preview": "vite preview",

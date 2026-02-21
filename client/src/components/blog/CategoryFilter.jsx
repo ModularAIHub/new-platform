@@ -1,4 +1,4 @@
-import { BLOG_CATEGORY_ORDER, BLOG_CATEGORY_META } from '../../data/blogPosts';
+import { BLOG_CATEGORY_ORDER, BLOG_CATEGORY_META } from '../../data/blogIndex.generated';
 
 const CategoryFilter = ({ activeCategory = 'all', onChange }) => (
   <div className="hide-scrollbar flex gap-2 overflow-x-auto pb-1">

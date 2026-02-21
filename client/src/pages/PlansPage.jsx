@@ -1,16 +1,27 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Check, X, ChevronDown, ChevronUp } from 'lucide-react';
 import Footer from '../components/Footer';
 import { useAuth } from '../contexts/AuthContext';
+import usePlanAccess from '../hooks/usePlanAccess';
 import toast from 'react-hot-toast';
 import api from '../utils/api';
+import { loadRazorpayScript } from '../utils/payment';
 
 const PlansPage = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const { user, refreshUser } = useAuth();
+  const { userPlan, refreshPlanInfo } = usePlanAccess();
   const [openFaq, setOpenFaq] = useState(null);
   const [upgrading, setUpgrading] = useState(false);
+  const pendingIntent = searchParams.get('intent');
+  const currentIndividualPlanType = String(
+    userPlan?.individualPlan ||
+    user?.planType ||
+    user?.plan_type ||
+    'free'
+  ).toLowerCase();
 
   const toggleFaq = (index) => {
     setOpenFaq(openFaq === index ? null : index);
@@ -25,14 +36,15 @@ const PlansPage = () => {
       features: [
         'All core SuiteGenie features',
         'Content generation with AI (text only, no image generation)',
+        'Basic AI mode (good for everyday drafts)',
         'Basic analytics & scheduling',
         'Cross-platform posting',
         'Bulk scheduling for already generated content',
-        'Connect up to 3 social accounts',
+        'Connection of Tweet Genie and LinkedIn Genie',
         'Encrypted BYOK (OpenAI, Perplexity, Gemini)',
-        'Priority support',
+        'Community support',
         '75 credits per month (BYOK mode)',
-        '0 credits in platform mode',
+        '15 credits per month (platform mode)',
       ],
       notIncluded: [],
       buttonText: 'Start Free',
@@ -40,11 +52,12 @@ const PlansPage = () => {
     },
     {
       name: 'Pro',
-      price: '₹399',
-      monthlyPrice: '₹399',
+      price: 'Rs 399',
+      monthlyPrice: 'Rs 399',
       description: 'Best for individual creators and small teams with multiple accounts',
       features: [
         'Everything in Free',
+        'Upgraded AI',
         'Image generation with AI',
         'Bulk Content Generation (AI-powered)',
         'Content Strategy Builder',
@@ -81,24 +94,25 @@ const PlansPage = () => {
   ];
 
   const comparisonFeatures = [
-    { name: 'Monthly Credits (Platform)', free: '0', pro: '100' },
+    { name: 'AI Quality Mode', free: 'Basic AI', pro: 'Upgraded AI' },
+    { name: 'Monthly Credits (Platform)', free: '15', pro: '100' },
     { name: 'Monthly Credits (BYOK)', free: '75', pro: '200' },
-    { name: 'Social Accounts', free: '3', pro: '8 (any mix)' },
+    { name: 'Social Accounts', free: '2 (Tweet + LinkedIn)', pro: '8 (any mix)' },
     { name: 'Analytics', free: 'Basic', pro: 'Complete' },
     { name: 'Image Generation', free: false, pro: true },
     { name: 'Bulk Content Generation (AI)', free: false, pro: true },
     { name: 'Bulk Scheduling', free: 'Already generated', pro: 'Already generated' },
     { name: 'Content Strategy Builder', free: false, pro: true },
     { name: 'Teams Mode (Collaboration)', free: false, pro: true },
-    { name: 'Team Members', free: '1', pro: '5' },
-    { name: 'Priority Support', free: true, pro: true },
+    { name: 'Team Members', free: '0', pro: '5' },
+    { name: 'Priority Support', free: false, pro: true },
     { name: 'All Core Features', free: true, pro: true },
   ];
 
   const faqs = [
     {
       question: 'How do I upgrade to Pro?',
-      answer: 'Simply click \'Upgrade to Pro\' and your account will be upgraded instantly for ₹399/month.'
+      answer: 'Click \'Upgrade to Pro\', complete the secure Razorpay checkout, and your account will be upgraded for Rs 399/month.'
     },
     {
       question: 'Can I change plans at any time?',
@@ -123,13 +137,140 @@ const PlansPage = () => {
 
     {
       question: 'What kind of support do you provide?',
-      answer: 'Both Free and Pro users get priority email support to help you succeed with your social media automation.'
+      answer: 'Free users get community support. Pro users get priority email support to help you move faster.'
     },
     {
       question: 'Where do I manage my team after upgrading to Pro?',
       answer: 'After upgrading to Pro, you can visit the /team page on your dashboard to create or manage your team. You\'ll be able to invite members, manage social accounts, and collaborate with your team on content creation.'
     }
   ];
+
+  const handleProUpgrade = async () => {
+    const latestPlan = await refreshPlanInfo();
+    const authoritativePlanType = String(
+      latestPlan?.individualPlan ||
+      latestPlan?.type ||
+      userPlan?.individualPlan ||
+      userPlan?.type ||
+      user?.planType ||
+      user?.plan_type ||
+      'free'
+    ).toLowerCase();
+
+    if (authoritativePlanType === 'pro') {
+      toast.success('You are already a Pro user!');
+      return;
+    }
+
+    if (authoritativePlanType === 'enterprise') {
+      toast.success('You are already on Enterprise.');
+      return;
+    }
+
+    setUpgrading(true);
+
+    try {
+      const isScriptLoaded = await loadRazorpayScript();
+      if (!isScriptLoaded) {
+        toast.error('Failed to load payment gateway. Please try again.');
+        return;
+      }
+
+      const orderResponse = await api.post('/payments/create-order', {
+        type: 'plan',
+        package: 'pro',
+      });
+
+      const { orderId, amount, currency, description, demo } = orderResponse.data;
+
+      if (demo) {
+        const confirmDemo = window.confirm(
+          'DEMO MODE: This is a simulated Pro upgrade payment. Continue?'
+        );
+
+        if (!confirmDemo) {
+          return;
+        }
+
+        const verifyResponse = await api.post('/payments/verify', {
+          razorpayOrderId: orderId,
+          razorpayPaymentId: 'demo_payment_id',
+          razorpaySignature: 'demo_signature',
+        });
+
+        await refreshUser();
+        toast.success(verifyResponse.data?.message || 'Pro plan activated successfully.');
+        navigate('/team');
+        return;
+      }
+
+      const razorpayKey = orderResponse.data.razorpayKey || import.meta.env.VITE_RAZORPAY_KEY_ID || '';
+      if (!razorpayKey) {
+        toast.error('Payment configuration is incomplete. Please contact support.');
+        return;
+      }
+
+      if (!window.Razorpay) {
+        toast.error('Payment gateway failed to initialize. Please refresh and try again.');
+        return;
+      }
+
+      await new Promise((resolve, reject) => {
+        const razorpay = new window.Razorpay({
+          key: razorpayKey,
+          amount,
+          currency,
+          name: 'SuiteGenie',
+          description,
+          order_id: orderId,
+          handler: async (response) => {
+            try {
+              const verifyResponse = await api.post('/payments/verify', {
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature,
+              });
+
+              await refreshUser();
+              toast.success(verifyResponse.data?.message || 'Pro plan activated successfully.');
+              resolve(verifyResponse.data);
+            } catch (verificationError) {
+              reject(verificationError);
+            }
+          },
+          prefill: {
+            name: user?.name || 'SuiteGenie User',
+            email: user?.email || undefined,
+          },
+          theme: {
+            color: '#2563eb',
+          },
+          modal: {
+            ondismiss: () => {
+              reject(new Error('CHECKOUT_DISMISSED'));
+            },
+          },
+        });
+
+        razorpay.on('payment.failed', (failure) => {
+          const reason = failure?.error?.description || 'Payment failed. Please try again.';
+          reject(new Error(reason));
+        });
+
+        razorpay.open();
+      });
+
+      navigate('/team');
+    } catch (error) {
+      if (error?.message === 'CHECKOUT_DISMISSED') {
+        toast.error('Payment was cancelled.');
+      } else {
+        toast.error(error?.response?.data?.error || error?.message || 'Failed to upgrade to Pro.');
+      }
+    } finally {
+      setUpgrading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 relative">
@@ -144,7 +285,7 @@ const PlansPage = () => {
             Scale your content creation with AI-powered tools across Twitter, LinkedIn, and WordPress.
           </p>
           {/* <div className="inline-flex items-center bg-blue-50 rounded-full px-4 py-2 text-blue-700">
-            <span className="text-sm font-medium">✨ No credit card required for trial</span>
+            <span className="text-sm font-medium">No credit card required for trial</span>
           </div> */}
         </div>
       </div>
@@ -176,12 +317,6 @@ const PlansPage = () => {
                     <span className="text-gray-500 ml-1">/month</span>
                   )}
                 </div>
-                {/* {plan.price !== 'Free' && plan.price !== 'Custom' && plan.name === 'Teams' && (
-                  <div className="mt-2">
-                    <p className="text-sm text-green-600 font-medium">✨ Free 14-day trial</p>
-                    <p className="text-xs text-gray-500 mt-1">Then ₹399 per month</p>
-                  </div>
-                )} */}
               </div>
 
               <div className="space-y-4 mb-8">
@@ -201,12 +336,6 @@ const PlansPage = () => {
 
               <button
                 onClick={async () => {
-                  // Check if user is already on Pro plan
-                  if (plan.name === 'Pro' && user?.planType === 'pro') {
-                    toast.success('You are already a Pro user! 🎉');
-                    return;
-                  }
-                  
                   // If not logged in, redirect to signup with plan parameter
                   if (!user) {
                     if (plan.name === 'Pro') {
@@ -227,22 +356,7 @@ const PlansPage = () => {
                   
                   // If user is logged in and clicking Pro plan, upgrade
                   if (plan.name === 'Pro') {
-                    setUpgrading(true);
-                    try {
-                      // Upgrade to Pro
-                      const response = await api.post('/plans/upgrade', {
-                        planType: 'pro',
-                        isTrial: false
-                      });
-                      
-                      toast.success(`🎉 Welcome to Pro!\n✨ ${response.data.message}`);
-                      // Redirect to Team page after successful upgrade
-                      setTimeout(() => navigate('/team'), 1500);
-                    } catch (error) {
-                      console.error('Upgrade error:', error);
-                      toast.error(error.response?.data?.error || 'Failed to upgrade');
-                      setUpgrading(false);
-                    }
+                    await handleProUpgrade();
                     return;
                   }
                 }}
@@ -253,7 +367,15 @@ const PlansPage = () => {
                     : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                 } ${upgrading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                {upgrading ? 'Processing...' : (plan.name === 'Pro' && user?.planType === 'pro' ? 'Current Plan ✓' : plan.buttonText)}
+                {upgrading
+                  ? 'Processing...'
+                  : (plan.name === 'Pro' && currentIndividualPlanType === 'pro'
+                      ? 'Current Plan - Active'
+                      : (plan.name === 'Pro' && currentIndividualPlanType === 'enterprise'
+                          ? 'Already on Enterprise'
+                          : (plan.name === 'Pro' && pendingIntent === 'pro'
+                              ? 'Upgrade to Pro (Recommended)'
+                              : plan.buttonText)))}
               </button>
             </div>
           ))}
@@ -315,25 +437,25 @@ const PlansPage = () => {
       <div className="py-16 bg-gradient-to-r from-blue-50 to-indigo-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">👥 Team Collaboration</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Team Collaboration</h2>
             <p className="text-xl text-gray-600">Bring your team together and collaborate on content</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-              <div className="text-4xl mb-4">👤</div>
+              <div className="text-4xl mb-4">01</div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Invite Members</h3>
               <p className="text-gray-600">Invite up to 5 team members to collaborate on your social media strategy. Assign roles based on permissions.</p>
             </div>
 
             <div className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-              <div className="text-4xl mb-4">�. </div>
+              <div className="text-4xl mb-4">02</div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Shared Accounts</h3>
               <p className="text-gray-600">Connect and share up to 8 social media accounts with your team. Everyone can create content together.</p>
             </div>
 
             <div className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-              <div className="text-4xl mb-4">📊</div>
+              <div className="text-4xl mb-4">03</div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Team Analytics</h3>
               <p className="text-gray-600">View performance metrics across all team accounts. Track engagement and optimize together.</p>
             </div>
@@ -414,7 +536,6 @@ const PlansPage = () => {
           >
             Get Started Today
           </button>
-          {/* <p className="text-blue-200 mt-4 text-sm">No credit card required • 14-day free trial</p> */}
         </div>
       </div>
 

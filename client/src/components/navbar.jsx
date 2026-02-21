@@ -134,7 +134,7 @@ const Navbar = () => {
                                 ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-white' 
                                 : 'bg-neutral-100 text-neutral-700'
                             }`}>
-                              {user?.planType === 'pro' ? '⭐ PRO' : user?.planType?.toUpperCase() || 'FREE'}
+                              {user?.planType === 'pro' ? 'PRO' : user?.planType?.toUpperCase() || 'FREE'}
                             </span>
                             <span className="text-xs text-neutral-500">
                               {user?.creditsRemaining || 0} credits
@@ -244,7 +244,14 @@ const Navbar = () => {
                           <User className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                          <p className="font-medium text-neutral-900">{user?.name}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-neutral-900">{user?.name}</p>
+                            {user?.planType === 'pro' && (
+                              <span className="px-2 py-0.5 text-xs font-semibold bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-full shadow-sm">
+                                PRO
+                              </span>
+                            )}
+                          </div>
                           <p className="text-sm text-neutral-500">{user?.email}</p>
                         </div>
                       </div>
@@ -320,3 +327,4 @@ const Navbar = () => {
 };
 
 export default Navbar;
+

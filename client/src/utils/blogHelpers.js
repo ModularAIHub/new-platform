@@ -1,4 +1,4 @@
-import { BLOG_CATEGORY_META } from '../data/blogPosts.js';
+import { BLOG_CATEGORY_META } from '../data/blogIndex.generated.js';
 
 export const BLOG_POSTS_PER_PAGE = 10;
 
@@ -313,18 +313,29 @@ export const generateTableOfContents = (content = '') => {
   return toc;
 };
 
-export const searchPosts = (query = '', posts = []) => {
+export const searchPosts = (query = '', posts = [], searchIndex = []) => {
   const normalizedQuery = String(query).trim().toLowerCase();
   if (!normalizedQuery) return posts;
 
   const terms = normalizedQuery.split(/\s+/).filter(Boolean);
+  const searchIndexMap =
+    Array.isArray(searchIndex) && searchIndex.length
+      ? new Map(
+          searchIndex
+            .filter((entry) => entry?.category && entry?.slug)
+            .map((entry) => [`${entry.category}/${entry.slug}`, String(entry.content || '').toLowerCase()])
+        )
+      : null;
+
   return posts
     .map((post) => {
+      const routeKey = `${post.category}/${post.slug}`;
+      const indexedContent = searchIndexMap?.get(routeKey);
       const haystack = {
         title: String(post.title || '').toLowerCase(),
         excerpt: String(post.excerpt || '').toLowerCase(),
         tags: (post.tags || []).join(' ').toLowerCase(),
-        content: stripMarkdown(post.content || '').toLowerCase(),
+        content: indexedContent ?? stripMarkdown(post.content || '').toLowerCase(),
       };
 
       const score = terms.reduce((total, term) => {

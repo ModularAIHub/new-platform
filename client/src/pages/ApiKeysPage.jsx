@@ -26,7 +26,7 @@ const ApiKeysPage = () => {
     const [form, setForm] = useState({ provider: 'openai', keyName: '', apiKey: '' })
     const [preference, setPreference] = useState(null)
     const [lockUntil, setLockUntil] = useState(null)
-    const [creditTier, setCreditTier] = useState(25)
+    const [creditTier, setCreditTier] = useState(0)
     const [locked, setLocked] = useState(false)
     const [lockMessage, setLockMessage] = useState(null)
     const [showByokInfo, setShowByokInfo] = useState(false)
@@ -58,7 +58,8 @@ const ApiKeysPage = () => {
             const res = await api.get('/byok/preference')
             setPreference(res.data.api_key_preference ?? null)
             setLockUntil(res.data.byok_locked_until)
-            setCreditTier(res.data.creditTier || (res.data.api_key_preference === 'byok' ? 55 : 25))
+            const fallbackTier = res.data.api_key_preference === 'byok' ? 75 : 15
+            setCreditTier(res.data.creditTier ?? fallbackTier)
             setLocked(res.data.locked)
             setLockMessage(res.data.lockMessage)
         } catch (e) {
@@ -185,10 +186,10 @@ const ApiKeysPage = () => {
                             <h2 className="text-2xl font-bold mb-2 text-blue-900">How BYOK Works</h2>
                             <ul className="list-disc pl-6 text-gray-700 text-base mb-4">
                                 <li><b>BYOK</b> (Bring Your Own Key) lets you use your own API keys for OpenAI, Gemini, or Perplexity.</li>
-                                <li>When you switch to BYOK, your account is <b>locked for 30 days</b> (cannot switch back to platform keys).</li>
-                                <li>BYOK gives you <b>2x credits</b> (Free: 100, Pro: 300 vs Platform's Free: 50, Pro: 150).</li>
+                                <li>When you switch to BYOK, your account is <b>locked for 90 days</b> (cannot switch back to platform keys).</li>
+                                <li>Monthly credits: <b>Platform</b> (Free: 15, Pro: 100) and <b>BYOK</b> (Free: 75, Pro: 200).</li>
                                 <li>You must add at least one valid API key for each provider you want to use.</li>
-                                <li>After 30 days, you can switch back to platform keys if you wish.</li>
+                                <li>After 90 days, you can switch back to platform keys if you wish.</li>
                                 <li>Active keys are used for all AI requests for that provider.</li>
                             </ul>
                             <div className="bg-blue-50 border border-blue-200 rounded p-3 text-blue-800 text-sm">
@@ -204,7 +205,7 @@ const ApiKeysPage = () => {
                             <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">API Key Preference</h1>
                             <button className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 font-semibold" onClick={() => setShowByokInfo(true)}>What is BYOK?</button>
                         </div>
-                        <p className="text-gray-500 mt-2 text-lg">Choose your API key mode. <b>Platform</b>: 50 credits (Free) / 150 (Pro). <b>BYOK</b>: 100 credits (Free) / 300 (Pro), 90-day lock.</p>
+                        <p className="text-gray-500 mt-2 text-lg">Choose your API key mode. <b>Platform</b>: 15 credits (Free) / 100 (Pro). <b>BYOK</b>: 75 credits (Free) / 200 (Pro), 90-day lock.</p>
                         
                         {/* BYOK Mode Guide Banner */}
                         {searchParams.get('mode') === 'byok' && preference !== 'byok' && (
@@ -212,13 +213,13 @@ const ApiKeysPage = () => {
                                 <div className="flex items-start gap-3">
                                     <Info className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
                                     <div>
-                                        <h3 className="font-bold text-green-900 mb-1">🚀 Ready to switch to BYOK?</h3>
+                                        <h3 className="font-bold text-green-900 mb-1">Ready to switch to BYOK?</h3>
                                         <p className="text-sm text-green-800">
-                                            To activate BYOK mode and get <b>2x credits</b> (100 for Free, 300 for Pro), add your first API key below. 
+                                            To activate BYOK mode and get BYOK monthly credits (<b>75 for Free</b>, <b>200 for Pro</b>), add your first API key below. 
                                             Once added, you'll automatically switch to BYOK mode.
                                         </p>
                                         <p className="text-xs text-green-700 mt-2">
-                                            👉 Scroll down to the form and add your OpenAI, Gemini, or Perplexity API key.
+                                            Scroll down to the form and add your OpenAI, Gemini, or Perplexity API key.
                                         </p>
                                     </div>
                                 </div>
@@ -237,7 +238,7 @@ const ApiKeysPage = () => {
                                     disabled={locked || (preference === 'byok' && lockUntil && new Date(lockUntil) > new Date())}
                                 />
                                 <span className="font-semibold text-blue-700">Platform Key</span>
-                                <span className="text-xs text-gray-500">(50 Free / 150 Pro)</span>
+                                <span className="text-xs text-gray-500">(15 Free / 100 Pro)</span>
                             </label>
                             <label className="flex items-center gap-2 cursor-pointer">
                                 <input type="radio" name="api-key-pref" value="byok" 
@@ -255,11 +256,11 @@ const ApiKeysPage = () => {
                                     disabled={locked || (preference === 'platform' && lockUntil && new Date(lockUntil) > new Date())}
                                 />
                                 <span className="font-semibold text-green-700">BYOK</span>
-                                <span className="text-xs text-gray-500">(100 Free / 300 Pro, 30-day lock)</span>
+                                <span className="text-xs text-gray-500">(75 Free / 200 Pro, 90-day lock)</span>
                             </label>
                             {byokSelected && preference !== 'byok' && (
                                 <div className="mt-2 px-3 py-2 bg-green-50 border border-green-300 rounded-lg text-sm text-green-800 font-medium">
-                                    ✅ BYOK selected! Add your first API key below to activate BYOK mode and unlock 2x credits.
+                                    BYOK selected! Add your first API key below to activate BYOK mode and unlock BYOK credits.
                                 </div>
                             )}
                             {!byokSelected && preference !== 'byok' && (

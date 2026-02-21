@@ -10,34 +10,33 @@ const PricingSection = () => {
 
   const plans = [
     {
-      name: "Starter",
-      price: "Free",
-      period: "Forever",
-      description: "Perfect for individuals getting started",
+      name: "Free",
+      price: "$0",
+      period: "/month",
+      description: "Best for getting started",
       features: [
-        "5 social media accounts",
-        "10 AI-generated posts/month", 
-        "Basic analytics",
-        "Email support"
+        "Basic AI mode (text-first generation)",
+        "Cross-platform posting + basic analytics",
+        "15 credits/month in platform mode",
+        "75 credits/month in BYOK mode"
       ],
-      buttonText: "Get Started",
+      buttonText: "Start Free",
       buttonStyle: "border border-gray-300 text-gray-700 hover:bg-gray-50",
       popular: false
     },
     {
-      name: "Teams", 
-      price: "Free",
-      period: "Forever",
-      description: "Best for growing businesses and creators",
+      name: "Pro", 
+      price: "INR 399",
+      period: "/month",
+      description: "Best for creators and small teams",
       features: [
-        "25 social media accounts",
-        "Unlimited AI posts",
-        "Advanced analytics", 
-        "Priority support",
-        "Custom brand voice",
-        "Team collaboration"
+        "Upgraded AI",
+        "Image generation + strategy builder",
+        "Teams mode (up to 5 members)",
+        "8 social accounts + advanced analytics",
+        "100 credits platform / 200 credits BYOK"
       ],
-      buttonText: "Upgrade to Teams", 
+      buttonText: "Upgrade to Pro", 
       buttonStyle: "bg-blue-600 text-white hover:bg-blue-700",
       popular: true
     },
@@ -48,7 +47,7 @@ const PricingSection = () => {
       description: "For large teams and agencies",
       features: [
         "Unlimited accounts",
-        "Unlimited everything", 
+        "Custom monthly credit limits", 
         "Advanced team features",
         "24/7 phone support",
         "Custom integrations",
@@ -112,7 +111,7 @@ const PricingSection = () => {
                 ))}
               </ul>
 
-              <button className={`w-full py-3 px-6 rounded-lg font-semibold transition-all duration-300 ${plan.buttonStyle} bg-blue-600/90 text-white hover:bg-blue-700/90 border-none`}>
+              <button className={`w-full py-3 px-6 rounded-lg font-semibold transition-all duration-300 ${plan.buttonStyle}`}>
                 {plan.buttonText}
               </button>
             </div>
