@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-02-21T16:38:51.018Z",
+  "generatedAt": "2026-02-21T18:21:14.826Z",
   "categories": {
     "meta": {
       "all": {
@@ -96,20 +96,20 @@
       "contentPath": "/blog/posts/story/what-we-learned-while-rebuilding-suitegenie-business-model.json"
     },
     {
-      "id": "social-genie-coming-soon",
-      "title": "Social Genie Is Coming Soon: What We Are Building Next",
-      "slug": "social-genie-coming-soon",
+      "id": "meta-genie-coming-soon",
+      "title": "Meta Genie Is Coming Soon: What We Are Building Next",
+      "slug": "meta-genie-coming-soon",
       "category": "updates",
       "tags": [
-        "social genie",
+        "meta genie",
         "coming soon",
         "roadmap",
         "suitegenie platform"
       ],
-      "excerpt": "We are actively building Social Genie and preparing rollout. Here is what it will include first, who gets access early, and what to expect next.",
+      "excerpt": "We are actively building Meta Genie and preparing rollout. Here is what it will include first, who gets access early, and what to expect next.",
       "featuredImage": {
         "url": "/images/blog/suitegenie-launch-hero.svg",
-        "alt": "Social Genie roadmap board with rollout stages"
+        "alt": "Meta Genie roadmap board with rollout stages"
       },
       "author": {
         "name": "Kanishk Saraswat",
@@ -125,7 +125,7 @@
       "readTime": 4,
       "featured": true,
       "status": "published",
-      "contentPath": "/blog/posts/updates/social-genie-coming-soon.json"
+      "contentPath": "/blog/posts/updates/meta-genie-coming-soon.json"
     },
     {
       "id": "linkedin-genie-strategy-builder-and-tweet-genie-rollout",

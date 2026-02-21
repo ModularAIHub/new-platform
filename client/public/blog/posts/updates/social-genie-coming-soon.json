@@ -1,19 +1,19 @@
 {
-  "id": "social-genie-coming-soon",
-  "title": "Social Genie Is Coming Soon: What We Are Building Next",
-  "slug": "social-genie-coming-soon",
+  "id": "meta-genie-coming-soon",
+  "title": "Meta Genie Is Coming Soon: What We Are Building Next",
+  "slug": "meta-genie-coming-soon",
   "category": "updates",
   "tags": [
-    "social genie",
+    "meta genie",
     "coming soon",
     "roadmap",
     "suitegenie platform"
   ],
-  "excerpt": "We are actively building Social Genie and preparing rollout. Here is what it will include first, who gets access early, and what to expect next.",
-  "content": "## Quick Summary\n\nSocial Genie is our next rollout, and it is designed to unify multi-platform social execution in one practical workspace.\n\n## Why Social Genie Exists\n\nRight now, teams still jump between tools for planning, writing, approvals, scheduling, and tracking performance. That fragmentation slows output and lowers quality.\n\nSocial Genie is being built to fix that with one connected operating flow.\n\n## What You Can Expect in the First Rollout\n\nInitial focus areas:\n- Unified publishing workflow across channels\n- Shared calendar and execution visibility\n- Better approval and collaboration flow for teams\n- Cleaner tracking of what is drafted, approved, and published\n\n## Rollout Plan\n\nWe are taking a staged release approach to keep quality high.\n\n- Stage 1: Internal hardening and controlled production checks\n- Stage 2: Early access for selected active users\n- Stage 3: Broader release once reliability targets are met\n\n## Who Should Care Most\n\n- Agencies handling multiple client pipelines\n- Creators running consistent weekly publishing systems\n- Teams that want one place for planning and execution\n\n## What Happens Next\n\nAs we get closer to release, we will publish:\n- Early access criteria\n- Detailed feature walkthroughs\n- Migration guidance for existing workflows\n\nSocial Genie is close, and we are focused on shipping it right, not rushing it out.",
+  "excerpt": "We are actively building Meta Genie and preparing rollout. Here is what it will include first, who gets access early, and what to expect next.",
+  "content": "## Quick Summary\n\nMeta Genie is our next rollout, and it is designed to unify Threads, Instagram, and YouTube execution in one practical workspace.\n\n## Why Meta Genie Exists\n\nRight now, teams still jump between tools for planning, writing, approvals, scheduling, and tracking performance across Meta platforms and YouTube. That fragmentation slows output and lowers quality.\n\nMeta Genie is being built to fix that with one connected operating flow for Threads, Instagram, and YouTube.\n\n## What You Can Expect in the First Rollout\n\nInitial focus areas:\n- Unified publishing workflow across Threads, Instagram, and YouTube\n- Shared calendar and execution visibility\n- Better approval and collaboration flow for teams\n- Cleaner tracking of what is drafted, approved, and published\n\n## Rollout Plan\n\nWe are taking a staged release approach to keep quality high.\n\n- Stage 1: Internal hardening and controlled production checks\n- Stage 2: Early access for selected active users (Threads invite-only while app is under review)\n- Stage 3: Broader release once reliability targets are met\n\n## Platform Status\n\n- **Threads**: Complete but invite-only while the app is under Meta review\n- **Instagram & YouTube**: In production and ready for use\n\n## Who Should Care Most\n\n- Agencies handling multiple client pipelines across Meta platforms and YouTube\n- Creators running consistent weekly publishing systems\n- Teams that want one place for planning and execution across these platforms\n\n## What Happens Next\n\nAs we get closer to release, we will publish:\n- Early access criteria\n- Detailed feature walkthroughs\n- Migration guidance for existing workflows\n\nMeta Genie is close, and we are focused on shipping it right, not rushing it out.",
   "featuredImage": {
     "url": "/images/blog/suitegenie-launch-hero.svg",
-    "alt": "Social Genie roadmap board with rollout stages"
+    "alt": "Meta Genie roadmap board with rollout stages"
   },
   "author": {
     "name": "Kanishk Saraswat",
@@ -30,26 +30,26 @@
   "featured": true,
   "status": "published",
   "seo": {
-    "metaTitle": "Social Genie Coming Soon: SuiteGenie Next Product Rollout",
-    "metaDescription": "Social Genie is rolling out soon. See what it will include first, the staged launch plan, and who should join early access.",
+    "metaTitle": "Meta Genie Coming Soon: SuiteGenie Next Product Rollout",
+    "metaDescription": "Meta Genie is rolling out soon. See what it will include first, the staged launch plan, and who should join early access.",
     "keywords": [
-      "social genie",
+      "meta genie",
       "suitegenie roadmap",
       "social media automation platform",
       "coming soon"
     ],
-    "canonicalUrl": "https://suitegenie.in/blogs/updates/social-genie-coming-soon"
+    "canonicalUrl": "https://suitegenie.in/blogs/updates/meta-genie-coming-soon"
   },
   "schema": {
     "type": "Article",
     "faq": [
       {
-        "question": "Is Social Genie already available to all users?",
+        "question": "Is Meta Genie already available to all users?",
         "answer": "Not yet. It is in active rollout preparation with staged access to ensure release quality and reliability."
       },
       {
-        "question": "Will Social Genie replace Tweet Genie and LinkedIn Genie?",
-        "answer": "It is intended to unify cross-channel operations while preserving the strengths of existing channel-specific workflows."
+        "question": "Will Meta Genie replace Tweet Genie and LinkedIn Genie?",
+        "answer": "No. Meta Genie is specifically for Threads, Instagram, and YouTube, complementing our existing Tweet Genie and LinkedIn Genie tools for a complete multi-platform solution."
       }
     ]
   }
