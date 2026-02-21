@@ -1,0 +1,56 @@
+{
+  "id": "what-we-learned-while-rebuilding-suitegenie-business-model",
+  "title": "What We Learned While Rebuilding SuiteGenie Around Real Execution",
+  "slug": "what-we-learned-while-rebuilding-suitegenie-business-model",
+  "category": "story",
+  "tags": [
+    "suitegenie story",
+    "product strategy",
+    "execution systems",
+    "founder lessons"
+  ],
+  "excerpt": "Four practical lessons from rebuilding SuiteGenie plans, workflows, and feature priorities around what users actually execute every week.",
+  "content": "## Why This Story Matters\n\nOver the last few releases, we changed more than features. We changed how we make product decisions.\n\nWe moved from shipping what looks exciting to shipping what improves weekly execution for real users.\n\n## Lesson 1: Constraints Improve Product Quality\n\nWhen everything is open to everyone, usage quality drops and support load spikes. Introducing clear plan boundaries gave us better signal on which workflows users truly value.\n\n## Lesson 2: Strategy Without Execution Is Noise\n\nUsers do not need another place to write ideas. They need strategy that turns into scheduled, shipped content. This is why Strategy Builder and execution tools now move together.\n\n## Lesson 3: Reliability Beats Feature Count\n\nThe best feature list means nothing if publish flow fails under pressure. We now prioritize reliability work, error handling, and predictable behavior before adding more surface area.\n\n## Lesson 4: Business Model and Product Design Are Linked\n\nPricing is not just billing. It shapes how people use the product. Better tier design helped us create clearer paths for free evaluation, pro execution, and enterprise scale.\n\n## What This Changed Internally\n\nOur release checklist now starts with:\n- Does this improve weekly output quality\n- Does this reduce operator effort\n- Does this stay reliable at scale\n\nIf a feature does not pass those checks, it does not ship yet.\n\n## Where We Go From Here\n\nThe next phase is simple: keep tightening the operating system for content teams.\n\nThat means better planning context, faster publishing loops, and cleaner collaboration in one stack.\n\nThanks for building with us while we make the product sharper.",
+  "featuredImage": {
+    "url": "/images/blog/suitegenie-launch-hero.svg",
+    "alt": "SuiteGenie product decision notes focused on execution and reliability"
+  },
+  "author": {
+    "name": "Kanishk Saraswat",
+    "avatar": "/kanishk.png",
+    "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+    "social": {
+      "linkedin": "kanishk-saraswat",
+      "twitter": "kanishksaraswat"
+    }
+  },
+  "publishDate": "2026-02-21T11:00:00+05:30",
+  "lastModified": "2026-02-21T11:00:00+05:30",
+  "readTime": 5,
+  "featured": false,
+  "status": "published",
+  "seo": {
+    "metaTitle": "SuiteGenie Product Story: Lessons From Rebuilding for Execution",
+    "metaDescription": "A behind-the-scenes look at how SuiteGenie changed its plans, feature priorities, and roadmap around real social media execution.",
+    "keywords": [
+      "suitegenie story",
+      "product lessons",
+      "social media automation strategy",
+      "startup execution"
+    ],
+    "canonicalUrl": "https://suitegenie.in/blogs/story/what-we-learned-while-rebuilding-suitegenie-business-model"
+  },
+  "schema": {
+    "type": "Article",
+    "faq": [
+      {
+        "question": "Why did SuiteGenie change pricing and feature access?",
+        "answer": "To align product usage with sustainable operations and invest more in reliability and execution quality for active teams."
+      },
+      {
+        "question": "What is the main principle behind recent releases?",
+        "answer": "Ship changes that improve weekly output quality and reduce effort, then scale that workflow across teams and channels."
+      }
+    ]
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "id": "linkedin-genie-strategy-builder-and-tweet-genie-rollout",
+  "title": "LinkedIn Genie Strategy Builder and Tweet Genie Rollout: What Is New",
+  "slug": "linkedin-genie-strategy-builder-and-tweet-genie-rollout",
+  "category": "updates",
+  "tags": [
+    "linkedin genie",
+    "tweet genie",
+    "strategy builder",
+    "cross posting",
+    "suitegenie updates"
+  ],
+  "excerpt": "A focused look at what we rolled out in LinkedIn Genie and Tweet Genie, including Strategy Builder, faster publishing workflows, and stronger execution controls.",
+  "content": "## Quick Summary\n\nWe shipped meaningful upgrades across LinkedIn Genie and Tweet Genie to help teams create better inputs, generate stronger content, and publish faster with less manual work.\n\n## LinkedIn Genie: Strategy Builder\n\nStrategy Builder is now central to how LinkedIn content is created. Instead of prompt guessing every day, users can define strategy once and reuse it across sessions.\n\nYou can now set:\n- Niche and positioning\n- Audience profile\n- Content goals\n- Tone and messaging direction\n\nThis gives your generated posts a stable voice and reduces random output.\n\n## Tweet Genie: Faster Publishing Flow\n\nTweet Genie now supports cleaner execution for high-frequency posting workflows. Key improvements include better compose flow, quicker generation loops, and tighter platform actions.\n\nFor teams publishing daily, this means less context switching and faster publish cycles.\n\n## Cross Product Execution Improvements\n\nWe also improved how both products work together in the same operating system.\n\nHighlights:\n- Better handoff between Twitter and LinkedIn workflows\n- Clearer account context for team environments\n- More predictable generation behavior for repeated campaigns\n\n## Why This Rollout Matters\n\nMost content systems fail because strategy and execution are disconnected. With Strategy Builder plus Tweet Genie execution improvements, we close that gap.\n\nYou can now:\n- Plan with intent\n- Generate with context\n- Publish with speed\n\n## Who Should Use This First\n\n- Founders building in public across Twitter and LinkedIn\n- Agencies managing multiple brand voices\n- Marketing teams that need consistency without slowing down production\n\nThis release is focused on real output quality, not surface level feature count.",
+  "featuredImage": {
+    "url": "/images/blog/linkedin-cross-posting-hero.svg",
+    "alt": "LinkedIn Genie and Tweet Genie workflow board with strategy builder notes"
+  },
+  "author": {
+    "name": "Kanishk Saraswat",
+    "avatar": "/kanishk.png",
+    "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+    "social": {
+      "linkedin": "kanishk-saraswat",
+      "twitter": "kanishksaraswat"
+    }
+  },
+  "publishDate": "2026-02-21T10:20:00+05:30",
+  "lastModified": "2026-02-21T10:20:00+05:30",
+  "readTime": 5,
+  "featured": true,
+  "status": "published",
+  "seo": {
+    "metaTitle": "LinkedIn Genie Strategy Builder and Tweet Genie Feature Rollout",
+    "metaDescription": "Explore the latest LinkedIn Genie and Tweet Genie improvements, including Strategy Builder, cross workflow upgrades, and faster publishing execution.",
+    "keywords": [
+      "linkedin genie strategy builder",
+      "tweet genie update",
+      "suitegenie release",
+      "social media execution workflow"
+    ],
+    "canonicalUrl": "https://suitegenie.in/blogs/updates/linkedin-genie-strategy-builder-and-tweet-genie-rollout"
+  },
+  "schema": {
+    "type": "Article",
+    "faq": [
+      {
+        "question": "What does Strategy Builder improve in LinkedIn Genie?",
+        "answer": "It improves consistency by storing audience, niche, goals, and tone so every generation starts with stable context."
+      },
+      {
+        "question": "Can I use Tweet Genie and LinkedIn Genie as one workflow?",
+        "answer": "Yes. Both are designed to run in one operating system so strategy and execution stay connected across channels."
+      }
+    ]
+  }
+}

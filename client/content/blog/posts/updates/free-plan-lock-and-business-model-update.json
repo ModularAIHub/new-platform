@@ -1,0 +1,57 @@
+{
+  "id": "free-plan-lock-and-business-model-update",
+  "title": "Why We Locked Free Plan Features and Reshaped Our Business Model",
+  "slug": "free-plan-lock-and-business-model-update",
+  "category": "updates",
+  "tags": [
+    "suitegenie pricing update",
+    "free plan",
+    "business model",
+    "credit tiers",
+    "feature access"
+  ],
+  "excerpt": "A transparent update on feature locking, credit tiers, and the business model changes we made to keep SuiteGenie sustainable and useful.",
+  "content": "## Quick Summary\n\nWe have updated our business model, tightened free plan access, and clarified credit tiers so the product stays fast, stable, and fair for serious users.\n\n## What Changed\n\n### 1. Free Plan Feature Locking\nWe kept free access for getting started, but we now lock advanced capabilities behind paid plans.\n\nFree plan users can still:\n- Generate core social copy\n- Use built in platform keys\n- Use their own API keys\n- Connect a small number of social accounts\n\nAdvanced features now require Pro or Enterprise:\n- Image generation\n- Team collaboration\n- Bulk scheduling\n- Advanced analytics\n- Priority support\n\n### 2. New Credit Tiers\nWe now use clearer monthly credit tiers based on plan and API preference.\n\n- Free: Platform 15, BYOK 75\n- Pro: Platform 100, BYOK 200\n- Enterprise: Platform 500, BYOK 1000\n\nThis gives every plan a predictable operating envelope instead of vague limits.\n\n### 3. Plan Limits Are More Explicit\nWe aligned account and team limits to plan type so there is less guesswork when you scale usage.\n\n## Why We Did This\n\n### Product quality has a real cost\nRunning reliable AI generation and multi-platform publishing at scale is expensive. Feature locking lets us fund reliability work instead of cutting corners.\n\n### Free should be useful, not unlimited\nFree remains a genuine starting point. It is now optimized for evaluation and early progress, while heavier execution belongs on paid plans.\n\n### Teams need predictable operations\nAgencies and creators asked for tighter limits, clearer expectations, and fewer surprises around credits. This update addresses exactly that.\n\n## What This Means for You\n\n- If you are on Free: you can still test and publish core workflows\n- If you need scale: Pro is now the practical default\n- If you run larger operations: Enterprise gives higher throughput and team capacity\n\n## Our Commitment\n\nWe are not locking features to create friction. We are doing it to keep the platform healthy and to keep shipping faster for people who depend on it every day.\n\nYou can expect continued improvements in generation quality, scheduling reliability, and cross-platform workflow speed over the coming releases.",
+  "featuredImage": {
+    "url": "/images/blog/suitegenie-launch-hero.svg",
+    "alt": "SuiteGenie plans board showing free, pro, and enterprise tiers"
+  },
+  "author": {
+    "name": "Kanishk Saraswat",
+    "avatar": "/kanishk.png",
+    "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+    "social": {
+      "linkedin": "kanishk-saraswat",
+      "twitter": "kanishksaraswat"
+    }
+  },
+  "publishDate": "2026-02-21T10:00:00+05:30",
+  "lastModified": "2026-02-21T10:00:00+05:30",
+  "readTime": 6,
+  "featured": true,
+  "status": "published",
+  "seo": {
+    "metaTitle": "SuiteGenie Pricing Update: Free Plan Locking and New Credit Tiers",
+    "metaDescription": "Learn why SuiteGenie locked selected free plan features and how new credit tiers across Free, Pro, and Enterprise improve clarity and reliability.",
+    "keywords": [
+      "suitegenie pricing",
+      "free plan locking",
+      "social media automation plans",
+      "credit tiers"
+    ],
+    "canonicalUrl": "https://suitegenie.in/blogs/updates/free-plan-lock-and-business-model-update"
+  },
+  "schema": {
+    "type": "Article",
+    "faq": [
+      {
+        "question": "Is SuiteGenie free plan removed?",
+        "answer": "No. The free plan is still available for testing and early workflows, but advanced capabilities are now reserved for paid plans."
+      },
+      {
+        "question": "Why are BYOK credits higher than platform credits?",
+        "answer": "BYOK reduces platform AI cost, so we can offer higher monthly credit limits when users bring their own provider keys."
+      }
+    ]
+  }
+}

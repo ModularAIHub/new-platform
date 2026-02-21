@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-02-20T20:56:50.005Z",
+  "generatedAt": "2026-02-21T08:00:23.206Z",
   "categories": {
     "meta": {
       "all": {
@@ -63,6 +63,136 @@
     ]
   },
   "posts": [
+    {
+      "id": "what-we-learned-while-rebuilding-suitegenie-business-model",
+      "title": "What We Learned While Rebuilding SuiteGenie Around Real Execution",
+      "slug": "what-we-learned-while-rebuilding-suitegenie-business-model",
+      "category": "story",
+      "tags": [
+        "suitegenie story",
+        "product strategy",
+        "execution systems",
+        "founder lessons"
+      ],
+      "excerpt": "Four practical lessons from rebuilding SuiteGenie plans, workflows, and feature priorities around what users actually execute every week.",
+      "featuredImage": {
+        "url": "/images/blog/suitegenie-launch-hero.svg",
+        "alt": "SuiteGenie product decision notes focused on execution and reliability"
+      },
+      "author": {
+        "name": "Kanishk Saraswat",
+        "avatar": "/kanishk.png",
+        "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+        "social": {
+          "linkedin": "kanishk-saraswat",
+          "twitter": "kanishksaraswat"
+        }
+      },
+      "publishDate": "2026-02-21T11:00:00+05:30",
+      "lastModified": "2026-02-21T11:00:00+05:30",
+      "readTime": 5,
+      "featured": false,
+      "status": "published",
+      "contentPath": "/blog/posts/story/what-we-learned-while-rebuilding-suitegenie-business-model.json"
+    },
+    {
+      "id": "social-genie-coming-soon",
+      "title": "Social Genie Is Coming Soon: What We Are Building Next",
+      "slug": "social-genie-coming-soon",
+      "category": "updates",
+      "tags": [
+        "social genie",
+        "coming soon",
+        "roadmap",
+        "suitegenie platform"
+      ],
+      "excerpt": "We are actively building Social Genie and preparing rollout. Here is what it will include first, who gets access early, and what to expect next.",
+      "featuredImage": {
+        "url": "/images/blog/suitegenie-launch-hero.svg",
+        "alt": "Social Genie roadmap board with rollout stages"
+      },
+      "author": {
+        "name": "Kanishk Saraswat",
+        "avatar": "/kanishk.png",
+        "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+        "social": {
+          "linkedin": "kanishk-saraswat",
+          "twitter": "kanishksaraswat"
+        }
+      },
+      "publishDate": "2026-02-21T10:40:00+05:30",
+      "lastModified": "2026-02-21T10:40:00+05:30",
+      "readTime": 4,
+      "featured": true,
+      "status": "published",
+      "contentPath": "/blog/posts/updates/social-genie-coming-soon.json"
+    },
+    {
+      "id": "linkedin-genie-strategy-builder-and-tweet-genie-rollout",
+      "title": "LinkedIn Genie Strategy Builder and Tweet Genie Rollout: What Is New",
+      "slug": "linkedin-genie-strategy-builder-and-tweet-genie-rollout",
+      "category": "updates",
+      "tags": [
+        "linkedin genie",
+        "tweet genie",
+        "strategy builder",
+        "cross posting",
+        "suitegenie updates"
+      ],
+      "excerpt": "A focused look at what we rolled out in LinkedIn Genie and Tweet Genie, including Strategy Builder, faster publishing workflows, and stronger execution controls.",
+      "featuredImage": {
+        "url": "/images/blog/linkedin-cross-posting-hero.svg",
+        "alt": "LinkedIn Genie and Tweet Genie workflow board with strategy builder notes"
+      },
+      "author": {
+        "name": "Kanishk Saraswat",
+        "avatar": "/kanishk.png",
+        "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+        "social": {
+          "linkedin": "kanishk-saraswat",
+          "twitter": "kanishksaraswat"
+        }
+      },
+      "publishDate": "2026-02-21T10:20:00+05:30",
+      "lastModified": "2026-02-21T10:20:00+05:30",
+      "readTime": 5,
+      "featured": true,
+      "status": "published",
+      "contentPath": "/blog/posts/updates/linkedin-genie-strategy-builder-and-tweet-genie-rollout.json"
+    },
+    {
+      "id": "free-plan-lock-and-business-model-update",
+      "title": "Why We Locked Free Plan Features and Reshaped Our Business Model",
+      "slug": "free-plan-lock-and-business-model-update",
+      "category": "updates",
+      "tags": [
+        "suitegenie pricing update",
+        "free plan",
+        "business model",
+        "credit tiers",
+        "feature access"
+      ],
+      "excerpt": "A transparent update on feature locking, credit tiers, and the business model changes we made to keep SuiteGenie sustainable and useful.",
+      "featuredImage": {
+        "url": "/images/blog/suitegenie-launch-hero.svg",
+        "alt": "SuiteGenie plans board showing free, pro, and enterprise tiers"
+      },
+      "author": {
+        "name": "Kanishk Saraswat",
+        "avatar": "/kanishk.png",
+        "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+        "social": {
+          "linkedin": "kanishk-saraswat",
+          "twitter": "kanishksaraswat"
+        }
+      },
+      "publishDate": "2026-02-21T10:00:00+05:30",
+      "lastModified": "2026-02-21T10:00:00+05:30",
+      "readTime": 6,
+      "featured": true,
+      "status": "published",
+      "contentPath": "/blog/posts/updates/free-plan-lock-and-business-model-update.json"
+    },
     {
       "id": "linkedin-cross-posting-tweet-genie",
       "title": "Cross-Post to LinkedIn Directly from Tweet Genie — Now Live on SuiteGenie",
