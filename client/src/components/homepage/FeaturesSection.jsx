@@ -1,5 +1,5 @@
 import { Card, CardContent } from '../ui';
-import { Twitter, Linkedin, FileText, Zap } from 'lucide-react';
+import { Twitter, Linkedin, FileText, AtSign, Zap } from 'lucide-react';
 
 const FeaturesSection = () => {
 
@@ -22,7 +22,21 @@ const FeaturesSection = () => {
       bgColor: "bg-blue-50",
       stats: "Professional networking made easy",
       features: ["Professional Content", "Industry Insights", "Brand Building"],
-      url: "https://linkedin.suitegenie.in"
+      url: "https://linkedin.suitegenie.in",
+      ctaLabel: "Access LinkedIn Automator",
+      ctaClass: "bg-blue-700 hover:bg-blue-800 focus:ring-blue-500"
+    },
+    {
+      icon: <AtSign className="w-8 h-8" />,
+      title: "Social Genie",
+      description: "AI-powered social publishing for Instagram, Threads, and YouTube with scheduling, post history, and analytics in one workspace. Built for creators, teams, and agencies.",
+      color: "from-slate-700 to-slate-900",
+      bgColor: "bg-slate-50",
+      stats: "Threads live now • Instagram + YouTube in development",
+      features: ["Threads Publishing (Live)", "Instagram (In Development)", "YouTube (In Development)", "Post Analytics"],
+      url: "https://meta.suitegenie.in",
+      ctaLabel: "Access Social Genie",
+      ctaClass: "bg-slate-700 hover:bg-slate-800 focus:ring-slate-500"
     },
     {
       icon: <FileText className="w-8 h-8" />,
@@ -56,15 +70,15 @@ const FeaturesSection = () => {
         </div>
 
         {/* Features Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
           {platforms.map((platform, index) => (
             <Card 
               key={index} 
               variant="interactive" 
-              className={`text-center hover-lift animate-fade-in`}
+              className={`text-center hover-lift animate-fade-in h-full`}
               style={{animationDelay: `${index * 0.1}s`}}
             >
-              <CardContent className="p-8">
+              <CardContent className="p-8 h-full flex flex-col">
                 {/* Icon */}
                 <div className={`w-16 h-16 bg-gradient-to-br ${platform.color} rounded-xl flex items-center justify-center mx-auto mb-6 text-white shadow-lg`}>
                   {platform.icon}
@@ -84,37 +98,23 @@ const FeaturesSection = () => {
                 </div>
                 
                 {/* Features List */}
-                <div className="space-y-2">
+                <div className="space-y-2 mt-auto">
                   {platform.features.map((feature, featureIndex) => (
                     <div key={featureIndex} className="flex items-center justify-center gap-2 text-sm text-neutral-600">
                       <div className="w-1.5 h-1.5 bg-primary-500 rounded-full"></div>
                       <span>{feature}</span>
                     </div>
                   ))}
-                  {/* Add access button for Tweet Genie only */}
-                  {platform.title === 'Tweet Genie' && platform.url && (
+                  {platform.url && (
                     <div className="mt-6 flex justify-center">
                       <a
                         href={platform.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-block px-5 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
-                        title="Open Tweet Genie"
+                        className={`inline-block px-5 py-2 text-white font-semibold rounded-lg shadow focus:outline-none focus:ring-2 transition ${platform.ctaClass || 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-400'}`}
+                        title={`Open ${platform.title}`}
                       >
-                        Access Tweet Genie
-                      </a>
-                    </div>
-                  )}
-                  {platform.title === 'LinkedIn Automator' && platform.url && (
-                    <div className="mt-6 flex justify-center">
-                      <a
-                        href={platform.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block px-5 py-2 bg-blue-700 text-white font-semibold rounded-lg shadow hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-                        title="Open LinkedIn Automator"
-                      >
-                        Access LinkedIn Automator
+                        {platform.ctaLabel || `Access ${platform.title}`}
                       </a>
                     </div>
                   )}

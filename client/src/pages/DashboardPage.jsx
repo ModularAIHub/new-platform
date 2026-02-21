@@ -178,6 +178,13 @@ const DashboardPage = () => {
             status: 'active'
         },
         {
+            name: 'Social Genie',
+            description: 'Instagram + Threads + YouTube publishing and analytics',
+            url: URLS.SOCIAL_GENIE,
+            icon: ExternalLink,
+            status: 'active'
+        },
+        {
             name: 'WordPress Genie',
             description: 'WordPress content automation',
             url: URLS.WORDPRESS_WRITER,
@@ -505,7 +512,7 @@ const DashboardPage = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                             <AiToolCard name="Tweet Genie" status="Active" />
                             <AiToolCard name="LinkedIn Genie" status="Active" />
-                            <AiToolCard name="Social Genie" status="Coming Soon" description="YouTube, Facebook & Instagram" />
+                            <AiToolCard name="Social Genie" status="Active" />
                             <AiToolCard name="WordPress Writer" status="Coming Soon" />
                         </div>
                     </CardContent>
@@ -659,7 +666,7 @@ function RecentActivity({ label, source, time, status }) {
 }
 
 // AI tool card
-function AiToolCard({ name, status, description }) {
+function AiToolCard({ name, status }) {
     const statusMap = {
         Active: 'badge-success',
         'Coming Soon': 'badge-warning',
@@ -670,7 +677,7 @@ function AiToolCard({ name, status, description }) {
 
     return (
         <Card variant="interactive" className="h-full">
-            <CardContent className="p-4">
+            <CardContent className="p-4 h-full flex flex-col">
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="font-semibold text-neutral-900">{name}</h3>
                     <span className={statusMap[status]}>{status}</span>
@@ -680,32 +687,30 @@ function AiToolCard({ name, status, description }) {
                     <Zap className="w-8 h-8 text-primary-600" />
                 </div>
 
-                {description && (
-                    <p className="text-sm text-neutral-600 mb-3 text-center">{description}</p>
-                )}
-
-                {status === 'Active' ? (
-                    <Button
-                        variant="primary"
-                        size="sm"
-                        fullWidth
-                        icon={<ExternalLink className="w-4 h-4" />}
-                        iconPosition="right"
-                        onClick={() => window.open(launchUrl, '_blank')}
-                        title={name === 'Tweet Genie' ? 'Open Tweet Genie in a new tab' : 'Launch this tool'}
-                    >
-                        {name === 'Tweet Genie' ? 'Open Tweet Genie' : 'Launch Tool'}
-                    </Button>
-                ) : (
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        fullWidth
-                        disabled
-                    >
-                        Coming Soon
-                    </Button>
-                )}
+                <div className="mt-auto">
+                    {status === 'Active' ? (
+                        <Button
+                            variant="primary"
+                            size="sm"
+                            fullWidth
+                            icon={<ExternalLink className="w-4 h-4" />}
+                            iconPosition="right"
+                            onClick={() => window.open(launchUrl, '_blank')}
+                            title={`Open ${name} in a new tab`}
+                        >
+                            {`Open ${name}`}
+                        </Button>
+                    ) : (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            fullWidth
+                            disabled
+                        >
+                            Coming Soon
+                        </Button>
+                    )}
+                </div>
             </CardContent>
         </Card>
     )
