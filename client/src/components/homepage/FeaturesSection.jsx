@@ -48,7 +48,7 @@ const FeaturesSection = () => {
             </div>
           </div>
           <h2 className="text-4xl md:text-5xl font-bold text-neutral-900 mb-6 tracking-tight">
-            How SuiteGenie Works
+            Social Media Management and Automation
           </h2>
           <p className="text-xl text-neutral-600 max-w-3xl mx-auto leading-relaxed">
             Automate your content creation, scheduling, and publishing across all your favorite platforms without losing your creative touch.

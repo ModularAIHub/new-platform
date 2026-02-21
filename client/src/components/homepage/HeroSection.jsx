@@ -30,7 +30,7 @@ const HeroSection = () => {
           {/* Left Content */}
           <div className="text-center lg:text-left animate-fade-in">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-neutral-900 mb-4 leading-tight animate-fade-in animate-stagger-2">
-              Social media automation for agencies and creators with{' '}
+              AI-powered social media management for creators and agencies with{' '}
               <span className="bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">
                 SuiteGenie
               </span>
@@ -42,7 +42,7 @@ const HeroSection = () => {
               </span>
             </div>
             <p className="text-lg sm:text-xl text-neutral-600 mb-10 leading-relaxed max-w-2xl mx-auto lg:mx-0 animate-fade-in animate-stagger-3">
-              The all-in-one AI suite for agencies, creators, marketers, and teams. Effortlessly generate, schedule, and manage content across every platform so you can focus on growing your brand.
+              Social media management and automation in one place. Generate, schedule, approve, and publish content across major platforms while keeping your brand voice.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-6">

@@ -19,22 +19,22 @@ const HomePage = () => {
     <>
       <Helmet>
         {/* Primary Meta Tags */}
-        <title>SuiteGenie - Social media automation for agencies and creators</title>
-        <meta name="title" content="SuiteGenie - Social media automation for agencies and creators" />
-        <meta name="description" content="Automate Twitter, LinkedIn and WordPress with AI. SuiteGenie helps agencies and creators generate, schedule, and manage content across platforms." />
-        <meta name="keywords" content="social media automation for agencies, social media automation for creators, Twitter automation, LinkedIn automation, WordPress automation, AI content scheduling, social media management platform, Buffer alternative, Hootsuite alternative" />
+        <title>AI Social Media Management for Creators & Agencies | SuiteGenie</title>
+        <meta name="title" content="AI Social Media Management for Creators & Agencies | SuiteGenie" />
+        <meta name="description" content="Automate content creation, scheduling, and publishing with SuiteGenie. AI-powered social media management and automation for creators, agencies, and growing teams." />
+        <meta name="keywords" content="AI social media management, social media management and automation, social media automation for creators, social media automation for agencies, Twitter automation, LinkedIn automation, Instagram automation, YouTube automation, content scheduling platform" />
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://suitegenie.in/" />
-        <meta property="og:title" content="SuiteGenie - Social media automation for agencies and creators" />
-        <meta property="og:description" content="Automate Twitter, LinkedIn and WordPress with AI. Built for agencies and creators to scale content and scheduling." />
+        <meta property="og:title" content="AI Social Media Management for Creators & Agencies | SuiteGenie" />
+        <meta property="og:description" content="Automate content creation, scheduling, and publishing with SuiteGenie. AI-powered social media management and automation for creators and agencies." />
         <meta property="og:image" content="https://suitegenie.in/og-image.jpg" />
         <meta property="og:site_name" content="SuiteGenie" />
         {/* Twitter */}
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:url" content="https://suitegenie.in/" />
-        <meta property="twitter:title" content="SuiteGenie - Social media automation for agencies and creators" />
-        <meta property="twitter:description" content="Automate Twitter, LinkedIn and WordPress with AI. Built for agencies and creators to scale content and scheduling." />
+        <meta property="twitter:title" content="AI Social Media Management for Creators & Agencies | SuiteGenie" />
+        <meta property="twitter:description" content="Automate content creation, scheduling, and publishing with SuiteGenie. AI-powered social media management and automation for creators and agencies." />
         <meta property="twitter:image" content="https://suitegenie.in/twitter-card.jpg" />
         <meta name="twitter:site" content="@Suitegenie1" />
         <meta name="twitter:creator" content="@Suitegenie1" />
@@ -86,7 +86,7 @@ const HomePage = () => {
                 "https://linkedin.com/company/suitegenie"
               ]
             },
-            "description": "Social media automation platform for agencies and creators. Generate, schedule, and manage content across Twitter, LinkedIn, and WordPress."
+            "description": "AI-powered social media management and automation for creators and agencies. Generate, schedule, and publish content across major platforms."
           }
         `}</script>
         {/* Organization Schema */}
@@ -97,7 +97,7 @@ const HomePage = () => {
             "name": "SuiteGenie",
             "url": "https://suitegenie.in",
             "logo": "https://suitegenie.in/logo.png",
-            "description": "Social media automation platform for agencies and creators",
+            "description": "AI-powered social media management and automation for creators and agencies",
             "foundingDate": "2024",
             "founder": {
               "@type": "Person",
