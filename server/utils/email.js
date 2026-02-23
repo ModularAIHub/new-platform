@@ -15,11 +15,11 @@ const emailDebug = (...args) => {
   }
 };
 
-export async function sendMail({ to, subject, html, text }) {
+export async function sendMail({ to, subject, html, text, from }) {
   emailDebug('Sending email', { to, subject });
   try {
     const { data, error } = await resend.emails.send({
-      from: 'suitegenie <noreply@suitegenie.in>',
+      from: from || 'suitegenie <noreply@suitegenie.in>',
       to,
       subject,
       html,

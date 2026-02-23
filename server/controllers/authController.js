@@ -6,6 +6,8 @@ import redisClient from '../config/redis.js';
 import { invalidateAuthUserCache } from '../middleware/auth.js';
 import { encrypt, decrypt } from '../utils/encryption.js';
 import { sendMail } from '../utils/email.js';
+import { buildWelcomeEmailTemplate } from '../utils/welcomeEmailTemplate.js';
+import { buildOtpEmailTemplate } from '../utils/otpEmailTemplate.js';
 import { comparePassword, hashPassword } from '../utils/bcrypt.js';
 import {
     validateRegistrationData,
@@ -25,6 +27,26 @@ const authDebug = (...args) => {
 };
 
 class AuthController {
+    static async sendWelcomeEmailBestEffort(user) {
+        try {
+            if (!user?.email) return;
+
+            const { subject, html, text } = buildWelcomeEmailTemplate({
+                name: user.name
+            });
+
+            await sendMail({
+                from: 'Kanishk at SuiteGenie <kanishksaraswat@suitegenie.in>',
+                to: user.email,
+                subject,
+                html,
+                text
+            });
+        } catch (error) {
+            console.error('Welcome email send failed (non-blocking):', error?.message || error);
+        }
+    }
+
     static buildAccessTokenPayload(user) {
         return {
             userId: user.id,
@@ -212,6 +234,9 @@ class AuthController {
                     creditsRemaining: user.credits_remaining
                 }
             });
+
+            // Send welcome email without blocking signup success.
+            void AuthController.sendWelcomeEmailBestEffort(user);
 
         } catch (error) {
             console.error('Registration error:', error);
@@ -895,43 +920,21 @@ class AuthController {
             await redisClient.setEx(rateLimitKey, 900, String((parseInt(attempts) || 0) + 1)); // 15 minutes
 
             // Prepare OTP email based on purpose
-            let subject, html;
-            switch (purpose) {
-                case 'password-reset':
-                    subject = 'Password Reset OTP';
-                    html = `
-                        <h2>Password Reset Request</h2>
-                        <p>Your OTP for resetting your password is: <strong>${otp}</strong></p>
-                        <p>This OTP will expire in 10 minutes.</p>
-                        <p>If you didn't request this, please ignore this email.</p>
-                    `;
-                    break;
-                case 'account-verification':
-                    subject = 'Account Verification OTP';
-                    html = `
-                        <h2>Account Verification</h2>
-                        <p>Your OTP for account verification is: <strong>${otp}</strong></p>
-                        <p>This OTP will expire in 10 minutes.</p>
-                        <p>Please use this code to verify your account.</p>
-                    `;
-                    break;
-                default: // verification
-                    subject = 'Email Verification OTP';
-                    html = `
-                        <h2>Email Verification</h2>
-                        <p>Your verification OTP is: <strong>${otp}</strong></p>
-                        <p>This OTP will expire in 10 minutes.</p>
-                        <p>Please use this code to complete the verification process.</p>
-                    `;
-            }
+            const { subject, html, text } = buildOtpEmailTemplate({
+                otp,
+                purpose,
+                expiresInMinutes: 10
+            });
 
 
             // Send email and only respond after success
             try {
                 await sendMail({
+                    from: 'SuiteGenie Security <noreply@suitegenie.in>',
                     to: email,
                     subject,
-                    html
+                    html,
+                    text
                 });
                 res.json({ 
                     message: 'OTP sent successfully',
