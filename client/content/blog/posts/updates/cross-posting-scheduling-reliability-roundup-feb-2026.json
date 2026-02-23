@@ -1,0 +1,59 @@
+{
+  "id": "cross-posting-scheduling-reliability-roundup-feb-2026",
+  "title": "SuiteGenie Update: Cross-Posting, Scheduling Reliability, and Analytics Visibility Across X, LinkedIn, and Threads",
+  "slug": "cross-posting-scheduling-reliability-roundup-feb-2026",
+  "category": "updates",
+  "tags": [
+    "suitegenie updates",
+    "cross posting",
+    "tweet genie",
+    "linkedin genie",
+    "social genie",
+    "scheduling",
+    "analytics"
+  ],
+  "excerpt": "A major reliability-focused update across Tweet Genie, LinkedIn Genie, and Social Genie: better cross-posting parity, timezone-safe schedules, stronger session persistence, and clearer analytics tracking.",
+  "content": "## Quick Answer\n\nWe shipped a reliability-heavy cross-platform update that makes SuiteGenie more consistent across X, LinkedIn, and Threads, especially for scheduling, mirrored cross-post visibility, and analytics tracking.\n\n## What Improved (High Impact)\n\n### 1. Cross-Posting Schedule Visibility Across Apps\n- Scheduled cross-posts now appear more consistently in target apps as read-only mirrored rows\n- Ownership remains clear with labels like `Managed in Tweet Genie` or `Managed in LinkedIn Genie`\n- Teams can verify planned posts without duplicating schedule management\n\n### 2. Timezone Consistency for Mirrored Scheduled Posts\n- Fixed schedule time mismatches caused by timezone parsing differences between apps\n- Mirrored rows now display the correct scheduled time with timezone labels (for example `Asia/Kolkata`)\n- This reduces one of the most confusing issues in cross-platform scheduling workflows\n\n### 3. Better Cross-Posting Coverage in Social Genie (Threads)\n- Threads scheduling and cross-post visibility received multiple fixes so users can track what is scheduled and what is managed externally\n- Meta/Threads compose flow now exposes cross-post controls in the right places for real publishing workflows\n\n### 4. Analytics Now Reflects More Scheduled and Cross-Posted Content\n- Analytics tracking improved for scheduled and externally created posts\n- Recent-post sections help users confirm that content they scheduled or cross-posted is actually being tracked\n- This is especially useful for validating team workflows and cross-platform publishing\n\n### 5. Session and Authentication Reliability Improvements\n- Session expiry and token refresh handling was tightened so users are less likely to get logged out unexpectedly during active use\n- This matters for bulk scheduling and scheduled publishing reliability across longer windows\n\n## Team Workflow Progress (Practical, Not Heavy)\n\nWe also started improving team cross-posting with a more controlled approach:\n- explicit target account selection (instead of ambiguous defaults)\n- safer account routing behavior for team publishing\n- stronger attribution for analytics and history\n\nThis makes it easier to support real scenarios like posting from one team member's X account to another team member's LinkedIn account without introducing confusing automation rules.\n\n## Quality of Life Fixes Included\n- cleaner scheduler status text rendering in UI\n- improved dev environment behavior for connection checks (Vite proxy/base URL consistency)\n- more predictable scheduling lead-time behavior in Tweet Genie\n- credits and monthly reset behavior aligned more clearly with plan logic\n\n## Why This Release Matters\n\nMost social media tools talk about multi-platform posting. The hard part is making it reliable when teams, scheduling, analytics, and account ownership all interact.\n\nThis update focused on that execution layer: fewer hidden mismatches, clearer visibility, and better confidence when you are shipping content at scale.\n\n## What This Means for Agencies, Teams, and Creators\n- More trustworthy cross-platform scheduling views\n- Better analytics confidence after scheduled or cross-posted publishing\n- Fewer interruptions caused by session/auth edge cases\n- Cleaner multi-account workflows as team routing support expands\n\n## What's Next\n\nWe are continuing to improve team cross-post routing (account-to-account targeting) and expanding reporting/retention features for long-term content operations.\n\nIf you are running a multi-platform calendar, this release should feel meaningfully more stable in day-to-day use.",
+  "featuredImage": {
+    "url": "/images/blog/suitegenie-launch-hero.svg",
+    "alt": "SuiteGenie cross-posting and scheduling reliability update across X LinkedIn and Threads"
+  },
+  "author": {
+    "name": "Kanishk Saraswat",
+    "avatar": "/kanishk.png",
+    "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+    "social": {
+      "linkedin": "kanishk-saraswat",
+      "twitter": "kanishksaraswat"
+    }
+  },
+  "publishDate": "2026-02-23T23:30:00+05:30",
+  "lastModified": "2026-02-23T23:30:00+05:30",
+  "readTime": 6,
+  "featured": false,
+  "status": "published",
+  "seo": {
+    "metaTitle": "SuiteGenie Update: Cross-Posting, Scheduling Reliability, and Analytics Visibility",
+    "metaDescription": "See what improved across Tweet Genie, LinkedIn Genie, and Social Genie: cross-post scheduling visibility, timezone fixes, analytics tracking, and session reliability.",
+    "keywords": [
+      "suitegenie updates",
+      "cross posting scheduling",
+      "social media automation reliability",
+      "x linkedin threads scheduling"
+    ],
+    "canonicalUrl": "https://suitegenie.in/blogs/updates/cross-posting-scheduling-reliability-roundup-feb-2026"
+  },
+  "schema": {
+    "type": "Article",
+    "faq": [
+      {
+        "question": "What changed in SuiteGenie scheduling with this update?",
+        "answer": "Scheduled cross-posts are now shown more consistently across apps with improved timezone-safe display and clearer ownership labels for externally managed items."
+      },
+      {
+        "question": "Does this update help with analytics for scheduled or cross-posted content?",
+        "answer": "Yes. Analytics tracking and visibility were improved so more scheduled and cross-posted posts appear in analytics views, including recent-post verification sections."
+      }
+    ]
+  }
+}

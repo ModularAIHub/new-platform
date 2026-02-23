@@ -64,6 +64,41 @@ export const BLOG_CATEGORY_ORDER = [
 
 export const BLOG_POSTS_INDEX = [
   {
+    "id": "cross-posting-scheduling-reliability-roundup-feb-2026",
+    "title": "SuiteGenie Update: Cross-Posting, Scheduling Reliability, and Analytics Visibility Across X, LinkedIn, and Threads",
+    "slug": "cross-posting-scheduling-reliability-roundup-feb-2026",
+    "category": "updates",
+    "tags": [
+      "suitegenie updates",
+      "cross posting",
+      "tweet genie",
+      "linkedin genie",
+      "social genie",
+      "scheduling",
+      "analytics"
+    ],
+    "excerpt": "A major reliability-focused update across Tweet Genie, LinkedIn Genie, and Social Genie: better cross-posting parity, timezone-safe schedules, stronger session persistence, and clearer analytics tracking.",
+    "featuredImage": {
+      "url": "/images/blog/suitegenie-launch-hero.svg",
+      "alt": "SuiteGenie cross-posting and scheduling reliability update across X LinkedIn and Threads"
+    },
+    "author": {
+      "name": "Kanishk Saraswat",
+      "avatar": "/kanishk.png",
+      "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+      "social": {
+        "linkedin": "kanishk-saraswat",
+        "twitter": "kanishksaraswat"
+      }
+    },
+    "publishDate": "2026-02-23T23:30:00+05:30",
+    "lastModified": "2026-02-23T23:30:00+05:30",
+    "readTime": 6,
+    "featured": false,
+    "status": "published",
+    "contentPath": "/blog/posts/updates/cross-posting-scheduling-reliability-roundup-feb-2026.json"
+  },
+  {
     "id": "what-we-learned-while-rebuilding-suitegenie-business-model",
     "title": "What We Learned While Rebuilding SuiteGenie Around Real Execution",
     "slug": "what-we-learned-while-rebuilding-suitegenie-business-model",
