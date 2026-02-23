@@ -63,7 +63,7 @@ export function buildWelcomeEmailTemplate({ name }) {
               <table cellpadding="0" cellspacing="0" border="0">
                 <tr>
                   <td style="background-color:#2563eb;border-radius:10px;padding:9px 18px;">
-                    <span style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;">Suite<span style="color:#bfdbfe;">Genie</span></span>
+                    <span style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;">Suite<span style="color:#ffffff;">Genie</span></span>
                   </td>
                 </tr>
               </table>
