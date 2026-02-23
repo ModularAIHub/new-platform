@@ -23,7 +23,7 @@ const UpgradePrompt = ({
     "Multi-account management (up to 8)",
     "Bulk content generation",
     "Priority email support",
-    "100 platform credits (200 with BYOK)"
+    "100 platform credits (180 with BYOK)"
   ];
   const displayFeatures = Array.isArray(benefits) && benefits.length > 0 ? benefits : proFeatures;
 

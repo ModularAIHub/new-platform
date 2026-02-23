@@ -214,7 +214,7 @@ const DashboardPage = () => {
                             <CardHeader className="text-center">
                                 <CardTitle className="text-2xl text-primary-900">Choose Your AI Key Mode</CardTitle>
                                 <CardDescription className="text-base">
-                                    Select how you want to use AI features. You can use platform keys (15 Free / 100 Pro) or BYOK (75 Free / 200 Pro, <strong>3-month lock</strong>). This cannot be skipped.
+                                    Select how you want to use AI features. You can use platform keys (15 Free / 100 Pro) or BYOK (50 Free / 180 Pro, <strong>3-month lock</strong>). This cannot be skipped.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
@@ -271,7 +271,7 @@ const DashboardPage = () => {
                                 <ul className="list-disc pl-6 text-neutral-700 space-y-2 mb-4">
                                     <li><strong>BYOK</strong> (Bring Your Own Key) lets you use your own API keys for OpenAI, Gemini, or Perplexity.</li>
                                     <li>When you switch to BYOK, your account is <strong>locked for 90 days</strong> (cannot switch back to platform keys).</li>
-                                    <li>Monthly credits: Platform (Free: 15, Pro: 100) and BYOK (Free: 75, Pro: 200).</li>
+                                    <li>Monthly credits: Platform (Free: 15, Pro: 100) and BYOK (Free: 50, Pro: 180).</li>
                                     <li>You must add at least one valid API key for each provider you want to use.</li>
                                     <li>After 90 days, you can switch back to platform keys if you wish.</li>
                                     <li>Active keys are used for all AI requests for that provider.</li>
@@ -294,7 +294,7 @@ const DashboardPage = () => {
                                     AI Key Preference
                                 </CardTitle>
                                 <CardDescription>
-                                    Select how you want to use AI features. Platform: 15 credits (Free) / 100 (Pro). BYOK: 75 (Free) / 200 (Pro), <strong>3-month lock</strong>.
+                                    Select how you want to use AI features. Platform: 15 credits (Free) / 100 (Pro). BYOK: 50 (Free) / 180 (Pro), <strong>3-month lock</strong>.
                                 </CardDescription>
                             </div>
                             <Button
@@ -326,7 +326,7 @@ const DashboardPage = () => {
                                 disabled={locked}
                                 onClick={() => handleSetPreference('byok')}
                             >
-                                Bring Your Own Key (75 Free / 200 Pro)
+                                Bring Your Own Key (50 Free / 180 Pro)
                             </Button>
                         </div>
 

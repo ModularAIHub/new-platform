@@ -1,6 +1,41 @@
 import jwt from 'jsonwebtoken';
 import { query } from '../config/database.js';
 
+const DEFAULT_ACCESS_TOKEN_EXPIRES_IN = '15m';
+const DEFAULT_REFRESH_TOKEN_EXPIRES_IN = '15d';
+const DEFAULT_SESSION_COOKIE_MAX_AGE_MS = 15 * 24 * 60 * 60 * 1000;
+
+const parseDurationToMs = (value, fallbackMs) => {
+    const raw = String(value || '').trim();
+    if (!raw) return fallbackMs;
+
+    const numeric = Number(raw);
+    if (Number.isFinite(numeric) && numeric > 0) {
+        return Math.floor(numeric);
+    }
+
+    const match = raw.match(/^(\d+)\s*(ms|s|m|h|d|w)$/i);
+    if (!match) return fallbackMs;
+
+    const amount = Number(match[1]);
+    const unit = match[2].toLowerCase();
+    const unitMs = {
+        ms: 1,
+        s: 1000,
+        m: 60 * 1000,
+        h: 60 * 60 * 1000,
+        d: 24 * 60 * 60 * 1000,
+        w: 7 * 24 * 60 * 60 * 1000,
+    }[unit];
+
+    return Number.isFinite(amount) && unitMs ? amount * unitMs : fallbackMs;
+};
+
+const getAccessTokenExpiresIn = () => process.env.JWT_EXPIRES_IN || DEFAULT_ACCESS_TOKEN_EXPIRES_IN;
+const getRefreshTokenExpiresIn = () => process.env.JWT_REFRESH_EXPIRES_IN || DEFAULT_REFRESH_TOKEN_EXPIRES_IN;
+const getSessionCookieMaxAgeMs = () =>
+    parseDurationToMs(process.env.AUTH_SESSION_MAX_AGE || process.env.JWT_REFRESH_EXPIRES_IN, DEFAULT_SESSION_COOKIE_MAX_AGE_MS);
+
 const parsePositiveInt = (value, fallback) => {
     const parsed = Number.parseInt(String(value ?? ''), 10);
     return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
@@ -153,24 +188,29 @@ const buildUserFromToken = (decoded) => ({
 
 const setAuthCookies = (res, accessToken, refreshToken) => {
     const isProduction = process.env.NODE_ENV === 'production';
-    const domain = isProduction ? process.env.COOKIE_DOMAIN || '.suitegenie.in' : undefined;
+    const cookieDomain = process.env.COOKIE_DOMAIN || '.suitegenie.in';
+    const clientUrl = String(process.env.CLIENT_URL || '');
+    const isLocalhost = clientUrl.includes('localhost') || clientUrl.includes('127.0.0.1') || cookieDomain === 'localhost';
+    const useCrossSiteCookie = isProduction && !isLocalhost;
+    const domain = useCrossSiteCookie ? cookieDomain : undefined;
+    const sessionCookieMaxAgeMs = getSessionCookieMaxAgeMs();
 
     const cookieOptions = {
         httpOnly: true,
-        secure: isProduction,
-        sameSite: isProduction ? 'none' : 'lax',
+        secure: useCrossSiteCookie,
+        sameSite: useCrossSiteCookie ? 'none' : 'lax',
         path: '/',
         ...(domain && { domain }),
     };
 
     res.cookie('accessToken', accessToken, {
         ...cookieOptions,
-        maxAge: 7 * 24 * 60 * 60 * 1000,
+        maxAge: sessionCookieMaxAgeMs,
     });
 
     res.cookie('refreshToken', refreshToken, {
         ...cookieOptions,
-        maxAge: 7 * 24 * 60 * 60 * 1000,
+        maxAge: sessionCookieMaxAgeMs,
     });
 };
 
@@ -240,13 +280,13 @@ const tryRefreshToken = async (req, res, refreshToken) => {
         const newAccessToken = jwt.sign(
             buildAccessTokenPayload(user),
             process.env.JWT_SECRET,
-            { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+            { expiresIn: getAccessTokenExpiresIn() }
         );
 
         const newRefreshToken = jwt.sign(
             { userId: user.id },
             process.env.JWT_REFRESH_SECRET,
-            { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+            { expiresIn: getRefreshTokenExpiresIn() }
         );
 
         setAuthCookies(res, newAccessToken, newRefreshToken);

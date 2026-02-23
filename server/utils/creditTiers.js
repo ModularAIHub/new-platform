@@ -2,8 +2,8 @@
 // Centralized monthly credit allocations by plan and API key preference
 
 export const CREDIT_TIERS = Object.freeze({
-  free: Object.freeze({ platform: 15, byok: 75 }),
-  pro: Object.freeze({ platform: 100, byok: 200 }),
+  free: Object.freeze({ platform: 15, byok: 50 }),
+  pro: Object.freeze({ platform: 100, byok: 180 }),
   enterprise: Object.freeze({ platform: 500, byok: 1000 })
 });
 

@@ -7,7 +7,7 @@ const PricingPage = () => (
       <title>Pricing - SuiteGenie Social Media Automation</title>
       <meta
         name="description"
-        content="Choose Free or Pro for SuiteGenie. Free includes 15 platform credits and 75 BYOK credits monthly. Pro includes 100 platform credits, 200 BYOK credits, and advanced features for creators and teams."
+        content="Choose Free or Pro for SuiteGenie. Free includes 15 platform credits and 50 BYOK credits monthly. Pro includes 100 platform credits, 180 BYOK credits, and advanced features for creators and teams."
       />
       <meta
         name="keywords"
@@ -86,7 +86,7 @@ const PricingPage = () => (
             <strong>15 credits in platform mode</strong>
           </li>
           <li>
-            <strong>75 credits in BYOK mode</strong>
+            <strong>50 credits in BYOK mode</strong>
           </li>
         </ul>
 
@@ -131,7 +131,7 @@ const PricingPage = () => (
             <strong>100 credits in platform mode</strong>
           </li>
           <li>
-            <strong>200 credits in BYOK mode</strong>
+            <strong>180 credits in BYOK mode</strong>
           </li>
         </ul>
 
@@ -187,7 +187,7 @@ const PricingPage = () => (
           <h3 className="text-lg font-semibold mb-2">What is the difference between platform mode and BYOK?</h3>
           <p className="mb-4 text-gray-700">
             Platform mode uses SuiteGenie-managed providers. BYOK mode uses your own provider keys. Monthly limits are:
-            Free (15 platform, 75 BYOK) and Pro (100 platform, 200 BYOK).
+            Free (15 platform, 50 BYOK) and Pro (100 platform, 180 BYOK).
           </p>
         </div>
 

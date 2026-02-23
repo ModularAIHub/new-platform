@@ -18,7 +18,7 @@ const PricingSection = () => {
         "Basic AI mode (text-first generation)",
         "Cross-platform posting + basic analytics",
         "15 credits/month in platform mode",
-        "75 credits/month in BYOK mode"
+        "50 credits/month in BYOK mode"
       ],
       buttonText: "Start Free",
       buttonStyle: "border border-gray-300 text-gray-700 hover:bg-gray-50",
@@ -34,7 +34,7 @@ const PricingSection = () => {
         "Image generation + strategy builder",
         "Teams mode (up to 5 members)",
         "8 social accounts + advanced analytics",
-        "100 credits platform / 200 credits BYOK"
+        "100 credits platform / 180 credits BYOK"
       ],
       buttonText: "Upgrade to Pro", 
       buttonStyle: "bg-blue-600 text-white hover:bg-blue-700",

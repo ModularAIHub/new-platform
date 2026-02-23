@@ -26,6 +26,41 @@ const authDebug = (...args) => {
     }
 };
 
+const DEFAULT_ACCESS_TOKEN_EXPIRES_IN = '15m';
+const DEFAULT_REFRESH_TOKEN_EXPIRES_IN = '15d';
+const DEFAULT_SESSION_COOKIE_MAX_AGE_MS = 15 * 24 * 60 * 60 * 1000;
+
+const parseDurationToMs = (value, fallbackMs) => {
+    const raw = String(value || '').trim();
+    if (!raw) return fallbackMs;
+
+    const numeric = Number(raw);
+    if (Number.isFinite(numeric) && numeric > 0) {
+        return Math.floor(numeric);
+    }
+
+    const match = raw.match(/^(\d+)\s*(ms|s|m|h|d|w)$/i);
+    if (!match) return fallbackMs;
+
+    const amount = Number(match[1]);
+    const unit = match[2].toLowerCase();
+    const unitMs = {
+        ms: 1,
+        s: 1000,
+        m: 60 * 1000,
+        h: 60 * 60 * 1000,
+        d: 24 * 60 * 60 * 1000,
+        w: 7 * 24 * 60 * 60 * 1000,
+    }[unit];
+
+    return Number.isFinite(amount) && unitMs ? amount * unitMs : fallbackMs;
+};
+
+const getAccessTokenExpiresIn = () => process.env.JWT_EXPIRES_IN || DEFAULT_ACCESS_TOKEN_EXPIRES_IN;
+const getRefreshTokenExpiresIn = () => process.env.JWT_REFRESH_EXPIRES_IN || DEFAULT_REFRESH_TOKEN_EXPIRES_IN;
+const getSessionCookieMaxAgeMs = () =>
+    parseDurationToMs(process.env.AUTH_SESSION_MAX_AGE || process.env.JWT_REFRESH_EXPIRES_IN, DEFAULT_SESSION_COOKIE_MAX_AGE_MS);
+
 class AuthController {
     static async sendWelcomeEmailBestEffort(user) {
         try {
@@ -62,13 +97,15 @@ class AuthController {
         // Environment-based cookie configuration
         const isProduction = process.env.NODE_ENV === 'production';
         const isLocalhost = process.env.DOMAIN === 'localhost' || process.env.CLIENT_URL?.includes('localhost');
+        const useCrossSiteCookie = isProduction && !isLocalhost;
+        const sessionCookieMaxAgeMs = getSessionCookieMaxAgeMs();
         
         const cookieOptions = {
             httpOnly: true,
-            secure: isProduction,
-            sameSite: isProduction ? 'none' : 'lax',
+            secure: useCrossSiteCookie,
+            sameSite: useCrossSiteCookie ? 'none' : 'lax',
             path: '/',
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+            maxAge: sessionCookieMaxAgeMs
         };
 
         // Only set domain in production
@@ -80,7 +117,7 @@ class AuthController {
 
         const refreshCookieOptions = {
             ...cookieOptions,
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+            maxAge: sessionCookieMaxAgeMs
         };
 
         res.cookie('refreshToken', refreshToken, refreshCookieOptions);
@@ -90,11 +127,12 @@ class AuthController {
     static clearAuthCookies(res) {
         const isProduction = process.env.NODE_ENV === 'production';
         const isLocalhost = process.env.DOMAIN === 'localhost' || process.env.CLIENT_URL?.includes('localhost');
+        const useCrossSiteCookie = isProduction && !isLocalhost;
         
         const clearOptions = {
             httpOnly: true,
-            secure: isProduction,
-            sameSite: isProduction ? 'none' : 'lax',
+            secure: useCrossSiteCookie,
+            sameSite: useCrossSiteCookie ? 'none' : 'lax',
             path: '/'
         };
 
@@ -210,13 +248,13 @@ class AuthController {
             const accessToken = jwt.sign(
                 AuthController.buildAccessTokenPayload(user),
                 process.env.JWT_SECRET,
-                { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
+                { expiresIn: getAccessTokenExpiresIn() }
             );
 
             const refreshToken = jwt.sign(
                 { userId: user.id, email: user.email },
                 process.env.JWT_REFRESH_SECRET,
-                { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+                { expiresIn: getRefreshTokenExpiresIn() }
             );
 
             // Set auth cookies
@@ -300,13 +338,13 @@ class AuthController {
             const accessToken = jwt.sign(
                 AuthController.buildAccessTokenPayload(user),
                 process.env.JWT_SECRET,
-                { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+                { expiresIn: getAccessTokenExpiresIn() }
             );
 
             const refreshToken = jwt.sign(
                 { userId: user.id },
                 process.env.JWT_REFRESH_SECRET,
-                { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+                { expiresIn: getRefreshTokenExpiresIn() }
             );
 
             // Set cookies
@@ -377,13 +415,13 @@ class AuthController {
             const accessToken = jwt.sign(
                 AuthController.buildAccessTokenPayload(user),
                 process.env.JWT_SECRET,
-                { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+                { expiresIn: getAccessTokenExpiresIn() }
             );
 
             const refreshToken = jwt.sign(
                 { userId: user.id },
                 process.env.JWT_REFRESH_SECRET,
-                { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+                { expiresIn: getRefreshTokenExpiresIn() }
             );
 
             // Debug: Log tokens after generation
@@ -1124,13 +1162,13 @@ class AuthController {
             const newAccessToken = jwt.sign(
                 AuthController.buildAccessTokenPayload(user),
                 process.env.JWT_SECRET,
-                { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+                { expiresIn: getAccessTokenExpiresIn() }
             );
 
             const newRefreshToken = jwt.sign(
                 { userId: user.id },
                 process.env.JWT_REFRESH_SECRET,
-                { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+                { expiresIn: getRefreshTokenExpiresIn() }
             );
 
             // Set new cookies

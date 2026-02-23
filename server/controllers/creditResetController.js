@@ -11,7 +11,7 @@ export const CreditResetController = {
       console.log('[CREDIT RESET] Manual monthly reset triggered by admin');
       
       // Update credits based on BOTH plan_type and api_key_preference
-      // Free: 15 (platform) / 75 (BYOK) | Pro: 100 (platform) / 200 (BYOK) | Enterprise: 500 (platform) / 1000 (BYOK)
+      // Free: 15 (platform) / 50 (BYOK) | Pro: 100 (platform) / 180 (BYOK) | Enterprise: 500 (platform) / 1000 (BYOK)
       const updateResult = await query(`
         UPDATE users 
         SET credits_remaining = CASE 
@@ -23,7 +23,7 @@ export const CreditResetController = {
             WHEN plan_type = 'enterprise' AND api_key_preference = 'byok' THEN ${CREDIT_TIERS.enterprise.byok}
             ELSE 0 
         END,
-        last_credit_reset = NOW()
+        last_credit_reset = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
         WHERE api_key_preference IS NOT NULL
       `);
       
@@ -91,7 +91,7 @@ export const CreditResetController = {
   async getResetInfo(req, res) {
     try {
       const now = new Date();
-      const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      const nextMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
       
       // Get last reset info from database with plan breakdown
       const { rows } = await query(`

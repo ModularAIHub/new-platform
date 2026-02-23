@@ -216,9 +216,9 @@ const migrations = [
       SET
         credits_remaining = CASE
           WHEN plan_type = 'free' AND api_key_preference = 'platform' THEN 15
-          WHEN plan_type = 'free' AND api_key_preference = 'byok' THEN 75
+          WHEN plan_type = 'free' AND api_key_preference = 'byok' THEN 50
           WHEN plan_type = 'pro' AND api_key_preference = 'platform' THEN 100
-          WHEN plan_type = 'pro' AND api_key_preference = 'byok' THEN 200
+          WHEN plan_type = 'pro' AND api_key_preference = 'byok' THEN 180
           WHEN plan_type = 'enterprise' AND api_key_preference = 'platform' THEN 500
           WHEN plan_type = 'enterprise' AND api_key_preference = 'byok' THEN 1000
           ELSE credits_remaining
@@ -231,7 +231,7 @@ const migrations = [
       SET
         credits_remaining = CASE
           WHEN u.plan_type = 'pro' AND u.api_key_preference = 'platform' THEN 100
-          WHEN u.plan_type = 'pro' AND u.api_key_preference = 'byok' THEN 200
+          WHEN u.plan_type = 'pro' AND u.api_key_preference = 'byok' THEN 180
           WHEN u.plan_type = 'enterprise' AND u.api_key_preference = 'platform' THEN 500
           WHEN u.plan_type = 'enterprise' AND u.api_key_preference = 'byok' THEN 1000
           ELSE COALESCE(t.credits_remaining, 0)
@@ -256,7 +256,7 @@ const migrations = [
         plan_type = COALESCE(plan_type, 'free'),
         credits_remaining = CASE
           WHEN COALESCE(plan_type, 'free') = 'free' AND api_key_preference = 'platform' THEN 15
-          WHEN COALESCE(plan_type, 'free') = 'free' AND api_key_preference = 'byok' THEN 75
+          WHEN COALESCE(plan_type, 'free') = 'free' AND api_key_preference = 'byok' THEN 50
           ELSE credits_remaining
         END,
         last_credit_reset = NOW(),
@@ -267,9 +267,9 @@ const migrations = [
       SET
         credits_remaining = CASE
           WHEN COALESCE(u.plan_type, 'free') = 'free' AND u.api_key_preference = 'platform' THEN 15
-          WHEN COALESCE(u.plan_type, 'free') = 'free' AND u.api_key_preference = 'byok' THEN 75
+          WHEN COALESCE(u.plan_type, 'free') = 'free' AND u.api_key_preference = 'byok' THEN 50
           WHEN u.plan_type = 'pro' AND u.api_key_preference = 'platform' THEN 100
-          WHEN u.plan_type = 'pro' AND u.api_key_preference = 'byok' THEN 200
+          WHEN u.plan_type = 'pro' AND u.api_key_preference = 'byok' THEN 180
           WHEN u.plan_type = 'enterprise' AND u.api_key_preference = 'platform' THEN 500
           WHEN u.plan_type = 'enterprise' AND u.api_key_preference = 'byok' THEN 1000
           ELSE COALESCE(t.credits_remaining, 0)
