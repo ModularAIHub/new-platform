@@ -1,14 +1,17 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "routes": [
-    { "handle": "filesystem" },
+  "framework": null,
+  "installCommand": "npm install",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "rewrites": [
     {
-      "src": "^/api/(.*)$",
-      "dest": "/api/$1"
+      "source": "/api/(.*)",
+      "destination": "https://api.suitegenie.in/api/$1"
     },
     {
-      "src": "^/((?!api/).*)$",
-      "dest": "/index.html"
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
     }
   ]
 }
