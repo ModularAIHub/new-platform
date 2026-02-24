@@ -173,7 +173,7 @@ const buildAccessTokenPayload = (user) => ({
     userId: user.id,
     email: user.email,
     name: user.name || '',
-    planType: user.plan_type || null,
+    planType: user.plan_type || 'free',
     creditsRemaining: toNumber(user.credits_remaining, 0),
 });
 
@@ -181,7 +181,7 @@ const buildUserFromToken = (decoded) => ({
     id: decoded.userId,
     email: decoded.email || null,
     name: decoded.name || '',
-    plan_type: decoded.planType || decoded.plan_type || null,
+    plan_type: decoded.planType || decoded.plan_type || 'free',
     credits_remaining: toNumber(decoded.creditsRemaining ?? decoded.credits_remaining, 0),
     created_at: null,
 });

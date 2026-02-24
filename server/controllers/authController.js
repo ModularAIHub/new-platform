@@ -87,7 +87,7 @@ class AuthController {
             userId: user.id,
             email: user.email,
             name: user.name || '',
-            planType: user.plan_type || null,
+            planType: user.plan_type || 'free',
             creditsRemaining: Number(user.credits_remaining || 0)
         };
     }
@@ -233,16 +233,16 @@ class AuthController {
             // Create user
 
             const userId = uuidv4();
-            // Set credits_remaining to 0 and do not assign plan_type or credits until user chooses
+            // Set free plan immediately, but keep credits at 0 until user chooses a mode.
             const result = await query(
                 `INSERT INTO users (id, email, password_hash, name, plan_type, credits_remaining, created_at, updated_at)
                  VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
                  RETURNING id, email, name, plan_type, credits_remaining, created_at`,
-                [userId, email, passwordHash, name, null, 0]
+                [userId, email, passwordHash, name, 'free', 0]
             );
             const user = result.rows[0];
 
-            // Do NOT initialize Redis credits or plan here. This will be done when user selects a mode.
+            // Do NOT initialize Redis credits here. This will be done when the user selects a mode.
 
             // Generate tokens to auto-login the user
             const accessToken = jwt.sign(
@@ -268,7 +268,7 @@ class AuthController {
                     id: user.id,
                     email: user.email,
                     name: user.name,
-                    planType: user.plan_type,
+                    planType: user.plan_type || 'free',
                     creditsRemaining: user.credits_remaining
                 }
             });
@@ -358,7 +358,7 @@ class AuthController {
                     id: user.id,
                     email: user.email,
                     name: user.name,
-                    planType: user.plan_type,
+                    planType: user.plan_type || 'free',
                     creditsRemaining: user.credits_remaining
                 }
             });
@@ -437,7 +437,7 @@ class AuthController {
                     id: user.id,
                     email: user.email,
                     name: user.name,
-                    planType: user.plan_type,
+                    planType: user.plan_type || 'free',
                     creditsRemaining: user.credits_remaining
                 }
             });
@@ -1180,7 +1180,7 @@ class AuthController {
                     id: user.id,
                     email: user.email,
                     name: user.name,
-                    planType: user.plan_type,
+                    planType: user.plan_type || 'free',
                     creditsRemaining: user.credits_remaining
                 }
             });
