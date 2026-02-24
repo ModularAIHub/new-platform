@@ -82,11 +82,11 @@ const OTPModal = ({
                 purpose: validation.sanitized.purpose 
             })
             
-            toast.success('OTP sent to your email')
+            toast.success(response.data?.message || 'OTP sent to your email')
             setStep(2)
             setResendTimer(30) // 30 second cooldown
         } catch (error) {
-            const message = error.response?.data?.message || 'Failed to send OTP'
+            const message = error.response?.data?.error || error.response?.data?.message || 'Failed to send OTP'
             toast.error(message)
             console.error('Send OTP error:', error)
         }
@@ -162,10 +162,10 @@ const OTPModal = ({
                 purpose 
             })
             
-            toast.success('OTP sent again!')
+            toast.success(response.data?.message || 'OTP sent again!')
             setResendTimer(30)
         } catch (error) {
-            const message = error.response?.data?.message || 'Failed to resend OTP'
+            const message = error.response?.data?.error || error.response?.data?.message || 'Failed to resend OTP'
             toast.error(message)
             console.error('Resend OTP error:', error)
         }

@@ -160,14 +160,14 @@ export const AuthProvider = ({ children }) => {
     const sendOTP = async (email, purpose = 'verification') => {
         try {
             const response = await api.post('/auth/send-otp', { email, purpose })
-            toast.success('OTP sent to your email!')
+            toast.success(response.data?.message || 'OTP sent to your email!')
             return response.data
         } catch (error) {
             let message
             if (error.response?.status === 429) {
                 message = 'Too many OTP requests. Please wait 15 minutes before trying again.'
             } else {
-                message = error.response?.data?.error || 'Failed to send OTP. Please try again.'
+                message = error.response?.data?.error || error.response?.data?.message || 'Failed to send OTP. Please try again.'
             }
             toast.error(message)
             throw error
