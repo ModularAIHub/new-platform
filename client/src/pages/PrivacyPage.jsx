@@ -219,7 +219,7 @@ const PrivacyPage = () => {
                 The Service integrates with third-party platforms and services:
               </p>
               <ul className="list-disc pl-6 text-gray-700 mb-4 space-y-2">
-                <li>Social media platforms (Twitter, LinkedIn, WordPress)</li>
+                <li>Social media platforms (Twitter, LinkedIn, Threads, and planned instagram, facebook and wordpress)</li>
                 <li>AI service providers (OpenAI, Anthropic, Google AI)</li>
                 <li>Payment processor (Razorpay)</li>
                 <li>Analytics providers</li>
