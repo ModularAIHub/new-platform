@@ -68,6 +68,27 @@ const processQueue = (error, token = null) => {
     failedQueue = [];
 };
 
+// All public routes that should never redirect to home on 401
+const isGuestPage = () => {
+    const path = window.location.pathname;
+    return path === '/' ||
+           path === '/login' ||
+           path === '/register' ||
+           path === '/signup' ||
+           path === '/about' ||
+           path === '/contact' ||
+           path === '/plans' ||
+           path === '/privacy' ||
+           path === '/terms' ||
+           path === '/pricing' ||
+           path === '/docs' ||
+           path === '/integrations' ||
+           path === '/help' ||
+           path === '/features' ||
+           path.startsWith('/blogs') ||
+           path.startsWith('/team/invite');
+};
+
 // Request interceptor
 api.interceptors.request.use(
     async (config) => {
@@ -111,15 +132,8 @@ api.interceptors.response.use(
                              sessionStorage.getItem('accessToken');
             
             if (!hasTokens) {
-                // No tokens available, but don't redirect if on guest pages
-                const isGuestPage = window.location.pathname === '/' || 
-                                   window.location.pathname === '/login' || 
-                                   window.location.pathname === '/register' ||
-                                   window.location.pathname === '/about' ||
-                                   window.location.pathname === '/contact' ||
-                                   window.location.pathname === '/plans';
-                                   
-                if (typeof window !== 'undefined' && !isGuestPage) {
+                // No tokens available, don't redirect if on guest/public pages
+                if (typeof window !== 'undefined' && !isGuestPage()) {
                     window.location.href = '/';
                 }
                 return Promise.reject(error);
@@ -160,15 +174,8 @@ api.interceptors.response.use(
                 processQueue(refreshError);
                 isRefreshing = false;
                 
-                // If refresh fails, but don't redirect if on guest pages
-                const isGuestPage = window.location.pathname === '/' || 
-                                   window.location.pathname === '/login' || 
-                                   window.location.pathname === '/register' ||
-                                   window.location.pathname === '/about' ||
-                                   window.location.pathname === '/contact' ||
-                                   window.location.pathname === '/plans';
-                                   
-                if (typeof window !== 'undefined' && !isGuestPage) {
+                // If refresh fails, don't redirect if on guest/public pages
+                if (typeof window !== 'undefined' && !isGuestPage()) {
                     window.location.href = '/';
                 }
                 
