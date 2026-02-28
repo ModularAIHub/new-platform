@@ -89,11 +89,12 @@ const sslConfig = sslEnabled
 const dbConnectTimeoutMs = Number.parseInt(process.env.DB_CONNECT_TIMEOUT_MS || '5000', 10);
 const dbStatementTimeoutMs = Number.parseInt(process.env.DB_STATEMENT_TIMEOUT_MS || '10000', 10);
 const dbQueryTimeoutMs = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS || '10000', 10);
+const dbPoolMax = Number.parseInt(process.env.DB_POOL_MAX || '3', 10);
 
 const pool = new Pool({
   connectionString: databaseUrl,
   ssl: sslConfig,
-  max: 20,
+  max: dbPoolMax,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: dbConnectTimeoutMs,
   statement_timeout: dbStatementTimeoutMs,
