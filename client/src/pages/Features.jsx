@@ -13,19 +13,19 @@ const Features = () => (
       <meta property="og:description" content="Automate Twitter & LinkedIn with AI. Bulk scheduling, engagement analytics, image generation, and BYOK. Save up to 80% using your own OpenAI, Perplexity, or Gemini API key. All keys and tokens are fully encrypted for your safety." />
       <meta property="og:type" content="website" />
       <meta property="og:url" content="https://suitegenie.in/features" />
-      <meta property="og:image" content="https://suitegenie.in/og-features.png" />
+      <meta property="og:image" content="https://suitegenie.in/og-default.svg" />
       {/* Twitter Card */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content="Features – AI Social Media Automation | SuiteGenie" />
       <meta name="twitter:description" content="Automate Twitter & LinkedIn with AI. Bulk scheduling, engagement analytics, image generation, and BYOK. Save up to 80% using your own OpenAI, Perplexity, or Gemini API key. All keys and tokens are fully encrypted for your safety." />
-      <meta name="twitter:image" content="https://suitegenie.in/og-features.png" />
+      <meta name="twitter:image" content="https://suitegenie.in/og-default.svg" />
       {/* Structured Data: Product */}
       <script type="application/ld+json">{`
         {
           "@context": "https://schema.org",
           "@type": "Product",
           "name": "SuiteGenie Features",
-          "image": "https://suitegenie.in/og-features.png",
+            "image": "https://suitegenie.in/og-default.svg",
           "description": "AI-powered social media automation features for Twitter and LinkedIn. Bulk scheduling, analytics, BYOK, and more.",
           "brand": {
             "@type": "Brand",

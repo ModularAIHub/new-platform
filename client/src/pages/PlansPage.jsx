@@ -7,6 +7,7 @@ import usePlanAccess from '../hooks/usePlanAccess';
 import toast from 'react-hot-toast';
 import api from '../utils/api';
 import { loadRazorpayScript } from '../utils/payment';
+import PublicSeo from '../components/PublicSeo';
 
 const PlansPage = () => {
   const navigate = useNavigate();
@@ -274,6 +275,55 @@ const PlansPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 relative">
+      <PublicSeo
+        title="SuiteGenie Plans and Pricing | Free, Pro, and Enterprise"
+        description="Compare SuiteGenie Free, Pro, and Enterprise plans for AI social media automation, BYOK, team collaboration, analytics, bulk generation, and scheduling."
+        canonicalPath="/plans"
+        keywords="SuiteGenie pricing, SuiteGenie plans, social media automation pricing, BYOK pricing, AI content scheduling plans"
+        schema={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'Product',
+            name: 'SuiteGenie',
+            description:
+              'AI social media automation platform for creators, founders, and teams.',
+            brand: {
+              '@type': 'Brand',
+              name: 'SuiteGenie',
+            },
+            offers: [
+              {
+                '@type': 'Offer',
+                name: 'SuiteGenie Free',
+                price: '0',
+                priceCurrency: 'INR',
+                availability: 'https://schema.org/InStock',
+                url: 'https://suitegenie.in/plans',
+              },
+              {
+                '@type': 'Offer',
+                name: 'SuiteGenie Pro',
+                price: '399',
+                priceCurrency: 'INR',
+                availability: 'https://schema.org/InStock',
+                url: 'https://suitegenie.in/plans',
+              },
+            ],
+          },
+          {
+            '@context': 'https://schema.org',
+            '@type': 'FAQPage',
+            mainEntity: faqs.map((faq) => ({
+              '@type': 'Question',
+              name: faq.question,
+              acceptedAnswer: {
+                '@type': 'Answer',
+                text: faq.answer,
+              },
+            })),
+          },
+        ]}
+      />
 
       <div className="bg-white">
         <div className="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8 text-center">

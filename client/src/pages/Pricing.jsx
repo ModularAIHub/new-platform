@@ -21,14 +21,14 @@ const PricingPage = () => (
       />
       <meta property="og:type" content="website" />
       <meta property="og:url" content="https://suitegenie.in/pricing" />
-      <meta property="og:image" content="https://suitegenie.in/og-pricing.png" />
+      <meta property="og:image" content="https://suitegenie.in/og-default.svg" />
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content="Pricing - SuiteGenie Social Media Automation" />
       <meta
         name="twitter:description"
         content="Choose Free or Pro for SuiteGenie with transparent credits and feature limits."
       />
-      <meta name="twitter:image" content="https://suitegenie.in/og-pricing.png" />
+      <meta name="twitter:image" content="https://suitegenie.in/og-default.svg" />
       <script type="application/ld+json">{`
         {
           "@context": "https://schema.org",

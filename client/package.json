@@ -7,6 +7,7 @@
     "scripts": {
         "predev": "node scripts/buildBlogData.mjs",
         "prebuild": "node scripts/buildBlogData.mjs",
+        "postbuild": "node scripts/prerenderPublicRoutes.mjs",
         "blog:sync": "node scripts/buildBlogData.mjs",
         "dev": "vite",
         "build": "vite build",

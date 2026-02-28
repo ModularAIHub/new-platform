@@ -46,10 +46,11 @@ const Navbar = () => {
           {/* SuiteGenie Brand */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center group" onClick={closeMenu}>
-              <img src="/logo[1].png" alt="SuiteGenie Logo" className="w-8 h-8 mr-3 rounded-lg shadow group-hover:shadow-md transition-shadow duration-200" />
+              <img src="/logo.svg" alt="SuiteGenie logo" className="w-8 h-8 mr-3 rounded-lg shadow group-hover:shadow-md transition-shadow duration-200" />
               <span className="font-bold text-xl tracking-tight text-neutral-900 group-hover:text-primary-600 transition-colors duration-200">
                 SuiteGenie
               </span>
+              <span className="sr-only">Suite Genie</span>
             </Link>
           </div>
 

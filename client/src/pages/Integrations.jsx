@@ -11,11 +11,11 @@ const IntegrationsPage = () => (
       <meta property="og:description" content="Connect SuiteGenie with Twitter, LinkedIn and upcoming platforms. See current and planned integrations for your social media workflow." />
       <meta property="og:type" content="website" />
       <meta property="og:url" content="https://suitegenie.in/integrations" />
-      <meta property="og:image" content="https://suitegenie.in/og-integrations.png" />
+      <meta property="og:image" content="https://suitegenie.in/og-default.svg" />
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content="Integrations – SuiteGenie" />
       <meta name="twitter:description" content="Connect SuiteGenie with Twitter, LinkedIn and upcoming platforms. See current and planned integrations for your social media workflow." />
-      <meta name="twitter:image" content="https://suitegenie.in/og-integrations.png" />
+      <meta name="twitter:image" content="https://suitegenie.in/og-default.svg" />
       {/* Structured Data: ItemList */}
       <script type="application/ld+json">{`
         {

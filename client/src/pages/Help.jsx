@@ -77,11 +77,11 @@ const HelpPage = () => (
       <meta property="og:description" content="Find answers, quick start guides, and support for SuiteGenie. Learn how to connect Twitter and LinkedIn, use BYOK, and fix common issues." />
       <meta property="og:type" content="website" />
       <meta property="og:url" content="https://suitegenie.in/help" />
-      <meta property="og:image" content="https://suitegenie.in/og-help.png" />
+      <meta property="og:image" content="https://suitegenie.in/og-default.svg" />
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content="Help Center – SuiteGenie" />
       <meta name="twitter:description" content="Find answers, quick start guides, and support for SuiteGenie. Learn how to connect Twitter and LinkedIn, use BYOK, and fix common issues." />
-      <meta name="twitter:image" content="https://suitegenie.in/og-help.png" />
+      <meta name="twitter:image" content="https://suitegenie.in/og-default.svg" />
       {/* Structured Data: FAQPage */}
       <script type="application/ld+json">{`
         {

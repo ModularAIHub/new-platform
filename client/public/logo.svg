@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">SuiteGenie logo</title>
+  <desc id="desc">Blue rounded square with a white letter S in the center.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb" />
+      <stop offset="100%" stop-color="#1d4ed8" />
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="56" fill="url(#bg)" />
+  <path
+    d="M166 74c-12-10-27-15-46-15-28 0-48 14-48 37 0 20 13 31 40 37l18 4c17 4 24 8 24 17 0 11-11 18-28 18-19 0-33-6-46-19l-22 22c16 16 38 24 66 24 36 0 60-18 60-46 0-22-14-34-42-40l-18-4c-15-3-22-7-22-15 0-9 9-15 24-15 14 0 25 4 36 13z"
+    fill="#ffffff"
+  />
+</svg>

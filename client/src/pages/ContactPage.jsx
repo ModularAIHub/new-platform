@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { MapPin, Mail, Clock, Send, MessageCircle, Zap, Users, HeadphonesIcon } from 'lucide-react';
 import Footer from '../components/Footer';
 import { Button, Input, Card, CardContent } from '../components/ui';
+import PublicSeo from '../components/PublicSeo';
 
 const ContactPage = () => {
   const [formData, setFormData] = useState({
@@ -69,6 +70,35 @@ const ContactPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <PublicSeo
+        title="Contact SuiteGenie | Support, Sales, and Setup Help"
+        description="Contact SuiteGenie for support, setup help, BYOK guidance, pricing questions, or enterprise inquiries. Reach our team and get help with your social media automation workflow."
+        canonicalPath="/contact"
+        keywords="contact SuiteGenie, SuiteGenie support, social media automation support, BYOK help, SuiteGenie sales"
+        schema={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'ContactPage',
+            name: 'Contact SuiteGenie',
+            url: 'https://suitegenie.in/contact',
+            description:
+              'Contact SuiteGenie for support, setup help, pricing questions, and enterprise inquiries.',
+          },
+          {
+            '@context': 'https://schema.org',
+            '@type': 'Organization',
+            name: 'SuiteGenie',
+            url: 'https://suitegenie.in',
+            contactPoint: {
+              '@type': 'ContactPoint',
+              email: 'suitegenie1@gmail.com',
+              contactType: 'Customer Support',
+              areaServed: 'Worldwide',
+              availableLanguage: 'English',
+            },
+          },
+        ]}
+      />
       {/* Hero Section */}
       <div className="bg-gradient-to-br from-primary-600 via-purple-600 to-primary-800 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-primary-600/10 to-purple-600/10"></div>

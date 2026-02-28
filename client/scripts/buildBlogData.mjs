@@ -50,6 +50,7 @@ const stripMarkdown = (value = '') =>
 
 const generateBlogSitemapXml = (posts = [], baseUrl = BLOG_BASE_URL) => {
   const publishedPosts = posts.filter((post) => post.status === 'published');
+  const seenUrls = new Set();
 
   const lines = [
     '<?xml version="1.0" encoding="UTF-8"?>',
@@ -58,6 +59,8 @@ const generateBlogSitemapXml = (posts = [], baseUrl = BLOG_BASE_URL) => {
 
   for (const post of publishedPosts) {
     const canonical = post.seo?.canonicalUrl || `${baseUrl}/blogs/${post.category}/${post.slug}`;
+    if (seenUrls.has(canonical)) continue;
+    seenUrls.add(canonical);
     const lastmod = new Date(post.lastModified || post.publishDate).toISOString().slice(0, 10);
 
     lines.push('  <url>');

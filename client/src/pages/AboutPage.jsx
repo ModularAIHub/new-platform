@@ -131,12 +131,12 @@ export default function About() {
         <meta property="og:description" content="Meet Kanishk Saraswat, indie founder of SuiteGenie. Learn how this solo developer built an AI social media automation platform to help creators. Made in India with passion." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://suitegenie.in/about" />
-        <meta property="og:image" content="https://suitegenie.in/og-about.png" />
+        <meta property="og:image" content="https://suitegenie.in/og-default.svg" />
         <meta property="og:site_name" content="SuiteGenie" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="About SuiteGenie - Indie Founder Building AI Tools | Kanishk Saraswat" />
         <meta name="twitter:description" content="Meet Kanishk Saraswat, indie founder of SuiteGenie. Learn how this solo developer built an AI social media automation platform to help creators. Made in India with passion." />
-        <meta name="twitter:image" content="https://suitegenie.in/og-about.png" />
+        <meta name="twitter:image" content="https://suitegenie.in/og-default.svg" />
         <meta name="twitter:site" content="@Suitegenie1" />
         <meta name="twitter:creator" content="@Suitegenie1" />
         {/* Structured Data: Person/Organization */}

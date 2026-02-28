@@ -11,11 +11,11 @@ const DocsPage = () => (
       <meta property="og:description" content="Learn how to set up SuiteGenie, connect Twitter and LinkedIn, add your AI API key (BYOK), and start generating and scheduling social content in minutes." />
       <meta property="og:type" content="website" />
       <meta property="og:url" content="https://suitegenie.in/docs" />
-      <meta property="og:image" content="https://suitegenie.in/og-docs.png" />
+      <meta property="og:image" content="https://suitegenie.in/og-default.svg" />
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content="Help & Documentation – SuiteGenie" />
       <meta name="twitter:description" content="Learn how to set up SuiteGenie, connect Twitter and LinkedIn, add your AI API key (BYOK), and start generating and scheduling social content in minutes." />
-      <meta name="twitter:image" content="https://suitegenie.in/og-docs.png" />
+      <meta name="twitter:image" content="https://suitegenie.in/og-default.svg" />
       {/* Structured Data: FAQPage */}
       <script type="application/ld+json">{`
         {

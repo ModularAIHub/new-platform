@@ -8,12 +8,12 @@ export default function Footer() {
           <div>
             <Link to="/" className="inline-flex items-center gap-2">
               <div className="h-9 w-9 rounded-lg bg-gradient-to-r from-primary-600 to-indigo-500 p-0.5">
-                <img src="/logo[1].png" alt="SuiteGenie logo" className="h-full w-full rounded-md bg-white p-1" />
+                <img src="/logo.svg" alt="SuiteGenie logo" className="h-full w-full rounded-md bg-white p-1" />
               </div>
               <span className="text-2xl font-bold text-white">SuiteGenie</span>
             </Link>
             <p className="mt-3 max-w-md text-sm leading-6 text-slate-300">
-              AI-powered automation for Twitter, LinkedIn, and your full content workflow.
+              SuiteGenie, also searched as Suite Genie, provides AI-powered automation for X, LinkedIn, and your full content workflow.
             </p>
             <div className="mt-4 flex items-center gap-2">
               <a

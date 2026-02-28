@@ -6,6 +6,7 @@ import { validateLoginData, formatValidationErrors } from '../utils/validation'
 import toast from 'react-hot-toast'
 import { Button, Input, Card, CardContent } from '../components/ui'
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
+import PublicSeo from '../components/PublicSeo'
 
 const LoginPage = () => {
     const [email, setEmail] = useState('')
@@ -46,6 +47,12 @@ const LoginPage = () => {
 
     return (
         <div className="min-h-screen bg-neutral-50 flex flex-col lg:flex-row">
+            <PublicSeo
+                title="Login | SuiteGenie"
+                description="Sign in to SuiteGenie to manage your social media automation workflows, account settings, AI tools, and publishing dashboards."
+                canonicalPath="/login"
+                noIndex
+            />
             {/* Left: Login Form */}
             <div className="flex-1 flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 py-12">
                 <div className="w-full max-w-md">

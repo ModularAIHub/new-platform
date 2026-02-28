@@ -1,5 +1,5 @@
 const SITE_URL = 'https://suitegenie.in';
-const DEFAULT_LOGO = `${SITE_URL}/logo[1].png`;
+const DEFAULT_LOGO = `${SITE_URL}/logo.svg`;
 
 const toIsoDate = (value) => new Date(value).toISOString();
 
@@ -21,7 +21,7 @@ const createAuthorSchema = (author = {}) => {
   return {
     '@type': 'Person',
     name: author.name || 'SuiteGenie Team',
-    image: toAbsoluteUrl(author.avatar || '/logo[1].png'),
+    image: toAbsoluteUrl(author.avatar || '/logo.svg'),
     description: author.bio || 'SuiteGenie content team',
     ...(sameAs.length > 0 ? { sameAs } : {}),
   };
@@ -32,6 +32,7 @@ export const generateOrganizationSchema = () => ({
   '@type': 'Organization',
   '@id': `${SITE_URL}/#organization`,
   name: 'SuiteGenie',
+  alternateName: ['Suite Genie', 'SuiteGenie Platform'],
   url: SITE_URL,
   logo: {
     '@type': 'ImageObject',

@@ -173,43 +173,69 @@ if (process.env.NODE_ENV !== 'development') {
 }
 
 // CORS configuration for cross-subdomain support
+const envAllowedOrigins = (process.env.ALLOWED_ORIGINS || '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+
 const allowedOrigins = [
     'https://api.suitegenie.in',
     'https://apilinkedin.suitegenie.in',
-    'https://apitweet.suitegenie.in',
+    'https://tweetapi.suitegenie.in',
     'https://metaapi.suitegenie.in',
     'https://suitegenie.in',
     'https://tweet.suitegenie.in',
     'https://linkedin.suitegenie.in',
+    'https://linkedin.suitgenie.in',
     'https://meta.suitegenie.in',
     'http://localhost:5173',
     'http://localhost:5174',
+    'http://localhost:5175',
+    'http://localhost:5176',
     'http://localhost:3000',
     'http://localhost:3001',
-    'http://localhost:3002'
-];
+    'http://localhost:3002',
+    'http://localhost:3004',
+    'http://localhost:3006',
+    process.env.CLIENT_URL,
+    ...envAllowedOrigins,
+].filter(Boolean);
+
+const isAllowedOrigin = (origin) => {
+    if (!origin) return true;
+
+    if (allowedOrigins.includes(origin) || origin.includes('localhost')) {
+        return true;
+    }
+
+    try {
+        const hostname = new URL(origin).hostname;
+
+        if (
+            hostname === 'suitegenie.in' ||
+            hostname.endsWith('.suitegenie.in') ||
+            hostname === 'suitgenie.in' ||
+            hostname.endsWith('.suitgenie.in')
+        ) {
+            return true;
+        }
+
+        if (process.env.ALLOW_VERCEL_PREVIEWS === 'true' && hostname.endsWith('.vercel.app')) {
+            return true;
+        }
+    } catch (err) {
+        return false;
+    }
+
+    return false;
+};
 
 const corsOptions = {
     origin: function (origin, callback) {
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
 
-        // Check if origin is in allowed list or is a subdomain of suitegenie.in
-        let isAllowed = false;
-        if (allowedOrigins.includes(origin) || origin.includes('localhost')) {
-            isAllowed = true;
-        } else {
-            try {
-                const hostname = new URL(origin).hostname;
-                if (hostname === 'suitegenie.in' || hostname.endsWith('.suitegenie.in')) {
-                    isAllowed = true;
-                }
-            } catch (err) {
-                isAllowed = false;
-            }
-        }
-
-        if (isAllowed || process.env.NODE_ENV === 'development') {
+        if (isAllowedOrigin(origin) || process.env.NODE_ENV === 'development') {
             return callback(null, true); // Allow the origin
         }
 
@@ -229,21 +255,7 @@ app.use(cors(corsOptions));
 app.use((req, res, next) => {
     const origin = req.headers.origin;
     if (origin) {
-        let isAllowed = false;
-        if (allowedOrigins.includes(origin) || origin.includes('localhost')) {
-            isAllowed = true;
-        } else {
-            try {
-                const hostname = new URL(origin).hostname;
-                if (hostname === 'suitegenie.in' || hostname.endsWith('.suitegenie.in')) {
-                    isAllowed = true;
-                }
-            } catch (err) {
-                isAllowed = false;
-            }
-        }
-
-        if (isAllowed || process.env.NODE_ENV === 'development') {
+        if (isAllowedOrigin(origin) || process.env.NODE_ENV === 'development') {
             res.header('Access-Control-Allow-Origin', origin);
             res.header('Access-Control-Allow-Credentials', 'true');
             res.header('Vary', 'Origin');
@@ -373,20 +385,7 @@ app.use((err, req, res, next) => {
     if (err && err.code === 'EBADCSRFTOKEN') {
         const origin = req.headers.origin;
         if (origin) {
-            let isAllowed = false;
-            if (allowedOrigins.includes(origin) || origin.includes('localhost')) {
-                isAllowed = true;
-            } else {
-                try {
-                    const hostname = new URL(origin).hostname;
-                    if (hostname === 'suitegenie.in' || hostname.endsWith('.suitegenie.in')) {
-                        isAllowed = true;
-                    }
-                } catch (e) {
-                    isAllowed = false;
-                }
-            }
-            if (isAllowed) {
+            if (isAllowedOrigin(origin) || process.env.NODE_ENV === 'development') {
                 res.header('Access-Control-Allow-Origin', origin);
                 res.header('Access-Control-Allow-Credentials', 'true');
             }
@@ -409,20 +408,7 @@ app.use((err, req, res, next) => {
     if (err) {
         const origin = req.headers.origin;
         if (origin) {
-            let isAllowed = false;
-            if (allowedOrigins.includes(origin) || origin.includes('localhost')) {
-                isAllowed = true;
-            } else {
-                try {
-                    const hostname = new URL(origin).hostname;
-                    if (hostname === 'suitegenie.in' || hostname.endsWith('.suitegenie.in')) {
-                        isAllowed = true;
-                    }
-                } catch (e) {
-                    isAllowed = false;
-                }
-            }
-            if (isAllowed) {
+            if (isAllowedOrigin(origin) || process.env.NODE_ENV === 'development') {
                 res.header('Access-Control-Allow-Origin', origin);
                 res.header('Access-Control-Allow-Credentials', 'true');
             }

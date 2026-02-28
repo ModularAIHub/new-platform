@@ -6,6 +6,7 @@ import { validateRegistrationData, validateOTPRequest, formatValidationErrors } 
 import toast from 'react-hot-toast';
 import { Button, Input, Card, CardContent } from '../components/ui';
 import { User, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import PublicSeo from '../components/PublicSeo';
 
 const RegisterPage = () => {
 	const [name, setName] = useState('');
@@ -100,6 +101,12 @@ const RegisterPage = () => {
 
 	return (
 		<div className="min-h-screen bg-neutral-50 flex flex-col lg:flex-row">
+			<PublicSeo
+				title="Create Your SuiteGenie Account | Sign Up"
+				description="Create your SuiteGenie account to start generating, scheduling, and managing AI-powered social media content across X, LinkedIn, and more."
+				canonicalPath="/register"
+				noIndex
+			/>
 			{/* Left: Registration Form */}
 			<div className="flex-1 flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 py-12">
 				<div className="w-full max-w-md">

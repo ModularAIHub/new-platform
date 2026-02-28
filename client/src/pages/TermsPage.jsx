@@ -14,12 +14,12 @@ const TermsPage = () => {
         <meta property="og:description" content="Read the SuiteGenie Terms of Service. Understand your rights, responsibilities, and the rules for using our AI social media automation platform." />
         <meta property="og:type" content="article" />
         <meta property="og:url" content="https://suitegenie.in/terms" />
-        <meta property="og:image" content="https://suitegenie.in/og-terms.png" />
+        <meta property="og:image" content="https://suitegenie.in/og-default.svg" />
         <meta property="og:site_name" content="SuiteGenie" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Terms of Service – SuiteGenie" />
         <meta name="twitter:description" content="Read the SuiteGenie Terms of Service. Understand your rights, responsibilities, and the rules for using our AI social media automation platform." />
-        <meta name="twitter:image" content="https://suitegenie.in/og-terms.png" />
+        <meta name="twitter:image" content="https://suitegenie.in/og-default.svg" />
         <meta name="twitter:site" content="@Suitegenie1" />
         {/* Structured Data: Terms Article */}
         <script type="application/ld+json">{`
