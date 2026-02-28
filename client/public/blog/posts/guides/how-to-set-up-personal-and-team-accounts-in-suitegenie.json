@@ -1,0 +1,71 @@
+{
+  "id": "how-to-set-up-personal-and-team-accounts-in-suitegenie",
+  "title": "How to Set Up Personal and Team Social Accounts in SuiteGenie Without Confusion",
+  "slug": "how-to-set-up-personal-and-team-accounts-in-suitegenie",
+  "category": "guides",
+  "tags": [
+    "suitegenie guide",
+    "team accounts",
+    "linkedin teams",
+    "x accounts",
+    "social media setup"
+  ],
+  "excerpt": "A practical guide to connecting personal and team accounts in SuiteGenie so posting, cross-posting, scheduling, and analytics stay clean from day one.",
+  "content": "## Why This Guide Matters\n\nThe fastest way to create account confusion is to mix personal and team connections without a clear rule. SuiteGenie works best when you decide up front which accounts belong to you and which accounts belong to a team workflow.\n\n## The Simple Rule\n\nUse this rule inside SuiteGenie:\n- connect personal accounts for solo publishing\n- connect team accounts for team-owned workflows\n- use team mode only when the team should own the publishing context\n\n## Recommended Setup Order\n\n### Step 1: Connect Your Personal Accounts First\nIf you publish as an individual creator or founder, connect your personal X and LinkedIn accounts first.\n\nThis gives you:\n- personal compose access\n- personal scheduling\n- personal history and analytics\n\n### Step 2: Create or Join a Team Only When Needed\nCreate a team when you need:\n- shared account access\n- shared scheduling workflows\n- shared analytics visibility\n- owner/admin/editor collaboration\n\n### Step 3: Connect Team Accounts in Team Mode\nWhen you are inside team mode, connect only the accounts the team should actually use.\n\nExamples:\n- a company X account\n- a company LinkedIn page\n- a founder account that is intentionally managed by the team\n\n## Best Practices\n\n### Keep Personal and Team Intent Separate\nBefore connecting an account, ask:\n- should this post appear under my personal workflow?\n- or should it appear under the team workflow?\n\nThat one decision prevents most confusion later.\n\n### Reconnect in the Same Scope You Plan to Use\nIf an account is meant for team publishing, reconnect it from the team flow, not from a personal settings flow.\n\n### Verify the Active Account Before Posting\nBefore posting or scheduling:\n- confirm the source account shown in the header\n- confirm the selected cross-post targets\n- confirm whether you are in personal or team mode\n\n## What to Expect in Team Mode\nWhen team mode is active, the goal is to keep the team workflow separate from personal publishing.\n\nThat means:\n- only team-relevant accounts should be used for team publishing\n- target selection should reflect the team context\n- history and scheduled views should map to the selected team account where supported\n\n## Common Mistakes to Avoid\n\n### Connecting every account everywhere\nOnly connect accounts where they are actually used.\n\n### Forgetting which scope you are in\nIf you are in team mode, assume team rules apply until you switch back.\n\n### Using cross-post targets without verifying the destination account\nAlways confirm the destination account label before posting.\n\n## Best Workflow for Teams\n- define which accounts are personal and which are team-owned\n- connect only the required team accounts in team mode\n- use strategy and bulk generation to prepare content\n- verify the source account and cross-post targets before scheduling\n- review history and analytics by the same account context you used to post\n\n## Final Takeaway\n\nSuiteGenie becomes much easier to trust when account ownership is clear. Personal accounts are best for personal publishing. Team accounts are best for shared workflows. Keep those lanes clean, and posting, scheduling, cross-posting, and analytics all make more sense.",
+  "featuredImage": {
+    "url": "/images/blog/suitegenie-launch-hero.svg",
+    "alt": "Guide to setting up personal and team social accounts in SuiteGenie"
+  },
+  "author": {
+    "name": "Kanishk Saraswat",
+    "avatar": "/kanishk.png",
+    "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+    "social": {
+      "linkedin": "kanishk-saraswat",
+      "twitter": "kanishksaraswat"
+    }
+  },
+  "publishDate": "2026-03-01T11:00:00+05:30",
+  "lastModified": "2026-03-01T11:00:00+05:30",
+  "readTime": 7,
+  "featured": false,
+  "status": "published",
+  "seo": {
+    "metaTitle": "How to Set Up Personal and Team Accounts in SuiteGenie",
+    "metaDescription": "Learn how to structure personal and team social accounts in SuiteGenie so posting, cross-posting, scheduling, and analytics stay organized.",
+    "keywords": [
+      "suitegenie team accounts",
+      "personal vs team social accounts",
+      "linkedin team setup",
+      "x team setup"
+    ],
+    "canonicalUrl": "https://suitegenie.in/blogs/guides/how-to-set-up-personal-and-team-accounts-in-suitegenie"
+  },
+  "schema": {
+    "type": "HowTo",
+    "steps": [
+      {
+        "name": "Connect personal accounts first",
+        "text": "Set up your individual X and LinkedIn accounts for solo publishing workflows."
+      },
+      {
+        "name": "Create or join a team",
+        "text": "Enable team mode only when you need shared publishing, shared analytics, or role-based collaboration."
+      },
+      {
+        "name": "Connect team accounts inside team mode",
+        "text": "Add only the accounts the team should actually publish from."
+      },
+      {
+        "name": "Verify source and target accounts before posting",
+        "text": "Confirm the selected source account and any cross-post destination accounts before you publish or schedule."
+      }
+    ],
+    "faq": [
+      {
+        "question": "Should I connect the same account as both personal and team?",
+        "answer": "Only do that intentionally. In most cases, you should decide whether the account is for solo publishing or team-managed publishing and keep that scope clear."
+      }
+    ]
+  }
+}

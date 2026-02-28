@@ -4,29 +4,38 @@ import { Helmet } from "react-helmet";
 const Features = () => (
   <>
     <Helmet>
-      <title>Features – AI Social Media Automation | SuiteGenie</title>
-      <meta name="description" content="Automate Twitter & LinkedIn with AI. Content strategy, bulk generation, team collaboration, and BYOK. Save up to 80% using your own OpenAI, Perplexity, or Gemini API key. All keys and tokens are fully encrypted for your safety. SuiteGenie is the modern, affordable social media automation platform for founders and teams." />
-      <meta name="keywords" content="social media automation, AI tweet generator, LinkedIn automation, BYOK, bulk generation, content strategy, team collaboration, engagement analytics, SuiteGenie features" />
+      <title>Features - AI Social Media Automation | SuiteGenie</title>
+      <meta
+        name="description"
+        content="Explore SuiteGenie features across Tweet Genie, LinkedIn Genie, and Social Genie. Create content with AI, schedule posts, cross-post between channels, manage team workflows, and analyze performance from one platform."
+      />
+      <meta
+        name="keywords"
+        content="suitegenie features, ai social media automation, tweet genie, linkedin genie, social genie, cross posting, bulk generation, team scheduling, byok"
+      />
       <link rel="canonical" href="https://suitegenie.in/features" />
-      {/* Open Graph / Facebook */}
-      <meta property="og:title" content="Features – AI Social Media Automation | SuiteGenie" />
-      <meta property="og:description" content="Automate Twitter & LinkedIn with AI. Bulk scheduling, engagement analytics, image generation, and BYOK. Save up to 80% using your own OpenAI, Perplexity, or Gemini API key. All keys and tokens are fully encrypted for your safety." />
+      <meta property="og:title" content="Features - AI Social Media Automation | SuiteGenie" />
+      <meta
+        property="og:description"
+        content="See what SuiteGenie can do across X, LinkedIn, Threads, AI content generation, scheduling, analytics, and team workflows."
+      />
       <meta property="og:type" content="website" />
       <meta property="og:url" content="https://suitegenie.in/features" />
       <meta property="og:image" content="https://suitegenie.in/og-default.svg" />
-      {/* Twitter Card */}
       <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:title" content="Features – AI Social Media Automation | SuiteGenie" />
-      <meta name="twitter:description" content="Automate Twitter & LinkedIn with AI. Bulk scheduling, engagement analytics, image generation, and BYOK. Save up to 80% using your own OpenAI, Perplexity, or Gemini API key. All keys and tokens are fully encrypted for your safety." />
+      <meta name="twitter:title" content="Features - AI Social Media Automation | SuiteGenie" />
+      <meta
+        name="twitter:description"
+        content="SuiteGenie combines Tweet Genie, LinkedIn Genie, and Social Genie with AI generation, scheduling, analytics, cross-posting, and team workflows."
+      />
       <meta name="twitter:image" content="https://suitegenie.in/og-default.svg" />
-      {/* Structured Data: Product */}
       <script type="application/ld+json">{`
         {
           "@context": "https://schema.org",
           "@type": "Product",
-          "name": "SuiteGenie Features",
-            "image": "https://suitegenie.in/og-default.svg",
-          "description": "AI-powered social media automation features for Twitter and LinkedIn. Bulk scheduling, analytics, BYOK, and more.",
+          "name": "SuiteGenie",
+          "image": "https://suitegenie.in/og-default.svg",
+          "description": "SuiteGenie is an AI-powered social media automation platform for X, LinkedIn, and expanding social workflows.",
           "brand": {
             "@type": "Brand",
             "name": "SuiteGenie"
@@ -40,232 +49,166 @@ const Features = () => (
         }
       `}</script>
     </Helmet>
+
     <div className="max-w-5xl mx-auto px-4 sm:px-8 py-8 text-base text-gray-800" role="main">
-      <h1 className="text-4xl font-extrabold mb-4 text-primary-700">AI-Powered Social Media Automation Features for Twitter and LinkedIn</h1>
+      <h1 className="text-4xl font-extrabold mb-4 text-primary-700">SuiteGenie Features</h1>
+
       <div className="flex flex-wrap gap-4 mb-6">
-        <a href="/pricing" className="text-blue-600 underline font-medium">Ready to start? Check our pricing.</a>
+        <a href="/pricing" className="text-blue-600 underline font-medium">See pricing</a>
         <span className="text-gray-400">|</span>
-        <a href="/docs" className="text-blue-600 underline font-medium">Need help setting things up? Read the docs.</a>
+        <a href="/docs" className="text-blue-600 underline font-medium">Read setup docs</a>
+        <span className="text-gray-400">|</span>
+        <a href="/blogs" className="text-blue-600 underline font-medium">Read product updates</a>
       </div>
+
       <p className="mb-8 text-lg text-gray-700 leading-relaxed">
-        SuiteGenie is the AI-first social media management platform built for founders, creators, and marketers who care about performance and pricing. <span className="font-semibold text-primary-600">Bring your own OpenAI, Perplexity, or Gemini API key (BYOK)</span>, all keys and tokens are fully encrypted and never shared. Generate content in seconds, and schedule posts for Twitter and LinkedIn from one clean dashboard.
+        SuiteGenie is the operating system for AI-assisted social publishing. It brings together Tweet Genie for X,
+        LinkedIn Genie for LinkedIn, and Social Genie for expanding multi-platform workflows. You can generate content,
+        schedule it, cross-post it, review it with a team, and track results without jumping between disconnected tools.
       </p>
+
       <div className="bg-gradient-to-r from-primary-50 to-purple-50 border border-primary-100 rounded-xl p-4 mb-8 shadow-sm">
-        <span className="block text-primary-700 font-semibold text-lg">Save up to 80% on social media automation costs with SuiteGenie’s BYOK model.</span>
+        <span className="block text-primary-700 font-semibold text-lg">
+          Built for founders, creators, and teams who want reliable execution, not just AI drafts.
+        </span>
       </div>
+
       <hr className="my-10" />
 
-      {/* Content & Image Generation */}
       <section className="mb-10">
-        <h2 className="text-2xl font-bold mb-2">⚡ Content & Image Generation</h2>
-        <h3 className="text-lg font-semibold mb-2">Create Scroll-Stopping Content in Seconds</h3>
-        <p className="mb-4 text-gray-700">Generate engaging posts and stunning visuals for Twitter and LinkedIn without staring at a blank screen.</p>
-        <div className="mb-2 font-semibold">What You Can Create:</div>
+        <h2 className="text-2xl font-bold mb-2">1. AI Creation with BYOK or Platform Credits</h2>
         <ul className="list-disc pl-6 mb-4 text-gray-600">
-          <li>Viral tweets and threads tailored to your niche</li>
-          <li>Professional LinkedIn posts for personal brands and company pages</li>
-          <li>Hooks, carousels and list-style posts that drive saves and comments</li>
-          <li>Simple image concepts to support your copy (cover images, quote tiles, etc.)</li>
-        </ul>
-        <div className="mb-2 font-semibold">AI-Powered Controls:</div>
-        <ul className="list-disc pl-6 mb-4 text-gray-600">
-          <li>Choose tone: professional, casual, humorous or educational</li>
-          <li>Ask for multiple variations in one click</li>
-          <li>Auto-respect platform limits (tweet character limits, LinkedIn length sweet spot)</li>
-          <li>Smart hashtag and emoji suggestions for more reach</li>
-        </ul>
-        <a href="/signup" className="inline-block mt-2 text-blue-600 font-semibold underline">Start Creating Content Free →</a>
-      </section>
-
-      <hr className="my-8" />
-
-      {/* Engagement Analytics */}
-      <section className="mb-10">
-        <h2 className="text-2xl font-bold mb-2">📊 Engagement Analytics</h2>
-        <h3 className="text-lg font-semibold mb-2">Track What Works, Do More of It</h3>
-        <p className="mb-4 text-gray-700">See how every tweet and LinkedIn post performs so you can double down on what actually grows your accounts.</p>
-        <div className="mb-2 font-semibold">Metrics You Can Monitor:</div>
-        <ul className="list-disc pl-6 mb-4 text-gray-600">
-          <li>Impressions and reach</li>
-          <li>Likes, comments, reposts/shares</li>
-          <li>Click-throughs to your site or landing page</li>
-          <li>Engagement rate across time periods</li>
-        </ul>
-        <div className="mb-2 font-semibold">Insightful Dashboards:</div>
-        <ul className="list-disc pl-6 mb-4 text-gray-600">
-          <li>Filter by platform, date range or campaign</li>
-          <li>Identify your top-performing formats and topics</li>
-          <li>Spot the days and times that consistently perform best</li>
-          <li>Export data to share results with co-founders or clients</li>
-        </ul>
-        <a href="/signup" className="inline-block mt-2 text-blue-600 font-semibold underline">See Your Best-Performing Posts →</a>
-      </section>
-
-      <hr className="my-8" />
-
-      {/* BYOK */}
-      <section className="mb-10">
-        <h2 className="text-2xl font-bold mb-2">🔑 BYOK (Bring Your Own Keys)</h2>
-        <h3 className="text-lg font-semibold mb-2">Keep Control, Cut Tool Costs</h3>
-        <p className="mb-4 text-gray-700">Traditional social media tools bundle in AI and charge steep monthly fees. With SuiteGenie's BYOK model, you can plug in your own <strong>OpenAI, Perplexity, or Gemini API key</strong>, all keys and tokens are fully encrypted and only used for your content generation. You pay the provider directly at raw cost, often 70-80% cheaper than "AI included" plans.</p>
-        <div className="mb-2 font-semibold">Why BYOK Is a Game-Changer:</div>
-        <ul className="list-disc pl-6 mb-4 text-gray-600">
-          <li>No hidden AI markups or usage padding</li>
-          <li>Full transparency on how much content really costs</li>
-          <li>Access to the latest OpenAI models as soon as they’re released</li>
-          <li>Your key, your limits, your billing – we just provide the layer on top</li>
-        </ul>
-        <div className="mb-2 font-semibold">How It Works (In Minutes):</div>
-        <ol className="list-decimal pl-6 mb-4 text-gray-600">
-          <li>Create an OpenAI, Perplexity, or Gemini account and generate an API key.</li>
-          <li>Paste it once into SuiteGenie settings. Your key is fully encrypted and never shared.</li>
-          <li>Start generating and scheduling content instantly.</li>
-        </ol>
-        <p className="mb-4 text-gray-700">Typical founders and creators stay around <strong>5–15 USD/month in API usage</strong>, instead of 99–249 USD/month with traditional suites.</p>
-        <a href="#" className="inline-block mt-2 text-blue-600 font-semibold underline">Learn How BYOK Saves You Money →</a>
-      </section>
-
-      <hr className="my-8" />
-
-      {/* Strategy Builder */}
-      <section className="mb-10">
-        <h2 className="text-2xl font-bold mb-2">🎯 Content Strategy Builder</h2>
-        <h3 className="text-lg font-semibold mb-2">AI-Powered Strategy Generation Based on Your Analytics</h3>
-        <p className="mb-4 text-gray-700">Let AI analyze your performance data and generate a personalized content strategy tailored to your goals. Get custom prompts and recommendations based on what actually works for your audience.</p>
-        <div className="mb-2 font-semibold">How It Works:</div>
-        <ul className="list-disc pl-6 mb-4 text-gray-600">
-          <li>AI analyzes your past performance and engagement patterns</li>
-          <li>Generate complete content strategies based on your goals (growth, engagement, conversions)</li>
-          <li>Get personalized content prompts tailored to your audience and niche</li>
-          <li>Receive recommendations on optimal posting times and content mix</li>
-          <li>Adapt strategy dynamically based on real-time analytics</li>
-        </ul>
-        <div className="mb-2 font-semibold">Strategic Planning Features:</div>
-        <ul className="list-disc pl-6 mb-4 text-gray-600">
-          <li>Define content pillars and themes for consistent messaging</li>
-          <li>Set posting frequency and optimal times based on your audience data</li>
-          <li>Plan content mix across different formats (threads, carousels, videos)</li>
-          <li>Track strategy performance and get AI suggestions for improvement</li>
-          <li>Generate weeks of content ideas based on your strategy</li>
-        </ul>
-        <div className="mb-2 font-semibold">Why AI-Powered Strategy Matters:</div>
-        <ul className="list-disc pl-6 mb-4 text-gray-600">
-          <li>Stop guessing what to post - let data guide your content decisions</li>
-          <li>Maintain consistent brand voice across all platforms</li>
-          <li>Balance promotional, educational, and engaging content automatically</li>
-          <li>Align social media with business objectives using AI insights</li>
-          <li>Save hours with AI-generated content frameworks and prompts</li>
-        </ul>
-        <a href="/signup" className="inline-block mt-2 text-blue-600 font-semibold underline">Build Your AI Strategy →</a>
-      </section>
-
-      <hr className="my-8" />
-
-      {/* Bulk Generation */}
-      <section className="mb-10">
-        <h2 className="text-2xl font-bold mb-2">⚡ Bulk Content Generation</h2>
-        <h3 className="text-lg font-semibold mb-2">Create a Week's Worth of Content in Minutes</h3>
-        <p className="mb-4 text-gray-700">Generate multiple posts at once and schedule them across your calendar. Perfect for batch content creation.</p>
-        <div className="mb-2 font-semibold">Bulk Generation Power:</div>
-        <ul className="list-disc pl-6 mb-4 text-gray-600">
-          <li>Generate 10, 20, or 50+ posts in a single session</li>
-          <li>Apply consistent themes and tones across all generated content</li>
-          <li>Mix different content types (tips, questions, stories, threads)</li>
-          <li>Review, edit, and approve before scheduling</li>
-        </ul>
-        <div className="mb-2 font-semibold">Smart Scheduling:</div>
-        <ul className="list-disc pl-6 mb-4 text-gray-600">
-          <li>Auto-distribute posts across optimal time slots</li>
-          <li>Avoid posting conflicts and maintain proper spacing</li>
-          <li>Schedule across multiple platforms simultaneously</li>
-          <li>Adjust timing with drag-and-drop calendar interface</li>
-        </ul>
-        <a href="/signup" className="inline-block mt-2 text-blue-600 font-semibold underline">Start Bulk Creating →</a>
-      </section>
-
-      <hr className="my-8" />
-
-      {/* AI-Powered, Built for Social */}
-      <section className="mb-10">
-        <h2 className="text-2xl font-bold mb-2">🎨 AI-Powered, Built for Social</h2>
-        <p className="mb-4 text-gray-700">Suite Genie is designed specifically around social media workflows, not generic text editing. Prompts, templates and outputs are optimized for how people actually consume feeds on Twitter and LinkedIn.</p>
-        <div className="mb-2 font-semibold">You Get:</div>
-        <ul className="list-disc pl-6 mb-4 text-gray-600">
-          <li>Templates tuned for hooks, stories, list posts and threads</li>
-          <li>Suggestions based on what’s currently performing in your niche</li>
-          <li>Guardrails to keep posts concise, clear and on-brand</li>
+          <li>Generate short-form and long-form social drafts quickly</li>
+          <li>Use reusable prompts, strategy context, and tone guidance</li>
+          <li>Support BYOK for lower-cost AI usage and more control</li>
+          <li>Switch between providers based on your preference and budget</li>
         </ul>
       </section>
 
       <hr className="my-8" />
 
-      {/* Team Collaboration */}
       <section className="mb-10">
-        <h2 className="text-2xl font-bold mb-2">👥 Team Collaboration</h2>
-        <h3 className="text-lg font-semibold mb-2">Work Together, Scale Faster</h3>
-        <p className="mb-4 text-gray-700">Invite team members, assign roles, and collaborate on content creation without sharing passwords.</p>
-        <div className="mb-2 font-semibold">Team Features:</div>
+        <h2 className="text-2xl font-bold mb-2">2. Tweet Genie for X</h2>
         <ul className="list-disc pl-6 mb-4 text-gray-600">
-          <li>Invite up to 5 team members with role-based access</li>
-          <li>Connect up to 8 social accounts shared across the team</li>
-          <li>Owner, Admin, Editor, and Viewer roles with granular permissions</li>
-          <li>Shared content calendar and analytics dashboard</li>
+          <li>Create single posts and threads</li>
+          <li>Upload media for supported X accounts</li>
+          <li>Schedule content and review history later</li>
+          <li>Track account-aware analytics and post performance</li>
+          <li>Cross-post from X to LinkedIn, X to X, and X to Threads where configured</li>
         </ul>
-        <div className="mb-2 font-semibold">Role Permissions:</div>
-        <ul className="list-disc pl-6 mb-4 text-gray-600">
-          <li>Owner: Full control, team management, billing</li>
-          <li>Admin: Invite members, connect accounts, manage content</li>
-          <li>Editor: Create and schedule content on connected accounts</li>
-          <li>Viewer: View team content and analytics (read-only)</li>
-        </ul>
-        <a href="/signup" className="inline-block mt-2 text-blue-600 font-semibold underline">Start Collaborating →</a>
       </section>
 
       <hr className="my-8" />
 
-      {/* One Dashboard for Twitter & LinkedIn */}
       <section className="mb-10">
-        <h2 className="text-2xl font-bold mb-2">🌐 One Dashboard for Twitter & LinkedIn</h2>
-        <p className="mb-4 text-gray-700">Manage your core growth channels from a single place instead of juggling multiple tools.</p>
+        <h2 className="text-2xl font-bold mb-2">3. LinkedIn Genie for Profiles and Pages</h2>
         <ul className="list-disc pl-6 mb-4 text-gray-600">
-          <li>Connect Twitter/X via OAuth in a few clicks</li>
-          <li>Connect LinkedIn for personal profiles and business pages</li>
-          <li>See all scheduled posts together in one calendar view</li>
-          <li>Support for WordPress, Facebook, and Instagram coming soon</li>
+          <li>Publish to LinkedIn personal profiles and supported company or page contexts</li>
+          <li>Create text, image, and PDF or document posts</li>
+          <li>Generate content in bulk and schedule it over time</li>
+          <li>Cross-post from LinkedIn to X and Threads where the destination is available</li>
+          <li>Review history and analytics with account-aware filtering</li>
         </ul>
-        <p className="mb-4 text-gray-700">Future channels can plug into the same layout without changing how you work.</p>
       </section>
 
       <hr className="my-8" />
 
-      {/* Secure & Reliable by Design */}
       <section className="mb-10">
-        <h2 className="text-2xl font-bold mb-2">🔐 Secure & Reliable by Design</h2>
-        <p className="mb-4 text-gray-700">Your social accounts and API keys are handled with care.</p>
+        <h2 className="text-2xl font-bold mb-2">4. Social Genie and Expanding Multi-Platform Workflows</h2>
         <ul className="list-disc pl-6 mb-4 text-gray-600">
-          <li>OAuth-based connections for Twitter and LinkedIn</li>
-          <li>Encrypted storage for all your API keys and tokens (OpenAI, Perplexity, Gemini, etc.)</li>
-          <li>All tokens and keys are encrypted at rest and in transit. Your data is never exposed</li>
-          <li>HTTPS everywhere and modern infrastructure practices</li>
+          <li>Threads-focused publishing and scheduling workflows</li>
+          <li>Multi-platform composer patterns</li>
+          <li>Shared account discovery across the SuiteGenie ecosystem</li>
+          <li>Expanding support for Instagram and YouTube workflows</li>
         </ul>
-        <p className="mb-4 text-gray-700">You can revoke access or rotate keys any time from your own dashboards.</p>
       </section>
 
       <hr className="my-8" />
 
-      {/* Call to Action */}
+      <section className="mb-10">
+        <h2 className="text-2xl font-bold mb-2">5. Strategy Builder</h2>
+        <ul className="list-disc pl-6 mb-4 text-gray-600">
+          <li>Define audience, positioning, content goals, and core themes</li>
+          <li>Generate prompt banks you can reuse across campaigns</li>
+          <li>Move from strategy output into compose or bulk generation flows</li>
+          <li>Keep planning and execution connected instead of scattered</li>
+        </ul>
+      </section>
+
+      <hr className="my-8" />
+
+      <section className="mb-10">
+        <h2 className="text-2xl font-bold mb-2">6. Bulk Generation and Scheduling</h2>
+        <ul className="list-disc pl-6 mb-4 text-gray-600">
+          <li>Generate multiple drafts in a single session</li>
+          <li>Edit, trim, and approve before publishing</li>
+          <li>Schedule for personal or team-owned accounts</li>
+          <li>Use bulk flows to build a one- to two-week publishing window quickly</li>
+        </ul>
+      </section>
+
+      <hr className="my-8" />
+
+      <section className="mb-10">
+        <h2 className="text-2xl font-bold mb-2">7. Cross-Posting and Destination Account Selection</h2>
+        <ul className="list-disc pl-6 mb-4 text-gray-600">
+          <li>X to LinkedIn</li>
+          <li>LinkedIn to X</li>
+          <li>X to X</li>
+          <li>Threads-origin cross-posting where enabled</li>
+          <li>Destination account selectors for safer multi-account routing</li>
+        </ul>
+      </section>
+
+      <hr className="my-8" />
+
+      <section className="mb-10">
+        <h2 className="text-2xl font-bold mb-2">8. History, Scheduled Views, and Analytics</h2>
+        <ul className="list-disc pl-6 mb-4 text-gray-600">
+          <li>Review posted content in history views</li>
+          <li>Check upcoming work in scheduled views</li>
+          <li>See analytics for supported account and content scopes</li>
+          <li>Use performance insights to improve future prompts and post formats</li>
+        </ul>
+      </section>
+
+      <hr className="my-8" />
+
+      <section className="mb-10">
+        <h2 className="text-2xl font-bold mb-2">9. Team Mode and Shared Account Workflows</h2>
+        <ul className="list-disc pl-6 mb-4 text-gray-600">
+          <li>Team creation, invites, and role-based access</li>
+          <li>Shared social accounts for team-owned publishing</li>
+          <li>Team-aware cross-posting and scheduling flows</li>
+          <li>Shared content operations for agencies and internal teams</li>
+        </ul>
+      </section>
+
+      <hr className="my-8" />
+
+      <section className="mb-10">
+        <h2 className="text-2xl font-bold mb-2">10. Security and Reliability</h2>
+        <ul className="list-disc pl-6 mb-4 text-gray-600">
+          <li>OAuth-based account connections</li>
+          <li>Encrypted storage for AI keys and platform tokens</li>
+          <li>Separation between personal and team account scopes</li>
+          <li>Ongoing product work focused on routing, visibility, and post-operation trust</li>
+        </ul>
+      </section>
+
+      <hr className="my-8" />
+
       <section className="mb-10 text-center">
-        <h2 className="text-2xl font-bold mb-2">🚀 Ready to See Suite Genie in Action?</h2>
+        <h2 className="text-2xl font-bold mb-2">Ready to explore the full SuiteGenie workflow?</h2>
         <ol className="list-decimal pl-6 mb-4 text-gray-600 text-left inline-block">
-          <li>Sign up in under a minute.</li>
-          <li>Add your OpenAI key once.</li>
-          <li>Generate, schedule and analyze your content from one place.</li>
+          <li>Create your account</li>
+          <li>Connect your social accounts</li>
+          <li>Generate, schedule, cross-post, and learn from performance</li>
         </ol>
-        <a href="/signup" className="inline-block mt-2 text-blue-600 font-semibold underline">Start Free – No Credit Card Needed →</a>
+        <a href="/signup" className="inline-block mt-2 text-blue-600 font-semibold underline">Start with SuiteGenie</a>
       </section>
     </div>
   </>
 );
 
 export default Features;
-

@@ -1,0 +1,58 @@
+{
+  "id": "team-mode-cross-posting-and-visibility-update-mar-2026",
+  "title": "SuiteGenie Update: Better Team Mode, Cross-Posting Visibility, and Account Routing",
+  "slug": "team-mode-cross-posting-and-visibility-update-mar-2026",
+  "category": "updates",
+  "tags": [
+    "suitegenie updates",
+    "team mode",
+    "cross posting",
+    "tweet genie",
+    "linkedin genie",
+    "analytics"
+  ],
+  "excerpt": "We shipped a reliability update focused on team mode, account-aware cross-posting, and making scheduled or mirrored posts show up in the right place across SuiteGenie apps.",
+  "content": "## Quick Answer\n\nWe tightened the way SuiteGenie handles team-owned accounts, destination account selection, and post visibility across X, LinkedIn, and Threads workflows.\n\n## What Changed\n\n### 1. Team Mode Routing Became More Predictable\n- Team publishing now respects team context more consistently\n- Account selection is less likely to fall back to the wrong personal account\n- Connected team accounts are easier to keep aligned across apps\n\n### 2. Cross-Posted Content Is Easier to Verify\n- Destination posts are more likely to appear in the correct history or scheduled views\n- Cross-post target selection is clearer when multiple accounts exist\n- Team users get better visibility into what was posted where\n\n### 3. Account Status Messaging Improved\n- Connection warnings are less likely to appear when the account is still usable\n- Media-specific permission issues are easier to distinguish from full reconnect issues\n- Team users get clearer guidance when the problem is account scope, not account loss\n\n### 4. LinkedIn Team Reconnect Flows Improved\n- Reconnecting the same LinkedIn account to the same team is now handled more safely\n- Team account visibility is more reliable after reconnecting\n- Duplicate or stale connection states are less likely to block normal team use\n\n## Why This Matters\n\nMulti-account publishing gets complicated quickly. Teams need three things to trust the system:\n- the right account is used\n- the resulting post is visible in the right UI\n- analytics and history stay tied to the right destination account\n\nThis update focused on those practical details.\n\n## What This Means for Teams\n- Fewer confusing account-state messages\n- Better confidence during team cross-posting\n- Cleaner visibility for posted and scheduled destination content\n- Less manual guesswork about which account owns which post\n\n## What We Are Still Improving\n\nWe are continuing to refine:\n- long-lived connection stability\n- analytics sync behavior for mirrored posts\n- more consistent visibility across every app surface\n\n## Best Next Step\n\nIf you are using team mode today, reconnect only the accounts you actually want the team to use, verify target selection once, and then keep using the normal workflow. The latest changes are designed to make that experience much smoother.",
+  "featuredImage": {
+    "url": "/images/blog/suitegenie-launch-hero.svg",
+    "alt": "SuiteGenie team mode and cross-posting visibility update"
+  },
+  "author": {
+    "name": "Kanishk Saraswat",
+    "avatar": "/kanishk.png",
+    "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+    "social": {
+      "linkedin": "kanishk-saraswat",
+      "twitter": "kanishksaraswat"
+    }
+  },
+  "publishDate": "2026-03-01T10:30:00+05:30",
+  "lastModified": "2026-03-01T10:30:00+05:30",
+  "readTime": 6,
+  "featured": true,
+  "status": "published",
+  "seo": {
+    "metaTitle": "SuiteGenie Update: Better Team Mode, Cross-Posting, and Visibility",
+    "metaDescription": "See what changed in SuiteGenie across team mode, cross-posting visibility, account routing, and analytics confidence.",
+    "keywords": [
+      "suitegenie update",
+      "team mode social media",
+      "cross posting visibility",
+      "account routing social media"
+    ],
+    "canonicalUrl": "https://suitegenie.in/blogs/updates/team-mode-cross-posting-and-visibility-update-mar-2026"
+  },
+  "schema": {
+    "type": "Article",
+    "faq": [
+      {
+        "question": "What was improved in SuiteGenie team mode?",
+        "answer": "Team mode now handles account scope and cross-post target selection more consistently, which improves history, scheduled visibility, and account-aware publishing."
+      },
+      {
+        "question": "Does this update help with LinkedIn and X cross-posting?",
+        "answer": "Yes. The update improves destination-account routing and visibility for cross-posting workflows across the main SuiteGenie apps."
+      }
+    ]
+  }
+}

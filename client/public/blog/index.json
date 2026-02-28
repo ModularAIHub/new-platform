@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-02-28T19:38:44.459Z",
+  "generatedAt": "2026-02-28T19:55:41.655Z",
   "categories": {
     "meta": {
       "all": {
@@ -63,6 +63,106 @@
     ]
   },
   "posts": [
+    {
+      "id": "what-reliable-social-automation-actually-needs",
+      "title": "What Reliable Social Media Automation Actually Needs",
+      "slug": "what-reliable-social-automation-actually-needs",
+      "category": "insights",
+      "tags": [
+        "social media automation",
+        "reliability",
+        "suitegenie",
+        "scheduling",
+        "analytics"
+      ],
+      "excerpt": "Automation is easy to demo and hard to trust. Here is what actually matters if you want social media automation to work reliably in the real world.",
+      "featuredImage": {
+        "url": "/images/blog/suitegenie-launch-hero.svg",
+        "alt": "Reliable social media automation requires account context, scheduling visibility, and analytics trust"
+      },
+      "author": {
+        "name": "Kanishk Saraswat",
+        "avatar": "/kanishk.png",
+        "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+        "social": {
+          "linkedin": "kanishk-saraswat",
+          "twitter": "kanishksaraswat"
+        }
+      },
+      "publishDate": "2026-03-01T11:30:00+05:30",
+      "lastModified": "2026-03-01T11:30:00+05:30",
+      "readTime": 5,
+      "featured": false,
+      "status": "published",
+      "contentPath": "/blog/posts/insights/what-reliable-social-automation-actually-needs.json"
+    },
+    {
+      "id": "how-to-set-up-personal-and-team-accounts-in-suitegenie",
+      "title": "How to Set Up Personal and Team Social Accounts in SuiteGenie Without Confusion",
+      "slug": "how-to-set-up-personal-and-team-accounts-in-suitegenie",
+      "category": "guides",
+      "tags": [
+        "suitegenie guide",
+        "team accounts",
+        "linkedin teams",
+        "x accounts",
+        "social media setup"
+      ],
+      "excerpt": "A practical guide to connecting personal and team accounts in SuiteGenie so posting, cross-posting, scheduling, and analytics stay clean from day one.",
+      "featuredImage": {
+        "url": "/images/blog/suitegenie-launch-hero.svg",
+        "alt": "Guide to setting up personal and team social accounts in SuiteGenie"
+      },
+      "author": {
+        "name": "Kanishk Saraswat",
+        "avatar": "/kanishk.png",
+        "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+        "social": {
+          "linkedin": "kanishk-saraswat",
+          "twitter": "kanishksaraswat"
+        }
+      },
+      "publishDate": "2026-03-01T11:00:00+05:30",
+      "lastModified": "2026-03-01T11:00:00+05:30",
+      "readTime": 7,
+      "featured": false,
+      "status": "published",
+      "contentPath": "/blog/posts/guides/how-to-set-up-personal-and-team-accounts-in-suitegenie.json"
+    },
+    {
+      "id": "team-mode-cross-posting-and-visibility-update-mar-2026",
+      "title": "SuiteGenie Update: Better Team Mode, Cross-Posting Visibility, and Account Routing",
+      "slug": "team-mode-cross-posting-and-visibility-update-mar-2026",
+      "category": "updates",
+      "tags": [
+        "suitegenie updates",
+        "team mode",
+        "cross posting",
+        "tweet genie",
+        "linkedin genie",
+        "analytics"
+      ],
+      "excerpt": "We shipped a reliability update focused on team mode, account-aware cross-posting, and making scheduled or mirrored posts show up in the right place across SuiteGenie apps.",
+      "featuredImage": {
+        "url": "/images/blog/suitegenie-launch-hero.svg",
+        "alt": "SuiteGenie team mode and cross-posting visibility update"
+      },
+      "author": {
+        "name": "Kanishk Saraswat",
+        "avatar": "/kanishk.png",
+        "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+        "social": {
+          "linkedin": "kanishk-saraswat",
+          "twitter": "kanishksaraswat"
+        }
+      },
+      "publishDate": "2026-03-01T10:30:00+05:30",
+      "lastModified": "2026-03-01T10:30:00+05:30",
+      "readTime": 6,
+      "featured": true,
+      "status": "published",
+      "contentPath": "/blog/posts/updates/team-mode-cross-posting-and-visibility-update-mar-2026.json"
+    },
     {
       "id": "cross-posting-scheduling-reliability-roundup-feb-2026",
       "title": "SuiteGenie Update: Cross-Posting, Scheduling Reliability, and Analytics Visibility Across X, LinkedIn, and Threads",
