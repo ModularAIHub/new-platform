@@ -42,6 +42,14 @@ const errorHandler = (err, req, res, next) => {
         };
     }
 
+    if (err.appCode === 'DATABASE_UNAVAILABLE') {
+        error = {
+            message: 'Database temporarily unavailable. Please try again.',
+            status: 503,
+            code: 'DATABASE_UNAVAILABLE'
+        };
+    }
+
     // Send error response
     res.status(error.status).json({
         error: error.message,

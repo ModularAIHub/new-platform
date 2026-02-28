@@ -48,7 +48,6 @@ const RegisterPage = () => {
 
 		} catch (error) {
 			console.error('Send OTP error:', error);
-			toast.error(error?.message || 'Failed to send OTP. Please try again.');
 		} finally {
 			setLoading(false);
 		}
@@ -60,17 +59,13 @@ const RegisterPage = () => {
 		try {
 			const verificationToken = otpData?.verificationToken;
 			if (!verificationToken) {
-				toast.error('Verification token not received. Please try again.');
-				setLoading(false);
-				return;
+				throw new Error('Verification token not received. Please try again.');
 			}
 			const validation = validateRegistrationData({ name, email, password });
 			if (!validation.isValid) {
 				const formattedErrors = formatValidationErrors(validation.errors);
 				setValidationErrors(formattedErrors);
-				toast.error('Please fix the validation errors below');
-				setLoading(false);
-				return;
+				throw new Error('Please fix the validation errors below');
 			}
 			const registerResult = await register(
 				validation.sanitized.name,
@@ -83,21 +78,21 @@ const RegisterPage = () => {
 			
 			// Check if registration was successful
 			if (!registerResult?.user) {
-				toast.error('Registration failed. Please try again.');
-				return;
+				throw new Error('Registration failed. Please try again.');
 			}
 			// If user selected Pro during signup, send them to paid checkout.
 			if (planType === 'pro') {
 				toast.success('Account created. Complete payment to activate Pro.');
 				navigate('/plans?intent=pro');
-				return;
+				return registerResult;
 			}
 
 			toast.success('Account created! Welcome to SuiteGenie!');
 			navigate('/dashboard');
+			return registerResult;
 		} catch (error) {
 			console.error('Register error:', error);
-			toast.error(error?.message || 'Failed to create account. Please try again.');
+			throw error;
 		} finally {
 			setLoading(false);
 		}

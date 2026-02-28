@@ -173,11 +173,41 @@ const SettingsPage = () => {
 
         setLoading(true)
         try {
-            await api.delete('/auth/delete-account')
+            await api.delete('/auth/delete-account', {
+                // Account deletion can include cross-service cleanup and team teardown.
+                // Keep this higher than the default API timeout to avoid false failure toasts.
+                timeout: 120000
+            })
             toast.success('Account deleted successfully')
             // Redirect to home page
             window.location.href = '/'
         } catch (error) {
+            const isTimeout = error?.code === 'ECONNABORTED' ||
+                String(error?.message || '').toLowerCase().includes('timeout')
+
+            if (isTimeout) {
+                // Backend may have completed deletion even if the client timed out waiting.
+                // Verify auth state once before showing a failure.
+                try {
+                    await new Promise((resolve) => setTimeout(resolve, 1500))
+                    const meResponse = await api.get('/auth/me', {
+                        timeout: 5000,
+                        validateStatus: () => true
+                    })
+
+                    if (meResponse.status === 401) {
+                        toast.success('Account deleted successfully')
+                        window.location.href = '/'
+                        return
+                    }
+                } catch {
+                    // Fall through to user-facing message below.
+                }
+
+                toast.error('Account deletion is taking longer than expected. Please wait a moment and refresh.')
+                return
+            }
+
             toast.error(error.response?.data?.error || 'Failed to delete account')
         } finally {
             setLoading(false)

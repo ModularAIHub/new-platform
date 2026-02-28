@@ -7,16 +7,24 @@ import App from './App.jsx'
 import ScrollToTop from './components/ScrollToTop.jsx'
 import './index.css'
 
+const isLocalhost = (() => {
+    if (typeof window === 'undefined') return false
+    const host = String(window.location.hostname || '').toLowerCase()
+    return host === 'localhost' || host === '127.0.0.1' || host === '::1'
+})()
+
+const isDev = Boolean(import.meta.env.DEV)
+
 const honeybadger = Honeybadger.configure({
     apiKey: 'hbp_A8vjKimYh8OnyV8J3djwKrpqc4OniI3a4MJg', // Replace with your real key
-    environment: 'production'
+    environment: isDev || isLocalhost ? 'development' : 'production'
 });
 
 
 ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
         <HoneybadgerErrorBoundary honeybadger={honeybadger}>
-            <BrowserRouter>
+            <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                 <ScrollToTop />
                 <App />
                 <Toaster

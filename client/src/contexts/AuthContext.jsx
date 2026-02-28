@@ -146,13 +146,6 @@ export const AuthProvider = ({ children }) => {
             }
             return response.data
         } catch (error) {
-            let message
-            if (error.response?.status === 429) {
-                message = 'Too many requests. Please wait a few minutes before trying again.'
-            } else {
-                message = error.response?.data?.error || 'Unable to register right now. Please try again later.'
-            }
-            toast.error(message)
             throw error
         }
     }

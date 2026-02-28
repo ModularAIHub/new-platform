@@ -4,7 +4,19 @@ const subdomains = {
     linkedin:
         process.env.LINKEDIN_API_URL ||
         process.env.LINKEDIN_SUBDOMAIN ||
-        'https://apilinkedin.suitegenie.in'
+        'https://apilinkedin.suitegenie.in',
+    social:
+        process.env.SOCIAL_GENIE_URL ||
+        process.env.SOCIAL_SUBDOMAIN ||
+        'https://meta.suitegenie.in',
+    threads:
+        process.env.SOCIAL_GENIE_URL ||
+        process.env.SOCIAL_SUBDOMAIN ||
+        'https://meta.suitegenie.in',
+    instagram:
+        process.env.SOCIAL_GENIE_URL ||
+        process.env.SOCIAL_SUBDOMAIN ||
+        'https://meta.suitegenie.in'
 };
 // proTeamController.js 
 // Controller for Pro plan team collaboration features
@@ -12,6 +24,123 @@ import jwt from 'jsonwebtoken';
 import { TeamService } from '../services/teamService.js';
 import { RolePermissionsService } from '../services/rolePermissions.js';
 import { query } from '../config/database.js';
+
+const normalizeUrlBase = (value) => String(value || '').replace(/\/+$/, '');
+const ensureUrl = (host) => host.startsWith('http') ? host : `https://${host}`;
+
+const resolveLocalTeamOAuthHost = (platformKey) => {
+    switch (platformKey) {
+        case 'twitter':
+            return process.env.TWEET_GENIE_URL || 'http://localhost:3002';
+        case 'linkedin':
+            return process.env.LINKEDIN_API_URL || 'http://localhost:3004';
+        case 'social':
+            return process.env.SOCIAL_GENIE_LOCAL_URL || process.env.SOCIAL_GENIE_URL || 'http://localhost:3003';
+        default:
+            return null;
+    }
+};
+
+const normalizeAccountIdentifier = (value, maxLen = 255) => {
+    if (value === undefined || value === null) return null;
+    const normalized = String(value).trim();
+    if (!normalized) return null;
+    return Number.isFinite(maxLen) && maxLen > 0 ? normalized.slice(0, maxLen) : normalized;
+};
+
+const mapRegistrySocialAccountRow = (row = {}) => {
+    const sourceId = normalizeAccountIdentifier(row.source_id);
+    const registryId = normalizeAccountIdentifier(row.registry_id || row.id);
+
+    return {
+        id: registryId,
+        registry_id: registryId,
+        source_id: sourceId,
+        source_table: normalizeAccountIdentifier(row.source_table, 128),
+        platform: normalizeAccountIdentifier(row.platform, 50),
+        account_username: normalizeAccountIdentifier(row.account_username, 255),
+        account_display_name: normalizeAccountIdentifier(row.account_display_name, 255),
+        account_id: normalizeAccountIdentifier(row.account_id, 255),
+        profile_image_url: normalizeAccountIdentifier(row.profile_image_url, 2048),
+        connected_by_name: normalizeAccountIdentifier(row.connected_by_name, 255),
+        connected_by_email: normalizeAccountIdentifier(row.connected_by_email, 255),
+        created_at: row.created_at || null,
+        updated_at: row.updated_at || null,
+        metadata: row.metadata && typeof row.metadata === 'object' ? row.metadata : {},
+        is_active: row.is_active !== false,
+        active: row.is_active !== false,
+    };
+};
+
+const fetchRegistryTeamSocialAccounts = async (teamId) => {
+    const registryResult = await query(
+        `SELECT
+             sca.id::text AS registry_id,
+             COALESCE(NULLIF(sca.metadata->>'source_id', ''), sca.id::text) AS source_id,
+             sca.metadata->>'source_table' AS source_table,
+             sca.platform,
+             sca.account_username,
+             sca.account_display_name,
+             sca.account_id,
+             sca.profile_image_url,
+             sca.created_at,
+             sca.updated_at,
+             sca.is_active,
+             sca.metadata,
+             u.name AS connected_by_name,
+             u.email AS connected_by_email
+         FROM social_connected_accounts sca
+         LEFT JOIN users u
+           ON u.id::text = COALESCE(NULLIF(sca.connected_by::text, ''), sca.user_id::text)
+         WHERE sca.team_id::text = $1::text
+           AND sca.is_active = true
+         ORDER BY sca.updated_at DESC NULLS LAST, sca.created_at DESC NULLS LAST, sca.id DESC`,
+        [teamId]
+    );
+
+    return registryResult.rows.map(mapRegistrySocialAccountRow).filter((row) => row.id);
+};
+
+const deactivateTeamRegistryRows = async ({
+    teamId,
+    registryId = null,
+    sourceTable = null,
+    sourceId = null,
+}) => {
+    const normalizedTeamId = normalizeAccountIdentifier(teamId, 128);
+    const normalizedRegistryId = normalizeAccountIdentifier(registryId, 128);
+    const normalizedSourceTable = normalizeAccountIdentifier(sourceTable, 128);
+    const normalizedSourceId = normalizeAccountIdentifier(sourceId, 255);
+
+    if (!normalizedTeamId) return;
+    if (!normalizedRegistryId && !(normalizedSourceTable && normalizedSourceId)) return;
+
+    const predicates = [];
+    const params = [normalizedTeamId];
+
+    if (normalizedRegistryId) {
+        params.push(normalizedRegistryId);
+        predicates.push(`id::text = $${params.length}::text`);
+    }
+
+    if (normalizedSourceTable && normalizedSourceId) {
+        params.push(normalizedSourceTable);
+        const sourceTableIndex = params.length;
+        params.push(normalizedSourceId);
+        predicates.push(
+            `(metadata->>'source_table' = $${sourceTableIndex} AND metadata->>'source_id' = $${params.length})`
+        );
+    }
+
+    await query(
+        `UPDATE social_connected_accounts
+         SET is_active = false,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE team_id::text = $1::text
+           AND (${predicates.join(' OR ')})`,
+        params
+    );
+};
 
 export const ProTeamController = {
     // Get team's social accounts (team-wide across sources)
@@ -30,7 +159,14 @@ export const ProTeamController = {
                 return res.status(403).json({ success: false, error: 'User is not in a team', accounts: [] });
             }
 
-            // Fetch OAuth1/user_social_accounts
+            let registryAccounts = [];
+            try {
+                registryAccounts = await fetchRegistryTeamSocialAccounts(teamId);
+            } catch (registryError) {
+                console.error('[pro-team/social-accounts] Registry-first lookup failed, falling back to legacy tables:', registryError.message);
+            }
+
+            // Legacy fallback until all environments are fully backfilled.
             const userAccountsResult = await query(
                 `SELECT usa.id, usa.platform, usa.account_username, usa.account_display_name, usa.account_id, usa.profile_image_url, usa.created_at,
                         usa.oauth1_access_token, usa.oauth1_access_token_secret,
@@ -43,7 +179,6 @@ export const ProTeamController = {
                 [teamId]
             );
 
-            // Fetch OAuth1 and OAuth2 credentials for Twitter team accounts
             const teamAccountsResult = await query(
                 `SELECT ta.id, 'twitter' as platform, ta.twitter_username as account_username, ta.twitter_display_name as account_display_name,
                         ta.twitter_user_id as account_id, ta.twitter_profile_image_url as profile_image_url,
@@ -57,7 +192,6 @@ export const ProTeamController = {
                 [teamId]
             );
 
-            // Fetch LinkedIn team accounts directly from database (same database as new-platform)
             let linkedinAccounts = [];
             try {
                 const linkedinResult = await query(
@@ -71,15 +205,34 @@ export const ProTeamController = {
                      ORDER BY lta.created_at DESC`,
                     [teamId]
                 );
-                
+
                 linkedinAccounts = linkedinResult.rows;
                 console.log('[LINKEDIN FETCH] Fetched LinkedIn team accounts from database:', linkedinAccounts.length);
             } catch (error) {
                 console.error('[LINKEDIN FETCH] Database query failed:', error.message);
             }
 
-            const merged = [...userAccountsResult.rows, ...teamAccountsResult.rows, ...linkedinAccounts];
-            res.json({ success: true, accounts: merged, totalAccounts: merged.length, teamId });
+            const fallbackAccounts = [...userAccountsResult.rows, ...teamAccountsResult.rows, ...linkedinAccounts];
+            const seenRegistryKeys = new Set(
+                registryAccounts.map((account) => `${String(account.platform || '').toLowerCase()}:${String(account.account_id || account.account_username || account.id || '').toLowerCase()}`)
+            );
+            const merged = registryAccounts.length > 0
+                ? [
+                    ...registryAccounts,
+                    ...fallbackAccounts.filter((account) => {
+                        const key = `${String(account.platform || '').toLowerCase()}:${String(account.account_id || account.account_username || account.id || '').toLowerCase()}`;
+                        return !seenRegistryKeys.has(key);
+                    }),
+                ]
+                : fallbackAccounts;
+
+            res.json({
+                success: true,
+                accounts: merged,
+                totalAccounts: merged.length,
+                teamId,
+                source: registryAccounts.length > 0 ? 'social_connected_accounts+fallback' : 'legacy',
+            });
         } catch (error) {
             console.error('[pro-team/social-accounts] Error:', error);
             console.error('[pro-team/social-accounts] Stack:', error.stack);
@@ -658,7 +811,11 @@ export const ProTeamController = {
                 success: true,
                 role: permissions.role,
                 permissions: permissions.permissions,
-                limits: teamWideLimits
+                limits: teamWideLimits,
+                team_id: permissions.team_id || null,
+                teamId: permissions.team_id || null,
+                user_id: userId,
+                userId: userId,
             });
         } catch (error) {
             console.error('Get user permissions error:', error);
@@ -757,28 +914,40 @@ export const ProTeamController = {
                 subdomain = process.env.LINKEDIN_API_URL || 'https://apilinkedin.suitegenie.in';
             }
 
-            // Use localhost for Twitter OAuth in local dev
-            if (isLocal && platformKey === 'twitter') {
-                subdomain = 'http://localhost:3002';
-            }
             if (!subdomain) {
                 return res.status(400).json({ error: 'Unsupported platform' });
             }
             
-            // Platform-specific OAuth paths
-            const oauthPaths = {
-                twitter: '/api/twitter/team-connect',
-                linkedin: '/api/oauth/linkedin/team-connect'
+            // Platform-specific OAuth paths and host selection
+            const oauthTargets = {
+                twitter: { path: '/api/twitter/team-connect', hostKey: 'twitter' },
+                linkedin: { path: '/api/oauth/linkedin/team-connect', hostKey: 'linkedin' },
+                threads: { path: '/api/oauth/threads/connect', hostKey: 'social' },
+                instagram: { path: '/api/oauth/instagram/connect', hostKey: 'social' }
             };
-            
-            const oauthPath = oauthPaths[platform.toLowerCase()];
-            if (!oauthPath) {
+
+            const oauthTarget = oauthTargets[platformKey];
+            if (!oauthTarget) {
                 return res.status(400).json({ error: `Platform ${platform} OAuth not yet implemented` });
             }
-            
-            const ensureUrl = (host) => host.startsWith('http') ? host : `https://${host}`;
-            const returnUrl = isLocal ? 'http://localhost:5173/team' : `${ensureUrl(process.env.CLIENT_URL || 'https://suitegenie.in')}/team`;
-            const redirectUrl = `${ensureUrl(subdomain)}${oauthPath}?teamId=${teamId}&userId=${userId}&returnUrl=${encodeURIComponent(returnUrl)}`;
+
+            if (isLocal) {
+                if (oauthTarget.hostKey === 'twitter') {
+                    subdomain = resolveLocalTeamOAuthHost('twitter');
+                } else if (oauthTarget.hostKey === 'linkedin') {
+                    subdomain = resolveLocalTeamOAuthHost('linkedin');
+                } else if (oauthTarget.hostKey === 'social') {
+                    subdomain = resolveLocalTeamOAuthHost('social');
+                }
+            } else if (oauthTarget.hostKey && subdomains[oauthTarget.hostKey]) {
+                subdomain = subdomains[oauthTarget.hostKey];
+            }
+
+            const clientBaseUrl = isLocal
+                ? normalizeUrlBase(req.headers.origin || process.env.CLIENT_URL || 'http://localhost:5173')
+                : normalizeUrlBase(ensureUrl(process.env.CLIENT_URL || 'https://suitegenie.in'));
+            const returnUrl = `${clientBaseUrl}/team`;
+            const redirectUrl = `${ensureUrl(subdomain)}${oauthTarget.path}?teamId=${teamId}&userId=${userId}&returnUrl=${encodeURIComponent(returnUrl)}`;
             
             res.json({
                 success: true,
@@ -800,63 +969,87 @@ export const ProTeamController = {
 
             console.log('[disconnectAccount] Attempting to disconnect account:', { userId, accountId });
 
-            // Try to find account in all three tables separately to avoid type issues
-            let accountResult = { rows: [] };
             let table_name = null;
             let accountTeamId = null;
+            let registryAccountId = null;
+            let sourceId = null;
+            let registryRow = null;
 
-            // Check if accountId looks like a UUID or integer
-            const isUUID = accountId.includes('-');
+            try {
+                const registryResult = await query(
+                    `SELECT id::text as id, team_id::text as team_id, platform, metadata
+                     FROM social_connected_accounts
+                     WHERE id::text = $1::text
+                       AND is_active = true
+                     LIMIT 1`,
+                    [accountId]
+                );
+                if (registryResult.rows.length > 0) {
+                    registryRow = registryResult.rows[0];
+                    registryAccountId = registryRow.id;
+                    accountTeamId = registryRow.team_id;
+                    table_name = normalizeAccountIdentifier(registryRow.metadata?.source_table, 128) || 'social_connected_accounts';
+                    sourceId = normalizeAccountIdentifier(registryRow.metadata?.source_id, 255) || registryRow.id;
+                }
+            } catch (e) {
+                console.log('[disconnectAccount] Error checking social_connected_accounts:', e.message);
+            }
 
-            // Check user_social_accounts first (has UUID id)
-            if (isUUID) {
+            if (!table_name) {
                 try {
                     const usaResult = await query(
-                        `SELECT id, team_id::text as team_id FROM user_social_accounts WHERE id = $1 AND is_active = true`,
+                        `SELECT id::text as id, team_id::text as team_id
+                         FROM user_social_accounts
+                         WHERE id::text = $1::text AND is_active = true`,
                         [accountId]
                     );
                     if (usaResult.rows.length > 0) {
                         table_name = 'user_social_accounts';
                         accountTeamId = usaResult.rows[0].team_id;
+                        sourceId = usaResult.rows[0].id;
                     }
                 } catch (e) {
-                    // Not a UUID, skip
+                    console.log('[disconnectAccount] Error checking user_social_accounts:', e.message);
                 }
             }
 
-            // Check team_accounts if not found (has UUID id)
-            if (!table_name && isUUID) {
+            if (!table_name) {
                 try {
                     const taResult = await query(
-                        `SELECT id, team_id::text as team_id FROM team_accounts WHERE id = $1 AND active = true`,
+                        `SELECT id::text as id, team_id::text as team_id
+                         FROM team_accounts
+                         WHERE id::text = $1::text AND active = true`,
                         [accountId]
                     );
                     if (taResult.rows.length > 0) {
                         table_name = 'team_accounts';
                         accountTeamId = taResult.rows[0].team_id;
+                        sourceId = taResult.rows[0].id;
                     }
                 } catch (e) {
-                    // Not a UUID, skip
+                    console.log('[disconnectAccount] Error checking team_accounts:', e.message);
                 }
             }
 
-            // Check linkedin_team_accounts if not found (has integer id)
             if (!table_name) {
                 try {
                     const ltaResult = await query(
-                        `SELECT id, team_id FROM linkedin_team_accounts WHERE id = $1 AND active = true`,
-                        [parseInt(accountId, 10) || accountId]
+                        `SELECT id::text as id, team_id::text as team_id
+                         FROM linkedin_team_accounts
+                         WHERE id::text = $1::text AND active = true`,
+                        [accountId]
                     );
                     if (ltaResult.rows.length > 0) {
                         table_name = 'linkedin_team_accounts';
-                        accountTeamId = ltaResult.rows[0].team_id; // Already TEXT
+                        accountTeamId = ltaResult.rows[0].team_id;
+                        sourceId = ltaResult.rows[0].id;
                     }
                 } catch (e) {
                     console.log('[disconnectAccount] Error checking linkedin_team_accounts:', e.message);
                 }
             }
 
-            console.log('[disconnectAccount] Account query result:', { table_name, accountTeamId });
+            console.log('[disconnectAccount] Account query result:', { table_name, accountTeamId, registryAccountId, sourceId });
 
             if (!table_name) {
                 return res.status(404).json({ error: 'Social account not found' });
@@ -880,23 +1073,39 @@ export const ProTeamController = {
             }
 
             // Update the appropriate table
-            if (table_name === 'user_social_accounts') {
+            if (table_name === 'social_connected_accounts') {
+                await query(
+                    `UPDATE social_connected_accounts
+                     SET is_active = false, updated_at = CURRENT_TIMESTAMP
+                     WHERE id::text = $1::text`,
+                    [registryAccountId || accountId]
+                );
+            } else if (table_name === 'user_social_accounts') {
                 await query(
                     `UPDATE user_social_accounts SET is_active = false, updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
-                    [accountId]
+                    [sourceId || accountId]
                 );
             } else if (table_name === 'team_accounts') {
                 // Actually DELETE Twitter team accounts to prevent orphans
                 await query(
-                    `DELETE FROM team_accounts WHERE id = $1`,
-                    [accountId]
+                    `DELETE FROM team_accounts WHERE id::text = $1::text`,
+                    [sourceId || accountId]
                 );
             } else if (table_name === 'linkedin_team_accounts') {
                 // Actually DELETE LinkedIn team accounts to prevent orphans
                 await query(
-                    `DELETE FROM linkedin_team_accounts WHERE id = $1`,
-                    [parseInt(accountId, 10)]
+                    `DELETE FROM linkedin_team_accounts WHERE id::text = $1::text`,
+                    [sourceId || accountId]
                 );
+            }
+
+            if (accountTeamId) {
+                await deactivateTeamRegistryRows({
+                    teamId: accountTeamId,
+                    registryId: registryAccountId || accountId,
+                    sourceTable: table_name === 'social_connected_accounts' ? null : table_name,
+                    sourceId: sourceId || accountId,
+                });
             }
 
             res.json({ success: true, message: 'Social account disconnected successfully' });

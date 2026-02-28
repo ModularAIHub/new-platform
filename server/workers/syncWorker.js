@@ -1,4 +1,4 @@
-import { query } from '../config/database.js';
+import { isDatabaseUnavailableError, query } from '../config/database.js';
 import redisClient from '../config/redis.js';
 import CreditService from '../services/creditService.js';
 import { CREDIT_TIERS } from '../utils/creditTiers.js';
@@ -8,35 +8,48 @@ class SyncWorker {
         this.isRunning = false;
         this.interval = null;
         this.syncInterval = 10 * 60 * 1000; // 10 minutes
+        this.startTime = null;
+        this.lastSyncTime = null;
 
-        // Monthly reset state
         this.monthlyResetTimer = null;
         this.monthlyResetInProgress = false;
         this.monthlyResetInterval = 60 * 60 * 1000; // 1 hour
-        this.startMonthlyReset();
+        this.runInitialMonthlyReset =
+            process.env.SYNC_WORKER_RUN_INITIAL_MONTHLY_RESET === 'true' ||
+            (
+                process.env.SYNC_WORKER_RUN_INITIAL_MONTHLY_RESET !== 'false' &&
+                process.env.NODE_ENV === 'production'
+            );
+
+        this.databaseFailureCooldownMs = Number.parseInt(
+            process.env.SYNC_WORKER_DB_FAILURE_COOLDOWN_MS || '120000',
+            10
+        );
+        this.databaseCooldownUntil = 0;
+        this.lastDatabaseCooldownReason = null;
     }
 
-    // Start the sync worker
     start() {
         if (this.isRunning) {
-            console.log('⚠️  Sync worker is already running');
+            console.log('Sync worker is already running');
             return;
         }
 
-        console.log('🚀 Starting credit sync worker...');
+        console.log('Starting credit sync worker...');
         this.isRunning = true;
+        this.startTime = Date.now();
 
-        // Run initial sync
-        this.performSync();
+        this.startMonthlyReset();
 
-        // Set up interval for periodic sync
+        void this.performSync();
+
         this.interval = setInterval(() => {
-            this.performSync();
+            void this.performSync();
         }, this.syncInterval);
 
-        console.log(`✅ Credit sync worker started (interval: ${this.syncInterval / 1000}s)`);
+        console.log(`Credit sync worker started (interval: ${this.syncInterval / 1000}s)`);
     }
-    // Monthly credit reset logic - checks hourly and resets accounts due for the current UTC month
+
     startMonthlyReset() {
         console.log('[CREDIT RESET] Monthly credit reset scheduler initialized (checks hourly, resets on UTC month start)');
 
@@ -44,16 +57,48 @@ class SyncWorker {
             clearInterval(this.monthlyResetTimer);
         }
 
-        // Run once on startup so the reset is not missed after a restart.
-        void this.runMonthlyCreditResetIfDue();
+        if (this.runInitialMonthlyReset) {
+            void this.runMonthlyCreditResetIfDue();
+        }
 
         this.monthlyResetTimer = setInterval(() => {
             void this.runMonthlyCreditResetIfDue();
         }, this.monthlyResetInterval);
     }
 
+    isDatabaseCooldownActive(taskLabel = 'worker task') {
+        const remainingMs = this.databaseCooldownUntil - Date.now();
+        if (remainingMs <= 0) {
+            return false;
+        }
+
+        console.warn(
+            `[SYNC WORKER] Skipping ${taskLabel}; database cooldown active for ${remainingMs}ms` +
+            (this.lastDatabaseCooldownReason ? ` (${this.lastDatabaseCooldownReason})` : '')
+        );
+        return true;
+    }
+
+    markDatabaseUnavailable(taskLabel, error) {
+        if (!isDatabaseUnavailableError(error)) {
+            return false;
+        }
+
+        this.databaseCooldownUntil = Date.now() + this.databaseFailureCooldownMs;
+        this.lastDatabaseCooldownReason = error?.message || 'database unavailable';
+        console.warn(
+            `[SYNC WORKER] ${taskLabel} paused for ${this.databaseFailureCooldownMs}ms:`,
+            this.lastDatabaseCooldownReason
+        );
+        return true;
+    }
+
     async runMonthlyCreditResetIfDue() {
         if (this.monthlyResetInProgress) {
+            return;
+        }
+
+        if (this.isDatabaseCooldownActive('monthly credit reset')) {
             return;
         }
 
@@ -130,13 +175,17 @@ class SyncWorker {
             `);
 
             if (updateResult.rowCount === 0 && teamResetResult.rowCount === 0) {
+                this.databaseCooldownUntil = 0;
+                this.lastDatabaseCooldownReason = null;
                 return;
             }
 
+            this.databaseCooldownUntil = 0;
+            this.lastDatabaseCooldownReason = null;
             console.log(`[CREDIT RESET] Monthly credit reset completed for ${utcMonth + 1}/${utcYear} (UTC month boundary)`);
             console.log(`[CREDIT RESET] User DB updates: ${updateResult.rowCount}, Redis updates: ${redisUpdates}`);
             console.log(`[CREDIT RESET] Team updates: ${teamResetResult.rowCount}`);
-            console.log(`[CREDIT RESET] Credit allocation by tier:`);
+            console.log('[CREDIT RESET] Credit allocation by tier:');
             console.log(`   Free+Platform (${CREDIT_TIERS.free.platform}): ${statsByTier['free-platform']} users`);
             console.log(`   Free+BYOK (${CREDIT_TIERS.free.byok}): ${statsByTier['free-byok']} users`);
             console.log(`   Pro+Platform (${CREDIT_TIERS.pro.platform}): ${statsByTier['pro-platform']} users`);
@@ -144,20 +193,21 @@ class SyncWorker {
             console.log(`   Enterprise+Platform (${CREDIT_TIERS.enterprise.platform}): ${statsByTier['enterprise-platform']} users`);
             console.log(`   Enterprise+BYOK (${CREDIT_TIERS.enterprise.byok}): ${statsByTier['enterprise-byok']} users`);
         } catch (err) {
-            console.error('[CREDIT RESET] Monthly credit reset failed:', err);
+            if (!this.markDatabaseUnavailable('monthly credit reset', err)) {
+                console.error('[CREDIT RESET] Monthly credit reset failed:', err);
+            }
         } finally {
             this.monthlyResetInProgress = false;
         }
     }
 
-    // Stop the sync worker
     stop() {
         if (!this.isRunning) {
-            console.log('⚠️  Sync worker is not running');
+            console.log('Sync worker is not running');
             return;
         }
 
-        console.log('🛑 Stopping credit sync worker...');
+        console.log('Stopping credit sync worker...');
         this.isRunning = false;
 
         if (this.interval) {
@@ -170,103 +220,108 @@ class SyncWorker {
             this.monthlyResetTimer = null;
         }
 
-        console.log('✅ Credit sync worker stopped');
+        console.log('Credit sync worker stopped');
     }
 
-    // Perform the actual sync operation
     async performSync() {
-        try {
-            console.log('🔄 Starting credit sync...');
-            const startTime = Date.now();
+        if (this.isDatabaseCooldownActive('credit sync')) {
+            return;
+        }
 
-            // Check if Redis is available
+        try {
+            console.log('Starting credit sync...');
+            const startedAt = Date.now();
+
             const redisHealth = await redisClient.ping();
             if (!redisHealth) {
-                console.log('⚠️  Redis not available, skipping sync');
+                console.log('Redis not available, skipping sync');
                 return;
             }
 
-            // Get dirty users from Redis
             const dirtyUsers = await redisClient.getDirtyUsers();
 
             if (dirtyUsers.length === 0) {
-                console.log('✅ No dirty users to sync');
+                this.lastSyncTime = new Date().toISOString();
+                console.log('No dirty users to sync');
                 return;
             }
 
-            console.log(`📊 Syncing ${dirtyUsers.length} dirty users...`);
+            console.log(`Syncing ${dirtyUsers.length} dirty users...`);
 
             let successCount = 0;
             let errorCount = 0;
 
-            // Sync each dirty user
             for (const userId of dirtyUsers) {
                 try {
                     await CreditService.syncUserToDatabase(userId);
                     successCount++;
                 } catch (error) {
-                    console.error(`❌ Failed to sync user ${userId}:`, error.message);
+                    if (this.markDatabaseUnavailable(`credit sync for user ${userId}`, error)) {
+                        errorCount++;
+                        break;
+                    }
+
+                    console.error(`Failed to sync user ${userId}:`, error.message);
                     errorCount++;
                 }
             }
 
-            const endTime = Date.now();
-            const duration = endTime - startTime;
+            const duration = Date.now() - startedAt;
+            this.lastSyncTime = new Date().toISOString();
+            this.databaseCooldownUntil = 0;
+            this.lastDatabaseCooldownReason = null;
 
-            console.log(`✅ Credit sync completed in ${duration}ms`);
-            console.log(`📈 Success: ${successCount}, Errors: ${errorCount}`);
+            console.log(`Credit sync completed in ${duration}ms`);
+            console.log(`Success: ${successCount}, Errors: ${errorCount}`);
 
-            // Log sync metrics
             this.logSyncMetrics({
-                timestamp: new Date().toISOString(),
+                timestamp: this.lastSyncTime,
                 duration,
                 totalUsers: dirtyUsers.length,
                 successCount,
                 errorCount
             });
-
         } catch (error) {
-            console.error('❌ Credit sync failed:', error);
+            if (!this.markDatabaseUnavailable('credit sync', error)) {
+                console.error('Credit sync failed:', error);
+            }
         }
     }
 
-    // Log sync metrics for monitoring
     logSyncMetrics(metrics) {
-        // In production, you might want to send these metrics to a monitoring service
-        console.log('📊 Sync Metrics:', JSON.stringify(metrics, null, 2));
+        console.log('Sync Metrics:', JSON.stringify(metrics, null, 2));
     }
 
-    // Manual sync trigger (for testing/debugging)
     async manualSync(userId = null) {
         try {
-            console.log('🔧 Manual sync triggered...');
+            console.log('Manual sync triggered...');
 
             if (userId) {
-                console.log(`📊 Manual sync for user: ${userId}`);
+                console.log(`Manual sync for user: ${userId}`);
                 await CreditService.syncToDatabase(userId);
             } else {
-                console.log('📊 Manual sync for all dirty users');
+                console.log('Manual sync for all dirty users');
                 await CreditService.syncToDatabase();
             }
 
-            console.log('✅ Manual sync completed');
+            console.log('Manual sync completed');
         } catch (error) {
-            console.error('❌ Manual sync failed:', error);
+            console.error('Manual sync failed:', error);
             throw error;
         }
     }
 
-    // Get worker status
     getStatus() {
         return {
             isRunning: this.isRunning,
             syncInterval: this.syncInterval,
             lastSync: this.lastSyncTime,
-            uptime: this.isRunning ? Date.now() - this.startTime : null
+            uptime: this.isRunning && this.startTime ? Date.now() - this.startTime : null,
+            databaseCooldownUntil: this.databaseCooldownUntil || null,
+            lastDatabaseCooldownReason: this.lastDatabaseCooldownReason
         };
     }
 
-    // Health check
     async healthCheck() {
         try {
             const redisHealth = await redisClient.ping();
@@ -276,6 +331,7 @@ class SyncWorker {
                 worker: this.isRunning,
                 redis: redisHealth,
                 dirtyUsersCount: dirtyUsers.length,
+                databaseCooldownActive: this.databaseCooldownUntil > Date.now(),
                 timestamp: new Date().toISOString()
             };
         } catch (error) {
@@ -283,24 +339,23 @@ class SyncWorker {
                 worker: this.isRunning,
                 redis: false,
                 error: error.message,
+                databaseCooldownActive: this.databaseCooldownUntil > Date.now(),
                 timestamp: new Date().toISOString()
             };
         }
     }
 }
 
-// Create singleton instance
 const syncWorker = new SyncWorker();
 
-// Graceful shutdown handling
 process.on('SIGINT', () => {
-    console.log('\n🛑 Received SIGINT, shutting down sync worker...');
+    console.log('\nReceived SIGINT, shutting down sync worker...');
     syncWorker.stop();
     process.exit(0);
 });
 
 process.on('SIGTERM', () => {
-    console.log('\n🛑 Received SIGTERM, shutting down sync worker...');
+    console.log('\nReceived SIGTERM, shutting down sync worker...');
     syncWorker.stop();
     process.exit(0);
 });

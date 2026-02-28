@@ -1,9 +1,9 @@
 // TeamPage.jsx - Pro plan team collaboration
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, Mail, UserX, Crown, Shield, Eye, Edit, Linkedin, Twitter, ExternalLink, Globe, MessageSquare, LogOut, Trash2, RefreshCw, Building2, User } from 'lucide-react';
+import { Users, Plus, Mail, UserX, Crown, Shield, Eye, Edit, Linkedin, Twitter, ExternalLink, Globe, MessageSquare, LogOut, Trash2, RefreshCw, Building2, User, AtSign } from 'lucide-react';
 import usePlanAccess from '../hooks/usePlanAccess';
 import UpgradePrompt from '../components/UpgradePrompt';
-import api, { twitterApi } from '../utils/api';
+import api from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { loadRazorpayScript } from '../utils/payment';
@@ -208,8 +208,8 @@ const TeamPage = () => {
         console.log('[DEBUG] connectTwitterOAuth1: userPermissions', userPermissions);
 
         // Robust teamId/userId extraction
-        const teamId = team?.id || userPermissions?.team_id;
-        let userId = userPermissions?.user_id || team?.user_id;
+        const teamId = team?.id || userPermissions?.team_id || userPermissions?.teamId;
+        let userId = user?.id || userPermissions?.user_id || userPermissions?.userId || team?.user_id;
 
         // Fallback: try to get from team members
         if (!userId && team?.members) {
@@ -522,14 +522,14 @@ const fetchUserPermissions = async () => {
                 role: response.data.role,
                 permissions: response.data.permissions || [],
                 limits: response.data.limits || { max_profile_connections: 0 },
-                user_id: response.data.user_id || response.data.userId,
-                team_id: response.data.team_id || response.data.teamId || team?.id
+                user_id: response.data.user_id || response.data.userId || user?.id || null,
+                team_id: response.data.team_id || response.data.teamId || team?.id || null
             });
             // Debug log for userPermissions
             console.log('[DEBUG] userPermissions after fetch:', {
                 role: response.data.role,
-                user_id: response.data.user_id || response.data.userId,
-                team_id: response.data.team_id || response.data.teamId
+                user_id: response.data.user_id || response.data.userId || user?.id || null,
+                team_id: response.data.team_id || response.data.teamId || team?.id || null
             });
         }
     } catch (error) {
@@ -560,16 +560,13 @@ const fetchUserPermissions = async () => {
 
     const connectLinkedIn = () => connectPlatform('linkedin');
     const connectTwitter = () => connectPlatform('twitter');
+    const connectThreads = () => connectPlatform('threads');
 
     const disconnectAccount = async (accountId) => {
         if (!confirm('Are you sure you want to disconnect this account?')) return;
 
         try {
-            // Use twitterApi for Twitter accounts, api for others
-            const isTwitter = socialAccounts.find(acc => acc.id === accountId && acc.platform === 'twitter');
-            const response = isTwitter
-                ? await twitterApi.delete(`/pro-team/social-accounts/${accountId}`)
-                : await api.delete(`/pro-team/social-accounts/${accountId}`);
+            const response = await api.delete(`/pro-team/social-accounts/${accountId}`);
             if (response.data.success) {
                 fetchSocialAccounts();
                 alert('Account disconnected successfully');
@@ -652,6 +649,7 @@ const fetchUserPermissions = async () => {
             case 'wordpress': return <Globe className="h-5 w-5 text-blue-800" />;
             case 'facebook': return <MessageSquare className="h-5 w-5 text-blue-700" />;
             case 'instagram': return <ExternalLink className="h-5 w-5 text-purple-600" />;
+            case 'threads': return <AtSign className="h-5 w-5 text-neutral-800" />;
             default: return <ExternalLink className="h-5 w-5 text-gray-500" />;
         }
     };
@@ -1120,6 +1118,17 @@ const fetchUserPermissions = async () => {
                                 <ExternalLink className="h-6 w-6 text-purple-600" />
                                 <span className="font-medium text-gray-900">
                                     {connecting === 'instagram' ? 'Connecting...' : 'Instagram'}
+                                </span>
+                            </button>
+
+                            <button
+                                onClick={connectThreads}
+                                disabled={connecting === 'threads'}
+                                className="flex items-center justify-center gap-3 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-neutral-900 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                            >
+                                <AtSign className="h-6 w-6 text-neutral-900" />
+                                <span className="font-medium text-gray-900">
+                                    {connecting === 'threads' ? 'Connecting...' : 'Threads'}
                                 </span>
                             </button>
 

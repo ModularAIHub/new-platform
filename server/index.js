@@ -14,13 +14,14 @@ dotenv.config({ path: path.resolve(__dirname, './.env') });
 
 // Honeybadger configuration
 Honeybadger.configure({
-    apiKey: 'hbp_A8vjKimYh8OnyV8J3djwKrpqc4OniI3a4MJg', // Replace with your real key
+    apiKey: process.env.HONEYBADGER_API_KEY || process.env.HONEYBADGER_KEY || '',
     environment: process.env.NODE_ENV || 'development'
 });
 
 import apiRouter from './routes/index.js';
 import { sanitizeBody, sanitizeQuery, sanitizeParams } from './middleware/sanitize.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { query as dbQuery } from './config/database.js';
 
 // Initialize Redis and sync worker
 import redisClient from './config/redis.js';
@@ -51,6 +52,93 @@ app.set('etag', false);
 // Trust the first proxy (needed for Railway and other cloud hosts)
 app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
+const READINESS_CHECK_INTERVAL_MS = Number.parseInt(process.env.READINESS_CHECK_INTERVAL_MS || '30000', 10);
+
+const platformRuntimeState = {
+    database: {
+        ok: false,
+        lastCheckedAt: null,
+        error: 'Database readiness not checked yet',
+    },
+    syncWorkerStarted: false,
+};
+
+const setDatabaseReady = () => {
+    platformRuntimeState.database.ok = true;
+    platformRuntimeState.database.lastCheckedAt = new Date().toISOString();
+    platformRuntimeState.database.error = null;
+};
+
+const setDatabaseNotReady = (error) => {
+    platformRuntimeState.database.ok = false;
+    platformRuntimeState.database.lastCheckedAt = new Date().toISOString();
+    platformRuntimeState.database.error = error?.message || String(error || 'Unknown database error');
+};
+
+const getPlatformReadinessPayload = () => ({
+    status: platformRuntimeState.database.ok ? 'OK' : 'DEGRADED',
+    live: true,
+    ready: platformRuntimeState.database.ok,
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV,
+    checks: {
+        database: { ...platformRuntimeState.database },
+        syncWorker: {
+            started: platformRuntimeState.syncWorkerStarted,
+        },
+    },
+});
+
+const refreshPlatformDatabaseReadiness = async () => {
+    try {
+        await dbQuery('SELECT 1');
+        setDatabaseReady();
+        return true;
+    } catch (error) {
+        setDatabaseNotReady(error);
+        return false;
+    }
+};
+
+const maybeStartSyncWorker = async () => {
+    if (platformRuntimeState.syncWorkerStarted) {
+        return;
+    }
+
+    if (!platformRuntimeState.database.ok) {
+        reqLog('Sync worker startup skipped because database is not ready');
+        return;
+    }
+
+    try {
+        try {
+            const pong = await redisClient.ping();
+            reqLog('Redis ping:', pong);
+        } catch (err) {
+            console.error('Redis ping test failed:', err?.message || err);
+        }
+
+        syncWorker.start();
+        platformRuntimeState.syncWorkerStarted = true;
+        console.log('Redis and sync worker initialized');
+    } catch (error) {
+        console.error('Failed to initialize Redis or sync worker:', error?.message || error);
+    }
+};
+
+const startPlatformReadinessLoop = () => {
+    const intervalMs =
+        Number.isFinite(READINESS_CHECK_INTERVAL_MS) && READINESS_CHECK_INTERVAL_MS > 0
+            ? READINESS_CHECK_INTERVAL_MS
+            : 30000;
+
+    const timer = setInterval(async () => {
+        await refreshPlatformDatabaseReadiness();
+        await maybeStartSyncWorker();
+    }, intervalMs);
+
+    timer.unref?.();
+};
 
 // Request logger (lightweight) to surface failing calls
 app.use((req, res, next) => {
@@ -237,7 +325,19 @@ app.use((req, res, next) => {
     if (shouldSkipCsrf(req)) {
         return next();
     }
-    return csrfProtection(req, res, next);
+    return csrfProtection(req, res, (err) => {
+        if (err && err.code === 'EBADCSRFTOKEN') {
+            // CSRF token is invalid - clear it and send a new one
+            securityLog('[CSRF] Invalid CSRF token detected, clearing cookie and generating new token');
+            res.clearCookie('_csrf', csrfCookieOptions);
+            // Try again with fresh CSRF
+            return csrfProtection(req, res, next);
+        }
+        if (err) {
+            return next(err);
+        }
+        next();
+    });
 });
 
 // CSRF token endpoint for frontend to fetch token
@@ -247,11 +347,13 @@ app.get('/api/csrf-token', (req, res) => {
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-    res.status(200).json({
-        status: 'OK',
-        timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV
-    });
+    const payload = getPlatformReadinessPayload();
+    res.status(200).json(payload);
+});
+
+app.get('/ready', (req, res) => {
+    const payload = getPlatformReadinessPayload();
+    res.status(payload.ready ? 200 : 503).json(payload);
 });
 
 app.get('/', (req, res) => {
@@ -259,7 +361,7 @@ app.get('/', (req, res) => {
         status: 'OK',
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV,
-        message: "Sab chal rha h theek thaak"
+        message: 'SuiteGenie Platform API is running'
     });
 });
 
@@ -355,19 +457,9 @@ app.listen(PORT, async () => {
     console.log(`Environment: ${process.env.NODE_ENV}`);
     console.log(`Health check: http://localhost:${PORT}/health`);
 
-    try {
-        try {
-            const pong = await redisClient.ping();
-            reqLog('Redis ping:', pong);
-        } catch (err) {
-            console.error('Redis ping test failed:', err?.message || err);
-        }
-
-        syncWorker.start();
-        console.log('Redis and sync worker initialized');
-    } catch (error) {
-        console.error('Failed to initialize Redis or sync worker:', error?.message || error);
-    }
+    await refreshPlatformDatabaseReadiness();
+    await maybeStartSyncWorker();
+    startPlatformReadinessLoop();
 });
 
 // Honeybadger error handler (must be after all routes/middleware)

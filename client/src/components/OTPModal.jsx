@@ -3,7 +3,11 @@ import { toast } from 'react-hot-toast'
 import { validateOTPRequest, validateOTPVerification, formatValidationErrors } from '../utils/validation'
 import api from '../utils/api'
 
-
+const getErrorMessage = (error, fallback) =>
+    error?.response?.data?.error
+    || error?.response?.data?.message
+    || error?.message
+    || fallback
 
 const OTPModal = ({ 
     isOpen, 
@@ -132,21 +136,22 @@ const OTPModal = ({
             
             // Call success callback with verification data
             if (onSuccess) {
-                onSuccess({
+                await Promise.resolve(onSuccess({
                     email: validation.sanitized.email,
                     otp: validation.sanitized.otp,
                     verificationToken: data.token || data.verificationToken,
                     ...data
-                })
+                }))
             }
             
             // Don't call handleClose here, let parent component handle it
         } catch (error) {
-            const message = error.response?.data?.message || 'Invalid OTP'
+            const message = getErrorMessage(error, 'OTP verification failed. Please try again.')
             toast.error(message)
             console.error('Verify OTP error:', error)
+        } finally {
+            setLoading(false)
         }
-        setLoading(false)
     }
 
     // Resend OTP

@@ -25,8 +25,8 @@ const SocialAccountsPage = () => {
     const fetchSocialAccounts = async () => {
         try {
             const response = await api.get('/pro-team/social-accounts');
-            if (response.success) {
-                setAccounts(response.accounts || []);
+            if (response.data?.success) {
+                setAccounts(response.data.accounts || []);
             }
         } catch (error) {
             console.error('Failed to fetch social accounts:', error);
@@ -36,11 +36,13 @@ const SocialAccountsPage = () => {
     const fetchUserPermissions = async () => {
         try {
             const response = await api.get('/pro-team/permissions');
-            if (response.success) {
+            if (response.data?.success) {
                 setUserPermissions({
-                    role: response.role,
-                    permissions: response.permissions || [],
-                    limits: response.limits
+                    role: response.data.role,
+                    permissions: response.data.permissions || [],
+                    limits: response.data.limits,
+                    team_id: response.data.team_id || response.data.teamId || null,
+                    user_id: response.data.user_id || response.data.userId || null,
                 });
             }
         } catch (error) {
@@ -119,10 +121,10 @@ const SocialAccountsPage = () => {
 
         try {
             const response = await api.delete(`/pro-team/social-accounts/${accountId}`);
-            if (response.success) {
+            if (response.data?.success) {
                 fetchSocialAccounts();
             } else {
-                alert('Failed to disconnect account');
+                alert(response.data?.error || 'Failed to disconnect account');
             }
         } catch (error) {
             console.error('Failed to disconnect account:', error);

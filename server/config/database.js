@@ -41,15 +41,18 @@ const throttledTransientError = (...args) => {
   lastTransientErrorAt = now;
   console.error(...args);
 };
-const isTransientDbError = (error) => {
+const isDatabaseUnavailableError = (error) => {
   const code = error?.code;
   const message = String(error?.message || '').toLowerCase();
 
-  if (['ETIMEDOUT', 'ECONNRESET', 'ECONNREFUSED', 'ENOTFOUND', 'ECONNABORTED'].includes(code)) {
+  if (['ETIMEDOUT', 'ECONNRESET', 'ECONNREFUSED', 'ENOTFOUND', 'ECONNABORTED', 'EAI_AGAIN', 'EACCES', 'EPERM'].includes(code)) {
     return true;
   }
 
   return (
+    message.includes('circuit breaker open') ||
+    message.includes('getaddrinfo') ||
+    message.includes('failed to retrieve database credentials') ||
     message.includes('timeout') ||
     message.includes('connection terminated') ||
     message.includes('terminated unexpectedly') ||
@@ -57,10 +60,13 @@ const isTransientDbError = (error) => {
   );
 };
 
+const isTransientDbError = (error) => isDatabaseUnavailableError(error);
+
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const databaseUrl = process.env.DATABASE_URL || '';
-const isSupabaseConnection = databaseUrl.includes('supabase.com');
+const isSupabaseConnection =
+  databaseUrl.includes('supabase.com') || databaseUrl.includes('supabase.co');
 const sslEnabled =
   process.env.DB_SSL === 'true' ||
   (process.env.DB_SSL !== 'false' && (process.env.NODE_ENV === 'production' || isSupabaseConnection));
@@ -108,11 +114,16 @@ pool.on('error', (err) => {
 async function query(text, params) {
   let attempt = 0;
 
-  while (true) {
-    try {
-      const result = await pool.query(text, params);
-      return result;
-    } catch (error) {
+    while (true) {
+      try {
+        const result = await pool.query(text, params);
+        return result;
+      } catch (error) {
+      if (isDatabaseUnavailableError(error)) {
+        error.status = 503;
+        error.appCode = 'DATABASE_UNAVAILABLE';
+      }
+
       const shouldRetry = isTransientDbError(error) && attempt < DB_QUERY_RETRY_COUNT;
       if (!shouldRetry) {
         console.error('Database query error:', error?.message || error);
@@ -129,4 +140,4 @@ async function query(text, params) {
   }
 }
 
-export { query, pool };
+export { query, pool, isDatabaseUnavailableError };

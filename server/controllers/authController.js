@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
-import { query } from '../config/database.js';
+import { isDatabaseUnavailableError, pool, query } from '../config/database.js';
 import redisClient from '../config/redis.js';
 import { invalidateAuthUserCache } from '../middleware/auth.js';
 import { encrypt, decrypt } from '../utils/encryption.js';
@@ -62,6 +62,13 @@ const getSessionCookieMaxAgeMs = () =>
     parseDurationToMs(process.env.AUTH_SESSION_MAX_AGE || process.env.JWT_REFRESH_EXPIRES_IN, DEFAULT_SESSION_COOKIE_MAX_AGE_MS);
 
 class AuthController {
+    static sendDatabaseUnavailable(res) {
+        return res.status(503).json({
+            error: 'Database temporarily unavailable. Please try again.',
+            code: 'DATABASE_UNAVAILABLE'
+        });
+    }
+
     static async sendWelcomeEmailBestEffort(user) {
         try {
             if (!user?.email) return;
@@ -277,6 +284,10 @@ class AuthController {
             void AuthController.sendWelcomeEmailBestEffort(user);
 
         } catch (error) {
+            if (isDatabaseUnavailableError(error)) {
+                return AuthController.sendDatabaseUnavailable(res);
+            }
+
             console.error('Registration error:', error);
             res.status(500).json({ 
                 error: 'Failed to create account',
@@ -363,6 +374,10 @@ class AuthController {
                 }
             });
         } catch (error) {
+            if (isDatabaseUnavailableError(error)) {
+                return AuthController.sendDatabaseUnavailable(res);
+            }
+
             console.error('[LOGIN] Login error:', error?.message || error);
             res.status(500).json({
                 error: 'Login failed',
@@ -442,6 +457,10 @@ class AuthController {
                 }
             });
         } catch (error) {
+            if (isDatabaseUnavailableError(error)) {
+                return AuthController.sendDatabaseUnavailable(res);
+            }
+
             console.error('Login with redirect error:', error);
             res.status(500).json({
                 error: 'Login failed',
@@ -714,14 +733,62 @@ class AuthController {
             }
 
             const userEmail = userResult.rows[0].email;
+            const linkedinApiBase =
+                process.env.LINKEDIN_API_URL ||
+                process.env.LINKEDIN_GENIE_URL ||
+                'http://localhost:3004';
+            const tweetApiBase =
+                process.env.TWEET_API_URL ||
+                process.env.TWEET_GENIE_URL ||
+                'http://localhost:3002';
+            const socialApiBase =
+                process.env.SOCIAL_API_URL ||
+                process.env.SOCIAL_GENIE_URL ||
+                'http://localhost:3006';
+            const cleanupTimeoutMs = Number.parseInt(
+                process.env.ACCOUNT_DELETE_CLEANUP_TIMEOUT_MS || '5000',
+                10
+            );
+
+            const postCleanup = async (url, payload, successLabel, failureLabel) => {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), cleanupTimeoutMs);
+                try {
+                    const cleanupResponse = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                        signal: controller.signal,
+                    });
+
+                    const cleanupResult = await cleanupResponse.json().catch(() => ({}));
+                    if (!cleanupResponse.ok) {
+                        const detail = cleanupResult?.error
+                            || cleanupResult?.message
+                            || `${cleanupResponse.status} ${cleanupResponse.statusText}`.trim();
+                        throw new Error(`${failureLabel}: ${detail}`);
+                    }
+
+                    console.log(`   ✓ ${successLabel}:`, cleanupResult.deletedCounts || cleanupResult);
+                } catch (error) {
+                    const reason = error?.name === 'AbortError'
+                        ? `timeout after ${cleanupTimeoutMs}ms`
+                        : (error?.message || 'unknown cleanup error');
+                    throw new Error(`${failureLabel}: ${reason}`);
+                } finally {
+                    clearTimeout(timeoutId);
+                }
+            };
             console.log(`📧 Deleting account for: ${userEmail}`);
 
-            // Begin transaction for complete cleanup
-            await query('BEGIN');
+            // Begin transaction for complete cleanup using a dedicated client.
+            const client = await pool.connect();
 
             try {
+                await client.query('BEGIN');
+
                 // 1. Check if user owns any teams - if yes, delete the entire team
-                const ownedTeamsResult = await query(
+                const ownedTeamsResult = await client.query(
                     'SELECT id, name FROM teams WHERE owner_id = $1',
                     [userId]
                 );
@@ -729,42 +796,36 @@ class AuthController {
                 if (ownedTeamsResult.rows.length > 0) {
                     for (const team of ownedTeamsResult.rows) {
                         console.log(`🏢 User owns team: ${team.name} (${team.id}), deleting team...`);
-
-                        // Call LinkedIn microservice to cleanup team data
-                        try {
-                            const linkedinCleanupResponse = await fetch(`${process.env.LINKEDIN_API_URL || 'http://localhost:3004'}/api/cleanup/team`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ teamId: team.id })
-                            });
-                            const linkedinResult = await linkedinCleanupResponse.json();
-                            console.log(`   ✓ LinkedIn cleanup:`, linkedinResult.deletedCounts);
-                        } catch (error) {
-                            console.warn(`   ⚠️  LinkedIn cleanup failed:`, error.message);
-                        }
-
-                        // Call Twitter microservice to cleanup team data
-                        try {
-                            const twitterCleanupResponse = await fetch(`${process.env.TWEET_API_URL || 'http://localhost:3002'}/api/cleanup/team`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ teamId: team.id })
-                            });
-                            const twitterResult = await twitterCleanupResponse.json();
-                            console.log(`   ✓ Twitter cleanup:`, twitterResult.deletedCounts);
-                        } catch (error) {
-                            console.warn(`   ⚠️  Twitter cleanup failed:`, error.message);
-                        }
+                        await Promise.all([
+                            postCleanup(
+                                `${linkedinApiBase}/api/cleanup/team`,
+                                { teamId: team.id },
+                                'LinkedIn cleanup',
+                                'LinkedIn cleanup failed'
+                            ),
+                            postCleanup(
+                                `${tweetApiBase}/api/cleanup/team`,
+                                { teamId: team.id },
+                                'Twitter cleanup',
+                                'Twitter cleanup failed'
+                            ),
+                            postCleanup(
+                                `${socialApiBase}/api/cleanup/team`,
+                                { teamId: team.id },
+                                'Social cleanup',
+                                'Social cleanup failed'
+                            ),
+                        ]);
 
                         // Delete team invitations
-                        const invitationsResult = await query(
+                        const invitationsResult = await client.query(
                             'DELETE FROM team_invitations WHERE team_id = $1',
                             [team.id]
                         );
                         console.log(`   ✓ Deleted ${invitationsResult.rowCount} team invitations`);
 
                         // Delete team social accounts from user_social_accounts
-                        const teamSocialAccountsResult = await query(
+                        const teamSocialAccountsResult = await client.query(
                             'DELETE FROM user_social_accounts WHERE team_id = $1',
                             [team.id]
                         );
@@ -772,7 +833,7 @@ class AuthController {
 
                         // Delete team_accounts entries (if table exists)
                         try {
-                            const teamAccountsResult = await query(
+                            const teamAccountsResult = await client.query(
                                 'DELETE FROM team_accounts WHERE team_id = $1',
                                 [team.id]
                             );
@@ -782,60 +843,54 @@ class AuthController {
                         }
 
                         // Clear current_team_id for all users pointing to this team
-                        const usersResult = await query(
+                        const usersResult = await client.query(
                             'UPDATE users SET current_team_id = NULL WHERE current_team_id = $1',
                             [team.id]
                         );
                         console.log(`   ✓ Cleared current_team_id for ${usersResult.rowCount} users`);
 
                         // Delete all team members
-                        const membersResult = await query(
+                        const membersResult = await client.query(
                             'DELETE FROM team_members WHERE team_id = $1',
                             [team.id]
                         );
                         console.log(`   ✓ Removed ${membersResult.rowCount} team members`);
 
                         // Finally, delete the team itself
-                        await query('DELETE FROM teams WHERE id = $1', [team.id]);
+                        await client.query('DELETE FROM teams WHERE id = $1', [team.id]);
                         console.log(`   ✓ Deleted team: ${team.name}`);
                     }
                 }
 
                 // 2. Delete user's personal social accounts (LinkedIn, Twitter, etc.)
-                const personalAccountsResult = await query(
+                const personalAccountsResult = await client.query(
                     'DELETE FROM user_social_accounts WHERE user_id = $1 AND team_id IS NULL',
                     [userId]
                 );
                 console.log(`📱 Deleted ${personalAccountsResult.rowCount} personal social accounts`);
-
-                // Call LinkedIn microservice to cleanup user's personal data
-                try {
-                    const linkedinUserCleanupResponse = await fetch(`${process.env.LINKEDIN_API_URL || 'http://localhost:3004'}/api/cleanup/user`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ userId })
-                    });
-                    const linkedinUserResult = await linkedinUserCleanupResponse.json();
-                    console.log(`📘 LinkedIn user cleanup:`, linkedinUserResult.deletedCounts);
-                } catch (error) {
-                    console.warn(`   ⚠️  LinkedIn user cleanup failed:`, error.message);
-                }
-
-                // Call Twitter microservice to cleanup user's personal data
-                try {
-                    const twitterUserCleanupResponse = await fetch(`${process.env.TWEET_API_URL || 'http://localhost:3002'}/api/cleanup/user`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ userId })
-                    });
-                    const twitterUserResult = await twitterUserCleanupResponse.json();
-                    console.log(`🐦 Twitter user cleanup:`, twitterUserResult.deletedCounts);
-                } catch (error) {
-                    console.warn(`   ⚠️  Twitter user cleanup failed:`, error.message);
-                }
+                await Promise.all([
+                    postCleanup(
+                        `${linkedinApiBase}/api/cleanup/user`,
+                        { userId },
+                        'LinkedIn user cleanup',
+                        'LinkedIn user cleanup failed'
+                    ),
+                    postCleanup(
+                        `${tweetApiBase}/api/cleanup/user`,
+                        { userId },
+                        'Twitter user cleanup',
+                        'Twitter user cleanup failed'
+                    ),
+                    postCleanup(
+                        `${socialApiBase}/api/cleanup/user`,
+                        { userId },
+                        'Social user cleanup',
+                        'Social user cleanup failed'
+                    ),
+                ]);
 
                 // 3. Remove user from any team memberships (where they're not owner)
-                const membershipResult = await query(
+                const membershipResult = await client.query(
                     'DELETE FROM team_members WHERE user_id = $1',
                     [userId]
                 );
@@ -843,7 +898,7 @@ class AuthController {
 
                 // 4. Delete user API keys (BYOK)
                 try {
-                    const apiKeysResult = await query(
+                    const apiKeysResult = await client.query(
                         'DELETE FROM user_api_keys WHERE user_id = $1',
                         [userId]
                     );
@@ -854,7 +909,7 @@ class AuthController {
 
                 // 5. Delete credit transactions history
                 try {
-                    const transactionsResult = await query(
+                    const transactionsResult = await client.query(
                         'DELETE FROM credit_transactions WHERE user_id = $1',
                         [userId]
                     );
@@ -865,7 +920,7 @@ class AuthController {
 
                 // 6. Delete pending team invitations sent to this user
                 try {
-                    const userInvitesResult = await query(
+                    const userInvitesResult = await client.query(
                         'DELETE FROM team_invitations WHERE email = $1',
                         [userEmail]
                     );
@@ -875,18 +930,20 @@ class AuthController {
                 }
 
                 // 7. Finally, delete the user account
-                await query('DELETE FROM users WHERE id = $1', [userId]);
+                await client.query('DELETE FROM users WHERE id = $1', [userId]);
                 console.log(`✅ Deleted user account: ${userEmail}`);
 
                 // Commit transaction
-                await query('COMMIT');
+                await client.query('COMMIT');
                 console.log(`🎉 Account deletion completed successfully`);
 
             } catch (error) {
                 // Rollback on any error
-                await query('ROLLBACK');
+                await client.query('ROLLBACK');
                 console.error('❌ Error during account deletion, rolled back:', error);
                 throw error;
+            } finally {
+                client.release();
             }
 
             // Clear authentication cookies
@@ -928,6 +985,20 @@ class AuthController {
             }
 
             const { email, purpose } = validation.sanitized;
+
+            if (purpose === 'account-verification') {
+                const existingUserResult = await query(
+                    'SELECT id FROM users WHERE email = $1 LIMIT 1',
+                    [email]
+                );
+
+                if (existingUserResult.rows.length > 0) {
+                    return res.status(409).json({
+                        error: 'User with this email already exists',
+                        code: 'USER_EXISTS'
+                    });
+                }
+            }
 
             // Check rate limiting - prevent spam
             const rateLimitKey = `otp_rate_limit:${email}`;
@@ -985,6 +1056,10 @@ class AuthController {
             }
 
         } catch (error) {
+            if (isDatabaseUnavailableError(error)) {
+                return AuthController.sendDatabaseUnavailable(res);
+            }
+
             console.error('Send OTP error:', error);
             res.status(500).json({ error: 'Failed to send OTP' });
         }
@@ -1005,6 +1080,20 @@ class AuthController {
 
 
             const { email, otp, purpose } = validation.sanitized;
+
+            if (purpose === 'account-verification') {
+                const existingUserResult = await query(
+                    'SELECT id FROM users WHERE email = $1 LIMIT 1',
+                    [email]
+                );
+
+                if (existingUserResult.rows.length > 0) {
+                    return res.status(409).json({
+                        error: 'User with this email already exists',
+                        code: 'USER_EXISTS'
+                    });
+                }
+            }
 
             // Get OTP from Redis
             const otpKey = `otp:${purpose}:${email}`;
@@ -1185,6 +1274,10 @@ class AuthController {
                 }
             });
         } catch (error) {
+            if (isDatabaseUnavailableError(error)) {
+                return AuthController.sendDatabaseUnavailable(res);
+            }
+
             console.error('Token refresh error:', error);
             AuthController.clearAuthCookies(res);
             res.status(401).json({
