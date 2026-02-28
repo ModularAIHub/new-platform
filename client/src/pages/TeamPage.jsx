@@ -321,7 +321,7 @@ const TeamPage = () => {
             let errorMessage = '';
             switch (error) {
                 case 'no_org_pages':
-                    errorMessage = `Your LinkedIn account "${accountName || 'this account'}" is already connected as a personal account.\n\nTo connect a LinkedIn Organization Page (Company Page), you need to:\n\n1. Be an admin of a LinkedIn Company Page\n2. Have "Super Admin" or "Content Admin" role\n\nIf you have admin access to a Company Page and still don't see the option, LinkedIn's API may not have granted access yet.`;
+                    errorMessage = `No LinkedIn organization pages were available for "${accountName || 'this account'}".\n\nIf you want to connect a LinkedIn Company Page, you need:\n\n1. Admin access to a LinkedIn Company Page\n2. "Super Admin" or "Content Admin" permissions\n\nIf this personal account was already connected to the team earlier, you can refresh the page and it should remain available.`;
                     break;
                 case 'already_connected':
                     errorMessage = `This LinkedIn account "${accountName || ''}" is already connected to team "${existingTeam || 'another team'}".\n\nEach LinkedIn account can only be connected to one team. If you want to use it here, please disconnect it from the other team first.`;
