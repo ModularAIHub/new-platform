@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-02-28T19:55:41.655Z",
+  "generatedAt": "2026-02-28T20:09:37.360Z",
   "categories": {
     "meta": {
       "all": {
@@ -63,6 +63,138 @@
     ]
   },
   "posts": [
+    {
+      "id": "bulk-content-planning-for-founders-and-small-teams",
+      "title": "Bulk Content Planning for Founders and Small Teams",
+      "slug": "bulk-content-planning-for-founders-and-small-teams",
+      "category": "guides",
+      "tags": [
+        "bulk generation",
+        "content planning",
+        "suitegenie guide",
+        "founder marketing",
+        "team workflow"
+      ],
+      "excerpt": "A simple way to use Strategy Builder, bulk generation, and scheduling together so founders and small teams can run a cleaner one- to two-week content window.",
+      "featuredImage": {
+        "url": "/images/blog/suitegenie-launch-hero.svg",
+        "alt": "Bulk content planning workflow for founders and small teams"
+      },
+      "author": {
+        "name": "Kanishk Saraswat",
+        "avatar": "/kanishk.png",
+        "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+        "social": {
+          "linkedin": "kanishk-saraswat",
+          "twitter": "kanishksaraswat"
+        }
+      },
+      "publishDate": "2026-03-01T12:40:00+05:30",
+      "lastModified": "2026-03-01T12:40:00+05:30",
+      "readTime": 6,
+      "featured": false,
+      "status": "published",
+      "contentPath": "/blog/posts/guides/bulk-content-planning-for-founders-and-small-teams.json"
+    },
+    {
+      "id": "why-cross-post-visibility-matters-in-social-automation",
+      "title": "Why Cross-Post Visibility Matters More Than One-Click Publishing",
+      "slug": "why-cross-post-visibility-matters-in-social-automation",
+      "category": "insights",
+      "tags": [
+        "cross posting",
+        "social media automation",
+        "history and analytics",
+        "suitegenie",
+        "content operations"
+      ],
+      "excerpt": "The real test of cross-posting is not whether you can trigger it once. It is whether teams can verify it later in history, scheduled views, and analytics without confusion.",
+      "featuredImage": {
+        "url": "/images/blog/suitegenie-launch-hero.svg",
+        "alt": "Cross-post visibility matters in history, scheduled views, and analytics"
+      },
+      "author": {
+        "name": "Kanishk Saraswat",
+        "avatar": "/kanishk.png",
+        "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+        "social": {
+          "linkedin": "kanishk-saraswat",
+          "twitter": "kanishksaraswat"
+        }
+      },
+      "publishDate": "2026-03-01T12:30:00+05:30",
+      "lastModified": "2026-03-01T12:30:00+05:30",
+      "readTime": 5,
+      "featured": false,
+      "status": "published",
+      "contentPath": "/blog/posts/insights/why-cross-post-visibility-matters-in-social-automation.json"
+    },
+    {
+      "id": "cleaner-team-routing-for-multi-account-publishing-mar-2026",
+      "title": "SuiteGenie Update: Cleaner Team Routing for Multi-Account Publishing",
+      "slug": "cleaner-team-routing-for-multi-account-publishing-mar-2026",
+      "category": "updates",
+      "tags": [
+        "suitegenie updates",
+        "team mode",
+        "multi account publishing",
+        "agency workflows",
+        "social media operations"
+      ],
+      "excerpt": "Team mode now routes publishing and account selection more predictably, helping creators, agencies, and internal teams work across multiple accounts with less confusion.",
+      "featuredImage": {
+        "url": "/images/blog/suitegenie-launch-hero.svg",
+        "alt": "SuiteGenie update about cleaner team routing and multi-account publishing"
+      },
+      "author": {
+        "name": "Kanishk Saraswat",
+        "avatar": "/kanishk.png",
+        "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+        "social": {
+          "linkedin": "kanishk-saraswat",
+          "twitter": "kanishksaraswat"
+        }
+      },
+      "publishDate": "2026-03-01T12:20:00+05:30",
+      "lastModified": "2026-03-01T12:20:00+05:30",
+      "readTime": 5,
+      "featured": false,
+      "status": "published",
+      "contentPath": "/blog/posts/updates/cleaner-team-routing-for-multi-account-publishing-mar-2026.json"
+    },
+    {
+      "id": "smarter-account-health-and-reconnect-recovery-mar-2026",
+      "title": "SuiteGenie Update: Smarter Account Health Checks and Fewer Reconnect Prompts",
+      "slug": "smarter-account-health-and-reconnect-recovery-mar-2026",
+      "category": "updates",
+      "tags": [
+        "suitegenie updates",
+        "account health",
+        "social media automation",
+        "x posting",
+        "linkedin posting"
+      ],
+      "excerpt": "SuiteGenie now handles account health more intelligently with clearer posting readiness checks, fewer unnecessary reconnect prompts, and better recovery behavior across supported workflows.",
+      "featuredImage": {
+        "url": "/images/blog/suitegenie-launch-hero.svg",
+        "alt": "SuiteGenie update about smarter account health checks and reconnect recovery"
+      },
+      "author": {
+        "name": "Kanishk Saraswat",
+        "avatar": "/kanishk.png",
+        "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+        "social": {
+          "linkedin": "kanishk-saraswat",
+          "twitter": "kanishksaraswat"
+        }
+      },
+      "publishDate": "2026-03-01T12:10:00+05:30",
+      "lastModified": "2026-03-01T12:10:00+05:30",
+      "readTime": 5,
+      "featured": false,
+      "status": "published",
+      "contentPath": "/blog/posts/updates/smarter-account-health-and-reconnect-recovery-mar-2026.json"
+    },
     {
       "id": "what-reliable-social-automation-actually-needs",
       "title": "What Reliable Social Media Automation Actually Needs",
