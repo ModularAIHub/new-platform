@@ -360,4 +360,8 @@ process.on('SIGTERM', () => {
     process.exit(0);
 });
 
+export async function runSyncTick() {
+    return syncWorker.performSync();
+}
+
 export default syncWorker;

@@ -5,6 +5,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import App from './App.jsx'
 import ScrollToTop from './components/ScrollToTop.jsx'
+import { FirebaseProvider } from './contexts/FirebaseContext.jsx'
 import './index.css'
 
 const isLocalhost = (() => {
@@ -24,34 +25,36 @@ const honeybadger = Honeybadger.configure({
 ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
         <HoneybadgerErrorBoundary honeybadger={honeybadger}>
-            <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-                <ScrollToTop />
-                <App />
-                <Toaster
-                    position="top-right"
-                    toastOptions={{
-                        duration: 4000,
-                        style: {
-                            background: '#363636',
-                            color: '#fff',
-                        },
-                        success: {
-                            duration: 3000,
-                            iconTheme: {
-                                primary: '#22c55e',
-                                secondary: '#fff',
+            <FirebaseProvider>
+                <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                    <ScrollToTop />
+                    <App />
+                    <Toaster
+                        position="top-right"
+                        toastOptions={{
+                            duration: 4000,
+                            style: {
+                                background: '#363636',
+                                color: '#fff',
                             },
-                        },
-                        error: {
-                            duration: 5000,
-                            iconTheme: {
-                                primary: '#ef4444',
-                                secondary: '#fff',
+                            success: {
+                                duration: 3000,
+                                iconTheme: {
+                                    primary: '#22c55e',
+                                    secondary: '#fff',
+                                },
                             },
-                        },
-                    }}
-                />
-            </BrowserRouter>
+                            error: {
+                                duration: 5000,
+                                iconTheme: {
+                                    primary: '#ef4444',
+                                    secondary: '#fff',
+                                },
+                            },
+                        }}
+                    />
+                </BrowserRouter>
+            </FirebaseProvider>
         </HoneybadgerErrorBoundary>
     </React.StrictMode>,
 )

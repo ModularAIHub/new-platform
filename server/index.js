@@ -25,7 +25,7 @@ import { query as dbQuery } from './config/database.js';
 
 // Initialize Redis and sync worker
 import redisClient from './config/redis.js';
-import syncWorker from './workers/syncWorker.js';
+import syncWorker, { runSyncTick } from './workers/syncWorker.js';
 
 const app = express();
 const REQUEST_DEBUG = process.env.REQUEST_DEBUG === 'true';
@@ -375,6 +375,25 @@ app.get('/', (req, res) => {
         environment: process.env.NODE_ENV,
         message: 'SuiteGenie Platform API is running'
     });
+});
+
+// Vercel Cron trigger for the credit sync worker.
+// Called every 10 minutes by Vercel (see server/vercel.json). Auth via CRON_SECRET.
+// Must be BEFORE app.use('/api', apiRouter) so it bypasses auth middleware.
+app.post('/api/cron/sync', async (req, res) => {
+    const cronSecret = (process.env.CRON_SECRET || '').trim();
+    const authHeader = req.headers['authorization'] || '';
+    const providedToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
+    if (!cronSecret || providedToken !== cronSecret) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+    try {
+        await runSyncTick();
+        return res.json({ ok: true });
+    } catch (error) {
+        console.error('[SyncCron] Tick failed:', error?.message || error);
+        return res.status(500).json({ ok: false, error: error?.message || 'unknown_error' });
+    }
 });
 
 // API routes

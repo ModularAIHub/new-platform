@@ -6,17 +6,17 @@ const subdomains = {
         process.env.LINKEDIN_SUBDOMAIN ||
         'https://apilinkedin.suitegenie.in',
     social:
-        process.env.SOCIAL_GENIE_URL ||
-        process.env.SOCIAL_SUBDOMAIN ||
-        'https://meta.suitegenie.in',
+        process.env.SOCIAL_GENIE_API_URL ||
+        process.env.SOCIAL_API_URL ||
+        'https://metaapi.suitegenie.in',
     threads:
-        process.env.SOCIAL_GENIE_URL ||
-        process.env.SOCIAL_SUBDOMAIN ||
-        'https://meta.suitegenie.in',
+        process.env.SOCIAL_GENIE_API_URL ||
+        process.env.SOCIAL_API_URL ||
+        'https://metaapi.suitegenie.in',
     instagram:
-        process.env.SOCIAL_GENIE_URL ||
-        process.env.SOCIAL_SUBDOMAIN ||
-        'https://meta.suitegenie.in'
+        process.env.SOCIAL_GENIE_API_URL ||
+        process.env.SOCIAL_API_URL ||
+        'https://metaapi.suitegenie.in'
 };
 // proTeamController.js 
 // Controller for Pro plan team collaboration features
