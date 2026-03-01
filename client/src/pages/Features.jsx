@@ -205,7 +205,7 @@ const Features = () => (
           <li>Connect your social accounts</li>
           <li>Generate, schedule, cross-post, and learn from performance</li>
         </ol>
-        <a href="/signup" className="inline-block mt-2 text-blue-600 font-semibold underline">Start with SuiteGenie</a>
+        <a href="/register" className="inline-block mt-2 text-blue-600 font-semibold underline">Start with SuiteGenie</a>
       </section>
     </div>
   </>

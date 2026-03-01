@@ -85,9 +85,9 @@ const UpgradePrompt = ({
         <div className="space-y-3">
           <button
             onClick={async () => {
-              // If not logged in, redirect to signup page with plan parameter
+              // If not logged in, redirect to register page with plan parameter
               if (!user) {
-                navigate('/signup?plan=pro');
+                navigate('/register?plan=pro');
                 onClose();
                 return;
               }

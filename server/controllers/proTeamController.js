@@ -72,6 +72,44 @@ const mapRegistrySocialAccountRow = (row = {}) => {
     };
 };
 
+const mapLegacyLinkedInTeamAccountRow = (row = {}) => {
+    const accountType = normalizeAccountIdentifier(row.account_type, 50) || 'personal';
+    const organizationId = normalizeAccountIdentifier(row.organization_id, 255);
+    const normalizedOrganizationName = normalizeAccountIdentifier(row.organization_name, 255);
+    const normalizedUsername = normalizeAccountIdentifier(row.account_username, 255);
+    const normalizedDisplayName = normalizeAccountIdentifier(row.account_display_name, 255);
+    const normalizedAccountId = accountType === 'organization' && organizationId
+        ? `org:${organizationId}`
+        : normalizeAccountIdentifier(row.account_id, 255);
+
+    return {
+        ...row,
+        id: normalizeAccountIdentifier(row.id, 128),
+        source_id: normalizeAccountIdentifier(row.id, 128),
+        source_table: 'linkedin_team_accounts',
+        platform: 'linkedin',
+        account_type: accountType,
+        organization_id: organizationId,
+        account_username: accountType === 'organization'
+            ? (organizationId ? `org-${organizationId}` : normalizedUsername)
+            : normalizedUsername,
+        account_display_name: accountType === 'organization'
+            ? (normalizedOrganizationName || normalizedDisplayName || normalizedUsername)
+            : (normalizedDisplayName || normalizedUsername),
+        account_id: normalizedAccountId,
+        profile_image_url: normalizeAccountIdentifier(row.profile_image_url, 2048),
+        connected_by_name: normalizeAccountIdentifier(row.connected_by_name, 255),
+        connected_by_email: normalizeAccountIdentifier(row.connected_by_email, 255),
+        is_active: row.is_active !== false,
+        active: row.is_active !== false,
+        metadata: {
+            source_table: 'linkedin_team_accounts',
+            account_type: accountType,
+            organization_id: organizationId,
+        },
+    };
+};
+
 const fetchRegistryTeamSocialAccounts = async (teamId) => {
     const registryResult = await query(
         `SELECT
@@ -195,9 +233,10 @@ export const ProTeamController = {
             let linkedinAccounts = [];
             try {
                 const linkedinResult = await query(
-                    `SELECT lta.id, 'linkedin' as platform, lta.linkedin_username as account_username, 
+                    `SELECT lta.id, 'linkedin' as platform, lta.linkedin_username as account_username,
                             lta.linkedin_display_name as account_display_name, lta.linkedin_user_id as account_id,
                             lta.linkedin_profile_image_url as profile_image_url, lta.headline, lta.connections_count,
+                            lta.account_type, lta.organization_id, lta.organization_name,
                             u.name as connected_by_name, u.email as connected_by_email, lta.active as is_active
                      FROM linkedin_team_accounts lta
                      LEFT JOIN users u ON lta.user_id = u.id
@@ -206,7 +245,7 @@ export const ProTeamController = {
                     [teamId]
                 );
 
-                linkedinAccounts = linkedinResult.rows;
+                linkedinAccounts = linkedinResult.rows.map(mapLegacyLinkedInTeamAccountRow);
                 console.log('[LINKEDIN FETCH] Fetched LinkedIn team accounts from database:', linkedinAccounts.length);
             } catch (error) {
                 console.error('[LINKEDIN FETCH] Database query failed:', error.message);

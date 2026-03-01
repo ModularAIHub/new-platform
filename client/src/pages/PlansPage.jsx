@@ -386,14 +386,14 @@ const PlansPage = () => {
 
               <button
                 onClick={async () => {
-                  // If not logged in, redirect to signup with plan parameter
+                  // If not logged in, redirect to register with plan parameter
                   if (!user) {
                     if (plan.name === 'Pro') {
-                      navigate('/signup?plan=pro');
+                      navigate('/register?plan=pro');
                     } else if (plan.name === 'Enterprise') {
                       navigate('/contact');
                     } else {
-                      navigate('/signup');
+                      navigate('/register');
                     }
                     return;
                   }

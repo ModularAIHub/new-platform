@@ -43,7 +43,7 @@ const TeamPage = () => {
         }
 
         if (!user) {
-            window.location.href = '/signup?plan=pro';
+            window.location.href = '/register?plan=pro';
             return;
         }
 
@@ -654,6 +654,15 @@ const fetchUserPermissions = async () => {
         }
     };
 
+    const getAccountSubtitle = (account) => {
+        const platformLabel = account?.platform || 'account';
+        const username = typeof account?.account_username === 'string' ? account.account_username.trim() : '';
+        if (username) {
+            return `@${username} - ${platformLabel}`;
+        }
+        return platformLabel;
+    };
+
     const updateMemberRole = async (memberId, newRole) => {
         // Optimistic update - update UI immediately
         const previousMembers = team.members;
@@ -1018,7 +1027,7 @@ const fetchUserPermissions = async () => {
                                             {account.account_display_name || account.account_username}
                                         </p>
                                         <p className="text-sm text-gray-600 truncate">
-                                            @{account.account_username} - {account.platform}
+                                            {getAccountSubtitle(account)}
                                         </p>
                                         <p className="text-xs text-gray-500 truncate">
                                             Connected by {account.connected_by_name || account.connected_by_email}
