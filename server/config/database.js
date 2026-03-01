@@ -90,15 +90,22 @@ const dbConnectTimeoutMs = Number.parseInt(process.env.DB_CONNECT_TIMEOUT_MS || 
 const dbStatementTimeoutMs = Number.parseInt(process.env.DB_STATEMENT_TIMEOUT_MS || '10000', 10);
 const dbQueryTimeoutMs = Number.parseInt(process.env.DB_QUERY_TIMEOUT_MS || '10000', 10);
 const dbPoolMax = Number.parseInt(process.env.DB_POOL_MAX || '3', 10);
+// Keep below Supabase's 30-second idle connection reaper so the pool discards
+// connections before the database kills them (avoids "Connection terminated" errors).
+const dbIdleTimeoutMs = Number.parseInt(process.env.DB_IDLE_TIMEOUT_MS || '20000', 10);
 
 const pool = new Pool({
   connectionString: databaseUrl,
   ssl: sslConfig,
   max: dbPoolMax,
-  idleTimeoutMillis: 30000,
+  idleTimeoutMillis: dbIdleTimeoutMs,
   connectionTimeoutMillis: dbConnectTimeoutMs,
   statement_timeout: dbStatementTimeoutMs,
   query_timeout: dbQueryTimeoutMs,
+  // TCP keepalive prevents the OS from silently dropping idle connections
+  // before the pool's idleTimeoutMillis fires.
+  keepAlive: true,
+  keepAliveInitialDelayMillis: 10000,
 });
 
 pool.on('connect', () => {

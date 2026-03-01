@@ -867,6 +867,69 @@ const fetchUserPermissions = async () => {
                 )}
             </div>
 
+            {/* Launch Platforms Section */}
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 sm:p-6 mb-6">
+                <div className="mb-4">
+                    <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Launch Your Platforms</h2>
+                    <p className="text-sm text-gray-600">
+                        Connect your social accounts below, then launch the platform to start creating content
+                    </p>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                    {/* Tweet Genie */}
+                    <button
+                        onClick={() => window.open(import.meta.env.VITE_TWEET_GENIE_URL || 'http://localhost:5174', '_blank')}
+                        className="flex items-center gap-3 p-4 bg-white border-2 border-blue-200 rounded-lg hover:border-blue-400 hover:shadow-md transition-all group"
+                    >
+                        <div className="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Twitter className="h-6 w-6 text-blue-500" />
+                        </div>
+                        <div className="flex-1 text-left min-w-0">
+                            <div className="font-semibold text-gray-900 truncate">Tweet Genie</div>
+                            <div className="text-xs text-gray-600 truncate">Create Twitter content</div>
+                        </div>
+                        <ExternalLink className="h-4 w-4 text-gray-400 group-hover:text-blue-600 flex-shrink-0" />
+                    </button>
+
+                    {/* LinkedIn Genie */}
+                    <button
+                        onClick={() => window.open(import.meta.env.VITE_LINKEDIN_GENIE_URL || 'http://localhost:5175', '_blank')}
+                        className="flex items-center gap-3 p-4 bg-white border-2 border-blue-200 rounded-lg hover:border-blue-400 hover:shadow-md transition-all group"
+                    >
+                        <div className="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Linkedin className="h-6 w-6 text-blue-600" />
+                        </div>
+                        <div className="flex-1 text-left min-w-0">
+                            <div className="font-semibold text-gray-900 truncate">LinkedIn Genie</div>
+                            <div className="text-xs text-gray-600 truncate">Create LinkedIn posts</div>
+                        </div>
+                        <ExternalLink className="h-4 w-4 text-gray-400 group-hover:text-blue-600 flex-shrink-0" />
+                    </button>
+
+                    {/* Social Genie */}
+                    <button
+                        onClick={() => window.open(import.meta.env.VITE_SOCIAL_GENIE_URL || 'http://localhost:5176', '_blank')}
+                        className="flex items-center gap-3 p-4 bg-white border-2 border-blue-200 rounded-lg hover:border-blue-400 hover:shadow-md transition-all group"
+                    >
+                        <div className="flex-shrink-0 w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <MessageSquare className="h-6 w-6 text-purple-600" />
+                        </div>
+                        <div className="flex-1 text-left min-w-0">
+                            <div className="font-semibold text-gray-900 truncate">Social Genie</div>
+                            <div className="text-xs text-gray-600 truncate">Instagram, Threads & more</div>
+                        </div>
+                        <ExternalLink className="h-4 w-4 text-gray-400 group-hover:text-purple-600 flex-shrink-0" />
+                    </button>
+                </div>
+
+                <div className="mt-4 p-3 bg-blue-100 border border-blue-300 rounded-lg">
+                    <p className="text-sm text-blue-900">
+                        <strong>How it works:</strong> Connect your social accounts in the section below, then click on any platform above to start creating and scheduling content for your team.
+                    </p>
+                </div>
+            </div>
+
             {/* Invite Section */}
             {team.canInvite && (
                 <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 mb-6">
@@ -1062,16 +1125,16 @@ const fetchUserPermissions = async () => {
                 {/* Connect New Accounts - Only owner/admin can connect (max 8 accounts) */}
                 {['owner', 'admin'].includes(userPermissions.role) && 
                  socialAccounts.length < 8 && (
-                    <div className="p-6 border-t border-gray-200">
+                    <div className="p-4 sm:p-6 border-t border-gray-200">
                         <h3 className="text-md font-medium text-gray-900 mb-4">Connect New Account</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                             <button
                                 onClick={connectLinkedIn}
                                 disabled={connecting === 'linkedin'}
-                                className="flex items-center justify-center gap-3 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors disabled:opacity-50"
+                                className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors disabled:opacity-50"
                             >
-                                <Linkedin className="h-6 w-6 text-blue-600" />
-                                <span className="font-medium text-gray-900">
+                                <Linkedin className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 flex-shrink-0" />
+                                <span className="font-medium text-gray-900 text-xs sm:text-sm text-center">
                                     {connecting === 'linkedin' ? 'Connecting...' : 'LinkedIn'}
                                 </span>
                             </button>
@@ -1079,66 +1142,60 @@ const fetchUserPermissions = async () => {
                             <button
                                 onClick={connectTwitter}
                                 disabled={connecting === 'twitter'}
-                                className="flex items-center justify-center gap-3 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors disabled:opacity-50"
+                                className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors disabled:opacity-50"
                             >
-                                <Twitter className="h-6 w-6 text-blue-400" />
-                                <span className="font-medium text-gray-900">
+                                <Twitter className="h-5 w-5 sm:h-6 sm:w-6 text-blue-400 flex-shrink-0" />
+                                <span className="font-medium text-gray-900 text-xs sm:text-sm text-center">
                                     {connecting === 'twitter' ? 'Connecting...' : 'Twitter'}
                                 </span>
                             </button>
                                 <button
                                     onClick={connectTwitterOAuth1}
                                     disabled={connecting === 'twitter-oauth1'}
-                                    className="flex items-center justify-center gap-3 p-4 border-2 border-dashed border-yellow-300 rounded-lg hover:border-yellow-500 hover:bg-yellow-50 transition-colors disabled:opacity-50"
+                                    className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 p-3 sm:p-4 border-2 border-dashed border-yellow-300 rounded-lg hover:border-yellow-500 hover:bg-yellow-50 transition-colors disabled:opacity-50"
                                 >
-                                    <Twitter className="h-6 w-6 text-yellow-500" />
-                                    <span className="font-medium text-gray-900">
-                                        {connecting === 'twitter-oauth1' ? 'Connecting Twitter (Media)...' : 'Twitter (Media Upload)'}
+                                    <Twitter className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-500 flex-shrink-0" />
+                                    <span className="font-medium text-gray-900 text-xs sm:text-sm text-center">
+                                        {connecting === 'twitter-oauth1' ? 'Connecting...' : 'Twitter Media'}
                                     </span>
                                 </button>
 
                             <button
                                 onClick={() => connectPlatform('wordpress')}
                                 disabled={connecting === 'wordpress'}
-                                className="flex items-center justify-center gap-3 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-800 hover:bg-blue-50 transition-colors disabled:opacity-50"
+                                className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-800 hover:bg-blue-50 transition-colors disabled:opacity-50"
                             >
-                                <Globe className="h-6 w-6 text-blue-800" />
-                                <span className="font-medium text-gray-900">
+                                <Globe className="h-5 w-5 sm:h-6 sm:w-6 text-blue-800 flex-shrink-0" />
+                                <span className="font-medium text-gray-900 text-xs sm:text-sm text-center">
                                     {connecting === 'wordpress' ? 'Connecting...' : 'WordPress'}
-                                </span>
-                            </button>
-                            
-                            <button
-                                onClick={() => connectPlatform('facebook')}
-                                disabled={connecting === 'facebook'}
-                                className="flex items-center justify-center gap-3 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-700 hover:bg-blue-50 transition-colors disabled:opacity-50"
-                            >
-                                <MessageSquare className="h-6 w-6 text-blue-700" />
-                                <span className="font-medium text-gray-900">
-                                    {connecting === 'facebook' ? 'Connecting...' : 'Facebook'}
-                                </span>
-                            </button>
-
-                            <button
-                                onClick={() => connectPlatform('instagram')}
-                                disabled={connecting === 'instagram'}
-                                className="flex items-center justify-center gap-3 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-600 hover:bg-purple-50 transition-colors disabled:opacity-50"
-                            >
-                                <ExternalLink className="h-6 w-6 text-purple-600" />
-                                <span className="font-medium text-gray-900">
-                                    {connecting === 'instagram' ? 'Connecting...' : 'Instagram'}
                                 </span>
                             </button>
 
                             <button
                                 onClick={connectThreads}
                                 disabled={connecting === 'threads'}
-                                className="flex items-center justify-center gap-3 p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-neutral-900 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                                className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-neutral-900 hover:bg-gray-50 transition-colors disabled:opacity-50"
                             >
-                                <AtSign className="h-6 w-6 text-neutral-900" />
-                                <span className="font-medium text-gray-900">
+                                <AtSign className="h-5 w-5 sm:h-6 sm:w-6 text-neutral-900 flex-shrink-0" />
+                                <span className="font-medium text-gray-900 text-xs sm:text-sm text-center">
                                     {connecting === 'threads' ? 'Connecting...' : 'Threads'}
                                 </span>
+                            </button>
+                            
+                            <button
+                                disabled
+                                className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 p-3 sm:p-4 border-2 border-dashed border-gray-200 rounded-lg opacity-50 cursor-not-allowed"
+                            >
+                                <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 flex-shrink-0" />
+                                <span className="font-medium text-gray-500 text-xs sm:text-sm text-center">Facebook</span>
+                            </button>
+
+                            <button
+                                disabled
+                                className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 p-3 sm:p-4 border-2 border-dashed border-gray-200 rounded-lg opacity-50 cursor-not-allowed"
+                            >
+                                <ExternalLink className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 flex-shrink-0" />
+                                <span className="font-medium text-gray-500 text-xs sm:text-sm text-center">Instagram</span>
                             </button>
 
                             <button
