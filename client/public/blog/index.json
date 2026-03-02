@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-01T17:11:52.002Z",
+  "generatedAt": "2026-03-02T17:52:36.257Z",
   "categories": {
     "meta": {
       "all": {
@@ -63,6 +63,148 @@
     ]
   },
   "posts": [
+    {
+      "id": "what-if-your-twitter-ran-itself-while-you-built-your-product",
+      "title": "What If Your Twitter Ran Itself While You Built Your Product?",
+      "slug": "what-if-your-twitter-ran-itself-while-you-built-your-product",
+      "category": "guides",
+      "tags": [
+        "tweetgenie",
+        "creators",
+        "founders",
+        "twitter automation"
+      ],
+      "excerpt": "For solo founders and indie hackers, there is always a tradeoff between building your product and building your audience. What if you didn't have to choose?",
+      "featuredImage": {
+        "url": "/images/blog/tweetgenie-hero.png",
+        "alt": "Twitter Automation for Creators"
+      },
+      "author": {
+        "name": "Kanishk Saraswat",
+        "avatar": "/kanishk.png",
+        "twitter": "kanishksaraswat"
+      },
+      "publishDate": "2026-03-02T21:10:00+05:30",
+      "lastModified": "2026-03-02T21:10:00+05:30",
+      "readTime": 4,
+      "featured": false,
+      "status": "published",
+      "contentPath": "/blog/posts/guides/what-if-your-twitter-ran-itself-while-you-built-your-product.json"
+    },
+    {
+      "id": "twitter-complete-automation-feature-drop-what-we-are-building",
+      "title": "Complete Twitter Automation — What We're Building and Where We Are",
+      "slug": "twitter-complete-automation-feature-drop-what-we-are-building",
+      "category": "updates",
+      "tags": [
+        "tweetgenie",
+        "product update",
+        "twitter automation",
+        "roadmap"
+      ],
+      "excerpt": "A full breakdown of the vision for TweetGenie's complete Twitter automation. What each phase does in plain English and when it ships.",
+      "featuredImage": {
+        "url": "/images/blog/suitegenie-launch-hero.svg",
+        "alt": "Twitter Automation Phases"
+      },
+      "author": {
+        "name": "Kanishk Saraswat",
+        "avatar": "/kanishk.png",
+        "twitter": "kanishksaraswat"
+      },
+      "publishDate": "2026-03-02T21:05:00+05:30",
+      "lastModified": "2026-03-02T21:05:00+05:30",
+      "readTime": 3,
+      "featured": false,
+      "status": "published",
+      "contentPath": "/blog/posts/updates/twitter-complete-automation-feature-drop-what-we-are-building.json"
+    },
+    {
+      "id": "they-said-i-was-building-another-buffer-clone-they-were-wrong",
+      "title": "They Said I Was Building Another Buffer Clone. They Were Wrong.",
+      "slug": "they-said-i-was-building-another-buffer-clone-they-were-wrong",
+      "category": "insights",
+      "tags": [
+        "tweetgenie",
+        "twitter automation",
+        "founder story",
+        "building in public"
+      ],
+      "excerpt": "For months everyone thought I was building just another social media scheduling tool. Here's what I was actually building.",
+      "featuredImage": {
+        "url": "/images/blog/suitegenie-launch-hero.svg",
+        "alt": "Twitter Complete Automation"
+      },
+      "author": {
+        "name": "Kanishk Saraswat",
+        "avatar": "/kanishk.png",
+        "twitter": "kanishksaraswat"
+      },
+      "publishDate": "2026-03-02T21:00:00+05:30",
+      "lastModified": "2026-03-02T21:00:00+05:30",
+      "readTime": 6,
+      "featured": false,
+      "status": "published",
+      "contentPath": "/blog/posts/insights/they-said-i-was-building-another-buffer-clone-they-were-wrong.json"
+    },
+    {
+      "id": "the-trojan-horse-why-im-not-scared-of-hootsuite",
+      "title": "The Trojan Horse: Why I Spent Months Building a Manual Scheduler When AI Already Exists",
+      "slug": "the-trojan-horse-why-im-not-scared-of-hootsuite",
+      "category": "insights",
+      "tags": [
+        "building in public",
+        "founder story",
+        "twitter automation",
+        "suitegenie",
+        "agencies"
+      ],
+      "excerpt": "For months, people asked me why I was building a social media tool. \"Buffer and Hootsuite will just add AI and crush you.\" Here is the secret they didn't know.",
+      "featuredImage": {
+        "url": "/images/blog/suitegenie-launch-hero.svg",
+        "alt": "The Trojan Horse Strategy"
+      },
+      "author": {
+        "name": "Kanishk Saraswat",
+        "avatar": "/kanishk.png",
+        "twitter": "kanishksaraswat"
+      },
+      "publishDate": "2026-03-02T19:50:00+05:30",
+      "lastModified": "2026-03-02T19:50:00+05:30",
+      "readTime": 4,
+      "featured": false,
+      "status": "published",
+      "contentPath": "/blog/posts/insights/the-trojan-horse-why-im-not-scared-of-hootsuite.json"
+    },
+    {
+      "id": "twitter-complete-automation-coming-soon",
+      "title": "The Biggest Thing We've Ever Built for TweetGenie Is Coming - And It's Going to Change How You Use Twitter Forever",
+      "slug": "twitter-complete-automation-coming-soon",
+      "category": "updates",
+      "tags": [
+        "tweetgenie",
+        "twitter automation",
+        "social media automation",
+        "agency tools",
+        "suitegenie updates"
+      ],
+      "excerpt": "We've been quietly building something. Complete Twitter automation - with your supervision or without. Here's what's coming, why we built it, and how to get early access.",
+      "featuredImage": {
+        "url": "/images/blog/suitegenie-launch-hero.svg",
+        "alt": "TweetGenie complete automation roadmap"
+      },
+      "author": {
+        "name": "Kanishk Saraswat",
+        "avatar": "/kanishk.png",
+        "twitter": "kanishksaraswat"
+      },
+      "publishDate": "2026-03-02T10:30:00+05:30",
+      "lastModified": "2026-03-02T10:30:00+05:30",
+      "readTime": 5,
+      "featured": false,
+      "status": "published",
+      "contentPath": "/blog/posts/updates/twitter-complete-automation-coming-soon.json"
+    },
     {
       "id": "bulk-content-planning-for-founders-and-small-teams",
       "title": "Bulk Content Planning for Founders and Small Teams",

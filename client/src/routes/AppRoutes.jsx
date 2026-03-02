@@ -59,7 +59,7 @@ const AppRoutes = () => {
       <Route path="/blogs/search" element={<BlogSearchPage />} />
       <Route path="/blogs/category/:name" element={<BlogCategoryPage />} />
       <Route path="/blogs/:category/:slug" element={<BlogPostPage />} />
-      
+
       {/* Guest routes - redirect to dashboard if already logged in */}
       <Route path="/login" element={
         <GuestRoute>

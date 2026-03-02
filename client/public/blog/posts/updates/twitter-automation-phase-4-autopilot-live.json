@@ -1,0 +1,35 @@
+{
+  "id": "twitter-automation-phase-4-autopilot-live",
+  "title": "Autopilot mode is live — your Twitter account now runs itself",
+  "slug": "twitter-automation-phase-4-autopilot-live",
+  "category": "updates",
+  "tags": [
+    "update",
+    "phase 4",
+    "autopilot"
+  ],
+  "excerpt": "What autopilot mode actually does and how to turn it on with the 1 hour undo window.",
+  "content": "## What Autopilot Mode Actually Does\nIt removes the need to even approve. It generates, schedules, and posts behind the scenes.\n\n## The 1 Hour Undo Window\nWe never want to break your trust. You have a full 1 hour window to undo/edit a finalized post before it's submitted to Twitter.\n\n## Real Example\nHere's what an autopilot account looks like after a week.\n\n[Turn on autopilot — takes 30 seconds](/dashboard/settings)",
+  "featuredImage": {
+    "url": "/images/blog/suitegenie-launch-hero.svg",
+    "alt": "Autopilot Mode"
+  },
+  "author": {
+    "name": "Kanishk Saraswat",
+    "avatar": "/kanishk.png",
+    "twitter": "kanishksaraswat"
+  },
+  "publishDate": "2026-04-10T10:00:00+05:30",
+  "lastModified": "2026-04-10T10:00:00+05:30",
+  "readTime": 3,
+  "status": "draft",
+  "seo": {
+    "metaTitle": "Phase 4 is Live: Autopilot Mode",
+    "metaDescription": "Your Twitter account now runs itself with Autopilot mode.",
+    "keywords": [
+      "autopilot",
+      "twitter automation"
+    ],
+    "canonicalUrl": "https://suitegenie.in/blogs/updates/twitter-automation-phase-4-autopilot-live"
+  }
+}
