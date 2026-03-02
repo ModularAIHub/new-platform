@@ -262,8 +262,8 @@ const BlogPostPage = () => {
             </figure>
           </section>
 
-          <section className="mt-8 lg:grid lg:grid-cols-[280px_minmax(0,_1fr)] lg:gap-8">
-            <TableOfContents items={tocItems} />
+          <section className={tocItems.length > 0 ? "mt-8 lg:grid lg:grid-cols-[280px_minmax(0,_1fr)] lg:gap-8" : "mt-8 mx-auto max-w-4xl"}>
+            {tocItems.length > 0 && <TableOfContents items={tocItems} />}
             <div className="space-y-8">
               <BlogPostContent html={postHtml} />
 

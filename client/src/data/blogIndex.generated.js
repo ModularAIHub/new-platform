@@ -93,7 +93,7 @@ export const BLOG_POSTS_INDEX = [
   },
   {
     "id": "twitter-complete-automation-feature-drop-what-we-are-building",
-    "title": "Complete Twitter Automation — What We're Building and Where We Are",
+    "title": "Complete Twitter Automation - What We're Building and Where We Are",
     "slug": "twitter-complete-automation-feature-drop-what-we-are-building",
     "category": "updates",
     "tags": [
@@ -604,7 +604,7 @@ export const BLOG_POSTS_INDEX = [
   },
   {
     "id": "linkedin-cross-posting-tweet-genie",
-    "title": "Cross-Post to LinkedIn Directly from Tweet Genie — Now Live on SuiteGenie",
+    "title": "Cross-Post to LinkedIn Directly from Tweet Genie - Now Live on SuiteGenie",
     "slug": "linkedin-cross-posting-from-tweet-genie",
     "category": "updates",
     "tags": [
@@ -613,7 +613,7 @@ export const BLOG_POSTS_INDEX = [
       "cross-posting",
       "suitegenie"
     ],
-    "excerpt": "Tweet once, publish to LinkedIn automatically — Tweet Genie's new LinkedIn toggle makes cross-posting seamless.",
+    "excerpt": "Tweet once, publish to LinkedIn automatically - Tweet Genie's new LinkedIn toggle makes cross-posting seamless.",
     "featuredImage": {
       "url": "/images/blog/linkedin-cross-posting-hero.svg",
       "alt": "Tweet Genie composer with LinkedIn cross-post toggle"
@@ -873,10 +873,10 @@ export const BLOG_POSTS_INDEX = [
       "byok",
       "bulk scheduling"
     ],
-    "excerpt": "From an anime passion project to a full AI-powered social media platform — here's the real story behind SuiteGenie and why we built it the way we did.",
+    "excerpt": "From an anime passion project to a full AI-powered social media platform - here's the real story behind SuiteGenie and why we built it the way we did.",
     "featuredImage": {
       "url": "/images/blog/from-content-chaos-hero.svg",
-      "alt": "From content chaos to system — SuiteGenie founder story"
+      "alt": "From content chaos to system - SuiteGenie founder story"
     },
     "author": {
       "name": "Kanishk Saraswat",
