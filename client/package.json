@@ -21,6 +21,7 @@
         "@tailwindcss/vite": "^4.1.12",
         "axios": "^1.6.2",
         "clsx": "^2.0.0",
+        "firebase": "^12.10.0",
         "gsap": "^3.13.0",
         "helmet": "^8.1.0",
         "lucide-react": "^0.294.0",
