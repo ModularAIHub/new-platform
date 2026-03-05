@@ -1,54 +1,63 @@
-
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Key, Plus, Edit, Trash2, Lock, AlertTriangle, Info } from 'lucide-react'
+import { Key, Plus, Trash2, Lock } from 'lucide-react'
 import api from '../utils/api'
 import Loader from '../components/Loader'
-import { 
-    Button, 
-    Input, 
-    Select, 
-    Card, 
-    CardHeader, 
-    CardTitle, 
-    CardDescription, 
-    CardContent, 
-    CardFooter 
+import {
+    Button,
+    Input,
+    Select,
+    Card,
+    CardHeader,
+    CardTitle,
+    CardDescription,
+    CardContent
 } from '../components/ui'
 
+const providerMeta = {
+    openai: {
+        label: 'OpenAI',
+        tone: 'border-green-200 bg-green-50 text-green-800'
+    },
+    gemini: {
+        label: 'Gemini',
+        tone: 'border-blue-200 bg-blue-50 text-blue-800'
+    },
+    perplexity: {
+        label: 'Perplexity',
+        tone: 'border-purple-200 bg-purple-50 text-purple-800'
+    }
+}
+
 const ApiKeysPage = () => {
-    const [searchParams] = useSearchParams();
-    const byokSectionRef = useRef(null);
-    const [highlightByok, setHighlightByok] = useState(false);
+    const [searchParams] = useSearchParams()
+    const byokSectionRef = useRef(null)
+    const [highlightByok, setHighlightByok] = useState(false)
     const [apiKeys, setApiKeys] = useState({})
     const [loading, setLoading] = useState(true)
     const [submitting, setSubmitting] = useState(false)
     const [form, setForm] = useState({ provider: 'openai', keyName: '', apiKey: '' })
     const [preference, setPreference] = useState(null)
-    const [lockUntil, setLockUntil] = useState(null)
     const [creditTier, setCreditTier] = useState(0)
     const [locked, setLocked] = useState(false)
     const [lockMessage, setLockMessage] = useState(null)
     const [showByokInfo, setShowByokInfo] = useState(false)
     const [prefLoading, setPrefLoading] = useState(true)
     const [showConfirm, setShowConfirm] = useState(false)
-    const [pendingPref, setPendingPref] = useState(null)
     const [showByokSwitch, setShowByokSwitch] = useState(false)
     const [byokSelected, setByokSelected] = useState(false)
-
 
     useEffect(() => {
         fetchByokKeys()
         fetchPreference()
-        
-        // Check if redirected from BYOK mode selection
-        const mode = searchParams.get('mode');
-        if (mode === 'byok' && byokSectionRef.current) {
+
+        if (searchParams.get('mode') === 'byok') {
+            setByokSelected(true)
             setTimeout(() => {
-                byokSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                setHighlightByok(true);
-                setTimeout(() => setHighlightByok(false), 3000);
-            }, 500);
+                byokSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                setHighlightByok(true)
+                setTimeout(() => setHighlightByok(false), 2500)
+            }, 500)
         }
     }, [])
 
@@ -57,7 +66,6 @@ const ApiKeysPage = () => {
         try {
             const res = await api.get('/byok/preference')
             setPreference(res.data.api_key_preference ?? null)
-            setLockUntil(res.data.byok_locked_until)
             const fallbackTier = res.data.api_key_preference === 'byok' ? 50 : 15
             setCreditTier(res.data.creditTier ?? fallbackTier)
             setLocked(res.data.locked)
@@ -69,12 +77,9 @@ const ApiKeysPage = () => {
         }
     }
 
-
-    // Fetch BYOK keys and group by provider
     const fetchByokKeys = async () => {
         try {
             const response = await api.get('/byok/keys')
-            // Group keys by provider for display
             const grouped = {}
             for (const key of response.data.keys || []) {
                 if (!grouped[key.provider]) grouped[key.provider] = []
@@ -88,10 +93,32 @@ const ApiKeysPage = () => {
         }
     }
 
+    const focusByokStep = () => {
+        setByokSelected(true)
+        setTimeout(() => {
+            byokSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            setHighlightByok(true)
+            setTimeout(() => setHighlightByok(false), 2500)
+        }, 120)
+    }
+
+    const handleModeSelect = (mode) => {
+        if (locked) return
+        if (mode === 'platform') {
+            if (preference === 'platform') return
+            setShowConfirm(true)
+            return
+        }
+
+        if (mode === 'byok') {
+            if (preference === 'byok') return
+            focusByokStep()
+        }
+    }
+
     const handleAdd = async (e) => {
         e.preventDefault()
         if (!form.provider || !form.apiKey || !form.keyName) return
-        // If not already BYOK, prompt confirmation to switch and lock
         if (preference !== 'byok') {
             setShowByokSwitch(true)
             return
@@ -105,7 +132,7 @@ const ApiKeysPage = () => {
             await api.post('/byok/key', {
                 provider: form.provider,
                 apiKey: form.apiKey,
-                keyName: form.keyName,
+                keyName: form.keyName
             })
             setForm({ provider: form.provider, keyName: '', apiKey: '' })
             await fetchByokKeys()
@@ -115,294 +142,285 @@ const ApiKeysPage = () => {
         }
     }
 
-
-    // Optionally remove toggle active for minimal UI
-    // const handleToggleActive = async (provider, id, isActive) => {
-    //     await api.put(`/api-keys/${id}`, { isActive: !isActive })
-    //     await fetchByokKeys()
-    // }
-
-
     const handleDelete = async (id) => {
         await api.delete('/byok/key', { data: { keyId: id } })
         await fetchByokKeys()
     }
-
-
 
     if (loading || prefLoading) {
         return <Loader className="h-64" size={28} />
     }
 
     const providers = ['openai', 'gemini', 'perplexity']
-
+    const isByokActive = preference === 'byok'
+    const shouldShowByokSetup = isByokActive || byokSelected || searchParams.get('mode') === 'byok'
 
     return (
-        <div className="space-y-12">
-            {/* Confirm switch to BYOK modal */}
+        <div className="space-y-8">
             {showByokSwitch && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-                    <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
-                        <h2 className="text-xl font-bold mb-4">Switch to BYOK?</h2>
-                        <p className="mb-4">Switching to BYOK will lock your preference for 90 days. Are you sure you want to continue?</p>
-                        <div className="flex gap-4 justify-end">
-                            <button className="px-4 py-2 rounded bg-gray-200" onClick={() => setShowByokSwitch(false)}>Cancel</button>
-                            <button className="px-4 py-2 rounded bg-green-600 text-white font-bold" onClick={async () => {
-                                setShowByokSwitch(false)
-                                await api.post('/byok/preference', { preference: 'byok' })
-                                setPreference('byok')
-                                await actuallyAddKey()
-                                await fetchPreference()
-                            }}>Confirm</button>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+                    <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full">
+                        <h2 className="text-xl font-bold mb-3">Switch to BYOK?</h2>
+                        <p className="mb-5 text-sm text-neutral-700">
+                            BYOK mode starts a 90-day preference lock after your first key is saved.
+                        </p>
+                        <div className="flex gap-3 justify-end">
+                            <Button variant="outline" onClick={() => setShowByokSwitch(false)}>Cancel</Button>
+                            <Button
+                                variant="success"
+                                loading={submitting}
+                                onClick={async () => {
+                                    setShowByokSwitch(false)
+                                    await api.post('/byok/preference', { preference: 'byok' })
+                                    setPreference('byok')
+                                    await actuallyAddKey()
+                                    await fetchPreference()
+                                }}
+                            >
+                                Confirm & Continue
+                            </Button>
                         </div>
                     </div>
                 </div>
             )}
-            {/* Confirm switch to platform modal */}
+
             {showConfirm && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-                    <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
-                        <h2 className="text-xl font-bold mb-4">Switch to Platform?</h2>
-                        <p className="mb-4">Switching to Platform will lock your preference for 90 days. Are you sure you want to continue?</p>
-                        <div className="flex gap-4 justify-end">
-                            <button className="px-4 py-2 rounded bg-gray-200" onClick={() => { setShowConfirm(false); setPendingPref(null); }}>Cancel</button>
-                            <button className="px-4 py-2 rounded bg-blue-600 text-white font-bold" onClick={async () => {
-                                setShowConfirm(false)
-                                setPendingPref(null)
-                                await api.post('/byok/preference', { preference: 'platform' })
-                                await fetchPreference()
-                            }}>Confirm</button>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+                    <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full">
+                        <h2 className="text-xl font-bold mb-3">Switch to Platform Keys?</h2>
+                        <p className="mb-5 text-sm text-neutral-700">
+                            Platform mode also applies the 90-day preference lock immediately.
+                        </p>
+                        <div className="flex gap-3 justify-end">
+                            <Button variant="outline" onClick={() => setShowConfirm(false)}>Cancel</Button>
+                            <Button
+                                variant="primary"
+                                onClick={async () => {
+                                    setShowConfirm(false)
+                                    await api.post('/byok/preference', { preference: 'platform' })
+                                    setByokSelected(false)
+                                    await fetchPreference()
+                                }}
+                            >
+                                Confirm Switch
+                            </Button>
                         </div>
                     </div>
                 </div>
             )}
-            {/* BYOK Preference Section */}
-            <div className="bg-gradient-to-r from-blue-50 via-purple-50 to-green-50 shadow-xl rounded-2xl p-10 border border-gray-100 relative overflow-hidden">
-                {/* BYOK Info Modal */}
-                {showByokInfo && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-                        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full relative">
-                            <button className="absolute top-3 right-3 text-gray-400 hover:text-gray-700" onClick={() => setShowByokInfo(false)}>&times;</button>
-                            <h2 className="text-2xl font-bold mb-2 text-blue-900">How BYOK Works</h2>
-                            <ul className="list-disc pl-6 text-gray-700 text-base mb-4">
-                                <li><b>BYOK</b> (Bring Your Own Key) lets you use your own API keys for OpenAI, Gemini, or Perplexity.</li>
-                                <li>When you switch to BYOK, your account is <b>locked for 90 days</b> (cannot switch back to platform keys).</li>
-                                <li>Monthly credits: <b>Platform</b> (Free: 15, Pro: 100) and <b>BYOK</b> (Free: 50, Pro: 180).</li>
-                                <li>You must add at least one valid API key for each provider you want to use.</li>
-                                <li>After 90 days, you can switch back to platform keys if you wish.</li>
-                                <li>Active keys are used for all AI requests for that provider.</li>
-                            </ul>
-                            <div className="bg-blue-50 border border-blue-200 rounded p-3 text-blue-800 text-sm">
-                                <b>Tip:</b> You can manage, add, or remove your keys below. If no key is configured for a provider, you cannot use that provider's AI features.
-                            </div>
-                        </div>
-                    </div>
-                )}
-                <div className="absolute inset-0 pointer-events-none" style={{background: 'radial-gradient(circle at 20% 40%, rgba(59,130,246,0.08) 0%, transparent 70%), radial-gradient(circle at 80% 60%, rgba(16,163,127,0.08) 0%, transparent 70%)'}}></div>
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 relative z-10">
-                    <div>
-                        <div className="flex items-center gap-2">
-                            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">API Keys & Preferences</h1>
-                            <button className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 font-semibold" onClick={() => setShowByokInfo(true)}>What is BYOK?</button>
-                        </div>
-                        <p className="text-gray-500 mt-2 text-lg">Manage your AI key preference and provider keys in one place. <b>Platform</b>: 15 credits (Free) / 100 (Pro). <b>BYOK</b>: 50 credits (Free) / 180 (Pro), 90-day lock.</p>
-                        
-                        {/* BYOK Mode Guide Banner */}
-                        {searchParams.get('mode') === 'byok' && preference !== 'byok' && (
-                            <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-400 rounded-lg shadow-lg animate-pulse">
-                                <div className="flex items-start gap-3">
-                                    <Info className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                                    <div>
-                                        <h3 className="font-bold text-green-900 mb-1">Ready to switch to BYOK?</h3>
-                                        <p className="text-sm text-green-800">
-                                            To activate BYOK mode and get BYOK monthly credits (<b>50 for Free</b>, <b>180 for Pro</b>), add your first API key below. 
-                                            Once added, you'll automatically switch to BYOK mode.
-                                        </p>
-                                        <p className="text-xs text-green-700 mt-2">
-                                            Scroll down to the form and add your OpenAI, Gemini, or Perplexity API key.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                        
-                        <div className="flex items-center gap-6 mt-4">
-                            <label className="flex items-center gap-2 cursor-pointer">
-                                <input type="radio" name="api-key-pref" value="platform" checked={preference === 'platform'}
-                                    onChange={() => {
-                                        if (preference !== 'platform' && (!lockUntil || new Date(lockUntil) <= new Date()) && !locked) {
-                                            setPendingPref('platform');
-                                            setShowConfirm(true);
-                                        }
-                                    }}
-                                    disabled={locked || (preference === 'byok' && lockUntil && new Date(lockUntil) > new Date())}
-                                />
-                                <span className="font-semibold text-blue-700">Platform Key</span>
-                                <span className="text-xs text-gray-500">(15 Free / 100 Pro)</span>
-                            </label>
-                            <label className="flex items-center gap-2 cursor-pointer">
-                                <input type="radio" name="api-key-pref" value="byok" 
-                                    checked={preference === 'byok' || (byokSelected && preference !== 'byok')}
-                                    onChange={() => {
-                                        if (preference !== 'byok') {
-                                            setByokSelected(true);
-                                            setTimeout(() => {
-                                                byokSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                                setHighlightByok(true);
-                                                setTimeout(() => setHighlightByok(false), 3000);
-                                            }, 100);
-                                        }
-                                    }}
-                                    disabled={locked || (preference === 'platform' && lockUntil && new Date(lockUntil) > new Date())}
-                                />
-                                <span className="font-semibold text-green-700">BYOK</span>
-                                <span className="text-xs text-gray-500">(50 Free / 180 Pro, 90-day lock)</span>
-                            </label>
-                            {byokSelected && preference !== 'byok' && (
-                                <div className="mt-2 px-3 py-2 bg-green-50 border border-green-300 rounded-lg text-sm text-green-800 font-medium">
-                                    BYOK selected! Add your first API key below to activate BYOK mode and unlock BYOK credits.
-                                </div>
-                            )}
-                            {!byokSelected && preference !== 'byok' && (
-                                <div className="mt-2 text-sm text-gray-600">
-                                    Click BYOK above to get started, then enter a key below.
-                                </div>
-                            )}
-                        </div>
-                        {locked && (
-                            <div className="flex items-center gap-2 mt-2 text-sm text-yellow-700 bg-yellow-50 border border-yellow-200 rounded px-3 py-2">
-                                <Lock className="h-4 w-4" />
-                                {lockMessage}
-                            </div>
-                        )}
-                        <div className="mt-4 text-base font-semibold text-blue-900">Current credit tier: <span className="text-blue-700">{creditTier} credits/month</span></div>
-                        {preference === 'byok' && (
-                            <div className="mt-2 text-sm text-blue-700 bg-blue-50 border border-blue-200 rounded px-3 py-2">
-                                <b>BYOK is active.</b> All AI requests will use your own keys. Make sure you have added valid keys for each provider you want to use.
-                            </div>
-                        )}
-                    </div>
-                    {/* Add Key Form */}
-                    <form 
-                        ref={byokSectionRef}
-                        onSubmit={handleAdd} 
-                        className={`flex flex-col md:flex-row items-center gap-2 bg-white/70 backdrop-blur-md p-4 rounded-xl shadow-lg border border-gray-200 transition-all duration-500 ${
-                            highlightByok ? 'ring-4 ring-green-400 ring-opacity-50 shadow-2xl' : ''
-                        }`}
-                    >
-                        <select
-                            className="border rounded-lg px-4 py-2 text-sm font-medium focus:ring-2 focus:ring-blue-400"
-                            value={form.provider}
-                            onChange={(e) => setForm({ ...form, provider: e.target.value })}
+
+            {showByokInfo && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+                    <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-lg w-full relative">
+                        <button
+                            type="button"
+                            className="absolute top-3 right-3 text-gray-400 hover:text-gray-700"
+                            onClick={() => setShowByokInfo(false)}
                         >
-                            <option value="openai">OpenAI</option>
-                            <option value="gemini">Gemini</option>
-                            <option value="perplexity">Perplexity</option>
-                        </select>
-                        <input
-                            className="border rounded-lg px-4 py-2 text-sm w-32 focus:ring-2 focus:ring-purple-400"
-                            placeholder="Key name"
-                            value={form.keyName}
-                            onChange={(e) => setForm({ ...form, keyName: e.target.value })}
-                        />
-                        <input
-                            className="border rounded-lg px-4 py-2 text-sm w-48 focus:ring-2 focus:ring-green-400"
-                            placeholder="API key"
-                            value={form.apiKey}
-                            onChange={(e) => setForm({ ...form, apiKey: e.target.value })}
-                        />
-                        <button disabled={submitting} className="flex items-center gap-1 px-5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-green-500 hover:from-blue-700 hover:to-green-600 text-white font-bold text-sm shadow-lg transition-all duration-200 disabled:opacity-50">
-                            <Plus className="h-4 w-4" /> Add
+                            &times;
                         </button>
-                    </form>
-                </div>
-            </div>
-
-            {/* BYOK Keys List removed: redundant, use provider sections below */}
-
-            {/* API Keys by provider */}
-            {providers.map((provider) => {
-                // Custom SVG icons and accent colors
-                let icon, accent, badge, gradient;
-                if (provider === 'openai') {
-                    icon = (
-                        <span className="inline-block align-middle">
-                            <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="16" fill="#10A37F"/><path d="M16 8l4 8-4 8-4-8 4-8z" fill="#fff"/></svg>
-                        </span>
-                    );
-                    accent = 'bg-green-50 border-green-200';
-                    badge = 'bg-green-600 text-white';
-                    gradient = 'from-green-50 via-white to-blue-50';
-                } else if (provider === 'gemini') {
-                    icon = (
-                        <span className="inline-block align-middle">
-                            <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="16" fill="#4285F4"/><path d="M16 8a8 8 0 100 16 8 8 0 000-16z" fill="#fff"/></svg>
-                        </span>
-                    );
-                    accent = 'bg-blue-50 border-blue-200';
-                    badge = 'bg-blue-600 text-white';
-                    gradient = 'from-blue-50 via-white to-purple-50';
-                } else if (provider === 'perplexity') {
-                    icon = (
-                        <span className="inline-block align-middle">
-                            <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="16" fill="#7C3AED"/><path d="M16 8a8 8 0 110 16 8 8 0 010-16z" fill="#fff"/></svg>
-                        </span>
-                    );
-                    accent = 'bg-purple-50 border-purple-200';
-                    badge = 'bg-purple-600 text-white';
-                    gradient = 'from-purple-50 via-white to-green-50';
-                }
-                return (
-                    <div key={provider} className={`rounded-2xl shadow-xl border ${accent} p-8 mb-10 transition-all duration-300 bg-gradient-to-br ${gradient} relative overflow-hidden`}> 
-                        <div className="absolute inset-0 pointer-events-none" style={{background: 'radial-gradient(circle at 20% 40%, rgba(59,130,246,0.08) 0%, transparent 70%), radial-gradient(circle at 80% 60%, rgba(16,163,127,0.08) 0%, transparent 70%)'}}></div>
-                        <div className="flex items-center gap-4 mb-6 relative z-10">
-                            <div className={`rounded-full p-2 ${accent} shadow flex items-center justify-center w-12 h-12`}>{icon}</div>
-                            <h2 className="text-xl font-bold text-gray-900 capitalize tracking-wide flex items-center gap-2">
-                                {provider.charAt(0).toUpperCase() + provider.slice(1)}
-                                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${badge}`}>{provider}</span>
-                                <span className="text-xs text-gray-400 font-normal ml-2">API Keys</span>
-                            </h2>
-                        </div>
-                        <div className="border-b border-gray-200 mb-6"></div>
-                        <div className="mb-6 text-gray-500 text-sm font-medium">Add, view, and manage your API keys for {provider.charAt(0).toUpperCase() + provider.slice(1)}.</div>
-                        {(!apiKeys[provider] || apiKeys[provider].length === 0) ? (
-                            <div className="text-center py-8">
-                                <p className="text-gray-400 text-base font-medium">No API keys configured for {provider}. <span className="text-yellow-700">You cannot use {provider.charAt(0).toUpperCase() + provider.slice(1)} AI features until you add a key.</span></p>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                {apiKeys[provider].map((key, idx) => (
-                                    <div key={key.id} className={`flex items-center justify-between p-6 rounded-2xl shadow-xl bg-white/70 backdrop-blur-md border ${accent} hover:scale-[1.03] hover:shadow-2xl transition-all duration-300 animate-fade-in`} style={{animationDelay: `${idx * 80}ms`}}>
-                                        <div className="flex items-center gap-4">
-                                            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${accent} shadow`}>{icon}</div>
-                                            <div>
-                                                <p className="text-lg font-semibold text-gray-900">{key.keyName}</p>
-                                                <p className="text-xs text-gray-500 mt-1">
-                                                    Created {new Date(key.createdAt).toLocaleDateString()}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center space-x-2">
-                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${key.isActive
-                                                ? 'bg-green-100 text-green-800'
-                                                : 'bg-gray-100 text-gray-800'
-                                                }`}>
-                                                {key.isActive ? 'Active' : 'Inactive'}
-                                            </span>
-                                            <button onClick={() => handleToggleActive(provider, key.id, key.isActive)} className="text-gray-400 hover:text-blue-600 transition">
-                                                <Edit className="h-4 w-4" />
-                                            </button>
-                                            <button onClick={() => handleDelete(key.id)} className="text-gray-400 hover:text-red-600 transition">
-                                                <Trash2 className="h-4 w-4" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                        <h2 className="text-xl font-bold mb-2 text-neutral-900">BYOK in plain terms</h2>
+                        <ul className="list-disc pl-5 text-sm text-neutral-700 space-y-1">
+                            <li>BYOK means you use your own provider key for AI requests.</li>
+                            <li>Switching preference triggers a 90-day lock.</li>
+                            <li>Platform mode is easiest. BYOK offers more control and higher credit tier.</li>
+                            <li>You can delete and rotate BYOK keys anytime.</li>
+                        </ul>
                     </div>
-                );
-            })}
+                </div>
+            )}
+
+            <Card variant="elevated" className="border border-neutral-200">
+                <CardHeader>
+                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                        <div>
+                            <CardTitle className="flex items-center gap-2">
+                                <Key className="w-5 h-5 text-primary-600" />
+                                API Keys & Preferences
+                            </CardTitle>
+                            <CardDescription>
+                                Pick your mode first, then add keys only if you choose BYOK.
+                            </CardDescription>
+                        </div>
+                        <Button variant="outline" size="sm" onClick={() => setShowByokInfo(true)}>
+                            What is BYOK?
+                        </Button>
+                    </div>
+                </CardHeader>
+
+                <CardContent className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <button
+                            type="button"
+                            onClick={() => handleModeSelect('platform')}
+                            disabled={locked}
+                            className={`rounded-xl border p-4 text-left transition-colors ${
+                                preference === 'platform'
+                                    ? 'border-primary-400 bg-primary-50'
+                                    : 'border-neutral-200 hover:border-primary-300'
+                            } ${locked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                        >
+                            <div className="flex items-center justify-between gap-2">
+                                <p className="font-semibold text-neutral-900">Platform Keys</p>
+                                {preference === 'platform' && (
+                                    <span className="text-xs font-semibold text-primary-700">Active</span>
+                                )}
+                            </div>
+                            <p className="mt-1 text-sm text-neutral-600">No setup needed. Best for quick onboarding.</p>
+                            <p className="mt-2 text-xs text-neutral-500">15 credits (Free) / 100 (Pro)</p>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => handleModeSelect('byok')}
+                            disabled={locked}
+                            className={`rounded-xl border p-4 text-left transition-colors ${
+                                isByokActive || byokSelected
+                                    ? 'border-success-400 bg-success-50'
+                                    : 'border-neutral-200 hover:border-success-300'
+                            } ${locked ? 'opacity-60 cursor-not-allowed' : ''}`}
+                        >
+                            <div className="flex items-center justify-between gap-2">
+                                <p className="font-semibold text-neutral-900">Bring Your Own Key (BYOK)</p>
+                                {isByokActive && (
+                                    <span className="text-xs font-semibold text-success-700">Active</span>
+                                )}
+                            </div>
+                            <p className="mt-1 text-sm text-neutral-600">Use OpenAI, Gemini, or Perplexity keys.</p>
+                            <p className="mt-2 text-xs text-neutral-500">50 credits (Free) / 180 (Pro)</p>
+                        </button>
+                    </div>
+
+                    {locked && (
+                        <div className="flex items-start gap-2 rounded-lg border border-warning-200 bg-warning-50 px-3 py-2 text-sm text-warning-800">
+                            <Lock className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                            <span>{lockMessage}</span>
+                        </div>
+                    )}
+
+                    <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                        <div>
+                            <p className="text-neutral-500">Current mode</p>
+                            <p className="font-semibold text-neutral-900">
+                                {isByokActive ? 'BYOK (Your Keys)' : 'Platform Keys'}
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-neutral-500">Current credit tier</p>
+                            <p className="font-semibold text-neutral-900">{creditTier} credits/month</p>
+                        </div>
+                    </div>
+
+                    {shouldShowByokSetup && (
+                        <div
+                            ref={byokSectionRef}
+                            className={`rounded-xl border p-4 transition-all ${
+                                highlightByok ? 'border-success-400 ring-2 ring-success-200' : 'border-neutral-200'
+                            }`}
+                        >
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+                                <h3 className="text-base font-semibold text-neutral-900">Step 2: Add BYOK key</h3>
+                                <span className="text-xs text-neutral-500">Required once to activate BYOK safely</span>
+                            </div>
+                            <form onSubmit={handleAdd} className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+                                <Select
+                                    label="Provider"
+                                    value={form.provider}
+                                    placeholder={null}
+                                    options={[
+                                        { value: 'openai', label: 'OpenAI' },
+                                        { value: 'gemini', label: 'Gemini' },
+                                        { value: 'perplexity', label: 'Perplexity' }
+                                    ]}
+                                    onChange={(e) => setForm({ ...form, provider: e.target.value })}
+                                />
+                                <Input
+                                    label="Key name"
+                                    value={form.keyName}
+                                    placeholder="Primary key"
+                                    onChange={(e) => setForm({ ...form, keyName: e.target.value })}
+                                />
+                                <Input
+                                    label="API key"
+                                    type="password"
+                                    value={form.apiKey}
+                                    placeholder="Paste key"
+                                    onChange={(e) => setForm({ ...form, apiKey: e.target.value })}
+                                />
+                                <Button
+                                    type="submit"
+                                    variant="success"
+                                    loading={submitting}
+                                    icon={<Plus className="h-4 w-4" />}
+                                >
+                                    Add Key
+                                </Button>
+                            </form>
+                            <p className="text-xs text-neutral-500 mt-3">
+                                The 90-day lock starts when your first BYOK key is saved.
+                            </p>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            <div className="space-y-5">
+                {providers.map((provider) => {
+                    const meta = providerMeta[provider]
+                    const keys = apiKeys[provider] || []
+                    return (
+                        <Card key={provider} className="border border-neutral-200">
+                            <CardHeader>
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                    <div>
+                                        <CardTitle className="text-lg">{meta.label} Keys</CardTitle>
+                                        <CardDescription>Manage active key entries for {meta.label}.</CardDescription>
+                                    </div>
+                                    <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold border ${meta.tone}`}>
+                                        {keys.length} key{keys.length === 1 ? '' : 's'}
+                                    </span>
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                {keys.length === 0 ? (
+                                    <div className="rounded-lg border border-dashed border-neutral-300 p-4 text-sm text-neutral-600">
+                                        No {meta.label} key added yet.
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {keys.map((key) => (
+                                            <div
+                                                key={key.id}
+                                                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border border-neutral-200 p-3"
+                                            >
+                                                <div>
+                                                    <p className="font-medium text-neutral-900">{key.keyName}</p>
+                                                    <p className="text-xs text-neutral-500">
+                                                        Created {new Date(key.createdAt).toLocaleDateString()}
+                                                    </p>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-success-100 text-success-700">
+                                                        Active
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDelete(key.id)}
+                                                        className="inline-flex items-center justify-center rounded-md border border-neutral-200 p-2 text-neutral-600 hover:text-error-600 hover:border-error-300"
+                                                        title={`Delete ${key.keyName}`}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    )
+                })}
+            </div>
         </div>
     )
 }

@@ -107,20 +107,15 @@ const DashboardPage = () => {
         setSubmitting(true)
         try {
             if (pref === 'platform') {
-                if (window.confirm('Are you sure you want to use Platform Keys? This choice will be locked for 3 months.')) {
-                    const response = await api.post('/byok/preference', { preference: pref })
-                    setPreference(pref)
-                    setCreditTier(response?.data?.credits ?? 0)
-                    setShowPrefModal(false)
-                    window.location.reload(); // Force reload to reflect mode and unlock navigation
-                } else {
-                    setSubmitting(false)
-                    return;
-                }
+                const response = await api.post('/byok/preference', { preference: pref })
+                setPreference(pref)
+                setCreditTier(response?.data?.credits ?? 0)
+                setShowPrefModal(false)
+                window.location.reload() // Refresh to unlock all routes tied to selected mode
             } else if (pref === 'byok') {
                 // Just redirect to API Keys page, do not update preference yet
-                setShowPrefModal(false);
-                navigate('/api-keys?mode=byok');
+                setShowPrefModal(false)
+                navigate('/api-keys?mode=byok')
             }
         } finally {
             setSubmitting(false)
@@ -196,41 +191,57 @@ const DashboardPage = () => {
                 {/* Mode Selection Modal (undismissable until choice) */}
                 {showPrefModal && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-                        <Card className="max-w-md w-full mx-4 animate-scale-in">
-                            <CardHeader className="text-center">
+                        <Card className="w-full max-w-2xl mx-4 animate-scale-in">
+                            <CardHeader>
                                 <CardTitle className="text-2xl text-primary-900">Choose Your AI Key Mode</CardTitle>
                                 <CardDescription className="text-base">
-                                    Select how you want to use AI features. You can use platform keys (15 Free / 100 Pro) or BYOK (50 Free / 180 Pro, <strong>3-month lock</strong>). This cannot be skipped.
+                                    One-time setup: pick how AI requests are billed. You can manage details later in API Keys & Preferences.
                                 </CardDescription>
                             </CardHeader>
-                            <CardContent>
-                                <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-yellow-900 text-sm text-left">
-                                    <strong>Note:</strong> Image generation is currently more reliable with BYOK (OpenAI or Gemini). Using platform keys may result in rate limits or errors for image generation. We're working to improve this soon!
-                                </div>
-                                <div className="space-y-3">
-                                    <Button
-                                        variant="primary"
-                                        size="lg"
-                                        fullWidth
-                                        loading={submitting}
+                            <CardContent className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <button
+                                        type="button"
+                                        disabled={submitting}
                                         onClick={() => handleSetPreference('platform')}
+                                        className="text-left rounded-xl border border-primary-200 bg-primary-50 p-5 hover:border-primary-400 transition-colors disabled:opacity-60"
                                     >
-                                        Use Platform Keys
-                                    </Button>
-                                    <Button
-                                        variant="success"
-                                        size="lg"
-                                        fullWidth
-                                        loading={submitting}
+                                        <div className="flex items-center justify-between gap-2">
+                                            <h3 className="text-lg font-semibold text-primary-900">Use Platform Keys</h3>
+                                            <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-primary-600 text-white">
+                                                Recommended Start
+                                            </span>
+                                        </div>
+                                        <p className="mt-2 text-sm text-primary-800">No API key setup required.</p>
+                                        <ul className="mt-3 space-y-1 text-sm text-primary-900">
+                                            <li>15 credits (Free) / 100 credits (Pro)</li>
+                                            <li>Fastest way to begin</li>
+                                            <li>Mode gets locked for 90 days after selection</li>
+                                        </ul>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        disabled={submitting}
                                         onClick={() => handleSetPreference('byok')}
+                                        className="text-left rounded-xl border border-success-200 bg-success-50 p-5 hover:border-success-400 transition-colors disabled:opacity-60"
                                     >
-                                        Bring Your Own Key
-                                    </Button>
+                                        <h3 className="text-lg font-semibold text-success-900">Bring Your Own Key (BYOK)</h3>
+                                        <p className="mt-2 text-sm text-success-800">Use your OpenAI/Gemini/Perplexity keys.</p>
+                                        <ul className="mt-3 space-y-1 text-sm text-success-900">
+                                            <li>50 credits (Free) / 180 credits (Pro)</li>
+                                            <li>More control over provider + spend</li>
+                                            <li>90-day lock starts after your first key is added</li>
+                                        </ul>
+                                    </button>
+                                </div>
+                                <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3 text-sm text-neutral-700">
+                                    Your API keys stay in your account scope. SuiteGenie does not expose raw keys in UI responses after save.
                                 </div>
                             </CardContent>
                             <CardFooter>
-                                <p className="text-xs text-neutral-500 text-center w-full">
-                                    You can change this later, but BYOK is locked for <strong>3 months</strong> after switching.
+                                <p className="text-xs text-neutral-500 w-full">
+                                    This step is required once so we can apply the right credit tier and usage rules.
                                 </p>
                             </CardFooter>
                         </Card>
