@@ -1,106 +1,95 @@
-import { Card, CardContent } from '../ui';
-import { Twitter, Linkedin, FileText, AtSign, Zap } from 'lucide-react';
+import { Card, CardContent } from '../ui'
+import { Twitter, Linkedin, FileText, AtSign, Zap } from 'lucide-react'
 
 const FeaturesSection = () => {
-
   const platforms = [
     {
       icon: <Twitter className="w-8 h-8" />,
-      title: "Tweet Genie",
-      description: "AI-powered tweet and thread generation with smart scheduling. Connect via OAuth, create content in bulk with credits, and track performance with detailed analytics. Scale your X/Twitter presence effortlessly.",
-      color: "from-blue-500 to-blue-600",
-      bgColor: "bg-blue-50",
-      stats: "OAuth integration & bulk creation",
-      features: ["OAuth Connection", "Bulk Content Creation", "Performance Analytics"],
-      url: "https://tweet.suitegenie.in"
+      title: 'Tweet Genie',
+      description:
+        'Platform-native X content engine with strategy-aware generation, queue workflows, and cross-post controls for connected destinations.',
+      color: 'from-blue-500 to-blue-600',
+      stats: 'Strategy plus queue plus X execution',
+      features: ['Thread and single-post workflows', 'Content queue operations', 'Performance analytics'],
+      url: 'https://tweet.suitegenie.in'
     },
     {
       icon: <Linkedin className="w-8 h-8" />,
-      title: "LinkedIn Automator", 
-      description: "Professional networking made effortless! Generate thought-leadership content, schedule industry insights, and build your professional brand.",
-      color: "from-blue-600 to-blue-700",
-      bgColor: "bg-blue-50",
-      stats: "Professional networking made easy",
-      features: ["Professional Content", "Industry Insights", "Brand Building"],
-      url: "https://linkedin.suitegenie.in",
-      ctaLabel: "Access LinkedIn Automator",
-      ctaClass: "bg-blue-700 hover:bg-blue-800 focus:ring-blue-500"
+      title: 'LinkedIn Automator',
+      description:
+        'Professional publishing workflow for thought-leadership, analysis-led ideas, and cross-post integration with the rest of your operation.',
+      color: 'from-blue-600 to-blue-700',
+      stats: 'Professional content ops for LinkedIn',
+      features: ['Thought-leadership generation', 'Cross-post aware routing', 'Performance tracking'],
+      url: 'https://linkedin.suitegenie.in',
+      ctaLabel: 'Access LinkedIn Automator',
+      ctaClass: 'bg-blue-700 hover:bg-blue-800 focus:ring-blue-500'
     },
     {
       icon: <AtSign className="w-8 h-8" />,
-      title: "Social Genie",
-      description: "AI-powered social publishing for Instagram, Threads, and YouTube with scheduling, post history, and analytics in one workspace. Built for creators, teams, and agencies.",
-      color: "from-slate-700 to-slate-900",
-      bgColor: "bg-slate-50",
-      stats: "Threads live now • Instagram + YouTube in development",
-      features: ["Threads Publishing (Live)", "Instagram (In Development)", "YouTube (In Development)", "Post Analytics"],
-      url: "https://meta.suitegenie.in",
-      ctaLabel: "Access Social Genie",
-      ctaClass: "bg-slate-700 hover:bg-slate-800 focus:ring-slate-500"
+      title: 'Social Genie',
+      description:
+        'Meta-oriented workflow for Threads and expanding channels with centralized queue, cross-post controls, and history visibility.',
+      color: 'from-slate-700 to-slate-900',
+      stats: 'Threads live now; Instagram plus YouTube rollout',
+      features: ['Threads publishing (live)', 'Queue and history', 'Cross-post controls', 'Post analytics'],
+      url: 'https://meta.suitegenie.in',
+      ctaLabel: 'Access Social Genie',
+      ctaClass: 'bg-slate-700 hover:bg-slate-800 focus:ring-slate-500'
     },
     {
       icon: <FileText className="w-8 h-8" />,
-      title: "WordPress Automator",
-      description: "Transform your blog into a content powerhouse! Auto-generate SEO-optimized posts, schedule publications, and keep your audience engaged.",
-      color: "from-neutral-600 to-neutral-700",
-      bgColor: "bg-neutral-50",
-      stats: "SEO-optimized blog content",
-      features: ["SEO Optimization", "Auto Publishing", "Content Calendar"]
+      title: 'WordPress Automator',
+      description:
+        'Transform your blog pipeline with SEO-aligned drafting, planned publishing, and reusable long-form workflows.',
+      color: 'from-neutral-600 to-neutral-700',
+      stats: 'Long-form content operations',
+      features: ['SEO-oriented drafting', 'Publishing workflow', 'Content planning']
     }
-  ];
+  ]
 
   return (
     <section className="pt-8 pb-24 bg-gradient-to-br from-neutral-50 via-primary-50/30 to-purple-50/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
         <div className="text-center mb-16 animate-fade-in">
           <div className="flex flex-col items-center justify-center mb-4">
-            {/* <img src="/logo[1].png" alt="SuiteGenie Logo" className="w-16 h-16 mb-2 rounded-xl shadow-lg" /> */}
             <div className="inline-flex items-center gap-2 bg-primary-100 text-primary-700 px-4 py-2 rounded-full text-sm font-medium">
               <Zap className="w-4 h-4" />
-              Powerful AI Tools
+              Product Modules
             </div>
           </div>
           <h2 className="text-4xl md:text-5xl font-bold text-neutral-900 mb-6 tracking-tight">
-            Social Media Management and Automation
+            Product Modules for Full Content Ops
           </h2>
           <p className="text-xl text-neutral-600 max-w-3xl mx-auto leading-relaxed">
-            Automate your content creation, scheduling, and publishing across all your favorite platforms without losing your creative touch.
+            Each module handles channel-native creation and publishing while staying connected to strategy, queueing, and cross-post workflows.
           </p>
         </div>
 
-        {/* Features Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
           {platforms.map((platform, index) => (
-            <Card 
-              key={index} 
-              variant="interactive" 
-              className={`text-center hover-lift animate-fade-in h-full`}
-              style={{animationDelay: `${index * 0.1}s`}}
+            <Card
+              key={platform.title}
+              variant="interactive"
+              className="text-center hover-lift animate-fade-in h-full"
+              style={{ animationDelay: `${index * 0.1}s` }}
             >
               <CardContent className="p-8 h-full flex flex-col">
-                {/* Icon */}
                 <div className={`w-16 h-16 bg-gradient-to-br ${platform.color} rounded-xl flex items-center justify-center mx-auto mb-6 text-white shadow-lg`}>
                   {platform.icon}
                 </div>
-                
-                {/* Title */}
+
                 <h3 className="text-2xl font-bold text-neutral-900 mb-4">{platform.title}</h3>
-                
-                {/* Description */}
-                <p className="text-neutral-600 leading-relaxed mb-6">
-                  {platform.description}
-                </p>
-                
-                {/* Stats */}
+
+                <p className="text-neutral-600 leading-relaxed mb-6">{platform.description}</p>
+
                 <div className="bg-primary-50 rounded-lg p-3 mb-4">
                   <p className="text-sm font-semibold text-primary-700">{platform.stats}</p>
                 </div>
-                
-                {/* Features List */}
+
                 <div className="space-y-2 mt-auto">
-                  {platform.features.map((feature, featureIndex) => (
-                    <div key={featureIndex} className="flex items-center justify-center gap-2 text-sm text-neutral-600">
+                  {platform.features.map((feature) => (
+                    <div key={feature} className="flex items-center justify-center gap-2 text-sm text-neutral-600">
                       <div className="w-1.5 h-1.5 bg-primary-500 rounded-full"></div>
                       <span>{feature}</span>
                     </div>
@@ -123,11 +112,9 @@ const FeaturesSection = () => {
             </Card>
           ))}
         </div>
-
-
       </div>
     </section>
-  );
-};
+  )
+}
 
-export default FeaturesSection;
+export default FeaturesSection

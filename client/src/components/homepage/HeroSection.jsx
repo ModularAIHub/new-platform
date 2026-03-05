@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Card } from '../ui';
-import { Zap, Users, TrendingUp, Star, PlayCircle } from 'lucide-react';
+import { Zap, Users, TrendingUp, PlayCircle } from 'lucide-react';
 import { Twitter, Linkedin, Instagram, Youtube } from 'lucide-react';
 
 const HeroSection = () => {
@@ -30,20 +30,32 @@ const HeroSection = () => {
           {/* Left Content */}
           <div className="text-center lg:text-left animate-fade-in">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-neutral-900 mb-4 leading-tight animate-fade-in animate-stagger-2">
-              AI-powered social media management for creators and agencies with{' '}
+              Not another scheduler. Your{' '}
               <span className="bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">
-                SuiteGenie
+                AI Content + Social Media Ops system
               </span>
             </h1>
             <div className="mb-6">
               <span className="inline-flex items-center gap-2 bg-gradient-to-r from-primary-100 to-purple-100 text-primary-700 font-semibold px-4 py-2 rounded-full shadow-sm text-sm tracking-tight border border-primary-200/50">
                 <Zap className="w-4 h-4" />
-                Automate your content, not your creativity
+                Analyze / Generate / Queue / Cross-post
               </span>
             </div>
             <p className="text-lg sm:text-xl text-neutral-600 mb-10 leading-relaxed max-w-2xl mx-auto lg:mx-0 animate-fade-in animate-stagger-3">
-              Social media management and automation in one place. Generate, schedule, approve, and publish content across major platforms while keeping your brand voice.
+              Analyze your account and competitors, generate platform-specific content, build a queue, and publish where you can win. SuiteGenie helps power users and small agencies move from strategy to execution.
             </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
+              <div className="rounded-xl border border-primary-200 bg-primary-50 px-3 py-2 text-sm text-primary-800 font-medium">
+                Platform-native content first
+              </div>
+              <div className="rounded-xl border border-success-200 bg-success-50 px-3 py-2 text-sm text-success-800 font-medium">
+                Strategy + competitor analysis
+              </div>
+              <div className="rounded-xl border border-secondary-200 bg-secondary-50 px-3 py-2 text-sm text-secondary-800 font-medium">
+                Pro mode team cross-post routing
+              </div>
+            </div>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-6">
               <Button
@@ -54,7 +66,7 @@ const HeroSection = () => {
                 icon={<Zap className="w-5 h-5" />}
                 iconPosition="left"
               >
-                Start Creating for Free
+                Start Free
               </Button>
               <Button
                 variant="outline"
@@ -64,7 +76,7 @@ const HeroSection = () => {
                 icon={<PlayCircle className="w-5 h-5" />}
                 iconPosition="left"
               >
-                See How It Works
+                See Product Flow
               </Button>
             </div>
 
@@ -78,9 +90,9 @@ const HeroSection = () => {
                     </div>
                   ))}
                 </div>
-                <span className="text-sm font-medium text-neutral-600 ml-3">Join 100+ creators worldwide</span>
+                <span className="text-sm font-medium text-neutral-600 ml-3">Used by creators, power users, and small agencies</span>
               </div>
-              <p className="text-sm text-neutral-500">Trusted by creators, marketers, and growing businesses worldwide</p>
+              <p className="text-sm text-neutral-500">Built for teams that want strategic publishing, not just scheduled posts</p>
             </div>
           </div>
 
@@ -128,18 +140,18 @@ const HeroSection = () => {
                     <div className="bg-white/80 rounded-lg p-3 border border-primary-100">
                       <div className="flex items-center gap-2 mb-1">
                         <TrendingUp className="w-4 h-4 text-success-600" />
-                        <span className="text-xs font-medium text-neutral-600">Content Created</span>
+                        <span className="text-xs font-medium text-neutral-600">Strategy Gaps Found</span>
                       </div>
-                      <div className="text-lg font-bold text-neutral-900">---</div>
-                      <div className="text-xs text-success-600">Ready to start</div>
+                      <div className="text-lg font-bold text-neutral-900">12</div>
+                      <div className="text-xs text-success-600">Where you can win</div>
                     </div>
                     <div className="bg-white/80 rounded-lg p-3 border border-primary-100">
                       <div className="flex items-center gap-2 mb-1">
                         <Users className="w-4 h-4 text-primary-600" />
-                        <span className="text-xs font-medium text-neutral-600">Engagement</span>
+                        <span className="text-xs font-medium text-neutral-600">Queued Posts</span>
                       </div>
-                      <div className="text-lg font-bold text-neutral-900">---</div>
-                      <div className="text-xs text-primary-600">Track your growth</div>
+                      <div className="text-lg font-bold text-neutral-900">28</div>
+                      <div className="text-xs text-primary-600">Cross-post ready</div>
                     </div>
                   </div>
 
@@ -158,10 +170,10 @@ const HeroSection = () => {
 
               {/* Floating Elements */}
               <div className="absolute -top-4 -right-4 bg-success-500 text-white px-3 py-1 rounded-full text-xs font-medium shadow-lg animate-bounce">
-                Schedule posts
+                Cross-post ready
               </div>
               <div className="absolute -bottom-4 -left-4 bg-primary-500 text-white px-3 py-1 rounded-full text-xs font-medium shadow-lg animate-pulse">
-                AI generating...
+                Strategy generating...
               </div>
             </div>
           </div>

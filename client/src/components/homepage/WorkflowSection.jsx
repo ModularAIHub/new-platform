@@ -1,64 +1,64 @@
-
 const WorkflowSection = () => {
-  const workflows = [
+  const steps = [
     {
-      icon: (
-        <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-        </svg>
-      ),
-      title: "Content & Image Generation",
-      description: "Generate engaging posts and stunning images for all your channels. SuiteGenie helps you create scroll-stopping content and visuals in seconds. No design or writing skills needed.",
-      bgColor: "bg-blue-100",
-      reverse: false
+      step: '01',
+      title: 'Analyze Your Account',
+      description:
+        'Understand what your audience engages with, what formats perform, and where your current content pipeline breaks.',
+      tone: 'border-blue-200 bg-blue-50 text-blue-900'
     },
     {
-      icon: (
-        <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m4 4h1a2 2 0 002-2v-2a2 2 0 00-2-2h-1m-4 0H7a2 2 0 00-2 2v2a2 2 0 002 2h1" />
-        </svg>
-      ),
-      title: "Engagement Analytics",
-      description: "Track likes, comments, and engagement for every post. See what works, when your audience is most active, and optimize your strategy with real data. No guesswork. Discover the best times to post based on real engagement, so you always publish at the perfect moment.",
-      bgColor: "bg-green-100",
-      reverse: true
+      step: '02',
+      title: 'Analyze Competitors',
+      description:
+        'Map competitor patterns, detect gaps they are missing, then target those gaps where you can excel with better content angles.',
+      tone: 'border-purple-200 bg-purple-50 text-purple-900'
     },
     {
-      icon: (
-        <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-      ),
-      title: "Bulk Generation & Scheduling",
-      description: "Create and schedule dozens of posts in one go. SuiteGenie makes it easy to plan campaigns, fill your calendar, and stay consistent. No more manual posting.",
-      bgColor: "bg-purple-100",
-      reverse: true
+      step: '03',
+      title: 'Generate Platform-Specific Content',
+      description:
+        'Create content for each platform natively first. Then adapt and cross-post with context instead of generic copy-paste output.',
+      tone: 'border-green-200 bg-green-50 text-green-900'
+    },
+    {
+      step: '04',
+      title: 'Queue, Route, and Publish',
+      description:
+        'Push approved content into queue, schedule it safely, and route cross-posts to authorized connected accounts in Pro team workflows.',
+      tone: 'border-orange-200 bg-orange-50 text-orange-900'
     }
-  ];
+  ]
 
   return (
-    <section className="py-24 bg-gradient-to-br from-white via-blue-50 to-purple-50">
+    <section className="py-24 bg-gradient-to-br from-white via-neutral-50 to-primary-50/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-extrabold text-gray-900 mb-4 tracking-tight">How SuiteGenie Works</h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">Automate your content creation, scheduling, and publishing across all your favorite platforms without losing your creative touch.</p>
+        <div className="text-center mb-14">
+          <h2 className="text-4xl font-extrabold text-neutral-900 mb-4 tracking-tight">
+            From Strategy to Posting Edge
+          </h2>
+          <p className="text-xl text-neutral-600 max-w-3xl mx-auto">
+            This is the core workflow: analyze yourself and competitors, identify where they lack, then publish where you can win.
+          </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {workflows.map((workflow, index) => (
-            <div key={index} className={`bg-white/80 border border-blue-100 p-10 rounded-3xl text-center hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 flex flex-col items-center`}>
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-xl flex items-center justify-center mb-6 shadow-md">
-                {workflow.icon}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {steps.map((item) => (
+            <div
+              key={item.step}
+              className={`rounded-2xl border p-6 shadow-sm ${item.tone}`}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-sm font-semibold tracking-wide opacity-80">Step {item.step}</span>
               </div>
-              <h3 className="text-2xl font-bold text-blue-900 mb-4">{workflow.title}</h3>
-              <p className="text-gray-700 leading-relaxed text-lg">
-                {workflow.description}
-              </p>
+              <h3 className="text-2xl font-bold mb-3">{item.title}</h3>
+              <p className="text-base leading-relaxed opacity-90">{item.description}</p>
             </div>
           ))}
         </div>
       </div>
     </section>
-  );
-};
+  )
+}
 
-export default WorkflowSection;
+export default WorkflowSection
