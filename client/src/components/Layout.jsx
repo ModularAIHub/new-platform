@@ -5,6 +5,7 @@ import {
     Home,
     CreditCard,
     Key,
+    Building2,
     Settings,
     Menu,
     X,
@@ -20,7 +21,8 @@ const Layout = ({ children }) => {
     const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Credits', href: '/credits', icon: CreditCard },
-    { name: 'API Keys', href: '/api-keys', icon: Key },
+    { name: 'API Keys & Preferences', href: '/api-keys', icon: Key },
+    { name: 'Agency Hub', href: '/agency', icon: Building2 },
     // { name: 'Analytics', href: '/analytics', icon: Settings, badge: 'New' },
     // { name: 'Schedule', href: '/schedule', icon: Settings },
     // { name: 'Activity', href: '/activity', icon: Settings },
@@ -71,9 +73,9 @@ const Layout = ({ children }) => {
                             <div className="ml-3">
                                 <div className="flex items-center gap-2">
                                     <p className="text-sm font-medium text-gray-700">{user?.name}</p>
-                                    {user?.planType === 'pro' && (
+                                    {(user?.planType === 'pro' || user?.planType === 'agency') && (
                                         <span className="px-2 py-0.5 text-[10px] font-semibold bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-full">
-                                            PRO
+                                            {user?.planType === 'agency' ? 'AGENCY' : 'PRO'}
                                         </span>
                                     )}
                                 </div>
@@ -123,9 +125,9 @@ const Layout = ({ children }) => {
                             <div className="ml-3">
                                 <div className="flex items-center gap-2">
                                     <p className="text-sm font-medium text-gray-700">{user?.name}</p>
-                                    {user?.planType === 'pro' && (
+                                    {(user?.planType === 'pro' || user?.planType === 'agency') && (
                                         <span className="px-2 py-0.5 text-[10px] font-semibold bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-full">
-                                            PRO
+                                            {user?.planType === 'agency' ? 'AGENCY' : 'PRO'}
                                         </span>
                                     )}
                                 </div>
@@ -161,9 +163,9 @@ const Layout = ({ children }) => {
                                 <span>
                                     Credits: <span className="font-medium text-gray-900">{user?.creditsRemaining || 0}</span>
                                 </span>
-                                {user?.planType === 'pro' && (
+                                {(user?.planType === 'pro' || user?.planType === 'agency') && (
                                     <span className="px-2 py-0.5 text-xs font-semibold bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-full">
-                                        PRO
+                                        {user?.planType === 'agency' ? 'AGENCY' : 'PRO'}
                                     </span>
                                 )}
                             </div>

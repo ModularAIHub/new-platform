@@ -202,10 +202,10 @@ const ApiKeysPage = () => {
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 relative z-10">
                     <div>
                         <div className="flex items-center gap-2">
-                            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">API Key Preference</h1>
+                            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">API Keys & Preferences</h1>
                             <button className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 font-semibold" onClick={() => setShowByokInfo(true)}>What is BYOK?</button>
                         </div>
-                        <p className="text-gray-500 mt-2 text-lg">Choose your API key mode. <b>Platform</b>: 15 credits (Free) / 100 (Pro). <b>BYOK</b>: 50 credits (Free) / 180 (Pro), 90-day lock.</p>
+                        <p className="text-gray-500 mt-2 text-lg">Manage your AI key preference and provider keys in one place. <b>Platform</b>: 15 credits (Free) / 100 (Pro). <b>BYOK</b>: 50 credits (Free) / 180 (Pro), 90-day lock.</p>
                         
                         {/* BYOK Mode Guide Banner */}
                         {searchParams.get('mode') === 'byok' && preference !== 'byok' && (
