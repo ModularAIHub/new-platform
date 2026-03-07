@@ -77,7 +77,7 @@ export const FirebaseProvider = ({ children }) => {
         const type = payload.data?.type;
 
         if (type === 'post_failed') {
-          toast.error(body || title || 'A scheduled post failed');
+          toast.error(body || title || 'An automated workflow failed');
         } else if (type === 'bulk_complete') {
           toast.success(body || title || 'Bulk generation complete');
         } else if (type === 'engagement_spike') {

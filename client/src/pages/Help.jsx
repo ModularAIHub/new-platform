@@ -7,7 +7,7 @@ const HelpPage = () => (
       <title>Help Center - SuiteGenie</title>
       <meta
         name="description"
-        content="Get fast help with SuiteGenie setup, BYOK, team mode, scheduling, cross-posting, and analytics."
+        content="Get fast help with SuiteGenie setup, BYOK, team mode, flow automation, cross-posting, and analytics."
       />
       <link rel="canonical" href="https://suitegenie.in/help" />
       <meta property="og:title" content="Help Center - SuiteGenie" />
@@ -79,24 +79,26 @@ const HelpPage = () => (
           <h2 className="text-xl font-bold mb-3 text-primary-700">Popular Workflows</h2>
           <ul className="space-y-2">
             <li><a href="/docs#3-team-mode" className="text-blue-600 underline font-medium">Set up team mode</a></li>
-            <li><a href="/docs#5-bulk-generation-and-scheduling" className="text-blue-600 underline font-medium">Use bulk generation and scheduling</a></li>
+            <li><a href="/docs#5-bulk-generation-and-automation" className="text-blue-600 underline font-medium">Use bulk generation and automation</a></li>
             <li><a href="/docs#6-cross-posting" className="text-blue-600 underline font-medium">Understand cross-posting</a></li>
           </ul>
         </div>
       </div>
 
-      <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm mb-10">
-        <h2 className="text-xl font-bold mb-3 text-primary-700">Common Topics</h2>
-        <ul className="space-y-2">
-          <li>Account connection warnings and reconnect flows</li>
-          <li>Team mode and shared account setup</li>
-          <li>Cross-post target selection</li>
-          <li>Why a post appears in history or scheduled views</li>
-          <li>How analytics relates to the selected account context</li>
-        </ul>
-        <p className="mt-4 text-sm">
-          For the full explanation, go to <a href="/docs#8-troubleshooting" className="text-blue-600 underline font-medium">Troubleshooting in Docs</a>.
-        </p>
+      <div className="mb-6 shadow-sm border border-gray-100">
+        <div className="p-6">
+          <h2 className="text-xl font-bold text-gray-800 mb-3 flex items-center gap-2">
+            <span className="text-blue-500">📊</span> Missing Features or History
+          </h2>
+          <ul className="list-disc pl-5 space-y-2 text-gray-700">
+            <li>Where to find cross-posting settings per genie</li>
+            <li>Why a post appears in history or automated views</li>
+            <li>How analytics relates to the selected account context</li>
+          </ul>
+          <p className="mt-4 text-sm">
+            For the full explanation, go to <a href="/docs#8-troubleshooting" className="text-blue-600 underline font-medium">Troubleshooting in Docs</a>.
+          </p>
+        </div>
       </div>
 
       <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm mb-10">

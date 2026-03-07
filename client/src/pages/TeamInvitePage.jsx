@@ -149,7 +149,7 @@ const TeamInvitePage = () => {
         <>
             <PublicSeo
                 title={`Join ${invitation?.team_name || 'a Team'} on SuiteGenie`}
-                description="Accept your SuiteGenie team invitation and collaborate on social media strategy, scheduling, publishing, and analytics."
+                description="Accept your SuiteGenie team invitation and collaborate on social media strategy, automating, publishing, and analytics."
                 canonicalPath={canonicalPath}
                 noIndex
             />
@@ -182,7 +182,7 @@ const TeamInvitePage = () => {
                                     <li>Access to shared social accounts</li>
                                     <li>Collaborative content creation</li>
                                     <li>Team analytics and insights</li>
-                                    <li>Shared scheduling and posting</li>
+                                    <li>Shared automating and posting</li>
                                 </ul>
                             </div>
                         </div>

@@ -2,11 +2,11 @@ import { useNavigate } from 'react-router-dom';
 import { X, Crown, Check, ArrowRight, Sparkles } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
-const UpgradePrompt = ({ 
-  isOpen, 
-  onClose, 
-  feature, 
-  title = "Upgrade to Pro", 
+const UpgradePrompt = ({
+  isOpen,
+  onClose,
+  feature,
+  title = "Upgrade to Pro",
   description = "Unlock powerful features to grow your social media presence",
   benefits = null,
   onUpgrade = null,
@@ -17,8 +17,8 @@ const UpgradePrompt = ({
 
   const proFeatures = [
     "Unlimited automated posts",
-    "Advanced AI content generation", 
-    "Smart scheduling optimization",
+    "Advanced AI content generation",
+    "Smart automation flows",
     "Detailed analytics & insights",
     "Multi-account management (up to 8)",
     "Bulk content generation",
@@ -107,7 +107,7 @@ const UpgradePrompt = ({
             {isUpgrading ? 'Opening Checkout...' : user ? 'Upgrade to Pro' : 'Sign Up & Upgrade to Pro'}
             <ArrowRight className="h-4 w-4 ml-2" />
           </button>
-          
+
           <button
             onClick={onClose}
             className="w-full text-gray-600 py-2 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors"

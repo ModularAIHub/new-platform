@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-02T20:28:58.528Z",
+  "generatedAt": "2026-03-07T20:06:58.597Z",
   "categories": {
     "meta": {
       "all": {
@@ -416,7 +416,7 @@
         "linkedin genie",
         "analytics"
       ],
-      "excerpt": "We shipped a reliability update focused on team mode, account-aware cross-posting, and making scheduled or mirrored posts show up in the right place across SuiteGenie apps.",
+      "excerpt": "We shipped a reliability update focused on team mode, account-aware cross-posting, and making automated or mirrored posts show up in the right place across SuiteGenie apps.",
       "featuredImage": {
         "url": "/images/blog/suitegenie-launch-hero.svg",
         "alt": "SuiteGenie team mode and cross-posting visibility update"
@@ -439,7 +439,7 @@
     },
     {
       "id": "cross-posting-scheduling-reliability-roundup-feb-2026",
-      "title": "SuiteGenie Update: Cross-Posting, Scheduling Reliability, and Analytics Visibility Across X, LinkedIn, and Threads",
+      "title": "SuiteGenie Update: Cross-Posting, Route Reliability, and Analytics Visibility",
       "slug": "cross-posting-scheduling-reliability-roundup-feb-2026",
       "category": "updates",
       "tags": [
@@ -448,13 +448,13 @@
         "tweet genie",
         "linkedin genie",
         "social genie",
-        "scheduling",
+        "automated-flows",
         "analytics"
       ],
-      "excerpt": "A major reliability-focused update across Tweet Genie, LinkedIn Genie, and Social Genie: better cross-posting parity, timezone-safe schedules, stronger session persistence, and clearer analytics tracking.",
+      "excerpt": "A deep dive into this week's reliability updates: better LinkedIn cross-posting, tighter automated routing execution rates, and cleaner history visibility across all Genie apps.",
       "featuredImage": {
         "url": "/images/blog/suitegenie-launch-hero.svg",
-        "alt": "SuiteGenie cross-posting and scheduling reliability update across X LinkedIn and Threads"
+        "alt": "SuiteGenie cross-posting and automation reliability update across X LinkedIn and Threads"
       },
       "author": {
         "name": "Kanishk Saraswat",
@@ -644,10 +644,10 @@
         "tweet genie",
         "linkedin genie",
         "strategy builder",
-        "bulk scheduling",
+        "bulk automation",
         "team collaboration"
       ],
-      "excerpt": "A complete roundup of SuiteGenie features shipped across Twitter, LinkedIn, teams, bulk workflows, analytics, and reliability.",
+      "excerpt": "A roundup of new features added to SuiteGenie in February, including Team Mode, enhanced analytics, and better bulk automation workflows.",
       "featuredImage": {
         "url": "/images/blog/suitegenie-launch-hero.svg",
         "alt": "SuiteGenie product update board with shipped features list"
@@ -712,10 +712,10 @@
         "approval workflow",
         "multi-account"
       ],
-      "excerpt": "See a practical agency workflow for planning, approvals, bulk generation, and scheduling across multiple client accounts.",
+      "excerpt": "See a practical agency workflow for planning, approvals, bulk generation, and automated cross-routing across multiple client accounts.",
       "featuredImage": {
         "url": "/images/blog/suitegenie-launch-hero.svg",
-        "alt": "Agency team content operations board with approvals and scheduling lanes"
+        "alt": "Agency team content operations board with approvals and automation lanes"
       },
       "author": {
         "name": "Kanishk Saraswat",
@@ -871,7 +871,7 @@
         "product",
         "strategy",
         "byok",
-        "bulk scheduling"
+        "bulk automation"
       ],
       "excerpt": "From an anime passion project to a full AI-powered social media platform - here's the real story behind SuiteGenie and why we built it the way we did.",
       "featuredImage": {

@@ -10,7 +10,7 @@ const SignupPage = () => {
     <>
       <PublicSeo
         title="Sign Up | SuiteGenie"
-        description="Create your SuiteGenie account to get started with AI social media automation, BYOK, analytics, and scheduling."
+        description="Create your SuiteGenie account to get started with AI social media automation, BYOK, analytics, and automation."
         canonicalPath="/register"
         noIndex
       />

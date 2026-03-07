@@ -68,18 +68,18 @@ const PrivacyPage = () => {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">1. Introduction</h2>
               <p className="text-gray-700 mb-4">
-                SuiteGenie ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains 
+                SuiteGenie ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains
                 how we collect, use, disclose, and safeguard your information when you use our Service.
               </p>
               <p className="text-gray-700 mb-4">
-                Please read this privacy policy carefully. If you do not agree with the terms of this privacy policy, 
+                Please read this privacy policy carefully. If you do not agree with the terms of this privacy policy,
                 please do not access the Service.
               </p>
             </section>
 
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">2. Information We Collect</h2>
-              
+
               <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-6">Personal Information</h3>
               <p className="text-gray-700 mb-4">
                 We collect information that you provide directly to us, including:
@@ -105,7 +105,7 @@ const PrivacyPage = () => {
 
               <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-6">Content Information</h3>
               <p className="text-gray-700 mb-4">
-                We store the content you create, schedule, and publish through the Service, including:
+                We store the content you create, automate, and publish through the Service, including:
               </p>
               <ul className="list-disc pl-6 text-gray-700 mb-4 space-y-2">
                 <li>Social media posts and drafts</li>
@@ -138,14 +138,14 @@ const PrivacyPage = () => {
                 We do not sell your personal information. We may share your information in the following circumstances:
               </p>
               <ul className="list-disc pl-6 text-gray-700 mb-4 space-y-2">
-                <li><strong>Service Providers:</strong> We share information with third-party vendors who perform services 
-                on our behalf (e.g., payment processing, hosting, analytics)</li>
-                <li><strong>Third-Party Platforms:</strong> When you connect social media accounts, we share necessary 
-                information with those platforms to publish content on your behalf</li>
-                <li><strong>AI Service Providers:</strong> When using Platform Keys, your content prompts are sent to 
-                AI providers (OpenAI, Anthropic, etc.) to generate content</li>
-                <li><strong>Legal Requirements:</strong> We may disclose information if required by law or in response 
-                to valid legal requests</li>
+                <li><strong>Service Providers:</strong> We share information with third-party vendors who perform services
+                  on our behalf (e.g., payment processing, hosting, analytics)</li>
+                <li><strong>Third-Party Platforms:</strong> When you connect social media accounts, we share necessary
+                  information with those platforms to publish content on your behalf</li>
+                <li><strong>AI Service Providers:</strong> When using Platform Keys, your content prompts are sent to
+                  AI providers (OpenAI, Anthropic, etc.) to generate content</li>
+                <li><strong>Legal Requirements:</strong> We may disclose information if required by law or in response
+                  to valid legal requests</li>
                 <li><strong>Business Transfers:</strong> In connection with a merger, acquisition, or sale of assets</li>
               </ul>
             </section>
@@ -164,7 +164,7 @@ const PrivacyPage = () => {
                 <li>Secure data centers with physical and network security</li>
               </ul>
               <p className="text-gray-700 mb-4">
-                However, no method of transmission over the Internet or electronic storage is 100% secure. We cannot 
+                However, no method of transmission over the Internet or electronic storage is 100% secure. We cannot
                 guarantee absolute security of your information.
               </p>
             </section>
@@ -172,8 +172,8 @@ const PrivacyPage = () => {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">6. Data Retention</h2>
               <p className="text-gray-700 mb-4">
-                We retain your personal information for as long as necessary to provide the Service and fulfill the 
-                purposes outlined in this Privacy Policy. When you delete your account, we will delete or anonymize 
+                We retain your personal information for as long as necessary to provide the Service and fulfill the
+                purposes outlined in this Privacy Policy. When you delete your account, we will delete or anonymize
                 your personal information, except where we are required to retain it for legal or regulatory purposes.
               </p>
             </section>
@@ -208,7 +208,7 @@ const PrivacyPage = () => {
                 <li>Provide personalized content and features</li>
               </ul>
               <p className="text-gray-700 mb-4">
-                You can control cookies through your browser settings. However, disabling cookies may affect the 
+                You can control cookies through your browser settings. However, disabling cookies may affect the
                 functionality of the Service.
               </p>
             </section>
@@ -232,8 +232,8 @@ const PrivacyPage = () => {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">10. Children's Privacy</h2>
               <p className="text-gray-700 mb-4">
-                The Service is not intended for children under 13 years of age. We do not knowingly collect personal 
-                information from children under 13. If you believe we have collected information from a child under 13, 
+                The Service is not intended for children under 13 years of age. We do not knowingly collect personal
+                information from children under 13. If you believe we have collected information from a child under 13,
                 please contact us immediately.
               </p>
             </section>
@@ -241,8 +241,8 @@ const PrivacyPage = () => {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">11. International Data Transfers</h2>
               <p className="text-gray-700 mb-4">
-                Your information may be transferred to and processed in countries other than your country of residence. 
-                These countries may have data protection laws different from your jurisdiction. We ensure appropriate 
+                Your information may be transferred to and processed in countries other than your country of residence.
+                These countries may have data protection laws different from your jurisdiction. We ensure appropriate
                 safeguards are in place to protect your information.
               </p>
             </section>
@@ -250,8 +250,8 @@ const PrivacyPage = () => {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">12. Changes to This Privacy Policy</h2>
               <p className="text-gray-700 mb-4">
-                We may update this Privacy Policy from time to time. We will notify you of any material changes by 
-                posting the new Privacy Policy on this page and updating the "Last updated" date. We encourage you 
+                We may update this Privacy Policy from time to time. We will notify you of any material changes by
+                posting the new Privacy Policy on this page and updating the "Last updated" date. We encourage you
                 to review this Privacy Policy periodically.
               </p>
             </section>

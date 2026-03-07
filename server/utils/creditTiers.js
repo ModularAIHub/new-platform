@@ -4,6 +4,7 @@
 export const CREDIT_TIERS = Object.freeze({
   free: Object.freeze({ platform: 15, byok: 50 }),
   pro: Object.freeze({ platform: 100, byok: 180 }),
+  agency: Object.freeze({ platform: 100, byok: 180 }),
   enterprise: Object.freeze({ platform: 500, byok: 1000 })
 });
 

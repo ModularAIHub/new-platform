@@ -251,7 +251,7 @@ class WorkspaceController {
                 })),
                 socialAccounts: {
                     connected: parseInt(accountsResult.rows[0].count),
-                    limit: workspace.plan_type === 'pro' ? 8 : workspace.plan_type === 'enterprise' ? 25 : 2
+                    limit: ['pro', 'agency'].includes(workspace.plan_type) ? 8 : workspace.plan_type === 'enterprise' ? 25 : 2
                 }
             });
             

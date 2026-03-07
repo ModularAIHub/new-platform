@@ -21,6 +21,15 @@ const PLAN_LIMITS = {
         support: 'priority_email',
         teamMembers: 5 // max team size including owner
     },
+    agency: {
+        platformCredits: CREDIT_TIERS.agency.platform,
+        byokCredits: CREDIT_TIERS.agency.byok,
+        profilesPerPlatform: 8,
+        totalSocialAccounts: 8,
+        features: ['basic_ai_generation', 'image_generation', 'built_in_keys', 'own_keys', 'team_collaboration', 'bulk_scheduling', 'advanced_analytics', 'priority_support', 'workspace_management', 'approval_workflows', 'white_label_reporting'],
+        support: 'priority',
+        teamMembers: 6
+    },
     enterprise: {
         platformCredits: CREDIT_TIERS.enterprise.platform,
         byokCredits: CREDIT_TIERS.enterprise.byok,
@@ -31,6 +40,8 @@ const PLAN_LIMITS = {
         teamMembers: 15
     }
 };
+
+const PUBLIC_PLAN_ORDER = ['free', 'pro', 'agency'];
 
 function isTransientDbError(error) {
     const code = error?.code;
@@ -63,6 +74,7 @@ function getRequiredPlanForFeature(featureName) {
 function getPlanPrice(planType) {
     if (planType === 'free') return 0;
     if (planType === 'pro') return 399;
+    if (planType === 'agency') return 0;
     return 1100;
 }
 
@@ -105,7 +117,7 @@ class PlansController {
             // Default to 'free' if plan_type is null
             const userPlanType = PLAN_LIMITS[user.plan_type] ? user.plan_type : 'free';
             
-            // Check if user is part of a Pro/Enterprise team
+            // Check if user is part of a paid team
             let teamPlanType = null;
             if (user.current_team_id) {
                 const teamResult = await query('SELECT plan_type FROM teams WHERE id = $1', [user.current_team_id]);
@@ -115,7 +127,7 @@ class PlansController {
             }
             
             // Use the higher plan type (individual vs team)
-            const effectivePlanType = teamPlanType && (teamPlanType === 'pro' || teamPlanType === 'enterprise') 
+            const effectivePlanType = teamPlanType && (teamPlanType === 'pro' || teamPlanType === 'agency' || teamPlanType === 'enterprise') 
                 ? teamPlanType 
                 : userPlanType;
             
@@ -137,7 +149,7 @@ class PlansController {
                     apiKeyPreference: user.api_key_preference || null,
                     individualPlan: userPlanType,
                     teamPlan: teamPlanType,
-                    hasTeamAccess: teamPlanType && (teamPlanType === 'pro' || teamPlanType === 'enterprise')
+                    hasTeamAccess: teamPlanType && (teamPlanType === 'pro' || teamPlanType === 'agency' || teamPlanType === 'enterprise')
                 },
                 limits: {
                     profilesPerPlatform: planConfig.profilesPerPlatform,
@@ -146,7 +158,7 @@ class PlansController {
                 },
                 features: planConfig.features,
                 support: planConfig.support,
-                availablePlans: Object.keys(PLAN_LIMITS).map((planType) => buildPlanPayload(planType))
+                availablePlans: PUBLIC_PLAN_ORDER.map((planType) => buildPlanPayload(planType))
             });
         } catch (error) {
             if (isTransientDbError(error)) {
@@ -178,7 +190,7 @@ class PlansController {
                     },
                     features: planConfig.features,
                     support: planConfig.support,
-                    availablePlans: Object.keys(PLAN_LIMITS).map((planType) => buildPlanPayload(planType))
+                    availablePlans: PUBLIC_PLAN_ORDER.map((planType) => buildPlanPayload(planType))
                 });
             }
 
@@ -192,6 +204,12 @@ class PlansController {
             const { planType, isTrial } = req.body;
             if (!PLAN_LIMITS[planType]) {
                 return res.status(400).json({ error: 'Invalid plan type', code: 'INVALID_PLAN_TYPE' });
+            }
+            if (planType === 'agency') {
+                return res.status(402).json({
+                    error: 'Agency upgrades are manual-only right now. Please contact admin.',
+                    code: 'MANUAL_AGENCY_UPGRADE_REQUIRED'
+                });
             }
             if (!isTrial) {
                 return res.status(402).json({
@@ -270,7 +288,7 @@ class PlansController {
         try {
             const result = await query('SELECT plan_type FROM users WHERE id = $1', [req.user.id]);
             const currentPlan = result.rows.length > 0 ? result.rows[0].plan_type : 'free';
-            const comparison = Object.keys(PLAN_LIMITS).map((planType) => {
+            const comparison = PUBLIC_PLAN_ORDER.map((planType) => {
                 const plan = PLAN_LIMITS[planType];
                 return {
                     type: planType,
@@ -286,7 +304,7 @@ class PlansController {
                     support: plan.support,
                     teamMembers: plan.teamMembers || 0,
                     isCurrentPlan: planType === currentPlan,
-                    canUpgrade: planType !== currentPlan && planType !== 'free'
+                    canUpgrade: planType !== currentPlan && planType !== 'free' && planType !== 'agency'
                 };
             });
             res.json({ currentPlan, comparison });

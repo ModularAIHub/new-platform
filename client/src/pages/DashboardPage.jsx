@@ -132,7 +132,7 @@ const DashboardPage = () => {
             ctaLabel: 'Open Tweet Genie',
             features: [
                 'Single posts + thread chains',
-                'Reliable scheduling and timezone support',
+                'Reliable flow automation and timezone support',
                 'Cross-post routing and history'
             ]
         },
@@ -157,7 +157,7 @@ const DashboardPage = () => {
             features: [
                 'Threads-first publishing workflow',
                 'Cross-post controls for X and LinkedIn',
-                'Media upload and scheduled publishing'
+                'Media upload and automated publishing'
             ]
         },
         {
@@ -357,13 +357,13 @@ const DashboardPage = () => {
                                     />
                                 )}
                                 <QuickAction
-                                    label="Bulk Scheduling"
-                                    description={hasFeatureAccess('bulk_scheduling') ? "Schedule multiple posts at once" : "Pro feature - Schedule in bulk"}
+                                    label="Bulk Automation"
+                                    description={hasFeatureAccess('bulk_scheduling') ? "Automate multiple posts at once" : "Pro feature - Automate in bulk"}
                                     icon={<Calendar className="w-5 h-5" />}
                                     color={hasFeatureAccess('bulk_scheduling') ? "primary" : "secondary"}
                                     onClick={() => handleRestrictedFeature('bulk_scheduling', () => {
-                                        // TODO: Navigate to bulk scheduling page
-                                        alert('Bulk scheduling feature coming soon!');
+                                        // TODO: Navigate to bulk automation page
+                                        alert('Bulk automation feature coming soon!');
                                     })}
                                     isPro={!hasFeatureAccess('bulk_scheduling')}
                                 />
@@ -388,7 +388,7 @@ const DashboardPage = () => {
                                 {userPlan?.type === 'free' && (
                                     <QuickAction
                                         label="Upgrade to Pro Plan"
-                                        description="Complete secure checkout for Rs 399/month"
+                                        description="Complete secure checkout for ₹399/month (~$4.80)"
                                         icon={<Crown className="w-5 h-5" />}
                                         color="warning"
                                         onClick={() => navigate('/plans?intent=pro')}
@@ -409,26 +409,26 @@ const DashboardPage = () => {
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                                                        <div className="space-y-4">
-                                                                {/* TODO: Replace with real activity data from backend */}
-                                                                {Array.isArray(user?.activity) && user.activity.length > 0 ? (
-                                                                    user.activity.map((item, idx) => (
-                                                                        <RecentActivity
-                                                                            key={idx}
-                                                                            label={item.label}
-                                                                            source={item.source}
-                                                                            time={item.time}
-                                                                            status={item.status}
-                                                                        />
-                                                                    ))
-                                                                ) : (
-                                                                    <div className="text-center py-8 text-neutral-500">
-                                                                        <Calendar className="h-10 w-10 mx-auto mb-2 text-primary-200" />
-                                                                        <div className="font-semibold mb-1">No recent activity yet</div>
-                                                                        <div className="text-sm">Your latest actions and updates will appear here.</div>
-                                                                    </div>
-                                                                )}
-                                                        </div>
+                            <div className="space-y-4">
+                                {/* TODO: Replace with real activity data from backend */}
+                                {Array.isArray(user?.activity) && user.activity.length > 0 ? (
+                                    user.activity.map((item, idx) => (
+                                        <RecentActivity
+                                            key={idx}
+                                            label={item.label}
+                                            source={item.source}
+                                            time={item.time}
+                                            status={item.status}
+                                        />
+                                    ))
+                                ) : (
+                                    <div className="text-center py-8 text-neutral-500">
+                                        <Calendar className="h-10 w-10 mx-auto mb-2 text-primary-200" />
+                                        <div className="font-semibold mb-1">No recent activity yet</div>
+                                        <div className="text-sm">Your latest actions and updates will appear here.</div>
+                                    </div>
+                                )}
+                            </div>
                         </CardContent>
                     </Card>
                 </div>

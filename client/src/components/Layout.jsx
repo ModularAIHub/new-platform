@@ -19,14 +19,14 @@ const Layout = ({ children }) => {
     const [sidebarOpen, setSidebarOpen] = useState(false)
 
     const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: Home },
-    { name: 'Credits', href: '/credits', icon: CreditCard },
-    { name: 'API Keys & Preferences', href: '/api-keys', icon: Key },
-    { name: 'Agency Hub', href: '/agency', icon: Building2 },
-    // { name: 'Analytics', href: '/analytics', icon: Settings, badge: 'New' },
-    // { name: 'Schedule', href: '/schedule', icon: Settings },
-    // { name: 'Activity', href: '/activity', icon: Settings },
-    { name: 'Settings', href: '/settings', icon: Settings },
+        { name: 'Dashboard', href: '/dashboard', icon: Home },
+        { name: 'Credits', href: '/credits', icon: CreditCard },
+        { name: 'API Keys & Preferences', href: '/api-keys', icon: Key },
+        { name: 'Agency Hub', href: '/agency', icon: Building2 },
+        // { name: 'Analytics', href: '/analytics', icon: Settings, badge: 'New' },
+        // { name: 'Automate', href: '/automate', icon: Settings },
+        // { name: 'Activity', href: '/activity', icon: Settings },
+        { name: 'Settings', href: '/settings', icon: Settings },
     ]
 
     const isActive = (path) => location.pathname === path
@@ -54,8 +54,8 @@ const Layout = ({ children }) => {
                                     key={item.name}
                                     to={item.href}
                                     className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${isActive(item.href)
-                                            ? 'bg-primary-100 text-primary-900'
-                                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                        ? 'bg-primary-100 text-primary-900'
+                                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                                         }`}
                                     onClick={() => setSidebarOpen(false)}
                                 >
@@ -107,8 +107,8 @@ const Layout = ({ children }) => {
                                     key={item.name}
                                     to={item.href}
                                     className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${isActive(item.href)
-                                            ? 'bg-primary-100 text-primary-900'
-                                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                        ? 'bg-primary-100 text-primary-900'
+                                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                                         }`}
                                 >
                                     <Icon className="mr-3 h-5 w-5" />

@@ -29,7 +29,7 @@ const TeamPage = () => {
     const { hasFeatureAccess, userPlan, refreshPlanInfo, loading: planLoading } = usePlanAccess();
     const { user, refreshUser } = useAuth();
     const [hasRetriedCreate, setHasRetriedCreate] = useState(false);
-    
+
     // LinkedIn account selection modal state
     const [showLinkedInSelection, setShowLinkedInSelection] = useState(false);
     const [linkedInSelectionData, setLinkedInSelectionData] = useState(null);
@@ -188,8 +188,12 @@ const TeamPage = () => {
     };
 
     useEffect(() => {
+        if (userPlan?.type === 'agency' || userPlan?.individualPlan === 'agency') {
+            window.location.href = '/agency';
+            return;
+        }
         fetchTeam();
-    }, []);
+    }, [userPlan?.type, userPlan?.individualPlan]);
 
     useEffect(() => {
         if (team) {
@@ -201,81 +205,81 @@ const TeamPage = () => {
     }, [team]);
 
     const connectTwitterOAuth1 = async () => {
-    setConnecting('twitter-oauth1');
-    try {
-        // Debug logs
-        console.log('[DEBUG] connectTwitterOAuth1: team', team);
-        console.log('[DEBUG] connectTwitterOAuth1: userPermissions', userPermissions);
+        setConnecting('twitter-oauth1');
+        try {
+            // Debug logs
+            console.log('[DEBUG] connectTwitterOAuth1: team', team);
+            console.log('[DEBUG] connectTwitterOAuth1: userPermissions', userPermissions);
 
-        // Robust teamId/userId extraction
-        const teamId = team?.id || userPermissions?.team_id || userPermissions?.teamId;
-        let userId = user?.id || userPermissions?.user_id || userPermissions?.userId || team?.user_id;
+            // Robust teamId/userId extraction
+            const teamId = team?.id || userPermissions?.team_id || userPermissions?.teamId;
+            let userId = user?.id || userPermissions?.user_id || userPermissions?.userId || team?.user_id;
 
-        // Fallback: try to get from team members
-        if (!userId && team?.members) {
-            const currentMember = team.members.find(
-                m => m.role === userPermissions?.role && m.user_id
-            );
-            userId = currentMember?.user_id || currentMember?.userid;
-        }
-
-        // Fallback: try to get from API if not found
-        if (!userId) {
-            try {
-                const userResponse = await api.get('/auth/me');
-                userId = userResponse.data?.id || userResponse.data?.user?.id;
-                console.log('[debug] Got userId from /auth/me:', userId);
-            } catch (err) {
-                console.error('Failed to get user from /auth/me:', err);
+            // Fallback: try to get from team members
+            if (!userId && team?.members) {
+                const currentMember = team.members.find(
+                    m => m.role === userPermissions?.role && m.user_id
+                );
+                userId = currentMember?.user_id || currentMember?.userid;
             }
-        }
 
-        // Final fallback: try to get from localStorage
-        if (!userId) {
-            try {
-                userId = localStorage.getItem('userId');
-                if (userId) {
-                    console.log('[debug] Got userId from localStorage:', userId);
+            // Fallback: try to get from API if not found
+            if (!userId) {
+                try {
+                    const userResponse = await api.get('/auth/me');
+                    userId = userResponse.data?.id || userResponse.data?.user?.id;
+                    console.log('[debug] Got userId from /auth/me:', userId);
+                } catch (err) {
+                    console.error('Failed to get user from /auth/me:', err);
                 }
-            } catch (err) {
-                console.error('Failed to get userId from localStorage:', err);
             }
-        }
 
-        const returnUrl = window.location.origin + '/team';
-        console.log('[debug] Attempting OAuth1 with:', { teamId, userId, team, userPermissions });
+            // Final fallback: try to get from localStorage
+            if (!userId) {
+                try {
+                    userId = localStorage.getItem('userId');
+                    if (userId) {
+                        console.log('[debug] Got userId from localStorage:', userId);
+                    }
+                } catch (err) {
+                    console.error('Failed to get userId from localStorage:', err);
+                }
+            }
 
-        if (!teamId) {
-            alert('No team found. Please refresh the page.');
+            const returnUrl = window.location.origin + '/team';
+            console.log('[debug] Attempting OAuth1 with:', { teamId, userId, team, userPermissions });
+
+            if (!teamId) {
+                alert('No team found. Please refresh the page.');
+                setConnecting(null);
+                return;
+            }
+            if (!userId) {
+                alert('Could not determine user ID. Please check console and backend logs.');
+                setConnecting(null);
+                return;
+            }
+
+            const apiBase =
+                import.meta.env.VITE_TWEET_GENIE_API_URL ||
+                (import.meta.env.MODE === 'production'
+                    ? 'https://tweetapi.suitegenie.in'
+                    : 'http://localhost:3002');
+
+            const twitterOAuth1Url =
+                `${apiBase}/api/twitter/team-connect-oauth1` +
+                `?teamId=${encodeURIComponent(teamId)}` +
+                `&userId=${encodeURIComponent(userId)}` +
+                `&returnUrl=${encodeURIComponent(returnUrl)}`;
+
+            window.location.href = twitterOAuth1Url;
+        } catch (error) {
+            console.error('Twitter OAuth1.0a connection failed:', error);
+            alert('Failed to initiate Twitter OAuth1.0a connection. Please check your network and backend logs.');
+        } finally {
             setConnecting(null);
-            return;
         }
-        if (!userId) {
-            alert('Could not determine user ID. Please check console and backend logs.');
-            setConnecting(null);
-            return;
-        }
-
-        const apiBase =
-            import.meta.env.VITE_TWEET_GENIE_API_URL ||
-            (import.meta.env.MODE === 'production'
-                ? 'https://tweetapi.suitegenie.in'
-                : 'http://localhost:3002');
-
-        const twitterOAuth1Url =
-            `${apiBase}/api/twitter/team-connect-oauth1` +
-            `?teamId=${encodeURIComponent(teamId)}` +
-            `&userId=${encodeURIComponent(userId)}` +
-            `&returnUrl=${encodeURIComponent(returnUrl)}`;
-
-        window.location.href = twitterOAuth1Url;
-    } catch (error) {
-        console.error('Twitter OAuth1.0a connection failed:', error);
-        alert('Failed to initiate Twitter OAuth1.0a connection. Please check your network and backend logs.');
-    } finally {
-        setConnecting(null);
-    }
-};
+    };
 
 
     // Handle OAuth callback success
@@ -335,11 +339,11 @@ const TeamPage = () => {
             window.history.replaceState({}, '', '/team');
         }
     }, []);
-    
+
     // Handle LinkedIn account type selection
     const handleLinkedInSelection = async (accountType, organizationId = null) => {
         if (!linkedInSelectionData) return;
-        
+
         setSelectingAccount(true);
         try {
             const linkedinApiUrl = import.meta.env.VITE_LINKEDIN_API_URL || (
@@ -359,9 +363,9 @@ const TeamPage = () => {
                 }),
                 credentials: 'include'
             });
-            
+
             const data = await response.json();
-            
+
             if (data.success) {
                 setShowLinkedInSelection(false);
                 setLinkedInSelectionData(null);
@@ -381,7 +385,7 @@ const TeamPage = () => {
     const fetchTeam = async () => {
         try {
             const response = await api.get('/pro-team');
-            
+
             if (response.data.success) {
                 setTeam(response.data.team);
             }
@@ -394,7 +398,7 @@ const TeamPage = () => {
 
     const createTeam = async () => {
         if (isCreatingTeam) return; // Prevent double-click
-        
+
         setIsCreatingTeam(true);
         try {
             const response = await api.post('/pro-team', { teamName: teamName || 'My Team' });
@@ -445,13 +449,13 @@ const TeamPage = () => {
         setIsInviting(true);
         setInviteErrorMessage('');
         try {
-            const response = await api.post('/pro-team/invite', { 
+            const response = await api.post('/pro-team/invite', {
                 email: inviteEmail,
-                role: inviteRole 
+                role: inviteRole
             });
-            
+
             const data = response.data;
-            
+
             if (data.success) {
                 alert(`Invitation sent to ${inviteEmail} as ${inviteRole}!`);
                 setInviteEmail('');
@@ -514,28 +518,28 @@ const TeamPage = () => {
             console.error('Failed to fetch social accounts:', error);
         }
     };
-const fetchUserPermissions = async () => {
-    try {
-        const response = await api.get('/pro-team/permissions');
-        if (response.data.success) {
-            setUserPermissions({
-                role: response.data.role,
-                permissions: response.data.permissions || [],
-                limits: response.data.limits || { max_profile_connections: 0 },
-                user_id: response.data.user_id || response.data.userId || user?.id || null,
-                team_id: response.data.team_id || response.data.teamId || team?.id || null
-            });
-            // Debug log for userPermissions
-            console.log('[DEBUG] userPermissions after fetch:', {
-                role: response.data.role,
-                user_id: response.data.user_id || response.data.userId || user?.id || null,
-                team_id: response.data.team_id || response.data.teamId || team?.id || null
-            });
+    const fetchUserPermissions = async () => {
+        try {
+            const response = await api.get('/pro-team/permissions');
+            if (response.data.success) {
+                setUserPermissions({
+                    role: response.data.role,
+                    permissions: response.data.permissions || [],
+                    limits: response.data.limits || { max_profile_connections: 0 },
+                    user_id: response.data.user_id || response.data.userId || user?.id || null,
+                    team_id: response.data.team_id || response.data.teamId || team?.id || null
+                });
+                // Debug log for userPermissions
+                console.log('[DEBUG] userPermissions after fetch:', {
+                    role: response.data.role,
+                    user_id: response.data.user_id || response.data.userId || user?.id || null,
+                    team_id: response.data.team_id || response.data.teamId || team?.id || null
+                });
+            }
+        } catch (error) {
+            console.error('Failed to fetch user permissions:', error);
         }
-    } catch (error) {
-        console.error('Failed to fetch user permissions:', error);
-    }
-};
+    };
 
     const connectPlatform = async (platform) => {
         setConnecting(platform);
@@ -668,17 +672,17 @@ const fetchUserPermissions = async () => {
         const previousMembers = team.members;
         setTeam(prev => ({
             ...prev,
-            members: prev.members.map(m => 
+            members: prev.members.map(m =>
                 m.id === memberId ? { ...m, role: newRole } : m
             )
         }));
 
         try {
             const response = await api.put(`/pro-team/members/${memberId}/role`, { role: newRole });
-            
+
             // Refresh to ensure consistency
             await fetchTeam();
-            
+
         } catch (error) {
             console.error('Failed to update member role:', error);
             // Revert on error
@@ -738,7 +742,7 @@ const fetchUserPermissions = async () => {
                     <p className="text-gray-600 mb-6">
                         Upgrade to Pro to invite up to 5 team members, share social accounts, and collaborate on content creation.
                     </p>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-left">
                         <div className="bg-white p-4 rounded-lg">
                             <h4 className="font-semibold text-gray-900 mb-2">Team Members</h4>
@@ -797,7 +801,7 @@ const fetchUserPermissions = async () => {
                     <p className="text-gray-600 mb-6 text-center">
                         Create a team workspace where you can invite up to 5 members to collaborate on your social media strategy.
                     </p>
-                    
+
                     <div className="mb-6">
                         <label htmlFor="teamName" className="block text-sm font-medium text-gray-700 mb-2">
                             Team Name (optional)
@@ -813,7 +817,7 @@ const fetchUserPermissions = async () => {
                         />
                         <p className="text-xs text-gray-500 mt-1">{teamName.length}/50 characters</p>
                     </div>
-                    
+
                     <button
                         onClick={createTeam}
                         disabled={isCreatingTeam}
@@ -875,7 +879,7 @@ const fetchUserPermissions = async () => {
                         Connect your social accounts below, then launch the platform to start creating content
                     </p>
                 </div>
-                
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                     {/* Tweet Genie */}
                     <button
@@ -925,7 +929,7 @@ const fetchUserPermissions = async () => {
 
                 <div className="mt-4 p-3 bg-blue-100 border border-blue-300 rounded-lg">
                     <p className="text-sm text-blue-900">
-                        <strong>How it works:</strong> Connect your social accounts in the section below, then click on any platform above to start creating and scheduling content for your team.
+                        <strong>How it works:</strong> Connect your social accounts in the section below, then click on any platform above to start creating and automating content for your team.
                     </p>
                 </div>
             </div>
@@ -992,61 +996,61 @@ const fetchUserPermissions = async () => {
                 <div className="p-4 sm:p-6 border-b border-gray-200">
                     <h2 className="text-lg font-semibold text-gray-900">Team Members</h2>
                 </div>
-                
+
                 <div className="divide-y divide-gray-200">
                     {team?.members && Array.isArray(team.members) ? (
                         team.members.map((member) => (
-                        <div key={member.id} className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                            <div className="flex items-center gap-4 min-w-0 flex-1">
-                                <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                    <span className="text-blue-600 font-semibold">
-                                        {member.user_name?.charAt(0)?.toUpperCase() || member.email.charAt(0).toUpperCase()}
-                                    </span>
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                    <p className="font-semibold text-gray-900 truncate">
-                                        {member.user_name || member.email}
-                                    </p>
-                                    <p className="text-sm text-gray-500 truncate">{member.email}</p>
-                                </div>
-                            </div>
-                            
-                            <div className="flex items-center justify-between sm:justify-end gap-4 flex-shrink-0">
-                                {/* Role Display/Selector */}
-                                {team.user_role === 'owner' && member.role !== 'owner' ? (
-                                    <div className="flex items-center gap-2">
-                                        {getRoleIcon(member.role)}
-                                        <select
-                                            value={member.role}
-                                            onChange={(e) => updateMemberRole(member.id, e.target.value)}
-                                            className="text-sm font-medium border border-gray-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        >
-                                            <option value="viewer">Viewer</option>
-                                            <option value="editor">Editor</option>
-                                            <option value="admin">Admin</option>
-                                        </select>
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center gap-1">
-                                        {getRoleIcon(member.role)}
-                                        <span className="text-sm font-medium text-gray-700">
-                                            {getRoleName(member.role)}
+                            <div key={member.id} className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                                <div className="flex items-center gap-4 min-w-0 flex-1">
+                                    <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                        <span className="text-blue-600 font-semibold">
+                                            {member.user_name?.charAt(0)?.toUpperCase() || member.email.charAt(0).toUpperCase()}
                                         </span>
                                     </div>
-                                )}
-                                
-                                {team.user_role === 'owner' && member.role !== 'owner' && (
-                                    <button
-                                        onClick={() => removeMember(member)}
-                                        className="text-red-600 hover:text-red-700 transition-colors"
-                                        title={member.user_id ? "Remove member" : "Remove pending invite"}
-                                    >
-                                        <UserX className="h-4 w-4" />
-                                    </button>
-                                )}
+                                    <div className="min-w-0 flex-1">
+                                        <p className="font-semibold text-gray-900 truncate">
+                                            {member.user_name || member.email}
+                                        </p>
+                                        <p className="text-sm text-gray-500 truncate">{member.email}</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between sm:justify-end gap-4 flex-shrink-0">
+                                    {/* Role Display/Selector */}
+                                    {team.user_role === 'owner' && member.role !== 'owner' ? (
+                                        <div className="flex items-center gap-2">
+                                            {getRoleIcon(member.role)}
+                                            <select
+                                                value={member.role}
+                                                onChange={(e) => updateMemberRole(member.id, e.target.value)}
+                                                className="text-sm font-medium border border-gray-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            >
+                                                <option value="viewer">Viewer</option>
+                                                <option value="editor">Editor</option>
+                                                <option value="admin">Admin</option>
+                                            </select>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-1">
+                                            {getRoleIcon(member.role)}
+                                            <span className="text-sm font-medium text-gray-700">
+                                                {getRoleName(member.role)}
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    {team.user_role === 'owner' && member.role !== 'owner' && (
+                                        <button
+                                            onClick={() => removeMember(member)}
+                                            className="text-red-600 hover:text-red-700 transition-colors"
+                                            title={member.user_id ? "Remove member" : "Remove pending invite"}
+                                        >
+                                            <UserX className="h-4 w-4" />
+                                        </button>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    ))
+                        ))
                     ) : (
                         <div className="p-8 text-center">
                             <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -1069,7 +1073,7 @@ const fetchUserPermissions = async () => {
                         </div>
                     </div>
                 </div>
-                
+
                 {/* Connected Accounts */}
                 <div className="divide-y divide-gray-200">
                     {socialAccounts.length === 0 ? (
@@ -1097,16 +1101,15 @@ const fetchUserPermissions = async () => {
                                         </p>
                                     </div>
                                 </div>
-                                
+
                                 <div className="flex items-center justify-between sm:justify-end gap-2 flex-shrink-0">
-                                    <span className={`px-2 py-1 text-xs rounded-full ${
-                                        (account.active || account.is_active) 
-                                            ? 'bg-green-100 text-green-800' 
+                                    <span className={`px-2 py-1 text-xs rounded-full ${(account.active || account.is_active)
+                                            ? 'bg-green-100 text-green-800'
                                             : 'bg-red-100 text-red-800'
-                                    }`}>
+                                        }`}>
                                         {(account.active || account.is_active) ? 'Active' : 'Inactive'}
                                     </span>
-                                    
+
                                     {['owner', 'admin'].includes(userPermissions.role) && (
                                         <button
                                             onClick={() => disconnectAccount(account.id)}
@@ -1121,34 +1124,34 @@ const fetchUserPermissions = async () => {
                         ))
                     )}
                 </div>
-                
+
                 {/* Connect New Accounts - Only owner/admin can connect (max 8 accounts) */}
-                {['owner', 'admin'].includes(userPermissions.role) && 
-                 socialAccounts.length < 8 && (
-                    <div className="p-4 sm:p-6 border-t border-gray-200">
-                        <h3 className="text-md font-medium text-gray-900 mb-4">Connect New Account</h3>
-                        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                            <button
-                                onClick={connectLinkedIn}
-                                disabled={connecting === 'linkedin'}
-                                className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors disabled:opacity-50"
-                            >
-                                <Linkedin className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 flex-shrink-0" />
-                                <span className="font-medium text-gray-900 text-xs sm:text-sm text-center">
-                                    {connecting === 'linkedin' ? 'Connecting...' : 'LinkedIn'}
-                                </span>
-                            </button>
-                            
-                            <button
-                                onClick={connectTwitter}
-                                disabled={connecting === 'twitter'}
-                                className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors disabled:opacity-50"
-                            >
-                                <Twitter className="h-5 w-5 sm:h-6 sm:w-6 text-blue-400 flex-shrink-0" />
-                                <span className="font-medium text-gray-900 text-xs sm:text-sm text-center">
-                                    {connecting === 'twitter' ? 'Connecting...' : 'Twitter'}
-                                </span>
-                            </button>
+                {['owner', 'admin'].includes(userPermissions.role) &&
+                    socialAccounts.length < 8 && (
+                        <div className="p-4 sm:p-6 border-t border-gray-200">
+                            <h3 className="text-md font-medium text-gray-900 mb-4">Connect New Account</h3>
+                            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                                <button
+                                    onClick={connectLinkedIn}
+                                    disabled={connecting === 'linkedin'}
+                                    className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors disabled:opacity-50"
+                                >
+                                    <Linkedin className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 flex-shrink-0" />
+                                    <span className="font-medium text-gray-900 text-xs sm:text-sm text-center">
+                                        {connecting === 'linkedin' ? 'Connecting...' : 'LinkedIn'}
+                                    </span>
+                                </button>
+
+                                <button
+                                    onClick={connectTwitter}
+                                    disabled={connecting === 'twitter'}
+                                    className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors disabled:opacity-50"
+                                >
+                                    <Twitter className="h-5 w-5 sm:h-6 sm:w-6 text-blue-400 flex-shrink-0" />
+                                    <span className="font-medium text-gray-900 text-xs sm:text-sm text-center">
+                                        {connecting === 'twitter' ? 'Connecting...' : 'Twitter'}
+                                    </span>
+                                </button>
                                 <button
                                     onClick={connectTwitterOAuth1}
                                     disabled={connecting === 'twitter-oauth1'}
@@ -1160,71 +1163,71 @@ const fetchUserPermissions = async () => {
                                     </span>
                                 </button>
 
-                            <button
-                                onClick={() => connectPlatform('wordpress')}
-                                disabled={connecting === 'wordpress'}
-                                className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-800 hover:bg-blue-50 transition-colors disabled:opacity-50"
-                            >
-                                <Globe className="h-5 w-5 sm:h-6 sm:w-6 text-blue-800 flex-shrink-0" />
-                                <span className="font-medium text-gray-900 text-xs sm:text-sm text-center">
-                                    {connecting === 'wordpress' ? 'Connecting...' : 'WordPress'}
-                                </span>
-                            </button>
+                                <button
+                                    onClick={() => connectPlatform('wordpress')}
+                                    disabled={connecting === 'wordpress'}
+                                    className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-800 hover:bg-blue-50 transition-colors disabled:opacity-50"
+                                >
+                                    <Globe className="h-5 w-5 sm:h-6 sm:w-6 text-blue-800 flex-shrink-0" />
+                                    <span className="font-medium text-gray-900 text-xs sm:text-sm text-center">
+                                        {connecting === 'wordpress' ? 'Connecting...' : 'WordPress'}
+                                    </span>
+                                </button>
 
-                            <button
-                                onClick={connectThreads}
-                                disabled={connecting === 'threads'}
-                                className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-neutral-900 hover:bg-gray-50 transition-colors disabled:opacity-50"
-                            >
-                                <AtSign className="h-5 w-5 sm:h-6 sm:w-6 text-neutral-900 flex-shrink-0" />
-                                <span className="font-medium text-gray-900 text-xs sm:text-sm text-center">
-                                    {connecting === 'threads' ? 'Connecting...' : 'Threads'}
-                                </span>
-                            </button>
-                            
-                            <button
-                                disabled
-                                className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 p-3 sm:p-4 border-2 border-dashed border-gray-200 rounded-lg opacity-50 cursor-not-allowed"
-                            >
-                                <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 flex-shrink-0" />
-                                <span className="font-medium text-gray-500 text-xs sm:text-sm text-center">Facebook</span>
-                            </button>
+                                <button
+                                    onClick={connectThreads}
+                                    disabled={connecting === 'threads'}
+                                    className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-neutral-900 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                                >
+                                    <AtSign className="h-5 w-5 sm:h-6 sm:w-6 text-neutral-900 flex-shrink-0" />
+                                    <span className="font-medium text-gray-900 text-xs sm:text-sm text-center">
+                                        {connecting === 'threads' ? 'Connecting...' : 'Threads'}
+                                    </span>
+                                </button>
 
-                            <button
-                                disabled
-                                className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 p-3 sm:p-4 border-2 border-dashed border-gray-200 rounded-lg opacity-50 cursor-not-allowed"
-                            >
-                                <ExternalLink className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 flex-shrink-0" />
-                                <span className="font-medium text-gray-500 text-xs sm:text-sm text-center">Instagram</span>
-                            </button>
+                                <button
+                                    disabled
+                                    className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 p-3 sm:p-4 border-2 border-dashed border-gray-200 rounded-lg opacity-50 cursor-not-allowed"
+                                >
+                                    <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 flex-shrink-0" />
+                                    <span className="font-medium text-gray-500 text-xs sm:text-sm text-center">Facebook</span>
+                                </button>
 
-                            <button
-                                disabled
-                                className="flex items-center justify-center gap-3 p-4 border-2 border-dashed border-gray-200 rounded-lg opacity-50 cursor-not-allowed"
-                            >
-                                <ExternalLink className="h-6 w-6 text-gray-400" />
-                                <span className="font-medium text-gray-500">More Soon</span>
-                            </button>
-                        </div>
-                        
-                        <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                            <h4 className="font-medium text-gray-900 mb-2">Team Social Accounts</h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                <div>
-                                    <p className="font-medium text-blue-600">Team Limit: 8 accounts total</p>
-                                    <p className="text-gray-600">Shared across all team members</p>
+                                <button
+                                    disabled
+                                    className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 p-3 sm:p-4 border-2 border-dashed border-gray-200 rounded-lg opacity-50 cursor-not-allowed"
+                                >
+                                    <ExternalLink className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 flex-shrink-0" />
+                                    <span className="font-medium text-gray-500 text-xs sm:text-sm text-center">Instagram</span>
+                                </button>
+
+                                <button
+                                    disabled
+                                    className="flex items-center justify-center gap-3 p-4 border-2 border-dashed border-gray-200 rounded-lg opacity-50 cursor-not-allowed"
+                                >
+                                    <ExternalLink className="h-6 w-6 text-gray-400" />
+                                    <span className="font-medium text-gray-500">More Soon</span>
+                                </button>
+                            </div>
+
+                            <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                                <h4 className="font-medium text-gray-900 mb-2">Team Social Accounts</h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <p className="font-medium text-blue-600">Team Limit: 8 accounts total</p>
+                                        <p className="text-gray-600">Shared across all team members</p>
+                                    </div>
+                                    <div>
+                                        <p className="font-medium text-orange-600">Connection Access:</p>
+                                        <p className="text-gray-600">Only Owner & Admin can connect/disconnect</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="font-medium text-orange-600">Connection Access:</p>
-                                    <p className="text-gray-600">Only Owner & Admin can connect/disconnect</p>
+                                <div className="mt-3 text-xs text-gray-500">
+                                    All team members can use connected accounts for content creation
                                 </div>
                             </div>
-                            <div className="mt-3 text-xs text-gray-500">
-                                All team members can use connected accounts for content creation
-                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
             </div>
 
             {showUpgrade && (
@@ -1245,7 +1248,7 @@ const fetchUserPermissions = async () => {
                     }}
                 />
             )}
-            
+
             {/* LinkedIn Account Selection Modal */}
             {showLinkedInSelection && linkedInSelectionData && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -1259,7 +1262,7 @@ const fetchUserPermissions = async () => {
                                 Choose which LinkedIn account to connect
                             </p>
                         </div>
-                        
+
                         <div className="p-6 space-y-4">
                             {/* Personal Account Option */}
                             {!linkedInSelectionData.personalConnected && (
@@ -1277,21 +1280,21 @@ const fetchUserPermissions = async () => {
                                     </div>
                                 </button>
                             )}
-                            
+
                             {linkedInSelectionData.personalConnected && (
                                 <div className="p-4 bg-gray-100 rounded-lg text-gray-500 text-sm flex items-center gap-3">
                                     <User className="h-5 w-5" />
                                     Personal profile already connected
                                 </div>
                             )}
-                            
+
                             {/* Organization Pages */}
                             <div className="border-t pt-4">
                                 <div className="text-sm font-medium text-gray-500 mb-3 flex items-center gap-2">
                                     <Building2 className="h-4 w-4" />
                                     Organization Pages
                                 </div>
-                                
+
                                 {linkedInSelectionData.organizations.map((org) => (
                                     <button
                                         key={org.id}
@@ -1314,7 +1317,7 @@ const fetchUserPermissions = async () => {
                                 ))}
                             </div>
                         </div>
-                        
+
                         <div className="px-6 py-4 bg-gray-50 border-t flex justify-end">
                             <button
                                 onClick={() => {

@@ -9,17 +9,19 @@ ALTER TABLE teams ADD COLUMN IF NOT EXISTS plan_type VARCHAR(20) DEFAULT 'pro'; 
 
 -- Add comment for clarity
 COMMENT ON COLUMN teams.credits_remaining IS 'Team credit pool, separate from owner personal credits';
-COMMENT ON COLUMN teams.plan_type IS 'Plan type inherited from owner (pro/enterprise)';
+COMMENT ON COLUMN teams.plan_type IS 'Plan type inherited from owner (pro/agency/enterprise)';
 
 -- Initialize existing teams with credits based on owner's plan
 UPDATE teams t
 SET 
   credits_remaining = CASE 
-    WHEN u.plan_type = 'pro' AND u.api_key_preference = 'platform' THEN 150
-    WHEN u.plan_type = 'pro' AND u.api_key_preference = 'byok' THEN 300
+    WHEN u.plan_type = 'pro' AND u.api_key_preference = 'platform' THEN 100
+    WHEN u.plan_type = 'pro' AND u.api_key_preference = 'byok' THEN 180
+    WHEN u.plan_type = 'agency' AND u.api_key_preference = 'platform' THEN 100
+    WHEN u.plan_type = 'agency' AND u.api_key_preference = 'byok' THEN 180
     WHEN u.plan_type = 'enterprise' AND u.api_key_preference = 'platform' THEN 500
     WHEN u.plan_type = 'enterprise' AND u.api_key_preference = 'byok' THEN 1000
-    ELSE 150 -- Default to Pro+Platform if uncertain
+    ELSE 100 -- Default to Pro+Platform if uncertain
   END,
   plan_type = COALESCE(u.plan_type, 'pro'),
   last_credit_reset = NOW()

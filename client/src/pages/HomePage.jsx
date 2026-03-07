@@ -19,22 +19,22 @@ const HomePage = () => {
     <>
       <Helmet>
         {/* Primary Meta Tags */}
-        <title>SuiteGenie (Suite Genie) | AI Content + Social Media Ops With Strategy and Cross-Posting</title>
-        <meta name="title" content="SuiteGenie (Suite Genie) | AI Content + Social Media Ops With Strategy and Cross-Posting" />
-        <meta name="description" content="SuiteGenie is not just a scheduler. Analyze your account and competitors, generate platform-specific content, manage your content queue, and cross-post across connected accounts." />
-        <meta name="keywords" content="AI content ops, strategy builder, competitor analysis, content queue, cross-post automation, social media automation for creators, social media automation for agencies, Twitter automation, LinkedIn automation" />
+        <title>SuiteGenie | Competitor Gap Analysis + AI Content Automation</title>
+        <meta name="title" content="SuiteGenie | Competitor Gap Analysis + AI Content Automation" />
+        <meta name="description" content="Analyze your account and competitors, find where they are weak, generate platform-specific content, and publish where you can win." />
+        <meta name="keywords" content="AI content ops, strategy builder, competitor analysis, content automation, cross-post automation, social media automation for creators, social media automation for agencies, Twitter automation, LinkedIn automation" />
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://suitegenie.in/" />
-        <meta property="og:title" content="SuiteGenie (Suite Genie) | AI Content + Social Media Ops With Strategy and Cross-Posting" />
-        <meta property="og:description" content="Analyze your account and competitors, generate platform-specific content, and run cross-posting workflows from one content queue." />
+        <meta property="og:title" content="SuiteGenie | Competitor Gap Analysis + AI Content Automation" />
+        <meta property="og:description" content="Find competitor gaps, generate platform-specific content, and execute automated publishing workflows from one platform." />
         <meta property="og:image" content="https://suitegenie.in/og-default.svg" />
         <meta property="og:site_name" content="SuiteGenie" />
         {/* Twitter */}
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:url" content="https://suitegenie.in/" />
-        <meta property="twitter:title" content="SuiteGenie (Suite Genie) | AI Content + Social Media Ops With Strategy and Cross-Posting" />
-        <meta property="twitter:description" content="SuiteGenie helps power users and small agencies move from strategy and competitor analysis to queued cross-post publishing." />
+        <meta property="twitter:title" content="SuiteGenie | Competitor Gap Analysis + AI Content Automation" />
+        <meta property="twitter:description" content="Analyze competitors, identify growth gaps, generate platform-native content, and publish where your brand can win." />
         <meta property="twitter:image" content="https://suitegenie.in/og-default.svg" />
         <meta name="twitter:site" content="@Suitegenie1" />
         <meta name="twitter:creator" content="@Suitegenie1" />
@@ -66,20 +66,27 @@ const HomePage = () => {
               "ratingValue": "4.8",
               "ratingCount": "100"
             },
+            "operatingSystem": "Web",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "USD",
+              "priceValidUntil": "2027-12-31"
+            },
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4.8",
+              "ratingCount": "100"
+            },
             "featureList": [
               "AI Content Generation",
               "Platform-Specific Content Engine",
               "Strategy Builder",
               "Competitor Analysis",
-              "Content Queue",
-              "Cross-Post Orchestration",
-              "Multi-platform Scheduling",
+              "Content Automation",
+              "Multi-platform Automation",
               "Twitter Automation",
               "LinkedIn Automation",
-              "WordPress Integration",
-              "Analytics Dashboard",
-              "BYOK Support",
-              "Multi-AI Fallback"
             ],
             "screenshot": "https://suitegenie.in/og-default.svg",
             "author": {
@@ -92,7 +99,7 @@ const HomePage = () => {
                 "https://linkedin.com/company/suitegenie"
               ]
             },
-            "description": "SuiteGenie, also searched as Suite Genie, is an AI content operations platform for creators, power users, and agencies. Analyze competitors, build strategy, generate platform-native content, queue, and cross-post."
+            "description": "SuiteGenie, also searched as Suite Genie, is an AI content operations platform for creators, power users, and agencies. Analyze competitors, build strategy, generate platform-native content, automate, and cross-post."
           }
         `}</script>
         {/* Organization Schema */}
@@ -143,10 +150,6 @@ const HomePage = () => {
         `}</script>
       </Helmet>
       <main className="min-h-screen bg-white" role="main">
-        <p className="sr-only">
-          SuiteGenie is also commonly searched as Suite Genie.
-        </p>
-
         {/* ...existing code... */}
 
         {/* Hero Section */}

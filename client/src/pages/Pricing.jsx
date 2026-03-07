@@ -7,7 +7,7 @@ const PricingPage = () => (
       <title>Pricing - SuiteGenie Social Media Automation</title>
       <meta
         name="description"
-        content="Choose Free or Pro for SuiteGenie. Free includes 15 platform credits and 50 BYOK credits monthly. Pro includes 100 platform credits, 180 BYOK credits, and advanced features for creators and teams."
+        content="Choose Free, Pro, or Agency for SuiteGenie. Free includes 15 platform credits and 50 BYOK credits monthly. Pro and Agency include 100 platform credits, 180 BYOK credits, and advanced team/workspace features."
       />
       <meta
         name="keywords"
@@ -17,7 +17,7 @@ const PricingPage = () => (
       <meta property="og:title" content="Pricing - SuiteGenie Social Media Automation" />
       <meta
         property="og:description"
-        content="Choose Free or Pro for SuiteGenie with transparent credits and feature limits."
+        content="Choose Free, Pro, or Agency for SuiteGenie with transparent credits and feature limits."
       />
       <meta property="og:type" content="website" />
       <meta property="og:url" content="https://suitegenie.in/pricing" />
@@ -26,7 +26,7 @@ const PricingPage = () => (
       <meta name="twitter:title" content="Pricing - SuiteGenie Social Media Automation" />
       <meta
         name="twitter:description"
-        content="Choose Free or Pro for SuiteGenie with transparent credits and feature limits."
+        content="Choose Free, Pro, or Agency for SuiteGenie with transparent credits and feature limits."
       />
       <meta name="twitter:image" content="https://suitegenie.in/og-default.svg" />
       <script type="application/ld+json">{`
@@ -58,7 +58,7 @@ const PricingPage = () => (
       </div>
       <p className="mb-6 text-gray-700">
         Choose the plan that fits your workflow. Start free, then upgrade when you need advanced analytics,
-        strategy, bulk generation, and team collaboration.
+        strategy, bulk generation, team collaboration, or workspace-first agency operations.
       </p>
 
       <hr className="my-8" />
@@ -74,7 +74,7 @@ const PricingPage = () => (
           <li>Text-only AI generation (no image generation)</li>
           <li>Basic AI mode for everyday drafts</li>
           <li>Cross-platform posting and basic analytics</li>
-          <li>Bulk scheduling for already generated content</li>
+          <li>Bulk automation for already generated content</li>
           <li>Connect up to 2 social accounts</li>
           <li>Encrypted BYOK (OpenAI, Perplexity, Gemini)</li>
           <li>Community support</li>
@@ -138,7 +138,7 @@ const PricingPage = () => (
         <div className="mb-2 font-semibold">Pricing:</div>
         <ul className="list-disc pl-6 mb-4 text-gray-600">
           <li>
-            <strong>&#8377;399/month</strong>
+            <strong>&#8377;399/month (about $4.80/month)</strong>
           </li>
           <li>Secure checkout via Razorpay</li>
           <li>Upgrade instantly from your account</li>
@@ -146,6 +146,43 @@ const PricingPage = () => (
 
         <a href="/plans?intent=pro" className="inline-block mt-2 text-blue-600 font-semibold underline">
           Upgrade to Pro
+        </a>
+      </section>
+
+      <hr className="my-8" />
+
+      <section className="mb-10">
+        <h2 className="text-2xl font-bold mb-2">Agency Plan - Workspace First</h2>
+        <h3 className="text-lg font-semibold mb-2">Built for agencies managing multiple client brands</h3>
+        <p className="mb-4 text-gray-700">
+          Agency uses a client workspace model with assignment-based access and launch context across Tweet Genie, LinkedIn Genie, and Social Genie.
+        </p>
+
+        <div className="mb-2 font-semibold">What is included in current Agency phase:</div>
+        <ul className="list-disc pl-6 mb-4 text-gray-600">
+          <li>6 client workspaces</li>
+          <li>6 seats total (including owner)</li>
+          <li>Workspace brand info, timezone, pause/archive controls</li>
+          <li>Workspace-level member assignment and access matrix</li>
+          <li>Workspace account attachment from existing connected accounts</li>
+          <li>Launchpad with workspace context tokens for app handoff</li>
+        </ul>
+
+        <div className="mb-2 font-semibold">Credits per month:</div>
+        <ul className="list-disc pl-6 mb-4 text-gray-600">
+          <li><strong>100 credits in platform mode</strong></li>
+          <li><strong>180 credits in BYOK mode</strong></li>
+        </ul>
+
+        <div className="mb-2 font-semibold">Pricing:</div>
+        <ul className="list-disc pl-6 mb-4 text-gray-600">
+          <li><strong>Manual activation in this phase</strong></li>
+          <li>Contact sales/admin for onboarding</li>
+          <li>Seat/workspace add-ons planned later</li>
+        </ul>
+
+        <a href="/contact" className="inline-block mt-2 text-blue-600 font-semibold underline">
+          Contact Sales for Agency
         </a>
       </section>
 
@@ -187,14 +224,14 @@ const PricingPage = () => (
           <h3 className="text-lg font-semibold mb-2">What is the difference between platform mode and BYOK?</h3>
           <p className="mb-4 text-gray-700">
             Platform mode uses SuiteGenie-managed providers. BYOK mode uses your own provider keys. Monthly limits are:
-            Free (15 platform, 50 BYOK) and Pro (100 platform, 180 BYOK).
+            Free (15 platform, 50 BYOK), Pro (100 platform, 180 BYOK), and Agency (100 platform, 180 BYOK).
           </p>
         </div>
 
         <div className="mb-6">
           <h3 className="text-lg font-semibold mb-2">Can I switch between Free and Pro?</h3>
           <p className="mb-4 text-gray-700">
-            Yes. You can upgrade anytime to unlock advanced features and downgrade later if needed.
+            Yes. You can upgrade anytime to unlock advanced features and downgrade later if needed. Agency is currently manual activation.
           </p>
         </div>
       </section>
@@ -205,8 +242,8 @@ const PricingPage = () => (
         <h2 className="text-2xl font-bold mb-2">Ready to get started?</h2>
         <ol className="list-decimal pl-6 mb-4 text-gray-600 text-left inline-block">
           <li>Create your SuiteGenie account</li>
-          <li>Choose Free or Pro</li>
-          <li>Start generating and scheduling content</li>
+          <li>Choose Free, Pro, or request Agency activation</li>
+          <li>Start generating and automating content</li>
         </ol>
         <a href="/auth" className="inline-block mt-2 text-blue-600 font-semibold underline">
           Create Free Account

@@ -7,7 +7,9 @@ import EmailService from './emailService.js';
 export const TeamService = {
     // Create a team for a Pro user
     async createTeam(ownerId, teamName) {
-        const maxMembers = 5; // Pro plan limit
+        const ownerPlanResult = await query('SELECT plan_type FROM users WHERE id = $1', [ownerId]);
+        const ownerPlanType = ownerPlanResult.rows[0]?.plan_type || 'pro';
+        const maxMembers = ownerPlanType === 'enterprise' ? 15 : ownerPlanType === 'agency' ? 6 : 5;
         
         console.log('[TeamService] Creating team for user:', ownerId, 'name:', teamName);
         
@@ -26,9 +28,9 @@ export const TeamService = {
             console.log('[TeamService] Inserting new team...');
             const result = await query(
                 `INSERT INTO teams (name, owner_id, plan_type, max_members) 
-                 VALUES ($1, $2, 'pro', $3) 
+                 VALUES ($1, $2, $3, $4) 
                  RETURNING *`,
-                [teamName, ownerId, maxMembers]
+                [teamName, ownerId, ownerPlanType, maxMembers]
             );
             
             const teamId = result.rows[0].id;

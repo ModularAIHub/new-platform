@@ -56,20 +56,20 @@ const IntegrationsPage = () => (
       <ul className="list-disc pl-6 mb-4">
         <li>Personal and team account flows</li>
         <li>Single posts, threads, and supported media posting</li>
-        <li>Scheduling, history, analytics, and cross-posting support</li>
+        <li>Flow execution, history, analytics, and cross-posting support</li>
       </ul>
 
       <h3 className="text-lg font-semibold mb-2">LinkedIn via LinkedIn Genie</h3>
       <ul className="list-disc pl-6 mb-4">
         <li>Personal and supported team or page workflows</li>
         <li>Text, image, and PDF or document publishing</li>
-        <li>Scheduling, history, analytics, and cross-posting support</li>
+        <li>Flow execution, history, analytics, and cross-posting support</li>
       </ul>
 
       <h3 className="text-lg font-semibold mb-2">Threads via Social Genie</h3>
       <ul className="list-disc pl-6 mb-4">
         <li>Threads-focused publishing where enabled</li>
-        <li>Schedule, history, analytics, and cross-post-aware workflows</li>
+        <li>Automated flow, history, analytics, and cross-post-aware workflows</li>
         <li>Part of the broader Social Genie expansion path</li>
       </ul>
 
@@ -101,7 +101,7 @@ const IntegrationsPage = () => (
       <ul className="list-disc pl-6 mb-4">
         <li>Social accounts use secure connection flows</li>
         <li>Team mode keeps team-owned workflows separate from personal publishing</li>
-        <li>Connected accounts are surfaced across SuiteGenie where needed for scheduling and cross-post target selection</li>
+        <li>Connected accounts are surfaced across SuiteGenie where needed for automation and cross-post target selection</li>
       </ul>
 
       <p className="mb-6">

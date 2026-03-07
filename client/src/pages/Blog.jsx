@@ -64,7 +64,7 @@ const BlogPage = () => {
         />
         <meta
           name="keywords"
-          content="social media automation blog, twitter automation guides, linkedin scheduling tips, suitegenie updates"
+          content="social media automation blog, twitter automation guides, linkedin automation tips, suitegenie updates"
         />
         <link rel="canonical" href="https://suitegenie.in/blogs" />
         <meta property="og:type" content="website" />
@@ -109,36 +109,52 @@ const BlogPage = () => {
           </section>
 
           {featuredPost ? (
-            <section className="mt-6">
-              <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-amber-700">
-                <Sparkles className="h-3.5 w-3.5" />
-                Featured
-              </p>
+            <section className="mt-8 mb-4">
+              <div className="mb-4 flex items-center gap-3">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold uppercase tracking-widest text-amber-700 shadow-sm">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Featured Story
+                </span>
+                <div className="h-px flex-1 bg-gradient-to-r from-slate-200 to-transparent"></div>
+              </div>
               <Link
                 to={getPostUrl(featuredPost)}
-                className="group block overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:border-blue-200 hover:shadow-lg"
+                className="group block overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-1 hover:border-blue-300 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)]"
               >
-                <div className="grid gap-0 lg:grid-cols-[420px_minmax(0,_1fr)]">
-                  <div className="h-56 overflow-hidden sm:h-64 lg:h-full">
+                <div className="grid gap-0 lg:grid-cols-[55%_45%]">
+                  <div className="relative aspect-video overflow-hidden bg-slate-100 lg:aspect-auto lg:h-full">
                     <img
                       src={featuredPost.featuredImage.url}
                       alt={featuredPost.featuredImage.alt}
-                      className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                      className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.03]"
                     />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                   </div>
-                  <div className="p-6 sm:p-7">
+                  <div className="flex flex-col justify-center p-8 sm:p-10 lg:p-12">
                     <span
-                      className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${BLOG_CATEGORY_META[featuredPost.category].badgeClass}`}
+                      className={`inline-flex self-start rounded-full border px-4 py-1.5 text-xs font-bold uppercase tracking-wide ${BLOG_CATEGORY_META[featuredPost.category].badgeClass}`}
                     >
                       {BLOG_CATEGORY_META[featuredPost.category].label}
                     </span>
-                    <h2 className="mt-3 text-2xl font-extrabold leading-tight text-slate-900">{featuredPost.title}</h2>
-                    <p className="mt-3 text-base leading-7 text-slate-600">{featuredPost.excerpt}</p>
-                    <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-slate-500">
-                      <span>{formatDate(featuredPost.publishDate)}</span>
-                      <span className="inline-flex items-center gap-1">
-                        <Clock3 className="h-4 w-4" />
-                        {featuredPost.readTime} min read
+                    <h2 className="mt-5 text-3xl font-extrabold leading-tight text-slate-900 md:text-4xl lg:text-[2.5rem] lg:leading-[1.1] transition-colors group-hover:text-blue-700">{featuredPost.title}</h2>
+                    <p className="mt-4 text-lg leading-relaxed text-slate-600 line-clamp-3">{featuredPost.excerpt}</p>
+
+                    <div className="mt-8 flex items-center justify-between border-t border-slate-100 pt-6">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={featuredPost.author?.avatar || "/kanishk.png"}
+                          alt={featuredPost.author?.name || "Author"}
+                          className="h-10 w-10 rounded-full border-2 border-slate-100 object-cover"
+                        />
+                        <div>
+                          <p className="text-sm font-bold text-slate-900">{featuredPost.author?.name || "Kanishk Saraswat"}</p>
+                          <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
+                            <span>{formatDate(featuredPost.publishDate)}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600">
+                        Read Story <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                       </span>
                     </div>
                   </div>
@@ -169,11 +185,10 @@ const BlogPage = () => {
                   key={pageNumber}
                   type="button"
                   onClick={() => setPage(pageNumber)}
-                  className={`h-10 w-10 rounded-lg text-sm font-semibold transition ${
-                    pageNumber === paginated.page
-                      ? 'bg-blue-600 text-white'
-                      : 'border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-100'
-                  }`}
+                  className={`h-10 w-10 rounded-lg text-sm font-semibold transition ${pageNumber === paginated.page
+                    ? 'bg-blue-600 text-white'
+                    : 'border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-100'
+                    }`}
                 >
                   {pageNumber}
                 </button>

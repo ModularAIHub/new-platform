@@ -23,9 +23,9 @@ const WorkflowSection = () => {
     },
     {
       step: '04',
-      title: 'Queue, Route, and Publish',
+      title: 'Automate, Route, and Publish',
       description:
-        'Push approved content into queue, schedule it safely, and route cross-posts to authorized connected accounts in Pro team workflows.',
+        'Deploy approved content into automated flows, routing cross-posts to authorized connected accounts in Pro team workflows.',
       tone: 'border-orange-200 bg-orange-50 text-orange-900'
     }
   ]

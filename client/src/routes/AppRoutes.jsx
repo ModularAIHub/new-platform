@@ -33,6 +33,9 @@ import ApiKeysPage from '../pages/ApiKeysPage';
 import SettingsPage from '../pages/SettingsPage';
 import TeamPage from '../pages/TeamPage';
 import TeamInvitePage from '../pages/TeamInvitePage';
+import AgencyHubPage from '../pages/AgencyHubPage';
+import AgencyWorkspacePage from '../pages/AgencyWorkspacePage';
+import AgencyTeamPage from '../pages/AgencyTeamPage';
 
 // OnboardingPage import removed
 import { useEffect, useState } from 'react';
@@ -110,6 +113,30 @@ const AppRoutes = () => {
         <ProtectedRoute>
           <Layout>
             <TeamPage />
+          </Layout>
+        </ProtectedRoute>
+      } />
+
+      <Route path="/agency" element={
+        <ProtectedRoute>
+          <Layout>
+            <AgencyHubPage />
+          </Layout>
+        </ProtectedRoute>
+      } />
+
+      <Route path="/agency/workspaces/:workspaceId" element={
+        <ProtectedRoute>
+          <Layout>
+            <AgencyWorkspacePage />
+          </Layout>
+        </ProtectedRoute>
+      } />
+
+      <Route path="/agency/team" element={
+        <ProtectedRoute>
+          <Layout>
+            <AgencyTeamPage />
           </Layout>
         </ProtectedRoute>
       } />

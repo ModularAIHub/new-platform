@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 
 export default function Footer() {
   return (
-    <footer className="w-full bg-gradient-to-r from-slate-950 via-blue-950 to-indigo-950">
+    <footer className="w-full bg-gradient-to-r from-slate-950 via-slate-900 to-blue-950">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-[1.4fr_1fr_1fr]">
           <div>
@@ -13,7 +13,7 @@ export default function Footer() {
               <span className="text-2xl font-bold text-white">SuiteGenie</span>
             </Link>
             <p className="mt-3 max-w-md text-sm leading-6 text-slate-300">
-              SuiteGenie, also searched as Suite Genie, provides AI-powered automation for X, LinkedIn, and your full content workflow.
+              SuiteGenie helps creators and small agencies analyze competitor gaps, generate platform-native content, and automate execution.
             </p>
             <div className="mt-4 flex items-center gap-2">
               <a

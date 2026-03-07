@@ -116,6 +116,8 @@ class SyncWorker {
                     WHEN COALESCE(plan_type, 'free') = 'free' AND api_key_preference = 'byok' THEN ${CREDIT_TIERS.free.byok}
                     WHEN plan_type = 'pro' AND api_key_preference = 'platform' THEN ${CREDIT_TIERS.pro.platform}
                     WHEN plan_type = 'pro' AND api_key_preference = 'byok' THEN ${CREDIT_TIERS.pro.byok}
+                    WHEN plan_type = 'agency' AND api_key_preference = 'platform' THEN ${CREDIT_TIERS.agency.platform}
+                    WHEN plan_type = 'agency' AND api_key_preference = 'byok' THEN ${CREDIT_TIERS.agency.byok}
                     WHEN plan_type = 'enterprise' AND api_key_preference = 'platform' THEN ${CREDIT_TIERS.enterprise.platform}
                     WHEN plan_type = 'enterprise' AND api_key_preference = 'byok' THEN ${CREDIT_TIERS.enterprise.byok}
                     ELSE 0
@@ -136,6 +138,8 @@ class SyncWorker {
                 'free-byok': 0,
                 'pro-platform': 0,
                 'pro-byok': 0,
+                'agency-platform': 0,
+                'agency-byok': 0,
                 'enterprise-platform': 0,
                 'enterprise-byok': 0
             };
@@ -160,6 +164,8 @@ class SyncWorker {
                   credits_remaining = CASE
                     WHEN u.plan_type = 'pro' AND u.api_key_preference = 'platform' THEN ${CREDIT_TIERS.pro.platform}
                     WHEN u.plan_type = 'pro' AND u.api_key_preference = 'byok' THEN ${CREDIT_TIERS.pro.byok}
+                    WHEN u.plan_type = 'agency' AND u.api_key_preference = 'platform' THEN ${CREDIT_TIERS.agency.platform}
+                    WHEN u.plan_type = 'agency' AND u.api_key_preference = 'byok' THEN ${CREDIT_TIERS.agency.byok}
                     WHEN u.plan_type = 'enterprise' AND u.api_key_preference = 'platform' THEN ${CREDIT_TIERS.enterprise.platform}
                     WHEN u.plan_type = 'enterprise' AND u.api_key_preference = 'byok' THEN ${CREDIT_TIERS.enterprise.byok}
                     ELSE ${CREDIT_TIERS.pro.platform}
@@ -190,6 +196,8 @@ class SyncWorker {
             console.log(`   Free+BYOK (${CREDIT_TIERS.free.byok}): ${statsByTier['free-byok']} users`);
             console.log(`   Pro+Platform (${CREDIT_TIERS.pro.platform}): ${statsByTier['pro-platform']} users`);
             console.log(`   Pro+BYOK (${CREDIT_TIERS.pro.byok}): ${statsByTier['pro-byok']} users`);
+            console.log(`   Agency+Platform (${CREDIT_TIERS.agency.platform}): ${statsByTier['agency-platform']} users`);
+            console.log(`   Agency+BYOK (${CREDIT_TIERS.agency.byok}): ${statsByTier['agency-byok']} users`);
             console.log(`   Enterprise+Platform (${CREDIT_TIERS.enterprise.platform}): ${statsByTier['enterprise-platform']} users`);
             console.log(`   Enterprise+BYOK (${CREDIT_TIERS.enterprise.byok}): ${statsByTier['enterprise-byok']} users`);
         } catch (err) {

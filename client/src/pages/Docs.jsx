@@ -7,13 +7,17 @@ const DocsPage = () => (
       <title>Help and Documentation - SuiteGenie</title>
       <meta
         name="description"
-        content="Learn how to set up SuiteGenie, connect X, LinkedIn, and supported social accounts, use BYOK, generate content, schedule posts, work in team mode, and understand analytics."
+        content="Learn how to set up SuiteGenie, connect X, LinkedIn, and supported social accounts, use BYOK, generate content, automate flows, work in team mode, and understand analytics."
+      />
+      <meta
+        name="keywords"
+        content="suitegenie documentation, suitegenie docs, how to use suitegenie, team mode, cross posting, BYOK, ai content automation"
       />
       <link rel="canonical" href="https://suitegenie.in/docs" />
       <meta property="og:title" content="Help and Documentation - SuiteGenie" />
       <meta
         property="og:description"
-        content="Step-by-step SuiteGenie setup docs for accounts, BYOK, scheduling, team mode, strategy builder, cross-posting, and analytics."
+        content="Step-by-step SuiteGenie setup docs for accounts, BYOK, flow automation, team mode, strategy builder, cross-posting, and analytics."
       />
       <meta property="og:type" content="website" />
       <meta property="og:url" content="https://suitegenie.in/docs" />
@@ -22,7 +26,7 @@ const DocsPage = () => (
       <meta name="twitter:title" content="Help and Documentation - SuiteGenie" />
       <meta
         name="twitter:description"
-        content="Step-by-step SuiteGenie setup docs for accounts, BYOK, scheduling, team mode, strategy builder, cross-posting, and analytics."
+        content="Step-by-step SuiteGenie setup docs for accounts, BYOK, automation, team mode, strategy builder, cross-posting, and analytics."
       />
       <meta name="twitter:image" content="https://suitegenie.in/og-default.svg" />
       <script type="application/ld+json">{`
@@ -61,9 +65,9 @@ const DocsPage = () => (
         <a href="/blogs" className="text-blue-600 underline font-medium">Read updates</a>
       </div>
 
-      <p className="mb-8 text-lg text-gray-700 leading-relaxed">
-        This guide covers the complete SuiteGenie workflow: setup, account connections, content creation, scheduling,
-        team mode, cross-posting, and analytics.
+      <p className="text-gray-700 mb-6">
+        This guide covers the complete SuiteGenie workflow: setup, account connections, content creation, automation flows,
+        and team collaboration. Use the menu to navigate topics.
       </p>
 
       <div className="bg-gradient-to-r from-primary-50 to-purple-50 border border-primary-100 rounded-xl p-4 mb-10 shadow-sm">
@@ -123,7 +127,7 @@ const DocsPage = () => (
         <li>Create or join a team</li>
         <li>Invite owners, admins, editors, or viewers</li>
         <li>Connect team-owned accounts only when the team should publish from them</li>
-        <li>Use team mode for shared scheduling and shared review workflows</li>
+        <li>Use team mode for shared workflows and shared review flows</li>
       </ul>
       <p className="mb-6">
         Best practice: keep personal accounts for solo workflows and connect team-owned accounts in team mode only when the team should own that publishing context.
@@ -137,13 +141,15 @@ const DocsPage = () => (
         <li>Use Social Genie for supported Threads and expanding social workflows</li>
       </ul>
 
-      <h2 id="5-bulk-generation-and-scheduling" className="text-2xl font-bold mt-16 mb-3 scroll-mt-24 text-primary-700 border-b-2 border-primary-100 pb-1">5. Bulk Generation and Scheduling</h2>
-      <ol className="list-decimal pl-6 mb-4">
-        <li>Generate multiple drafts in a focused session.</li>
-        <li>Edit and approve the best ones.</li>
-        <li>Schedule them into a one- to two-week window.</li>
-        <li>Use team mode if the schedule should belong to a shared team workflow.</li>
-      </ol>
+      <h2 id="5-bulk-generation-and-automation" className="text-2xl font-bold mt-16 mb-3 scroll-mt-24 text-primary-700 border-b-2 border-primary-100 pb-1">5. Bulk Generation and Automation</h2>
+      <p className="text-gray-700 mb-4 leading-relaxed">
+        SuiteGenie supports bulk generation via Strategy Builder context. Currently, generation supports single formats out to approximately one month of structured volume.
+      </p>
+      <ul className="list-disc pl-6 space-y-2 text-gray-700 mb-8">
+        <li>Generate 10-20 posts aligned to your strategy constraint.</li>
+        <li>Automate them into a one- to two-week window.</li>
+        <li>Use team mode if the flow should belong to a shared team workflow.</li>
+      </ul>
       <p className="mb-6">
         Bulk generation is best used as a planning accelerator, not a replacement for review.
       </p>
@@ -157,13 +163,13 @@ const DocsPage = () => (
         <li>Threads-origin cross-posting where enabled</li>
       </ul>
       <p className="mb-6">
-        Always verify the source account and destination target account before posting or scheduling.
+        Always verify the source account and destination target account before posting or automating cross-posts.
       </p>
 
       <h2 id="7-history-and-analytics" className="text-2xl font-bold mt-16 mb-3 scroll-mt-24 text-primary-700 border-b-2 border-primary-100 pb-1">7. History and Analytics</h2>
       <ul className="list-disc pl-6 mb-6">
         <li>Use history views to confirm what was published</li>
-        <li>Use scheduled views to confirm what is still upcoming</li>
+        <li>Use automated flow views to confirm what is still upcoming</li>
         <li>Use analytics to learn which topics, formats, and accounts perform best</li>
         <li>Keep the selected account context in mind when reviewing performance</li>
       </ul>

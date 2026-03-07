@@ -9,6 +9,9 @@ import api from '../utils/api';
 import { loadRazorpayScript } from '../utils/payment';
 import PublicSeo from '../components/PublicSeo';
 
+const INR_TO_USD_APPROX = 83;
+const toUsdApprox = (inrAmount) => (inrAmount / INR_TO_USD_APPROX).toFixed(2);
+
 const PlansPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -38,9 +41,9 @@ const PlansPage = () => {
         'All core SuiteGenie features',
         'Content generation with AI (text only, no image generation)',
         'Basic AI mode (good for everyday drafts)',
-        'Basic analytics & scheduling',
+        'Basic analytics & automation',
         'Cross-platform posting',
-        'Bulk scheduling for already generated content',
+        'Bulk automation for already generated content',
         'Connection of Tweet Genie and LinkedIn Genie',
         'Encrypted BYOK (OpenAI, Perplexity, Gemini)',
         'Community support',
@@ -53,8 +56,9 @@ const PlansPage = () => {
     },
     {
       name: 'Pro',
-      price: 'Rs 399',
-      monthlyPrice: 'Rs 399',
+      price: '₹399',
+      monthlyPrice: '₹399',
+      monthlyPriceUsdApprox: `~$${toUsdApprox(399)}`,
       description: 'Best for individual creators and small teams with multiple accounts',
       features: [
         'Everything in Free',
@@ -75,23 +79,27 @@ const PlansPage = () => {
       popular: true
     },
     {
-      name: 'Enterprise',
+      name: 'Agency',
       price: 'Custom',
-      monthlyPrice: 'Contact Us',
-      description: 'For large teams and agencies',
+      monthlyPrice: 'Contact Admin',
+      description: 'Workspace-first operations for agencies with multi-client delivery',
       features: [
-        'Everything in Pro',
-        'Unlimited team members',
-        'Custom credit limits',
-        'Dedicated account manager',
-        'Priority support & onboarding',
-        'Custom integrations',
-        'Advanced security features',
+        '6 client workspaces (included)',
+        '6 seats total including owner (included)',
+        'Client workspace management: brand, logo, timezone, pause/archive',
+        'Assign team members to specific client workspaces',
+        'Roles: Admin, Editor, Viewer with workspace-level access control',
+        'Attach workspace accounts across Twitter, LinkedIn, Threads, Instagram',
+        'Launch Tweet Genie, LinkedIn Genie, and Social Genie from workspace context',
+        'Cross-platform compose and automation roadmap included',
+        'Approval workflow, calendar, analytics, and white-label reporting roadmap',
+        'Priority support and guided onboarding',
       ],
       notIncluded: [],
       buttonText: 'Contact Sales',
       popular: false
-    }
+    },
+
   ];
 
   const comparisonFeatures = [
@@ -102,7 +110,7 @@ const PlansPage = () => {
     { name: 'Analytics', free: 'Basic', pro: 'Complete' },
     { name: 'Image Generation', free: false, pro: true },
     { name: 'Bulk Content Generation (AI)', free: false, pro: true },
-    { name: 'Bulk Scheduling', free: 'Already generated', pro: 'Already generated' },
+    { name: 'Bulk Automation', free: 'Already generated', pro: 'Already generated' },
     { name: 'Content Strategy Builder', free: false, pro: true },
     { name: 'Teams Mode (Collaboration)', free: false, pro: true },
     { name: 'Team Members', free: '0', pro: '5' },
@@ -113,7 +121,7 @@ const PlansPage = () => {
   const faqs = [
     {
       question: 'How do I upgrade to Pro?',
-      answer: 'Click \'Upgrade to Pro\', complete the secure Razorpay checkout, and your account will be upgraded for Rs 399/month.'
+      answer: `Click 'Upgrade to Pro', complete the secure Razorpay checkout, and your account will be upgraded for ₹399/month (about $${toUsdApprox(399)}/month).`
     },
     {
       question: 'Can I change plans at any time?',
@@ -143,6 +151,10 @@ const PlansPage = () => {
     {
       question: 'Where do I manage my team after upgrading to Pro?',
       answer: 'After upgrading to Pro, you can visit the /team page on your dashboard to create or manage your team. You\'ll be able to invite members, manage social accounts, and collaborate with your team on content creation.'
+    },
+    {
+      question: 'How do I start with Agency plan?',
+      answer: 'Agency plan is currently activated manually. Contact sales/admin, then manage client workspaces from /agency once your account is enabled.'
     }
   ];
 
@@ -164,7 +176,11 @@ const PlansPage = () => {
     }
 
     if (authoritativePlanType === 'enterprise') {
-      toast.success('You are already on Enterprise.');
+      toast.success('Legacy plan detected. Contact support to change plan.');
+      return;
+    }
+    if (authoritativePlanType === 'agency') {
+      toast.success('You are already on Agency.');
       return;
     }
 
@@ -273,13 +289,32 @@ const PlansPage = () => {
     }
   };
 
+  const getPlanButtonText = (plan) => {
+    if (upgrading) return 'Processing...';
+
+    if (plan.name === 'Agency') {
+      if (currentIndividualPlanType === 'agency') return 'Current Plan - Agency';
+      if (currentIndividualPlanType === 'enterprise') return 'Contact Support';
+      return 'Contact Sales';
+    }
+
+    if (plan.name === 'Pro') {
+      if (currentIndividualPlanType === 'pro') return 'Current Plan - Active';
+      if (currentIndividualPlanType === 'enterprise') return 'Contact Support';
+      if (currentIndividualPlanType === 'agency') return 'Already on Agency';
+      if (pendingIntent === 'pro') return 'Upgrade to Pro (Recommended)';
+    }
+
+    return plan.buttonText;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 relative">
       <PublicSeo
-        title="SuiteGenie Plans and Pricing | Free, Pro, and Enterprise"
-        description="Compare SuiteGenie Free, Pro, and Enterprise plans for AI social media automation, BYOK, team collaboration, analytics, bulk generation, and scheduling."
+        title="SuiteGenie Plans and Pricing | Free, Pro, and Agency"
+        description="Compare SuiteGenie Free, Pro, and Agency plans for AI social media automation, BYOK, workspace management, team collaboration, analytics, and flow automation."
         canonicalPath="/plans"
-        keywords="SuiteGenie pricing, SuiteGenie plans, social media automation pricing, BYOK pricing, AI content scheduling plans"
+        keywords="SuiteGenie pricing, SuiteGenie plans, social media automation pricing, BYOK pricing, AI content automation plans"
         schema={[
           {
             '@context': 'https://schema.org',
@@ -308,6 +343,12 @@ const PlansPage = () => {
                 availability: 'https://schema.org/InStock',
                 url: 'https://suitegenie.in/plans',
               },
+              {
+                '@type': 'Offer',
+                name: 'SuiteGenie Agency',
+                availability: 'https://schema.org/InStock',
+                url: 'https://suitegenie.in/plans',
+              },
             ],
           },
           {
@@ -331,7 +372,7 @@ const PlansPage = () => {
             Choose Your Plan
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Choose the perfect plan for your social media automation needs. 
+            Choose the perfect plan for your social media automation needs.
             Scale your content creation with AI-powered tools across Twitter, LinkedIn, and WordPress.
           </p>
           {/* <div className="inline-flex items-center bg-blue-50 rounded-full px-4 py-2 text-blue-700">
@@ -346,9 +387,8 @@ const PlansPage = () => {
           {plans.map((plan, index) => (
             <div
               key={index}
-              className={`bg-white rounded-2xl shadow-lg p-8 relative ${
-                plan.popular ? 'border-2 border-blue-500 scale-105' : 'border border-gray-200'
-              }`}
+              className={`bg-white rounded-2xl shadow-lg p-8 relative ${plan.popular ? 'border-2 border-blue-500 scale-105' : 'border border-gray-200'
+                }`}
             >
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
@@ -367,6 +407,9 @@ const PlansPage = () => {
                     <span className="text-gray-500 ml-1">/month</span>
                   )}
                 </div>
+                {plan.monthlyPriceUsdApprox && (
+                  <p className="mt-2 text-sm text-gray-500">{plan.monthlyPriceUsdApprox} / month</p>
+                )}
               </div>
 
               <div className="space-y-4 mb-8">
@@ -390,20 +433,23 @@ const PlansPage = () => {
                   if (!user) {
                     if (plan.name === 'Pro') {
                       navigate('/register?plan=pro');
-                    } else if (plan.name === 'Enterprise') {
+                    } else if (plan.name === 'Agency') {
                       navigate('/contact');
                     } else {
                       navigate('/register');
                     }
                     return;
                   }
-                  
-                  // If Enterprise, redirect to contact
-                  if (plan.name === 'Enterprise') {
+
+                  if (plan.name === 'Agency') {
+                    if (currentIndividualPlanType === 'agency') {
+                      navigate('/agency');
+                      return;
+                    }
                     navigate('/contact');
                     return;
                   }
-                  
+
                   // If user is logged in and clicking Pro plan, upgrade
                   if (plan.name === 'Pro') {
                     await handleProUpgrade();
@@ -411,21 +457,12 @@ const PlansPage = () => {
                   }
                 }}
                 disabled={upgrading}
-                className={`w-full py-3 px-6 rounded-lg font-medium transition-colors ${
-                  plan.popular
+                className={`w-full py-3 px-6 rounded-lg font-medium transition-colors ${plan.popular
                     ? 'bg-blue-600 text-white hover:bg-blue-700'
                     : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
-                } ${upgrading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  } ${upgrading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                {upgrading
-                  ? 'Processing...'
-                  : (plan.name === 'Pro' && currentIndividualPlanType === 'pro'
-                      ? 'Current Plan - Active'
-                      : (plan.name === 'Pro' && currentIndividualPlanType === 'enterprise'
-                          ? 'Already on Enterprise'
-                          : (plan.name === 'Pro' && pendingIntent === 'pro'
-                              ? 'Upgrade to Pro (Recommended)'
-                              : plan.buttonText)))}
+                {getPlanButtonText(plan)}
               </button>
             </div>
           ))}

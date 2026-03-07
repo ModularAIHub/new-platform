@@ -14,7 +14,7 @@ const CTASection = () => {
           Ready to Run AI Content Ops?
         </h2>
         <p className="text-xl text-gray-700 mb-8 max-w-3xl mx-auto">
-          Move from strategy and competitor analysis to platform-specific content, queue planning, and cross-post execution in one workspace.
+          Move from strategy and competitor analysis to platform-specific content, automated planning, and cross-post execution in one workspace.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
           <button

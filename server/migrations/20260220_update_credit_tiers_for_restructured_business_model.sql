@@ -1,6 +1,7 @@
 -- Update credit tiers after SuiteGenie business model restructure
 -- Free: Platform 15 / BYOK 50
 -- Pro: Platform 100 / BYOK 180
+-- Agency: Platform 100 / BYOK 180
 -- Enterprise: Platform 500 / BYOK 1000
 
 -- Safety: some environments may not have run 20260202_team_credits.sql yet.
@@ -23,6 +24,8 @@ SET
     WHEN plan_type = 'free' AND api_key_preference = 'byok' THEN 50
     WHEN plan_type = 'pro' AND api_key_preference = 'platform' THEN 100
     WHEN plan_type = 'pro' AND api_key_preference = 'byok' THEN 180
+    WHEN plan_type = 'agency' AND api_key_preference = 'platform' THEN 100
+    WHEN plan_type = 'agency' AND api_key_preference = 'byok' THEN 180
     WHEN plan_type = 'enterprise' AND api_key_preference = 'platform' THEN 500
     WHEN plan_type = 'enterprise' AND api_key_preference = 'byok' THEN 1000
     ELSE credits_remaining
@@ -36,6 +39,8 @@ SET
   credits_remaining = CASE
     WHEN u.plan_type = 'pro' AND u.api_key_preference = 'platform' THEN 100
     WHEN u.plan_type = 'pro' AND u.api_key_preference = 'byok' THEN 180
+    WHEN u.plan_type = 'agency' AND u.api_key_preference = 'platform' THEN 100
+    WHEN u.plan_type = 'agency' AND u.api_key_preference = 'byok' THEN 180
     WHEN u.plan_type = 'enterprise' AND u.api_key_preference = 'platform' THEN 500
     WHEN u.plan_type = 'enterprise' AND u.api_key_preference = 'byok' THEN 1000
     ELSE COALESCE(t.credits_remaining, 0)

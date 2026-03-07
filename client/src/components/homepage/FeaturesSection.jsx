@@ -7,10 +7,10 @@ const FeaturesSection = () => {
       icon: <Twitter className="w-8 h-8" />,
       title: 'Tweet Genie',
       description:
-        'Platform-native X content engine with strategy-aware generation, queue workflows, and cross-post controls for connected destinations.',
+        'Platform-native X content engine with strategy-aware generation, automation workflows, and cross-post controls for connected destinations.',
       color: 'from-blue-500 to-blue-600',
-      stats: 'Strategy plus queue plus X execution',
-      features: ['Thread and single-post workflows', 'Content queue operations', 'Performance analytics'],
+      stats: 'Strategy plus automation plus X execution',
+      features: ['Thread and single-post workflows', 'Content flow operations', 'Performance analytics'],
       url: 'https://tweet.suitegenie.in'
     },
     {
@@ -29,10 +29,10 @@ const FeaturesSection = () => {
       icon: <AtSign className="w-8 h-8" />,
       title: 'Social Genie',
       description:
-        'Meta-oriented workflow for Threads and expanding channels with centralized queue, cross-post controls, and history visibility.',
+        'Meta-oriented workflow for Threads and expanding channels with centralized flow, cross-post controls, and history visibility.',
       color: 'from-slate-700 to-slate-900',
       stats: 'Threads live now; Instagram plus YouTube rollout',
-      features: ['Threads publishing (live)', 'Queue and history', 'Cross-post controls', 'Post analytics'],
+      features: ['Threads publishing (live)', 'Automation flow and history', 'Cross-post controls', 'Post analytics'],
       url: 'https://meta.suitegenie.in',
       ctaLabel: 'Access Social Genie',
       ctaClass: 'bg-slate-700 hover:bg-slate-800 focus:ring-slate-500'
@@ -62,7 +62,7 @@ const FeaturesSection = () => {
             Product Modules for Full Content Ops
           </h2>
           <p className="text-xl text-neutral-600 max-w-3xl mx-auto leading-relaxed">
-            Each module handles channel-native creation and publishing while staying connected to strategy, queueing, and cross-post workflows.
+            Each module handles channel-native creation and publishing while staying connected to strategy, automation, and cross-post workflows.
           </p>
         </div>
 

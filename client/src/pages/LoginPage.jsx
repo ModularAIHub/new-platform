@@ -22,10 +22,10 @@ const LoginPage = () => {
 
     const handleSubmit = useCallback(async (e) => {
         e.preventDefault()
-        
+
         // Clear previous validation errors
         setValidationErrors({})
-        
+
         // Validate form data
         const validation = validateLoginData({ email, password })
         if (!validation.isValid) {
@@ -107,15 +107,15 @@ const LoginPage = () => {
                                 {/* Remember Me & Forgot Password */}
                                 <div className="flex items-center justify-between">
                                     <label className="flex items-center">
-                                        <input 
-                                            type="checkbox" 
-                                            className="w-4 h-4 text-primary-600 bg-white border-neutral-300 rounded focus:ring-primary-500 focus:ring-2" 
+                                        <input
+                                            type="checkbox"
+                                            className="w-4 h-4 text-primary-600 bg-white border-neutral-300 rounded focus:ring-primary-500 focus:ring-2"
                                         />
                                         <span className="ml-2 text-sm text-neutral-600">Remember me</span>
                                     </label>
-                                    <button 
-                                        type="button" 
-                                        onClick={() => setShowForgotPassword(true)} 
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowForgotPassword(true)}
                                         className="text-sm text-primary-600 hover:text-primary-700 hover:underline transition-colors"
                                     >
                                         Forgot password?
@@ -137,8 +137,8 @@ const LoginPage = () => {
                                 <div className="text-center">
                                     <span className="text-sm text-neutral-600">
                                         Don't have an account?{' '}
-                                        <Link 
-                                            to="/register" 
+                                        <Link
+                                            to="/register"
                                             className="font-medium text-primary-600 hover:text-primary-700 transition-colors"
                                         >
                                             Sign up for free
@@ -155,13 +155,13 @@ const LoginPage = () => {
             <div className="hidden lg:flex lg:flex-1 bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800 relative overflow-hidden">
                 {/* Background Pattern */}
                 <div className="absolute inset-0 opacity-5 bg-white/5"></div>
-                
+
                 <div className="relative flex flex-col justify-center px-12 py-16 text-white">
                     <div className="max-w-lg">
                         <h2 className="text-4xl font-bold mb-6">
                             Welcome back to SuiteGenie! 🚀
                         </h2>
-                        
+
                         <div className="space-y-6 text-lg">
                             <div className="flex items-start space-x-4">
                                 <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
@@ -174,7 +174,7 @@ const LoginPage = () => {
                                     </p>
                                 </div>
                             </div>
-                            
+
                             <div className="flex items-start space-x-4">
                                 <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
                                     <span className="text-xl">📝</span>
@@ -182,11 +182,11 @@ const LoginPage = () => {
                                 <div>
                                     <h3 className="font-semibold mb-1">Start Creating</h3>
                                     <p className="text-primary-100 text-base">
-                                        Use our intuitive tools to generate, schedule, and analyze your content.
+                                        Use our intuitive tools to generate, automate, and analyze your content.
                                     </p>
                                 </div>
                             </div>
-                            
+
                             <div className="flex items-start space-x-4">
                                 <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
                                     <span className="text-xl">📊</span>
@@ -199,7 +199,7 @@ const LoginPage = () => {
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div className="mt-8 p-6 bg-white/10 rounded-xl border border-white/20">
                             <h4 className="font-semibold mb-2">🎯 Next Steps</h4>
                             <ul className="space-y-1 text-primary-100 text-sm">
@@ -208,7 +208,7 @@ const LoginPage = () => {
                                 <li>• Start creating amazing content</li>
                             </ul>
                         </div>
-                        
+
                         <p className="mt-6 text-primary-200 italic">
                             Your creative journey continues. Manage, create, and grow, all in one place.
                         </p>

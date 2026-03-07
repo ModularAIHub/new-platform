@@ -321,7 +321,7 @@ export const ProTeamController = {
 
             // Check if user has Pro plan
             const user = await query('SELECT plan_type FROM users WHERE id = $1', [userId]);
-            if (!user.rows[0] || !['pro', 'enterprise'].includes(user.rows[0].plan_type)) {
+            if (!user.rows[0] || !['pro', 'agency', 'enterprise'].includes(user.rows[0].plan_type)) {
                 return res.status(403).json({ 
                     error: 'Team collaboration requires Pro plan',
                     code: 'UPGRADE_REQUIRED' 

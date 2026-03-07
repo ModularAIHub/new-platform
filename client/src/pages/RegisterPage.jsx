@@ -74,9 +74,9 @@ const RegisterPage = () => {
 				validation.sanitized.password,
 				verificationToken
 			);
-			
+
 			setShowOTPModal(false);
-			
+
 			// Check if registration was successful
 			if (!registerResult?.user) {
 				throw new Error('Registration failed. Please try again.');
@@ -103,7 +103,7 @@ const RegisterPage = () => {
 		<div className="min-h-screen bg-neutral-50 flex flex-col lg:flex-row">
 			<PublicSeo
 				title="Create Your SuiteGenie Account | Sign Up"
-				description="Create your SuiteGenie account to start generating, scheduling, and managing AI-powered social media content across X, LinkedIn, and more."
+				description="Create your SuiteGenie account to start generating, automating, and managing AI-powered social media content across X, LinkedIn, and more."
 				canonicalPath="/register"
 				noIndex
 			/>
@@ -173,10 +173,10 @@ const RegisterPage = () => {
 
 								{/* Terms and Conditions */}
 								<div className="flex items-start space-x-3">
-									<input 
-										type="checkbox" 
+									<input
+										type="checkbox"
 										required
-										className="w-4 h-4 text-primary-600 bg-white border-neutral-300 rounded focus:ring-primary-500 focus:ring-2 mt-1" 
+										className="w-4 h-4 text-primary-600 bg-white border-neutral-300 rounded focus:ring-primary-500 focus:ring-2 mt-1"
 									/>
 									<span className="text-sm text-neutral-600">
 										I agree to the{' '}
@@ -205,29 +205,29 @@ const RegisterPage = () => {
 								<div className="text-center">
 									<span className="text-sm text-neutral-600">
 										Already have an account?{' '}
-										<Link 
-											to="/login" 
+										<Link
+											to="/login"
 											className="font-medium text-primary-600 hover:text-primary-700 transition-colors"
 										>
 											Sign in
 										</Link>
 									</span>
 								</div>
-					</form>
-				</CardContent>
-			</Card>
-			
-			<OTPModal
-				isOpen={showOTPModal}
-				onClose={() => setShowOTPModal(false)}
-				email={email}
-				onSuccess={handleOTPSuccess}
-				title="Verify Your Email"
-				purpose="account-verification"
-			/>
-		</div>
-	</div>
-			
+							</form>
+						</CardContent>
+					</Card>
+
+					<OTPModal
+						isOpen={showOTPModal}
+						onClose={() => setShowOTPModal(false)}
+						email={email}
+						onSuccess={handleOTPSuccess}
+						title="Verify Your Email"
+						purpose="account-verification"
+					/>
+				</div>
+			</div>
+
 			{/* Features Panel */}
 			<div className="hidden lg:flex lg:flex-1 bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800 relative overflow-hidden">
 				{/* Background Pattern */}
@@ -237,13 +237,13 @@ const RegisterPage = () => {
 						backgroundSize: '60px 60px'
 					}}></div>
 				</div>
-				
+
 				<div className="relative flex flex-col justify-center px-12 py-16 text-white">
 					<div className="max-w-lg">
 						<h2 className="text-4xl font-bold mb-6 animate-fade-in">
 							What Awaits You? 🌟
 						</h2>
-						
+
 						<div className="space-y-6 text-lg animate-fade-in animate-stagger-1">
 							<div className="flex items-start space-x-4">
 								<div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
@@ -252,11 +252,11 @@ const RegisterPage = () => {
 								<div>
 									<h3 className="font-semibold mb-1">Advanced AI Modules</h3>
 									<p className="text-primary-100 text-base">
-										Access cutting-edge AI tools for content creation, scheduling, and analytics.
+										Access cutting-edge AI tools for content creation, automation, and analytics.
 									</p>
 								</div>
 							</div>
-							
+
 							<div className="flex items-start space-x-4">
 								<div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
 									<span className="text-xl">🤖</span>
@@ -264,11 +264,11 @@ const RegisterPage = () => {
 								<div>
 									<h3 className="font-semibold mb-1">Smart Automation</h3>
 									<p className="text-primary-100 text-base">
-										Automated scheduling, cross-platform publishing, and intelligent analytics.
+										Flow automation, cross-platform publishing, and intelligent analytics.
 									</p>
 								</div>
 							</div>
-							
+
 							<div className="flex items-start space-x-4">
 								<div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
 									<span className="text-xl">📈</span>
@@ -280,7 +280,7 @@ const RegisterPage = () => {
 									</p>
 								</div>
 							</div>
-							
+
 							<div className="flex items-start space-x-4">
 								<div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
 									<span className="text-xl">🛡️</span>
@@ -293,14 +293,14 @@ const RegisterPage = () => {
 								</div>
 							</div>
 						</div>
-						
+
 						<div className="mt-8 p-6 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 animate-fade-in animate-stagger-2">
 							<h4 className="font-semibold mb-2">🎯 Ready to Level Up?</h4>
 							<p className="text-primary-100 text-sm">
 								Join thousands of creators who've transformed their content workflow with SuiteGenie.
 							</p>
 						</div>
-						
+
 						<p className="mt-6 text-primary-200 italic animate-fade-in animate-stagger-3">
 							Your journey to effortless content creation starts here.
 						</p>

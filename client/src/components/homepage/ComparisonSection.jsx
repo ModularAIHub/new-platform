@@ -27,7 +27,7 @@ const ComparisonSection = () => {
       sproutSocial: 'partial'
     },
     {
-      name: 'Content queue orchestration',
+      name: 'Platform automation orchestration',
       ourPlatform: true,
       hootsuite: true,
       buffer: true,
@@ -94,15 +94,15 @@ const ComparisonSection = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <div className="inline-flex items-center px-6 py-3 bg-blue-500/20 rounded-full text-sm font-semibold text-blue-300 mb-6 border border-blue-400/20">
-            Not Scheduler-Only
+            Not Basic Automation
           </div>
           <h2 className="text-5xl font-light text-white mb-6">
             <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              SuiteGenie vs Scheduler-Only Tools
+              SuiteGenie vs Basic Automation Tools
             </span>
           </h2>
           <p className="text-xl text-slate-300 max-w-3xl mx-auto">
-            Scheduling is table stakes. Strategy, competitor analysis, platform-native generation, and routing are where teams actually win.
+            Basic automation is table stakes. Strategy, competitor analysis, platform-native generation, and routing are where teams actually win.
           </p>
         </div>
 

@@ -37,7 +37,7 @@ export const usePlanAccess = () => {
       'image_generation': userPlan.type !== 'free',
       'multi_accounts': userPlan.type !== 'free',
       'priority_support': userPlan.type !== 'free',
-      'team_collaboration': userPlan.type === 'pro' || userPlan.type === 'enterprise',
+      'team_collaboration': userPlan.type === 'pro' || userPlan.type === 'agency' || userPlan.type === 'enterprise',
       'own_keys': true, // Available to all users
       'basic_ai_generation': true, // Available to all users
       'built_in_keys': true // Available to all users

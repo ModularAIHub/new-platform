@@ -48,16 +48,16 @@ const TabbedFeaturesSection = () => {
     },
     {
       id: 'queue',
-      label: 'Content Queue + Cross-Post',
-      desc: 'Control publishing from one queue.',
+      label: 'Flow Automation + Cross-Post',
+      desc: 'Control publishing from automated flows.',
       content: {
-        title: 'Queue Once, Route Everywhere You Are Connected',
-        body: 'Move approved drafts into a queue, set scheduling, and route cross-posts through connected accounts without rebuilding each post from scratch.',
+        title: 'Automate Once, Route Everywhere You Are Connected',
+        body: 'Move approved drafts into an automated flow, set execution rules, and route cross-posts through connected accounts without rebuilding each post from scratch.',
         bullets: [
-          'Central queue for planned execution',
-          'Cross-post routing across connected channels',
-          'Scheduling with operational control'
-        ]
+          'Central flow for planned execution',
+          'Cross-post target selection per post',
+          'Execution with operational control'
+        ],
       }
     },
     {
@@ -65,8 +65,8 @@ const TabbedFeaturesSection = () => {
       label: 'Pro Team Mode',
       desc: 'Built for power users and small agencies.',
       content: {
-        title: 'Pro Mode For Multi-Handle Teams',
-        body: 'Power users and small agencies can operate from team space: shared connected accounts, coordinated queue management, and cross-post to authorized team-linked destinations.',
+        title: 'Team Workspaces + Account Model',
+        body: 'Power users and small agencies can operate from team space: shared connected accounts, coordinated flow management, and cross-post to authorized team-linked destinations.',
         bullets: [
           'Shared account pool in team context',
           'Cross-post to authorized connected accounts',
@@ -82,14 +82,11 @@ const TabbedFeaturesSection = () => {
     <section className="py-24 bg-gradient-to-br from-gray-900 via-gray-950 to-slate-950">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-14">
-          <div className="inline-flex items-center gap-2 bg-blue-500/20 text-blue-200 px-4 py-2 rounded-full text-sm font-medium mb-6 border border-blue-500/30">
-            Core Differentiators
-          </div>
-          <h2 className="text-4xl lg:text-5xl font-bold text-white mb-4 tracking-tight">
-            This Is More Than Scheduling
+          <h2 className="text-sm font-bold tracking-widest text-primary-400 uppercase mb-3">
+            This Is More Than Execution
           </h2>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            Strategy, competitor intelligence, platform-native generation, queue orchestration, and pro team routing in one workflow.
+          <p className="text-3xl sm:text-4xl font-extrabold text-white leading-tight">
+            Strategy, competitor intelligence, platform-native generation, flow orchestration, and pro team routing in one workflow.
           </p>
         </div>
 
@@ -99,11 +96,10 @@ const TabbedFeaturesSection = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`rounded-xl px-4 py-3 text-left transition-all duration-200 border ${
-                  activeTab === tab.id
-                    ? 'bg-blue-600 text-white border-blue-500'
-                    : 'bg-gray-800/70 text-gray-200 border-gray-700 hover:border-gray-500'
-                }`}
+                className={`rounded-xl px-4 py-3 text-left transition-all duration-200 border ${activeTab === tab.id
+                  ? 'bg-blue-600 text-white border-blue-500'
+                  : 'bg-gray-800/70 text-gray-200 border-gray-700 hover:border-gray-500'
+                  }`}
               >
                 <div className="text-sm font-semibold">{tab.label}</div>
                 <div className="text-xs mt-1 opacity-85">{tab.desc}</div>

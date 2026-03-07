@@ -214,53 +214,51 @@ const BlogPostPage = () => {
             </ol>
           </nav>
 
-          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-            <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${categoryMeta.badgeClass}`}>
+          <section className="mb-12 text-center md:pb-8">
+            <span className={`inline-flex rounded-full border px-4 py-1.5 text-xs font-bold tracking-wide uppercase ${categoryMeta.badgeClass}`}>
               {categoryMeta.label}
             </span>
-            <h1 className="mt-4 text-4xl font-extrabold leading-tight text-slate-900 sm:text-5xl">{post.title}</h1>
+            <h1 className="mx-auto mt-6 max-w-4xl text-4xl font-extrabold leading-tight text-slate-900 tracking-tight sm:text-5xl lg:text-6xl">{post.title}</h1>
 
-            <div className="mt-6 flex flex-col gap-6 border-y border-slate-100 py-5 xl:flex-row xl:items-center xl:justify-between">
-              <div className="flex flex-wrap items-center gap-4">
-                <div className="flex items-center gap-3">
-                  <img
-                    src={post.author.avatar}
-                    alt={`${post.author.name} avatar`}
-                    className="h-11 w-11 rounded-full border border-slate-200 object-cover"
-                  />
-                  <div>
-                    <p className="font-semibold text-slate-900">{post.author.name}</p>
-                    <p className="text-sm text-slate-500">{post.author.bio}</p>
-                  </div>
-                </div>
-
-                <div className="h-8 w-px bg-slate-200" />
-
-                <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
-                  <p className="inline-flex items-center gap-1">
-                    <CalendarDays className="h-4 w-4" />
-                    Published {formatDate(post.publishDate)}
-                  </p>
-                  <p>Updated {formatDate(post.lastModified || post.publishDate)}</p>
-                  <p className="inline-flex items-center gap-1">
-                    <Clock3 className="h-4 w-4" />
-                    {readTime} min read
-                  </p>
+            <div className="mt-8 flex flex-col items-center justify-center gap-6 border-y border-slate-100 py-6 md:flex-row md:gap-8">
+              <div className="flex items-center gap-4">
+                <img
+                  src={post.author.avatar}
+                  alt={`${post.author.name} avatar`}
+                  className="h-12 w-12 rounded-full border-2 border-slate-200 object-cover shadow-sm"
+                />
+                <div className="text-left">
+                  <p className="font-bold text-slate-900">{post.author.name}</p>
+                  <p className="text-sm font-medium text-slate-500">SuiteGenie</p>
                 </div>
               </div>
 
-              <ShareButtons title={post.title} url={canonicalUrl} />
-            </div>
+              <div className="hidden h-10 w-px bg-slate-200 md:block" />
 
-            <figure className="mt-8 overflow-hidden rounded-2xl border border-slate-200">
+              <div className="flex flex-wrap items-center justify-center gap-4 text-sm font-medium text-slate-500">
+                <p className="inline-flex items-center gap-1.5">
+                  <CalendarDays className="h-4 w-4" />
+                  Published {formatDate(post.publishDate)}
+                </p>
+                <div className="hidden h-1 w-1 rounded-full bg-slate-300 md:block" />
+                <p className="inline-flex items-center gap-1.5">
+                  <Clock3 className="h-4 w-4" />
+                  {readTime} min read
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <figure className="relative z-10 mx-auto -mt-6 mb-16 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl md:max-w-[95%]">
+            <div className="aspect-[21/9] w-full bg-slate-100">
               <img
                 src={post.featuredImage.url}
                 alt={post.featuredImage.alt}
-                className="h-full w-full object-cover"
+                className="h-full w-full object-cover transition duration-500 hover:scale-105"
                 loading="eager"
               />
-            </figure>
-          </section>
+            </div>
+          </figure>
 
           <section className={tocItems.length > 0 ? "mt-8 lg:grid lg:grid-cols-[280px_minmax(0,_1fr)] lg:gap-8" : "mt-8 mx-auto max-w-4xl"}>
             {tocItems.length > 0 && <TableOfContents items={tocItems} />}
@@ -284,7 +282,7 @@ const BlogPostPage = () => {
               <section className="rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-6 shadow-sm">
                 <h2 className="text-2xl font-extrabold text-slate-900">Try SuiteGenie Free</h2>
                 <p className="mt-2 max-w-2xl text-slate-600">
-                  Generate and schedule social content faster with AI workflows built for agencies and creators.
+                  Generate and automate social content faster with AI workflows built for agencies and creators.
                 </p>
                 <div className="mt-5">
                   <Link

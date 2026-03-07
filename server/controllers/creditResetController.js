@@ -19,6 +19,8 @@ export const CreditResetController = {
             WHEN COALESCE(plan_type, 'free') = 'free' AND api_key_preference = 'byok' THEN ${CREDIT_TIERS.free.byok}
             WHEN plan_type = 'pro' AND api_key_preference = 'platform' THEN ${CREDIT_TIERS.pro.platform}
             WHEN plan_type = 'pro' AND api_key_preference = 'byok' THEN ${CREDIT_TIERS.pro.byok}
+            WHEN plan_type = 'agency' AND api_key_preference = 'platform' THEN ${CREDIT_TIERS.agency.platform}
+            WHEN plan_type = 'agency' AND api_key_preference = 'byok' THEN ${CREDIT_TIERS.agency.byok}
             WHEN plan_type = 'enterprise' AND api_key_preference = 'platform' THEN ${CREDIT_TIERS.enterprise.platform}
             WHEN plan_type = 'enterprise' AND api_key_preference = 'byok' THEN ${CREDIT_TIERS.enterprise.byok}
             ELSE 0 
@@ -42,6 +44,8 @@ export const CreditResetController = {
         'free-byok': 0,
         'pro-platform': 0,
         'pro-byok': 0,
+        'agency-platform': 0,
+        'agency-byok': 0,
         'enterprise-platform': 0,
         'enterprise-byok': 0
       };
@@ -103,6 +107,8 @@ export const CreditResetController = {
           COUNT(CASE WHEN COALESCE(plan_type, 'free') = 'free' AND api_key_preference = 'byok' THEN 1 END) as free_byok,
           COUNT(CASE WHEN plan_type = 'pro' AND api_key_preference = 'platform' THEN 1 END) as pro_platform,
           COUNT(CASE WHEN plan_type = 'pro' AND api_key_preference = 'byok' THEN 1 END) as pro_byok,
+          COUNT(CASE WHEN plan_type = 'agency' AND api_key_preference = 'platform' THEN 1 END) as agency_platform,
+          COUNT(CASE WHEN plan_type = 'agency' AND api_key_preference = 'byok' THEN 1 END) as agency_byok,
           COUNT(CASE WHEN plan_type = 'enterprise' AND api_key_preference = 'platform' THEN 1 END) as enterprise_platform,
           COUNT(CASE WHEN plan_type = 'enterprise' AND api_key_preference = 'byok' THEN 1 END) as enterprise_byok,
           MAX(last_credit_reset) as last_global_reset
@@ -126,6 +132,8 @@ export const CreditResetController = {
               freeByok: parseInt(stats.free_byok),
               proPlatform: parseInt(stats.pro_platform),
               proByok: parseInt(stats.pro_byok),
+              agencyPlatform: parseInt(stats.agency_platform),
+              agencyByok: parseInt(stats.agency_byok),
               enterprisePlatform: parseInt(stats.enterprise_platform),
               enterpriseByok: parseInt(stats.enterprise_byok)
             }
@@ -133,6 +141,7 @@ export const CreditResetController = {
           creditAmounts: {
             free: { platform: CREDIT_TIERS.free.platform, byok: CREDIT_TIERS.free.byok },
             pro: { platform: CREDIT_TIERS.pro.platform, byok: CREDIT_TIERS.pro.byok },
+            agency: { platform: CREDIT_TIERS.agency.platform, byok: CREDIT_TIERS.agency.byok },
             enterprise: { platform: CREDIT_TIERS.enterprise.platform, byok: CREDIT_TIERS.enterprise.byok }
           }
         }

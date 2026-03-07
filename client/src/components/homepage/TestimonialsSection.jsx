@@ -4,7 +4,7 @@ const TestimonialsSection = () => {
   const testimonials = [
     {
       name: "Annette Black",
-      role: "Founder at GreenFox", 
+      role: "Founder at GreenFox",
       initials: "AB",
       bgColor: "bg-blue-100",
       textColor: "text-blue-600",
@@ -14,46 +14,46 @@ const TestimonialsSection = () => {
     {
       name: "Savannah Nguyen",
       role: "Founder at GreenFox",
-      initials: "SN", 
+      initials: "SN",
       bgColor: "bg-green-100",
       textColor: "text-green-600",
       stars: 5,
       quote: "The analytics insights are incredible. We can now predict which content will perform best and optimize our strategy accordingly. Game-changer for our business."
     },
     {
-      name: "Darlene Robertson", 
+      name: "Darlene Robertson",
       role: "Founder at GreenFox",
       initials: "DR",
-      bgColor: "bg-purple-100", 
+      bgColor: "bg-purple-100",
       textColor: "text-purple-600",
       stars: 5,
       quote: "Simple, intuitive, and powerful. Our small team can now compete with larger companies in terms of social media presence. Highly recommended!"
     },
     {
       name: "Savannah Nguyen",
-      role: "Marketing Director", 
+      role: "Marketing Director",
       initials: "SN",
       bgColor: "bg-yellow-100",
-      textColor: "text-yellow-600", 
+      textColor: "text-yellow-600",
       stars: 5,
-      quote: "The automation features are fantastic. We can schedule weeks of content in advance while maintaining our brand voice. It's like having a social media manager that never sleeps."
+      quote: "The automation features are fantastic. We can build out weeks of content strategy in advance while maintaining our brand voice. It's like having a social media manager that never sleeps."
     },
     {
       name: "Darlene Robertson",
       role: "CEO at TechStart",
-      initials: "DR", 
+      initials: "DR",
       bgColor: "bg-red-100",
       textColor: "text-red-600",
       stars: 5,
       quote: "ROI has been exceptional. We've seen a 300% increase in social media engagement and our customer acquisition costs have dropped significantly."
     },
     {
-      name: "Annette Black", 
+      name: "Annette Black",
       role: "Creative Director",
       initials: "AB",
       bgColor: "bg-indigo-100",
       textColor: "text-indigo-600",
-      stars: 5, 
+      stars: 5,
       quote: "The cross-platform integration is seamless. We can manage Twitter, LinkedIn, and our upcoming WordPress content all from one dashboard. Brilliant!"
     }
   ];

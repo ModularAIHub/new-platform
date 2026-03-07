@@ -13,6 +13,7 @@ import creditResetRoutes from './creditReset.js';
 import workspaceRoutes from './workspace.js';
 import teamRoutes from './team.js';
 import proTeamRoutes from './proTeam.js';
+import agencyRoutes from './agency.js';
 
 const router = express.Router();
 
@@ -29,6 +30,7 @@ router.use('/credit-reset', creditResetRoutes);
 router.use('/workspaces', workspaceRoutes);
 router.use('/team', teamRoutes);
 router.use('/pro-team', proTeamRoutes);
+router.use('/agency', agencyRoutes);
 
 export default router;
 
