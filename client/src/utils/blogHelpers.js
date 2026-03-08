@@ -18,6 +18,18 @@ const escapeHtml = (value = '') =>
 
 const decodeMarkdownEscapes = (value = '') => String(value).replace(/\\([\\`*_[\]()#+\-.!])/g, '$1');
 
+const normalizeMarkdownInput = (value = '') => {
+  let normalized = String(value ?? '');
+
+  // Safety net: some generated JSON payloads may contain escaped newlines as literal "\n".
+  // Convert them so markdown parsing and TOC extraction still work.
+  if (normalized.includes('\\n') || normalized.includes('\\r\\n')) {
+    normalized = normalized.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n');
+  }
+
+  return normalized.replace(/\r\n/g, '\n');
+};
+
 export const generateSlug = (value = '') =>
   decodeMarkdownEscapes(String(value))
     .toLowerCase()
@@ -188,7 +200,7 @@ const parseTable = (lines, startIndex) => {
 };
 
 export const markdownToHTML = (markdown = '') => {
-  const lines = String(markdown).replace(/\r\n/g, '\n').split('\n');
+  const lines = normalizeMarkdownInput(markdown).split('\n');
   const output = [];
   const state = {
     inUnorderedList: false,
@@ -295,8 +307,7 @@ export const markdownToHTML = (markdown = '') => {
 
 export const generateTableOfContents = (content = '') => {
   const toc = [];
-  String(content)
-    .replace(/\r\n/g, '\n')
+  normalizeMarkdownInput(content)
     .split('\n')
     .forEach((line) => {
       const trimmed = line.trim();
