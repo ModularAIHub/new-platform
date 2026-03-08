@@ -46,13 +46,13 @@ const HeroSection = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
               <div className="rounded-xl border border-primary-200 bg-primary-50 px-3 py-2 text-sm text-primary-800 font-medium">
-                11-14 high-signal prompts, not fluff
+                Platform-native content first
               </div>
               <div className="rounded-xl border border-success-200 bg-success-50 px-3 py-2 text-sm text-success-800 font-medium">
-                4 publish-ready posts per content plan run
+                Strategy + competitor analysis
               </div>
               <div className="rounded-xl border border-secondary-200 bg-secondary-50 px-3 py-2 text-sm text-secondary-800 font-medium">
-                Context Vault learns from approvals + analytics
+                Pro mode team cross-post routing
               </div>
             </div>
 
