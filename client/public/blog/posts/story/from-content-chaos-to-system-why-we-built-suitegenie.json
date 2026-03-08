@@ -40,7 +40,7 @@
       "BYOK AI platform",
       "content chaos to system"
     ],
-    "canonicalUrl": "https://suitegenie.in/blogs/story/from-content-chaos-to-system"
+    "canonicalUrl": "https://suitegenie.in/blogs/story/from-content-chaos-to-system-why-we-built-suitegenie"
   },
   "schema": {
     "type": "Article",
@@ -93,7 +93,7 @@
     "organization": {
       "name": "SuiteGenie",
       "url": "https://suitegenie.in",
-      "logo": "https://suitegenie.in/images/logo.svg"
+      "logo": "https://suitegenie.in/suitegenie-logo.png"
     }
   }
 }
