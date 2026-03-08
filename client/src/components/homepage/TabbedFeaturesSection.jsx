@@ -7,70 +7,70 @@ const TabbedFeaturesSection = () => {
     {
       id: 'strategy',
       label: 'Strategy Builder',
-      desc: 'Turn data into practical content direction.',
+      desc: 'Turn signals into a clear plan.',
       content: {
-        title: 'Strategy Builder That Moves You Past Guesswork',
-        body: 'SuiteGenie analyzes account-level performance and outputs practical direction: content angles, timing signals, and prompt-ready ideas tied to your goals.',
+        title: 'Strategy Builder That Removes Guesswork',
+        body: 'Run setup -> review -> prompt pack -> content plan -> context vault in one guided flow. You get execution-ready output, not vague strategy notes.',
         bullets: [
-          'Audience and performance-aware recommendations',
-          'Actionable prompts instead of generic suggestions',
-          'Built for continuous iteration'
+          'Niche, audience, tone, and goals synced before generation',
+          'Clear next-best-step guidance for first-time users',
+          'Quality-first flow designed for repeatable weekly output'
         ]
       }
     },
     {
       id: 'competitor',
-      label: 'Competitor Analysis',
-      desc: 'Find where competitors are weak and you can win.',
+      label: 'Prompt Pack',
+      desc: 'High-signal prompts, not filler.',
       content: {
-        title: 'Analyze Yourself and Competitors, Then Outpublish Them',
-        body: 'The competitor workflow identifies gaps in format, positioning, and cadence. You then publish exactly where they are weak and your brand can excel.',
+        title: 'Prompt Packs Built for Quality Over Quantity',
+        body: 'LinkedIn prompt packs now target a tighter 11-14 range with better specificity so users can actually execute instead of sorting through generic prompts.',
         bullets: [
-          'Track competitor patterns and blind spots',
-          'Extract content opportunities by theme',
-          'Convert insights into posting ideas quickly'
+          'Prompt usage tracking with used-state persistence',
+          'Regeneration signals based on stale/used prompts',
+          'Prompt-to-compose handoff with cleaner context payloads'
         ]
       }
     },
     {
       id: 'content',
-      label: 'Platform-Native Generation',
-      desc: 'Create natively, then adapt for cross-post.',
+      label: 'Content Plan',
+      desc: 'Publish-ready posts generated for you.',
       content: {
-        title: 'Deep AI Generation For Each Platform First',
-        body: 'SuiteGenie writes for platform context first, not generic filler. After native generation, cross-post adaptation keeps structure and intent aligned to each destination.',
+        title: 'Generate a Publish-Ready Queue Automatically',
+        body: 'After prompt generation, SuiteGenie can auto-generate a strategy-scoped Content Plan with ready-to-edit posts, schedule suggestions, and approval controls.',
         bullets: [
-          'Native-first writing workflow',
-          'Tone and structure tuned to channel behavior',
-          'Cross-post adaptation with context retention'
+          'Fixed queue target for quality control',
+          'Approve, reject, schedule, and compose handoff in one place',
+          'Fallback hardening to avoid identity-like low-quality outputs'
         ]
       }
     },
     {
       id: 'queue',
-      label: 'Flow Automation + Cross-Post',
-      desc: 'Control publishing from automated flows.',
+      label: 'Context Vault',
+      desc: 'Memory that improves each cycle.',
       content: {
-        title: 'Automate Once, Route Everywhere You Are Connected',
-        body: 'Move approved drafts into an automated flow, set execution rules, and route cross-posts through connected accounts without rebuilding each post from scratch.',
+        title: 'Context Vault Learns from Real Outcomes',
+        body: 'Context Vault stores strategy, profile, usage, review, and analytics signals. It refreshes after key actions so the next generation cycle gets smarter.',
         bullets: [
-          'Central flow for planned execution',
-          'Cross-post target selection per post',
-          'Execution with operational control'
+          'Learns from approve/reject/schedule actions',
+          'Learns from analytics sync and post outcomes',
+          'Feeds recommendations back into strategy and prompts'
         ],
       }
     },
     {
       id: 'pro',
       label: 'Pro Team Mode',
-      desc: 'Built for power users and small agencies.',
+      desc: 'Operate cleanly across clients and brands.',
       content: {
         title: 'Team Workspaces + Account Model',
-        body: 'Power users and small agencies can operate from team space: shared connected accounts, coordinated flow management, and cross-post to authorized team-linked destinations.',
+        body: 'Power users and agencies can run structured operations with shared account pools, role-based execution, and account-aware publishing controls.',
         bullets: [
           'Shared account pool in team context',
           'Cross-post to authorized connected accounts',
-          'Team-ready operations for multiple handles'
+          'Team-ready workflows for multiple handles and clients'
         ]
       }
     }
@@ -86,7 +86,7 @@ const TabbedFeaturesSection = () => {
             This Is More Than Execution
           </h2>
           <p className="text-3xl sm:text-4xl font-extrabold text-white leading-tight">
-            Strategy, competitor intelligence, platform-native generation, flow orchestration, and pro team routing in one workflow.
+            Strategy, prompt quality, publish-ready execution, and learning loops in one workflow.
           </p>
         </div>
 

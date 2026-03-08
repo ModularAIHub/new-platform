@@ -79,6 +79,7 @@ const HelpPage = () => (
           <h2 className="text-xl font-bold mb-3 text-primary-700">Popular Workflows</h2>
           <ul className="space-y-2">
             <li><a href="/docs#3-team-mode" className="text-blue-600 underline font-medium">Set up team mode</a></li>
+            <li><a href="/docs#4-strategy-builder-content-plan-context-vault" className="text-blue-600 underline font-medium">Run Strategy Builder + Content Plan + Context Vault</a></li>
             <li><a href="/docs#5-bulk-generation-and-automation" className="text-blue-600 underline font-medium">Use bulk generation and automation</a></li>
             <li><a href="/docs#6-cross-posting" className="text-blue-600 underline font-medium">Understand cross-posting</a></li>
           </ul>
@@ -104,9 +105,9 @@ const HelpPage = () => (
       <div className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm mb-10">
         <h2 className="text-xl font-bold mb-3 text-primary-700">Latest Reading</h2>
         <ul className="space-y-2">
-          <li><a href="/blogs/updates/team-mode-cross-posting-and-visibility-update-mar-2026" className="text-blue-600 underline font-medium">Team mode, cross-posting, and visibility update</a></li>
-          <li><a href="/blogs/guides/how-to-set-up-personal-and-team-accounts-in-suitegenie" className="text-blue-600 underline font-medium">How to set up personal and team accounts cleanly</a></li>
-          <li><a href="/blogs/insights/what-reliable-social-automation-actually-needs" className="text-blue-600 underline font-medium">What reliable social automation actually needs</a></li>
+          <li><a href="/blogs/updates/strategy-builder-content-plan-and-context-vault-update-mar-2026" className="text-blue-600 underline font-medium">Strategy Builder + Content Plan + Context Vault update</a></li>
+          <li><a href="/blogs/guides/how-to-use-context-vault-to-improve-linkedin-content-quality" className="text-blue-600 underline font-medium">How to use Context Vault to improve LinkedIn quality</a></li>
+          <li><a href="/blogs/insights/why-most-ai-social-content-feels-generic-and-how-to-fix-it" className="text-blue-600 underline font-medium">Why most AI social content feels generic and how to fix it</a></li>
         </ul>
       </div>
 

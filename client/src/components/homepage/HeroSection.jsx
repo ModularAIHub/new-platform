@@ -29,30 +29,30 @@ const HeroSection = () => {
           {/* Left Content */}
           <div className="text-center lg:text-left animate-fade-in">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-neutral-900 mb-4 leading-tight animate-fade-in animate-stagger-2">
-              Find where competitors are weak.{' '}
+              Turn strategy into pipeline.{' '}
               <span className="bg-gradient-to-r from-blue-700 to-cyan-600 bg-clip-text text-transparent">
-                Publish where you can win.
+                Ship better content every week.
               </span>
             </h1>
             <div className="mb-6">
               <span className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-800 font-semibold px-4 py-2 rounded-full shadow-sm text-sm tracking-tight border border-blue-200/60">
                 <Zap className="w-4 h-4" />
-                Analyze / Gap map / Generate / Deploy
+                Analyze / Prompt pack / Content plan / Learn
               </span>
             </div>
             <p className="text-lg sm:text-xl text-neutral-600 mb-10 leading-relaxed max-w-2xl mx-auto lg:mx-0 animate-fade-in animate-stagger-3">
-              SuiteGenie analyzes your account and competitors, surfaces blind spots they are missing, and generates platform-specific content to help you own those opportunities.
+              SuiteGenie combines strategy analysis, publish-ready content planning, and analytics learning loops so you stop posting generic drafts and start shipping repeatable winners.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
               <div className="rounded-xl border border-primary-200 bg-primary-50 px-3 py-2 text-sm text-primary-800 font-medium">
-                Platform-native content first
+                11-14 high-signal prompts, not fluff
               </div>
               <div className="rounded-xl border border-success-200 bg-success-50 px-3 py-2 text-sm text-success-800 font-medium">
-                Strategy + competitor analysis
+                4 publish-ready posts per content plan run
               </div>
               <div className="rounded-xl border border-secondary-200 bg-secondary-50 px-3 py-2 text-sm text-secondary-800 font-medium">
-                Pro mode team cross-post routing
+                Context Vault learns from approvals + analytics
               </div>
             </div>
 
@@ -120,28 +120,28 @@ const HeroSection = () => {
 
                   {/* Competitor breakdown preview */}
                   <div className="rounded-xl border border-blue-100 bg-blue-50/70 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-blue-800 mb-3">Competitor gap map</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-blue-800 mb-3">Content plan quality signals</p>
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-700">Practical playbooks</span>
-                        <span className="font-semibold text-emerald-700">Gap 78%</span>
+                        <span className="text-slate-700">Prompt relevance</span>
+                        <span className="font-semibold text-emerald-700">92%</span>
                       </div>
                       <div className="h-2 rounded-full bg-blue-100">
-                        <div className="h-2 w-[78%] rounded-full bg-emerald-500"></div>
+                        <div className="h-2 w-[92%] rounded-full bg-emerald-500"></div>
                       </div>
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-700">Case-study storytelling</span>
-                        <span className="font-semibold text-amber-700">Gap 52%</span>
+                        <span className="text-slate-700">Execution specificity</span>
+                        <span className="font-semibold text-amber-700">86%</span>
                       </div>
                       <div className="h-2 rounded-full bg-blue-100">
-                        <div className="h-2 w-[52%] rounded-full bg-amber-500"></div>
+                        <div className="h-2 w-[86%] rounded-full bg-amber-500"></div>
                       </div>
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-700">Founder POV content</span>
-                        <span className="font-semibold text-cyan-700">Gap 64%</span>
+                        <span className="text-slate-700">Reuse of proven angles</span>
+                        <span className="font-semibold text-cyan-700">81%</span>
                       </div>
                       <div className="h-2 rounded-full bg-blue-100">
-                        <div className="h-2 w-[64%] rounded-full bg-cyan-500"></div>
+                        <div className="h-2 w-[81%] rounded-full bg-cyan-500"></div>
                       </div>
                     </div>
                   </div>
@@ -154,45 +154,45 @@ const HeroSection = () => {
                           <TrendingUp className="w-8 h-8 text-success-700" />
                         </div>
                         <div>
-                          <span className="block text-xl font-bold text-neutral-900 tracking-tight">Strategy Gaps Found</span>
-                          <span className="block text-sm text-neutral-500 font-medium">Competitor silence detected</span>
+                          <span className="block text-xl font-bold text-neutral-900 tracking-tight">Context Vault Updated</span>
+                          <span className="block text-sm text-neutral-500 font-medium">signals from strategy + analytics</span>
                         </div>
                       </div>
                       <span className="px-3 py-1 bg-success-100/80 text-success-700 rounded-md text-xs font-bold uppercase tracking-wider animate-pulse border border-success-200">
-                        High Potential
+                        Learning Loop
                       </span>
                     </div>
                     <div className="text-6xl font-black text-neutral-900 mb-1 tracking-tighter">
-                      12
+                      4
                     </div>
                     <div className="text-sm text-success-700 font-medium bg-success-50 p-2 rounded-md border border-success-100">
-                      Uncontested topics where your competitors are silent. Generate strategy to win.
+                      Publish-ready posts generated, tracked, and fed back into next strategy cycle.
                     </div>
                   </div>
 
                   {/* Automation Flow */}
                   <div className="bg-white rounded-xl p-5 border border-slate-200 mt-2 shadow-sm">
                     <h4 className="text-sm font-bold text-neutral-800 mb-3 flex items-center gap-2">
-                      <Zap className="w-4 h-4 text-blue-700" /> Active execution flow
+                      <Zap className="w-4 h-4 text-blue-700" /> Active strategy loop
                     </h4>
                     <div className="space-y-3">
                       <div className="flex items-center gap-3 opacity-90">
                         <div className="w-5 h-5 rounded-full bg-success-100 flex items-center justify-center">
                           <svg className="w-3 h-3 text-success-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                         </div>
-                        <span className="text-xs text-neutral-700 font-medium">Competitors analyzed</span>
+                        <span className="text-xs text-neutral-700 font-medium">Prompt pack generated (11-14 quality prompts)</span>
                       </div>
                       <div className="flex items-center gap-3 opacity-90">
                         <div className="w-5 h-5 rounded-full bg-success-100 flex items-center justify-center">
                           <svg className="w-3 h-3 text-success-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                         </div>
-                        <span className="text-xs text-neutral-700 font-medium">AI hooks generated for gaps</span>
+                        <span className="text-xs text-neutral-700 font-medium">Content plan generated (4 publish-ready posts)</span>
                       </div>
                       <div className="flex items-center gap-3 bg-blue-50 p-2 rounded-md border border-blue-100">
                         <div className="w-5 h-5 rounded-full bg-blue-200 flex items-center justify-center animate-pulse shadow-sm">
                           <div className="w-2 h-2 bg-blue-700 rounded-full"></div>
                         </div>
-                        <span className="text-xs text-neutral-900 font-bold">Routing to multi-platform audience...</span>
+                        <span className="text-xs text-neutral-900 font-bold">Updating Context Vault from approvals + analytics...</span>
                       </div>
                     </div>
                   </div>
@@ -201,10 +201,10 @@ const HeroSection = () => {
 
               {/* Floating Elements */}
               <div className="absolute -top-6 -right-6 bg-success-500 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-xl animate-bounce transform rotate-3 z-10">
-                Gap signal detected
+                Content plan ready
               </div>
               <div className="absolute -bottom-6 -left-6 bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-xl animate-pulse transform -rotate-2 border-2 border-white z-10">
-                Automation running
+                Strategy learning
               </div>
             </div>
           </div>

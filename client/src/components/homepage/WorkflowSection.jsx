@@ -2,30 +2,30 @@ const WorkflowSection = () => {
   const steps = [
     {
       step: '01',
-      title: 'Analyze Your Account',
+      title: 'Run Strategy Analysis',
       description:
-        'Understand what your audience engages with, what formats perform, and where your current content pipeline breaks.',
+        'Analyze your recent content, profile context, and positioning so the system starts from your real baseline instead of generic assumptions.',
       tone: 'border-blue-200 bg-blue-50 text-blue-900'
     },
     {
       step: '02',
-      title: 'Analyze Competitors',
+      title: 'Generate High-Signal Prompt Pack',
       description:
-        'Map competitor patterns, detect gaps they are missing, then target those gaps where you can excel with better content angles.',
+        'Create a quality-first prompt pack (11-14 prompts) tuned to your niche, audience, and goals so every generation starts with strong direction.',
       tone: 'border-purple-200 bg-purple-50 text-purple-900'
     },
     {
       step: '03',
-      title: 'Generate Platform-Specific Content',
+      title: 'Create Publish-Ready Content Plan',
       description:
-        'Create content for each platform natively first. Then adapt and cross-post with context instead of generic copy-paste output.',
+        'Auto-generate 4 publish-ready posts with schedule suggestions, approve or reject quickly, and push selected posts to Compose in one click.',
       tone: 'border-green-200 bg-green-50 text-green-900'
     },
     {
       step: '04',
-      title: 'Automate, Route, and Publish',
+      title: 'Learn and Improve Automatically',
       description:
-        'Deploy approved content into automated flows, routing cross-posts to authorized connected accounts in Pro team workflows.',
+        'Context Vault ingests queue reviews and analytics performance so the next strategy cycle learns what worked and avoids what failed.',
       tone: 'border-orange-200 bg-orange-50 text-orange-900'
     }
   ]
@@ -35,10 +35,10 @@ const WorkflowSection = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-14">
           <h2 className="text-4xl font-extrabold text-neutral-900 mb-4 tracking-tight">
-            From Strategy to Posting Edge
+            From Strategy to Reliable Publishing
           </h2>
           <p className="text-xl text-neutral-600 max-w-3xl mx-auto">
-            This is the core workflow: analyze yourself and competitors, identify where they lack, then publish where you can win.
+            A practical loop for creators and teams: analyze, generate quality prompts, publish ready-to-use content, and learn from real outcomes.
           </p>
         </div>
 

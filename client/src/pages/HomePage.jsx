@@ -19,22 +19,22 @@ const HomePage = () => {
     <>
       <Helmet>
         {/* Primary Meta Tags */}
-        <title>SuiteGenie | Competitor Gap Analysis + AI Content Automation</title>
-        <meta name="title" content="SuiteGenie | Competitor Gap Analysis + AI Content Automation" />
-        <meta name="description" content="Analyze your account and competitors, find where they are weak, generate platform-specific content, and publish where you can win." />
+        <title>SuiteGenie | Strategy Builder, Content Plan, and AI Content Ops</title>
+        <meta name="title" content="SuiteGenie | Strategy Builder, Content Plan, and AI Content Ops" />
+        <meta name="description" content="Build high-signal prompts, generate publish-ready content plans, and improve each cycle with Context Vault learning from approvals and analytics." />
         <meta name="keywords" content="AI content ops, strategy builder, competitor analysis, content automation, cross-post automation, social media automation for creators, social media automation for agencies, Twitter automation, LinkedIn automation" />
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://suitegenie.in/" />
-        <meta property="og:title" content="SuiteGenie | Competitor Gap Analysis + AI Content Automation" />
-        <meta property="og:description" content="Find competitor gaps, generate platform-specific content, and execute automated publishing workflows from one platform." />
+        <meta property="og:title" content="SuiteGenie | Strategy Builder, Content Plan, and AI Content Ops" />
+        <meta property="og:description" content="Generate high-signal prompts, create publish-ready content plans, and run a strategy loop that learns from real analytics." />
         <meta property="og:image" content="https://suitegenie.in/og-default.svg" />
         <meta property="og:site_name" content="SuiteGenie" />
         {/* Twitter */}
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:url" content="https://suitegenie.in/" />
-        <meta property="twitter:title" content="SuiteGenie | Competitor Gap Analysis + AI Content Automation" />
-        <meta property="twitter:description" content="Analyze competitors, identify growth gaps, generate platform-native content, and publish where your brand can win." />
+        <meta property="twitter:title" content="SuiteGenie | Strategy Builder, Content Plan, and AI Content Ops" />
+        <meta property="twitter:description" content="Create better prompts, publish-ready content, and continuously improve with Context Vault feedback loops." />
         <meta property="twitter:image" content="https://suitegenie.in/og-default.svg" />
         <meta name="twitter:site" content="@Suitegenie1" />
         <meta name="twitter:creator" content="@Suitegenie1" />
@@ -82,7 +82,9 @@ const HomePage = () => {
               "AI Content Generation",
               "Platform-Specific Content Engine",
               "Strategy Builder",
-              "Competitor Analysis",
+              "High-Signal Prompt Pack",
+              "Publish-Ready Content Plan",
+              "Context Vault Learning",
               "Content Automation",
               "Multi-platform Automation",
               "Twitter Automation",
@@ -93,7 +95,7 @@ const HomePage = () => {
               "@type": "Organization",
               "name": "SuiteGenie",
               "url": "https://suitegenie.in",
-              "logo": "https://suitegenie.in/logo.svg",
+              "logo": "https://suitegenie.in/suitegenie-logo.png",
               "sameAs": [
                 "https://x.com/Suitegenie",
                 "https://linkedin.com/company/suitegenie"
@@ -110,7 +112,7 @@ const HomePage = () => {
             "name": "SuiteGenie",
             "alternateName": ["Suite Genie"],
             "url": "https://suitegenie.in",
-            "logo": "https://suitegenie.in/logo.svg",
+            "logo": "https://suitegenie.in/suitegenie-logo.png",
             "description": "AI content operations platform with strategy builder, competitor analysis, platform-specific generation, and cross-post workflows",
             "foundingDate": "2024",
             "founder": {

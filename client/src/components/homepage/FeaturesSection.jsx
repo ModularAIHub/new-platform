@@ -15,14 +15,14 @@ const FeaturesSection = () => {
     },
     {
       icon: <Linkedin className="w-8 h-8" />,
-      title: 'LinkedIn Automator',
+      title: 'LinkedIn Genie',
       description:
-        'Professional publishing workflow for thought-leadership, analysis-led ideas, and cross-post integration with the rest of your operation.',
+        'Strategy Builder powered LinkedIn workflow with prompt packs, content plans, and Context Vault learning from real approvals and analytics.',
       color: 'from-blue-600 to-blue-700',
-      stats: 'Professional content ops for LinkedIn',
-      features: ['Thought-leadership generation', 'Cross-post aware routing', 'Performance tracking'],
+      stats: 'Publish-ready LinkedIn ops for creators and teams',
+      features: ['11-14 high-signal prompts', '4-post content plan queue', 'Context Vault learning loop'],
       url: 'https://linkedin.suitegenie.in',
-      ctaLabel: 'Access LinkedIn Automator',
+      ctaLabel: 'Access LinkedIn Genie',
       ctaClass: 'bg-blue-700 hover:bg-blue-800 focus:ring-blue-500'
     },
     {

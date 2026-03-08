@@ -64,6 +64,105 @@ export const BLOG_CATEGORY_ORDER = [
 
 export const BLOG_POSTS_INDEX = [
   {
+    "id": "why-most-ai-social-content-feels-generic-and-how-to-fix-it",
+    "title": "Why Most AI Social Content Feels Generic and How to Fix It",
+    "slug": "why-most-ai-social-content-feels-generic-and-how-to-fix-it",
+    "category": "insights",
+    "tags": [
+      "ai content quality",
+      "linkedin strategy",
+      "context memory",
+      "social media workflow",
+      "suitegenie insights"
+    ],
+    "excerpt": "Generic AI content is usually a workflow problem, not a model problem. Here is the framework to fix it with stronger inputs, review loops, and context memory.",
+    "featuredImage": {
+      "url": "/images/blog/suitegenie-vs-hootsuite.svg",
+      "alt": "Framework showing why AI social content gets generic and how to improve quality"
+    },
+    "author": {
+      "name": "Kanishk Saraswat",
+      "avatar": "/kanishk.png",
+      "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+      "social": {
+        "linkedin": "kanishk-saraswat",
+        "twitter": "kanishksaraswat"
+      }
+    },
+    "publishDate": "2026-03-08T22:30:00+05:30",
+    "lastModified": "2026-03-08T22:30:00+05:30",
+    "readTime": 6,
+    "featured": true,
+    "status": "published",
+    "contentPath": "/blog/posts/insights/why-most-ai-social-content-feels-generic-and-how-to-fix-it.json"
+  },
+  {
+    "id": "how-to-use-context-vault-to-improve-linkedin-content-quality",
+    "title": "How to Use Context Vault to Improve LinkedIn Content Quality in 7 Days",
+    "slug": "how-to-use-context-vault-to-improve-linkedin-content-quality",
+    "category": "guides",
+    "tags": [
+      "context vault guide",
+      "linkedin content quality",
+      "strategy builder",
+      "suitegenie workflow",
+      "content plan"
+    ],
+    "excerpt": "A practical 7-day workflow to use Strategy Builder, Prompt Pack, Content Plan, and Context Vault so your LinkedIn output gets sharper each cycle.",
+    "featuredImage": {
+      "url": "/images/blog/suitegenie-launch-hero.svg",
+      "alt": "Context Vault weekly workflow for improving LinkedIn content quality"
+    },
+    "author": {
+      "name": "Kanishk Saraswat",
+      "avatar": "/kanishk.png",
+      "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+      "social": {
+        "linkedin": "kanishk-saraswat",
+        "twitter": "kanishksaraswat"
+      }
+    },
+    "publishDate": "2026-03-08T22:20:00+05:30",
+    "lastModified": "2026-03-08T22:20:00+05:30",
+    "readTime": 7,
+    "featured": true,
+    "status": "published",
+    "contentPath": "/blog/posts/guides/how-to-use-context-vault-to-improve-linkedin-content-quality.json"
+  },
+  {
+    "id": "strategy-builder-content-plan-and-context-vault-update-mar-2026",
+    "title": "SuiteGenie Update: Strategy Builder, Content Plan, and Context Vault (March 2026)",
+    "slug": "strategy-builder-content-plan-and-context-vault-update-mar-2026",
+    "category": "updates",
+    "tags": [
+      "suitegenie updates",
+      "strategy builder",
+      "content plan",
+      "context vault",
+      "linkedin genie"
+    ],
+    "excerpt": "We shipped a full quality loop in SuiteGenie: better Strategy Builder UX, high-signal prompt packs, publish-ready content plans, and Context Vault learning from reviews plus analytics.",
+    "featuredImage": {
+      "url": "/images/blog/linkedin-cross-posting-hero.svg",
+      "alt": "Strategy Builder, Content Plan, and Context Vault release update in SuiteGenie"
+    },
+    "author": {
+      "name": "Kanishk Saraswat",
+      "avatar": "/kanishk.png",
+      "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+      "social": {
+        "linkedin": "kanishk-saraswat",
+        "twitter": "kanishksaraswat"
+      }
+    },
+    "publishDate": "2026-03-08T22:10:00+05:30",
+    "lastModified": "2026-03-08T22:10:00+05:30",
+    "readTime": 6,
+    "featured": true,
+    "status": "published",
+    "contentPath": "/blog/posts/updates/strategy-builder-content-plan-and-context-vault-update-mar-2026.json"
+  },
+  {
     "id": "what-if-your-twitter-ran-itself-while-you-built-your-product",
     "title": "What If Your Twitter Ran Itself While You Built Your Product?",
     "slug": "what-if-your-twitter-ran-itself-while-you-built-your-product",

@@ -1,0 +1,58 @@
+{
+  "id": "strategy-builder-content-plan-and-context-vault-update-mar-2026",
+  "title": "SuiteGenie Update: Strategy Builder, Content Plan, and Context Vault (March 2026)",
+  "slug": "strategy-builder-content-plan-and-context-vault-update-mar-2026",
+  "category": "updates",
+  "tags": [
+    "suitegenie updates",
+    "strategy builder",
+    "content plan",
+    "context vault",
+    "linkedin genie"
+  ],
+  "excerpt": "We shipped a full quality loop in SuiteGenie: better Strategy Builder UX, high-signal prompt packs, publish-ready content plans, and Context Vault learning from reviews plus analytics.",
+  "content": "## Quick Summary\\n\\n> **Quick Answer:** We shipped a full quality loop: Strategy Builder got simpler, Prompt Pack became quality-first, Content Plan now produces publish-ready queue items, and Context Vault learns from real outcomes.\\n\\n\\nThis release was focused on one question: **How do users consistently publish stronger content instead of random AI drafts?**\\n\\nThe answer was not one feature. It was connecting multiple pieces into one system.\\n\\n## What We Shipped\\n\\n### 1) Strategy Builder UI was simplified\\n\\nStrategy Builder now follows a cleaner sequence:\\n\\n- Setup\\n- Review\\n- Prompt Pack\\n- Content Plan\\n- Context Vault\\n\\nThis makes first-time usage easier and removes the \"where do I click next\" problem.\\n\\n### 2) Prompt Pack is now quality-first\\n\\nFor LinkedIn workflows, prompt generation is tuned toward quality instead of volume.\\n\\n- Better focused prompt ranges (typically 11-14)\\n- Prompt usage tracking\\n- Better stale/refresh recommendations\\n\\n### 3) Content Plan auto-generates publish-ready queue\\n\\nAfter prompt generation, users can now get a strategy-scoped queue with publish-ready drafts and schedule suggestions.\\n\\nActions include:\\n\\n- Approve\\n- Reject\\n- Schedule\\n- Use in Compose\\n\\nThis closes the gap between ideas and execution.\\n\\n### 4) Context Vault introduced as memory + learning layer\\n\\nContext Vault stores compact strategy memory and keeps improving from real usage:\\n\\n- queue reviews (approve/reject/schedule)\\n- performance data from analytics sync\\n- prompt/content usage signals\\n\\nSo each new generation cycle is based on actual outcomes, not blank state prompting.\\n\\n## Why This Matters for Users\\n\\nMost content tools stop at generation. SuiteGenie now has a stronger **generate -> execute -> learn** loop.\\n\\nThat means:\\n\\n- fewer generic prompts\\n- fewer throwaway drafts\\n- better alignment to niche, audience, and tone\\n- higher confidence in what to post next\\n\\n## Recommended Weekly Workflow\\n\\n1. Run Strategy Builder setup and review.\\n2. Generate prompt pack.\\n3. Generate content plan and approve queue.\\n4. Publish/schedule from Compose.\\n5. Sync analytics and refresh Context Vault.\\n6. Regenerate with updated signals.\\n\\n## Related Reading\\n\\n- [How to use Context Vault to improve LinkedIn content quality](/blogs/guides/how-to-use-context-vault-to-improve-linkedin-content-quality)\\n- [Why most AI social content feels generic and how to fix it](/blogs/insights/why-most-ai-social-content-feels-generic-and-how-to-fix-it)\\n- [What reliable social automation actually needs](/blogs/insights/what-reliable-social-automation-actually-needs)",
+  "featuredImage": {
+    "url": "/images/blog/linkedin-cross-posting-hero.svg",
+    "alt": "Strategy Builder, Content Plan, and Context Vault release update in SuiteGenie"
+  },
+  "author": {
+    "name": "Kanishk Saraswat",
+    "avatar": "/kanishk.png",
+    "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+    "social": {
+      "linkedin": "kanishk-saraswat",
+      "twitter": "kanishksaraswat"
+    }
+  },
+  "publishDate": "2026-03-08T22:10:00+05:30",
+  "lastModified": "2026-03-08T22:10:00+05:30",
+  "readTime": 6,
+  "featured": true,
+  "status": "published",
+  "seo": {
+    "metaTitle": "SuiteGenie March 2026 Update: Strategy Builder, Content Plan, Context Vault",
+    "metaDescription": "See what shipped in SuiteGenie: simpler Strategy Builder UX, quality-first prompt packs, publish-ready content plans, and Context Vault learning loops.",
+    "keywords": [
+      "suitegenie march 2026 update",
+      "strategy builder update",
+      "context vault",
+      "linkedin content plan",
+      "ai content workflow"
+    ],
+    "canonicalUrl": "https://suitegenie.in/blogs/updates/strategy-builder-content-plan-and-context-vault-update-mar-2026"
+  },
+  "schema": {
+    "type": "Article",
+    "faq": [
+      {
+        "question": "What is Context Vault in SuiteGenie?",
+        "answer": "Context Vault is a memory and learning layer that uses strategy context, queue review actions, and analytics signals to improve future prompt and content generation."
+      },
+      {
+        "question": "Does Content Plan replace Prompt Pack?",
+        "answer": "No. Prompt Pack generates high-signal directions, while Content Plan turns those directions into a publish-ready queue."
+      }
+    ]
+  }
+}

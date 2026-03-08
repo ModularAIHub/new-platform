@@ -11,6 +11,22 @@ const ComparisonSection = () => {
       sproutSocial: 'partial'
     },
     {
+      name: 'Publish-ready content plan queue',
+      ourPlatform: true,
+      hootsuite: false,
+      buffer: false,
+      later: false,
+      sproutSocial: false
+    },
+    {
+      name: 'Context memory from reviews + analytics',
+      ourPlatform: true,
+      hootsuite: false,
+      buffer: false,
+      later: false,
+      sproutSocial: false
+    },
+    {
       name: 'Strategy builder',
       ourPlatform: true,
       hootsuite: false,
