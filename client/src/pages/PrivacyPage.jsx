@@ -39,7 +39,7 @@ const PrivacyPage = () => {
               "name": "SuiteGenie",
               "logo": {
                 "@type": "ImageObject",
-                "url": "https://suitegenie.in/logo192.png"
+                "url": "https://suitegenie.in/suitegenie-logo.png"
               }
             },
             "mainEntityOfPage": "https://suitegenie.in/privacy"
@@ -50,9 +50,7 @@ const PrivacyPage = () => {
       <div className="bg-white border-b">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <Link to="/" className="inline-flex items-center group">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center mr-3 group-hover:shadow-lg transition-shadow duration-200">
-              <span className="text-white font-bold text-lg">S</span>
-            </div>
+            <img src="/suitegenie-logo-icon.png" alt="SuiteGenie logo" className="h-12 w-auto mr-3 object-contain" />
             <span className="text-2xl font-bold text-gray-900">SuiteGenie</span>
           </Link>
         </div>

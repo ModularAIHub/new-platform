@@ -14,6 +14,7 @@ const AgencyTeamPage = () => {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('editor');
   const [inviting, setInviting] = useState(false);
+  const [lastInvitation, setLastInvitation] = useState(null);
 
   const loadMembers = async () => {
     setLoading(true);
@@ -47,8 +48,27 @@ const AgencyTeamPage = () => {
         email: inviteEmail,
         role: inviteRole,
       });
-      const token = response.data?.invitation?.token;
-      toast.success(token ? `Invite created. Token: ${token.slice(0, 10)}...` : 'Invite created');
+      const invitation = response.data?.invitation || null;
+      const inviteUrl = invitation?.invite_url
+        || (invitation?.token ? `${window.location.origin}/agency/invite/${invitation.token}` : null);
+      const emailSent = Boolean(response.data?.emailDelivery?.sent);
+
+      setLastInvitation({
+        email: invitation?.email || inviteEmail,
+        role: invitation?.role || inviteRole,
+        inviteUrl,
+        emailSent,
+      });
+
+      if (inviteUrl && navigator?.clipboard?.writeText) {
+        try {
+          await navigator.clipboard.writeText(inviteUrl);
+        } catch {
+          // Ignore clipboard errors and still continue.
+        }
+      }
+
+      toast.success(emailSent ? 'Invite sent successfully' : 'Invite created. Share the link manually.');
       setInviteEmail('');
       setInviteRole('editor');
       await loadMembers();
@@ -104,6 +124,35 @@ const AgencyTeamPage = () => {
             {inviting ? 'Inviting...' : 'Send Invite'}
           </button>
         </form>
+        {lastInvitation?.inviteUrl && (
+          <div className="mt-4 border border-blue-200 rounded-lg bg-blue-50 p-3">
+            <p className="text-sm font-medium text-blue-900">
+              Invite ready for {lastInvitation.email} ({lastInvitation.role})
+            </p>
+            <p className="text-xs text-blue-700 mt-1">
+              {lastInvitation.emailSent ? 'Email sent via Resend.' : 'Email delivery failed; share this link manually.'}
+            </p>
+            <div className="mt-2 flex flex-col md:flex-row md:items-center gap-2">
+              <input
+                readOnly
+                value={lastInvitation.inviteUrl}
+                className="flex-1 border border-blue-200 rounded px-2 py-1 text-xs bg-white"
+              />
+              <button
+                type="button"
+                onClick={async () => {
+                  if (navigator?.clipboard?.writeText) {
+                    await navigator.clipboard.writeText(lastInvitation.inviteUrl);
+                    toast.success('Invite link copied');
+                  }
+                }}
+                className="text-xs px-3 py-1.5 rounded border border-blue-300 text-blue-700 bg-white hover:bg-blue-100"
+              >
+                Copy link
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl p-6">

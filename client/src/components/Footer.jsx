@@ -7,9 +7,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 gap-8 md:grid-cols-[1.4fr_1fr_1fr]">
           <div>
             <Link to="/" className="inline-flex items-center gap-2">
-              <div className="h-9 w-9 rounded-lg bg-gradient-to-r from-primary-600 to-indigo-500 p-0.5">
-                <img src="/logo.svg" alt="SuiteGenie logo" className="h-full w-full rounded-md bg-white p-1" />
-              </div>
+              <img src="/suitegenie-logo-icon.png" alt="SuiteGenie logo" className="h-12 w-auto object-contain" />
               <span className="text-2xl font-bold text-white">SuiteGenie</span>
             </Link>
             <p className="mt-3 max-w-md text-sm leading-6 text-slate-300">

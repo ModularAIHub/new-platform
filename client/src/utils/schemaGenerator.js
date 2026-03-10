@@ -1,5 +1,5 @@
 const SITE_URL = 'https://suitegenie.in';
-const DEFAULT_LOGO = `${SITE_URL}/logo.svg`;
+const DEFAULT_LOGO = `${SITE_URL}/suitegenie-logo.png`;
 
 const toIsoDate = (value) => new Date(value).toISOString();
 
@@ -21,7 +21,7 @@ const createAuthorSchema = (author = {}) => {
   return {
     '@type': 'Person',
     name: author.name || 'SuiteGenie Team',
-    image: toAbsoluteUrl(author.avatar || '/logo.svg'),
+    image: toAbsoluteUrl(author.avatar || '/suitegenie-logo.png'),
     description: author.bio || 'SuiteGenie content team',
     ...(sameAs.length > 0 ? { sameAs } : {}),
   };

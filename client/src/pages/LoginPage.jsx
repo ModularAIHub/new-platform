@@ -59,9 +59,7 @@ const LoginPage = () => {
                     {/* Logo and Header */}
                     <div className="text-center mb-8">
                         <Link to="/" className="inline-flex items-center mb-6 group">
-                            <div className="w-12 h-12 bg-gradient-to-br from-primary-600 to-primary-700 rounded-xl flex items-center justify-center mr-3 group-hover:shadow-lg transition-shadow duration-200">
-                                <span className="text-white font-bold text-lg">S</span>
-                            </div>
+                            <img src="/suitegenie-logo-icon.png" alt="SuiteGenie logo" className="h-12 w-auto mr-3 object-contain" />
                             <span className="text-2xl font-bold text-neutral-900">SuiteGenie</span>
                         </Link>
                         <h1 className="text-3xl font-bold text-neutral-900 mb-2">Welcome back</h1>

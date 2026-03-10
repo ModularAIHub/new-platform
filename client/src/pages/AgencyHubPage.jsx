@@ -1,13 +1,32 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, Plus, Users, Layers3, ExternalLink } from 'lucide-react';
+import {
+  BarChart3,
+  Building2,
+  CalendarDays,
+  Clock3,
+  ExternalLink,
+  Layers3,
+  Link2,
+  PenSquare,
+  Plus,
+  Users,
+} from 'lucide-react';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 
 const TOOL_OPTIONS = [
-  { key: 'twitter', label: 'Tweet Genie' },
   { key: 'linkedin', label: 'LinkedIn Genie' },
+  { key: 'twitter', label: 'Tweet Genie' },
   { key: 'social', label: 'Social Genie' },
+];
+
+const WORKSPACE_ACTIONS = [
+  { target: 'compose', label: 'Compose', icon: PenSquare },
+  { target: 'calendar', label: 'Calendar', icon: CalendarDays },
+  { target: 'scheduling', label: 'Queue', icon: Clock3 },
+  { target: 'connections', label: 'Connections', icon: Link2 },
+  { target: 'analytics', label: 'Analytics', icon: BarChart3 },
 ];
 
 const AgencyHubPage = () => {
@@ -18,6 +37,8 @@ const AgencyHubPage = () => {
   const [summary, setSummary] = useState({ active: 0, paused: 0, archived: 0 });
   const [form, setForm] = useState({ name: '', brand_name: '', timezone: 'Asia/Kolkata' });
   const [creating, setCreating] = useState(false);
+  const [launchingKey, setLaunchingKey] = useState(null);
+  const [workspaceToolSelection, setWorkspaceToolSelection] = useState({});
 
   const slotsRemaining = useMemo(() => {
     if (!context) return 0;
@@ -70,13 +91,20 @@ const AgencyHubPage = () => {
     }
   };
 
-  const launchTool = async (workspaceId, tool) => {
+  const resolveWorkspaceTool = (workspaceId) => workspaceToolSelection[workspaceId] || 'linkedin';
+
+  const launchTool = async (workspaceId, tool, target = 'dashboard') => {
+    const launchKey = `${workspaceId}:${tool}:${target}`;
+    setLaunchingKey(launchKey);
     try {
-      const response = await api.post(`/agency/workspaces/${workspaceId}/launch-token`, { tool });
+      const response = await api.post(`/agency/workspaces/${workspaceId}/launch-token`, { tool, target });
       const url = response.data?.launchUrl;
       if (url) window.open(url, '_blank', 'noopener,noreferrer');
+      else toast.error('Launch URL is unavailable');
     } catch (error) {
       toast.error(error?.response?.data?.error || 'Failed to create launch token');
+    } finally {
+      setLaunchingKey(null);
     }
   };
 
@@ -109,6 +137,22 @@ const AgencyHubPage = () => {
             </div>
           </div>
         )}
+      </div>
+
+      <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-white border border-blue-200 rounded-xl p-6">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="inline-flex items-center rounded-full bg-blue-100 text-blue-700 text-[11px] font-semibold px-2 py-1 uppercase tracking-wide">Agency Pro</p>
+            <h2 className="text-lg font-semibold text-gray-900 mt-2">Operations Guide</h2>
+            <p className="text-sm text-gray-600 mt-1">Create workspace → assign team → attach accounts → launch Compose/Calendar/Queue from each client card.</p>
+          </div>
+          <button
+            onClick={() => navigate('/agency/team')}
+            className="text-sm rounded-lg border border-blue-200 bg-white text-blue-700 px-3 py-2 hover:bg-blue-50"
+          >
+            Manage Team & Invites
+          </button>
+        </div>
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl p-6">
@@ -149,12 +193,48 @@ const AgencyHubPage = () => {
               </div>
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-2">
-              {TOOL_OPTIONS.map((tool) => (
-                <button key={tool.key} onClick={() => launchTool(workspace.id, tool.key)} className="text-xs border rounded-md px-2.5 py-1.5 hover:bg-gray-50 flex items-center gap-1">
-                  <ExternalLink className="h-3 w-3" /> {tool.label}
+            <div className="mt-4 border rounded-lg p-3 bg-blue-50/60 border-blue-100">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <p className="text-xs font-semibold text-blue-900 uppercase tracking-wide">Client Operations</p>
+                <select
+                  value={resolveWorkspaceTool(workspace.id)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setWorkspaceToolSelection((prev) => ({ ...prev, [workspace.id]: value }));
+                  }}
+                  className="text-xs border rounded-md px-2 py-1.5 bg-white"
+                >
+                  {TOOL_OPTIONS.map((tool) => (
+                    <option key={tool.key} value={tool.key}>{tool.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="mt-2 flex flex-wrap gap-2">
+                {WORKSPACE_ACTIONS.map((action) => {
+                  const Icon = action.icon;
+                  const selectedTool = resolveWorkspaceTool(workspace.id);
+                  const isLaunching = launchingKey === `${workspace.id}:${selectedTool}:${action.target}`;
+                  return (
+                    <button
+                      key={action.target}
+                      onClick={() => launchTool(workspace.id, selectedTool, action.target)}
+                      className="text-xs border rounded-md px-2.5 py-1.5 hover:bg-white flex items-center gap-1"
+                      disabled={isLaunching || workspace.status === 'archived'}
+                    >
+                      <Icon className="h-3 w-3" />
+                      {isLaunching ? 'Opening...' : action.label}
+                    </button>
+                  );
+                })}
+                <button
+                  onClick={() => navigate(`/agency/workspaces/${workspace.id}`)}
+                  className="text-xs border rounded-md px-2.5 py-1.5 hover:bg-white flex items-center gap-1"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  Manage Workspace
                 </button>
-              ))}
+              </div>
             </div>
 
             <div className="mt-4 flex flex-wrap gap-2">

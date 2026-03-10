@@ -18,7 +18,7 @@ messaging.onBackgroundMessage((payload) => {
 
   const notificationOptions = {
     body: body || 'You have a new notification',
-    icon: icon || '/logo.png',
+    icon: icon || '/suitegenie-logo.png',
     badge: '/badge.png',
     tag: payload.collapseKey || 'suitegenie-notification',
     data: payload.data || {},

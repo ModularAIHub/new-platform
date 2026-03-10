@@ -36,6 +36,7 @@ import TeamInvitePage from '../pages/TeamInvitePage';
 import AgencyHubPage from '../pages/AgencyHubPage';
 import AgencyWorkspacePage from '../pages/AgencyWorkspacePage';
 import AgencyTeamPage from '../pages/AgencyTeamPage';
+import AgencyInvitePage from '../pages/AgencyInvitePage';
 
 // OnboardingPage import removed
 import { useEffect, useState } from 'react';
@@ -145,6 +146,7 @@ const AppRoutes = () => {
 
       {/* Team invitation - public route (no Layout/auth required) */}
       <Route path="/team/invite/:token" element={<TeamInvitePage />} />
+      <Route path="/agency/invite/:token" element={<AgencyInvitePage />} />
 
       {/* Catch-all route - redirect to home */}
       <Route path="*" element={<HomePage />} />

@@ -99,6 +99,67 @@ class EmailService {
     }
 
     /**
+     * Send agency invitation email using Resend
+     */
+    async sendAgencyInvitation({
+        recipientEmail,
+        recipientName,
+        inviterName,
+        inviterEmail,
+        agencyName,
+        role,
+        invitationToken,
+        expiresAt
+    }) {
+        try {
+            const inviteUrl = `${this.baseUrl}/agency/invite/${invitationToken}`;
+            const expiryDate = new Date(expiresAt).toLocaleDateString();
+
+            const htmlTemplate = this.getAgencyInvitationTemplate({
+                recipientName: recipientName || recipientEmail,
+                inviterName,
+                inviterEmail,
+                agencyName,
+                role,
+                inviteUrl,
+                expiryDate,
+                platformName: this.platformName
+            });
+
+            const textContent = this.getAgencyInvitationTextTemplate({
+                recipientName: recipientName || recipientEmail,
+                inviterName,
+                agencyName,
+                role,
+                inviteUrl,
+                expiryDate,
+                platformName: this.platformName
+            });
+
+            const { data, error } = await this.resend.emails.send({
+                from: `${this.platformName} <${this.fromEmail}>`,
+                to: recipientEmail,
+                subject: `You're invited to join "${agencyName}" on ${this.platformName}`,
+                html: htmlTemplate,
+                text: textContent
+            });
+
+            if (error) {
+                throw new Error(`Resend API error: ${error.message}`);
+            }
+
+            return {
+                success: true,
+                messageId: data.id,
+                provider: 'resend'
+            };
+        } catch (error) {
+            console.error('Failed to send agency invitation email:', error);
+            throw new Error(`Agency invite email failed: ${error.message}`);
+        }
+    }
+
+    /**
      * Send reminder email for pending invitation using Resend
      */
     async sendInvitationReminder({
@@ -264,6 +325,84 @@ This invitation expires on ${expiryDate}
 Don't recognize ${inviterName}? You can safely ignore this email.
 
 © 2025 ${platformName}. All rights reserved.
+        `.trim();
+    }
+
+    /**
+     * HTML template for agency invitation
+     */
+    getAgencyInvitationTemplate({
+        recipientName,
+        inviterName,
+        inviterEmail,
+        agencyName,
+        role,
+        inviteUrl,
+        expiryDate,
+        platformName
+    }) {
+        return `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Agency Invitation</title>
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; padding: 28px 20px; text-align: center; border-radius: 8px 8px 0 0; }
+                .content { background: white; padding: 28px; border: 1px solid #e0e0e0; border-top: none; }
+                .invite-button { display: inline-block; background: #2563eb; color: white; padding: 14px 26px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 18px 0; }
+                .footer { background: #f8f9fa; padding: 18px; text-align: center; font-size: 12px; color: #666; border-radius: 0 0 8px 8px; }
+                .role-badge { background: #dbeafe; color: #1d4ed8; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 700; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>Agency Workspace Invite</h1>
+            </div>
+            <div class="content">
+                <p>Hi ${recipientName},</p>
+                <p><strong>${inviterName}</strong>${inviterEmail ? ` (${inviterEmail})` : ''} invited you to join <strong>${agencyName}</strong> on ${platformName}.</p>
+                <p>Your role: <span class="role-badge">${String(role || '').toUpperCase()}</span></p>
+                <div style="text-align: center;">
+                    <a href="${inviteUrl}" class="invite-button">Accept Agency Invite</a>
+                </div>
+                <p><strong>This invite expires on ${expiryDate}.</strong></p>
+                <p>If the button does not work, use this link:</p>
+                <p style="word-break: break-all; background: #f5f5f5; padding: 10px; border-radius: 4px;">${inviteUrl}</p>
+            </div>
+            <div class="footer">
+                <p>© 2026 ${platformName}. All rights reserved.</p>
+            </div>
+        </body>
+        </html>
+        `;
+    }
+
+    /**
+     * Plain text template for agency invitation
+     */
+    getAgencyInvitationTextTemplate({
+        recipientName,
+        inviterName,
+        agencyName,
+        role,
+        inviteUrl,
+        expiryDate,
+        platformName
+    }) {
+        return `
+Agency Workspace Invite
+
+Hi ${recipientName},
+
+${inviterName} invited you to join ${agencyName} on ${platformName}.
+Role: ${String(role || '').toUpperCase()}
+
+Accept your invitation: ${inviteUrl}
+
+This invitation expires on ${expiryDate}.
         `.trim();
     }
 

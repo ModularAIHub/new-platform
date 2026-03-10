@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { pool, query } from '../config/database.js';
+import EmailService from '../services/emailService.js';
 
 const AGENCY_LIMITS = Object.freeze({
   workspaceLimit: 6,
@@ -13,10 +14,84 @@ const VALID_MEMBER_ROLES = new Set(['owner', 'admin', 'editor', 'viewer']);
 const VALID_ASSIGNABLE_ROLES = new Set(['admin', 'editor', 'viewer']);
 const VALID_WORKSPACE_STATUSES = new Set(['active', 'paused', 'archived']);
 
-const TOOL_URLS = Object.freeze({
-  twitter: process.env.TWEET_GENIE_URL || process.env.TWEET_API_URL || 'https://tweet.suitegenie.in',
-  linkedin: process.env.LINKEDIN_GENIE_URL || process.env.LINKEDIN_API_URL || 'https://linkedin.suitegenie.in',
-  social: process.env.SOCIAL_GENIE_URL || process.env.SOCIAL_API_URL || 'https://meta.suitegenie.in',
+const TOOL_FRONTEND_HOST_BY_KEY = Object.freeze({
+  twitter: 'tweet.suitegenie.in',
+  linkedin: 'linkedin.suitegenie.in',
+  social: 'meta.suitegenie.in',
+});
+const TOOL_API_HOSTS_BY_KEY = Object.freeze({
+  twitter: new Set(['tweetapi.suitegenie.in', 'api.tweet.suitegenie.in']),
+  linkedin: new Set(['apilinkedin.suitegenie.in', 'api.linkedin.suitegenie.in']),
+  social: new Set(['metaapi.suitegenie.in', 'api.meta.suitegenie.in']),
+});
+const LOCAL_TOOL_FRONTEND_URLS = Object.freeze({
+  twitter: process.env.TWEET_GENIE_FRONTEND_LOCAL_URL || 'http://localhost:5174',
+  linkedin: process.env.LINKEDIN_GENIE_FRONTEND_LOCAL_URL || 'http://localhost:5175',
+  social: process.env.SOCIAL_GENIE_FRONTEND_LOCAL_URL || 'http://localhost:5176',
+});
+
+const RAW_TOOL_URLS = Object.freeze({
+  twitter:
+    process.env.TWEET_GENIE_FRONTEND_URL ||
+    process.env.TWEET_GENIE_URL ||
+    process.env.TWEET_API_URL ||
+    'https://tweet.suitegenie.in',
+  linkedin:
+    process.env.LINKEDIN_GENIE_FRONTEND_URL ||
+    process.env.LINKEDIN_GENIE_URL ||
+    process.env.LINKEDIN_WEB_URL ||
+    process.env.LINKEDIN_API_URL ||
+    'https://linkedin.suitegenie.in',
+  social:
+    process.env.SOCIAL_GENIE_FRONTEND_URL ||
+    process.env.SOCIAL_GENIE_URL ||
+    process.env.SOCIAL_API_URL ||
+    'https://meta.suitegenie.in',
+});
+const TOOL_API_BASE_URLS = Object.freeze({
+  twitter:
+    process.env.TWEET_API_URL ||
+    (process.env.NODE_ENV === 'development' ? 'http://localhost:3002' : 'https://tweetapi.suitegenie.in'),
+  linkedin:
+    process.env.LINKEDIN_API_URL ||
+    (process.env.NODE_ENV === 'development' ? 'http://localhost:3004' : 'https://apilinkedin.suitegenie.in'),
+  social:
+    process.env.SOCIAL_API_URL ||
+    (process.env.NODE_ENV === 'development' ? 'http://localhost:3006' : 'https://metaapi.suitegenie.in'),
+});
+const AGENCY_INVITE_URL_BASE = process.env.CLIENT_URL || process.env.BASE_URL || 'https://suitegenie.in';
+const TOOL_TARGET_PATHS = Object.freeze({
+  twitter: Object.freeze({
+    dashboard: '/',
+    compose: '/compose',
+    scheduling: '/scheduling',
+    calendar: '/scheduling?view=calendar',
+    analytics: '/analytics',
+    settings: '/settings',
+    connections: '/settings',
+    history: '/history',
+  }),
+  linkedin: Object.freeze({
+    dashboard: '/',
+    compose: '/compose',
+    scheduling: '/scheduling',
+    calendar: '/scheduling?view=calendar',
+    analytics: '/analytics',
+    settings: '/settings',
+    connections: '/settings',
+    history: '/history',
+    engagement: '/engagement',
+  }),
+  social: Object.freeze({
+    dashboard: '/',
+    compose: '/compose',
+    scheduling: '/scheduling',
+    calendar: '/scheduling?view=calendar',
+    analytics: '/analytics',
+    settings: '/settings',
+    connections: '/settings',
+    history: '/history',
+  }),
 });
 
 function apiError(message, code = 'BAD_REQUEST', status = 400) {
@@ -33,6 +108,400 @@ function cleanText(value, fallback = null) {
 
 function cleanEmail(value) {
   return String(value || '').trim().toLowerCase();
+}
+
+function getAgencyInviteUrl(token) {
+  const base = String(AGENCY_INVITE_URL_BASE || 'https://suitegenie.in').replace(/\/+$/, '');
+  return `${base}/agency/invite/${encodeURIComponent(String(token || '').trim())}`;
+}
+
+function resolveToolBaseUrl(toolKey) {
+  const normalizedTool = cleanText(toolKey, 'twitter')?.toLowerCase() || 'twitter';
+  const fallbackHost = TOOL_FRONTEND_HOST_BY_KEY[normalizedTool] || TOOL_FRONTEND_HOST_BY_KEY.twitter;
+  const rawValue = cleanText(RAW_TOOL_URLS[normalizedTool], '') || `https://${fallbackHost}`;
+
+  let parsed = null;
+  try {
+    parsed = new URL(rawValue.includes('://') ? rawValue : `https://${rawValue}`);
+  } catch (error) {
+    return `https://${fallbackHost}`;
+  }
+
+  const knownApiHosts = TOOL_API_HOSTS_BY_KEY[normalizedTool];
+  if (knownApiHosts?.has(parsed.hostname)) {
+    parsed.hostname = fallbackHost;
+    parsed.port = '';
+  }
+
+  if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') {
+    try {
+      const localFrontend = LOCAL_TOOL_FRONTEND_URLS[normalizedTool] || `http://localhost:5173`;
+      const localParsed = new URL(localFrontend.includes('://') ? localFrontend : `http://${localFrontend}`);
+      parsed.protocol = localParsed.protocol;
+      parsed.hostname = localParsed.hostname;
+      parsed.port = localParsed.port;
+    } catch {
+      // Keep original localhost URL if configured frontend URL is invalid.
+    }
+  }
+
+  parsed.pathname = '/';
+  parsed.search = '';
+  parsed.hash = '';
+  return parsed.toString().replace(/\/+$/, '');
+}
+
+const TOOL_URLS = Object.freeze({
+  twitter: resolveToolBaseUrl('twitter'),
+  linkedin: resolveToolBaseUrl('linkedin'),
+  social: resolveToolBaseUrl('social'),
+});
+
+function resolveTargetPath(tool, target) {
+  const normalizedTool = cleanText(tool, 'twitter')?.toLowerCase() || 'twitter';
+  const normalizedTarget = cleanText(target, 'dashboard')?.toLowerCase() || 'dashboard';
+  const toolMap = TOOL_TARGET_PATHS[normalizedTool] || TOOL_TARGET_PATHS.twitter;
+  const path = toolMap[normalizedTarget] || toolMap.dashboard || '/';
+  return { target: toolMap[normalizedTarget] ? normalizedTarget : 'dashboard', path };
+}
+
+function buildToolLaunchUrl(baseUrl, targetPath, params = {}) {
+  const base = String(baseUrl || '').trim();
+  if (!base) return null;
+
+  const [rawPath, rawQuery = ''] = String(targetPath || '/').split('?');
+  const url = new URL(base.endsWith('/') ? base : `${base}/`);
+  url.pathname = rawPath.startsWith('/') ? rawPath : `/${rawPath}`;
+
+  const search = new URLSearchParams(rawQuery);
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === '') return;
+    search.set(key, String(value));
+  });
+  url.search = search.toString();
+  return url.toString();
+}
+
+function ensureApiBaseUrl(value, fallback) {
+  const raw = cleanText(value, fallback) || fallback;
+  if (!raw) return null;
+
+  try {
+    const parsed = new URL(raw.includes('://') ? raw : `https://${raw}`);
+    parsed.pathname = '';
+    parsed.search = '';
+    parsed.hash = '';
+    return parsed.toString().replace(/\/+$/, '');
+  } catch {
+    return cleanText(fallback, null);
+  }
+}
+
+function normalizeWorkspacePlatform(value) {
+  const normalized = cleanText(value, '')?.toLowerCase() || '';
+  if (normalized === 'x') return 'twitter';
+  if (normalized === 'tweet') return 'twitter';
+  if (normalized === 'ig') return 'instagram';
+  return normalized;
+}
+
+function normalizeMediaInputs(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => String(item || '').trim())
+    .filter(Boolean)
+    .slice(0, 9);
+}
+
+function normalizeWorkspaceAccountIds(value) {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(value.map((id) => cleanText(id)).filter(Boolean))];
+}
+
+function parseMetadataObject(value) {
+  if (value && typeof value === 'object') return value;
+  if (typeof value !== 'string') return {};
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function resolveAccountTeamId(account = {}) {
+  const metadata = parseMetadataObject(account.metadata);
+  return (
+    cleanText(metadata.team_id, null) ||
+    cleanText(metadata.teamId, null) ||
+    cleanText(account.team_id, null) ||
+    null
+  );
+}
+
+function resolveTwitterTargetAccountId(account = {}) {
+  const metadata = parseMetadataObject(account.metadata);
+  return (
+    cleanText(metadata.source_id, null) ||
+    cleanText(metadata.sourceId, null) ||
+    cleanText(account.source_id, null) ||
+    cleanText(account.account_id, null) ||
+    null
+  );
+}
+
+function resolveLinkedInTargetPayload(account = {}) {
+  const sourceType = cleanText(account.source_type, '')?.toLowerCase() || '';
+  const targetAccountId =
+    cleanText(account.source_id, null) ||
+    cleanText(account.account_id, null) ||
+    null;
+  const teamId = resolveAccountTeamId(account);
+
+  if (!targetAccountId) return { teamId, bodyTarget: {}, targetLabel: null };
+
+  if (teamId || sourceType === 'linkedin_team_accounts') {
+    return {
+      teamId,
+      bodyTarget: { targetLinkedinTeamAccountId: targetAccountId },
+      targetLabel: targetAccountId,
+    };
+  }
+
+  return {
+    teamId: null,
+    bodyTarget: { targetAccountId },
+    targetLabel: targetAccountId,
+  };
+}
+
+function buildWorkspacePublishHeaders({ userId, teamId }) {
+  const internalApiKey = cleanText(process.env.INTERNAL_API_KEY, null);
+  if (!internalApiKey) {
+    throw apiError('INTERNAL_API_KEY is not configured', 'INTERNAL_API_KEY_NOT_CONFIGURED', 500);
+  }
+
+  const headers = {
+    'Content-Type': 'application/json',
+    'x-internal-api-key': internalApiKey,
+    'x-platform-user-id': String(userId),
+    'x-internal-caller': 'suitegenie-platform-agency',
+  };
+
+  if (teamId) {
+    headers['x-platform-team-id'] = String(teamId);
+  }
+
+  return headers;
+}
+
+async function invokeInternalPublishEndpoint({ tool, path, userId, teamId = null, body = {} }) {
+  const rawBase = TOOL_API_BASE_URLS[tool];
+  if (!rawBase) {
+    throw apiError(`Unsupported downstream tool "${tool}"`, 'UNSUPPORTED_DOWNSTREAM_TOOL', 400);
+  }
+
+  const baseUrl = ensureApiBaseUrl(rawBase, null);
+  if (!baseUrl) {
+    throw apiError(`Downstream API URL is missing for "${tool}"`, 'DOWNSTREAM_API_URL_MISSING', 500);
+  }
+
+  const response = await fetch(`${baseUrl}${path}`, {
+    method: 'POST',
+    headers: buildWorkspacePublishHeaders({ userId, teamId }),
+    body: JSON.stringify(body || {}),
+  });
+
+  let payload = {};
+  try {
+    payload = await response.json();
+  } catch {
+    payload = {};
+  }
+
+  if (!response.ok) {
+    const err = apiError(
+      cleanText(payload?.error, `Downstream ${tool} publish failed`) || `Downstream ${tool} publish failed`,
+      cleanText(payload?.code, 'DOWNSTREAM_PUBLISH_FAILED') || 'DOWNSTREAM_PUBLISH_FAILED',
+      response.status >= 400 && response.status < 500 ? response.status : 502
+    );
+    err.downstream = {
+      tool,
+      path,
+      status: response.status,
+      payload,
+    };
+    throw err;
+  }
+
+  return payload;
+}
+
+async function publishToWorkspaceAccount({ userId, account, content, postMode = 'single', threadParts = [], media = [] }) {
+  const platform = normalizeWorkspacePlatform(account?.platform);
+  const teamId = resolveAccountTeamId(account);
+
+  if (!platform) {
+    throw apiError('Workspace account platform is missing', 'WORKSPACE_ACCOUNT_PLATFORM_MISSING', 400);
+  }
+
+  const normalizedBody = {
+    content,
+    postMode: String(postMode || 'single').toLowerCase() === 'thread' ? 'thread' : 'single',
+    threadParts: Array.isArray(threadParts) ? threadParts : [],
+    mediaDetected: Array.isArray(media) && media.length > 0,
+    media,
+  };
+
+  if (platform === 'twitter') {
+    const targetAccountId = resolveTwitterTargetAccountId(account);
+    if (targetAccountId) normalizedBody.targetAccountId = targetAccountId;
+    const payload = await invokeInternalPublishEndpoint({
+      tool: 'twitter',
+      path: '/api/internal/twitter/cross-post',
+      userId,
+      teamId,
+      body: normalizedBody,
+    });
+    return {
+      platform,
+      teamId,
+      target: targetAccountId,
+      payload,
+      postId: payload?.tweetId || null,
+      postUrl: payload?.tweetUrl || null,
+    };
+  }
+
+  if (platform === 'linkedin') {
+    const linkedInTarget = resolveLinkedInTargetPayload(account);
+    const payload = await invokeInternalPublishEndpoint({
+      tool: 'linkedin',
+      path: '/api/internal/cross-post',
+      userId,
+      teamId: linkedInTarget.teamId,
+      body: {
+        content,
+        media,
+        ...linkedInTarget.bodyTarget,
+      },
+    });
+    return {
+      platform,
+      teamId: linkedInTarget.teamId,
+      target: linkedInTarget.targetLabel,
+      payload,
+      postId: payload?.linkedinPostId || null,
+      postUrl: null,
+    };
+  }
+
+  if (platform === 'threads' || platform === 'instagram') {
+    const targetAccountId =
+      cleanText(account?.source_id, null) ||
+      cleanText(account?.account_id, null) ||
+      null;
+    if (targetAccountId) normalizedBody.targetAccountId = targetAccountId;
+
+    const path =
+      platform === 'threads'
+        ? '/api/internal/threads/cross-post'
+        : '/api/internal/instagram/cross-post';
+    const payload = await invokeInternalPublishEndpoint({
+      tool: 'social',
+      path,
+      userId,
+      teamId,
+      body: normalizedBody,
+    });
+    return {
+      platform,
+      teamId,
+      target: targetAccountId,
+      payload,
+      postId: payload?.publishId || payload?.threadsPostId || null,
+      postUrl: payload?.postUrl || null,
+    };
+  }
+
+  throw apiError(`Unsupported workspace platform "${platform}"`, 'WORKSPACE_PLATFORM_UNSUPPORTED', 400);
+}
+
+function resolveSnapshotChannel(platform) {
+  const normalized = normalizeWorkspacePlatform(platform);
+  if (normalized === 'twitter') return 'twitter';
+  if (normalized === 'linkedin') return 'linkedin';
+  if (normalized === 'threads' || normalized === 'instagram' || normalized === 'social') return 'social';
+  return null;
+}
+
+function resolveSnapshotPath(channel) {
+  if (channel === 'twitter') return '/api/internal/twitter/workspace/snapshot';
+  if (channel === 'linkedin') return '/api/internal/workspace/snapshot';
+  if (channel === 'social') return '/api/internal/threads/workspace/snapshot';
+  return null;
+}
+
+function buildWorkspaceSnapshotGroups(workspaceAccounts = []) {
+  const groups = new Map();
+
+  for (const account of Array.isArray(workspaceAccounts) ? workspaceAccounts : []) {
+    const normalizedPlatform = normalizeWorkspacePlatform(account?.platform);
+    const channel = resolveSnapshotChannel(normalizedPlatform);
+    if (!channel) continue;
+
+    const teamId = resolveAccountTeamId(account);
+    const key = `${channel}|${teamId || 'personal'}`;
+    const current = groups.get(key) || {
+      key,
+      channel,
+      teamId: teamId || null,
+      targetAccountIds: new Set(),
+      platforms: new Set(),
+      workspaceAccountIds: new Set(),
+      labels: [],
+    };
+
+    current.platforms.add(normalizedPlatform);
+    current.workspaceAccountIds.add(String(account.id));
+    [account.source_id, account.account_id, account.id].forEach((value) => {
+      const normalized = cleanText(value, null);
+      if (normalized) current.targetAccountIds.add(normalized);
+    });
+
+    const label =
+      cleanText(account.account_display_name, null) ||
+      cleanText(account.account_username, null) ||
+      cleanText(account.account_id, null) ||
+      cleanText(account.source_id, null) ||
+      'Account';
+    current.labels.push(label);
+
+    groups.set(key, current);
+  }
+
+  return [...groups.values()].map((group) => ({
+    ...group,
+    targetAccountIds: [...group.targetAccountIds],
+    platforms: [...group.platforms],
+    workspaceAccountIds: [...group.workspaceAccountIds],
+  }));
+}
+
+function sortByMostRecentTimestamp(items = []) {
+  return [...items].sort((a, b) => {
+    const aTs = new Date(a?.scheduledFor || a?.createdAt || 0).getTime();
+    const bTs = new Date(b?.scheduledFor || b?.createdAt || 0).getTime();
+    return bTs - aTs;
+  });
+}
+
+function sortByUpcomingTimestamp(items = []) {
+  return [...items].sort((a, b) => {
+    const aTs = new Date(a?.scheduledFor || a?.createdAt || 0).getTime();
+    const bTs = new Date(b?.scheduledFor || b?.createdAt || 0).getTime();
+    return aTs - bTs;
+  });
 }
 
 function isRelationMissing(error) {
@@ -60,6 +529,34 @@ async function logAudit(agencyId, actorUserId, action, entityType, entityId = nu
      VALUES ($1, $2, $3, $4, $5, $6::jsonb, NOW())`,
     [agencyId, actorUserId || null, action, entityType, entityId, JSON.stringify(metadata || {})]
   );
+}
+
+async function sendAgencyInviteEmail({
+  recipientEmail,
+  invitationToken,
+  inviterName,
+  inviterEmail,
+  agencyName,
+  role,
+  expiresAt,
+} = {}) {
+  try {
+    const emailService = new EmailService();
+    await emailService.sendAgencyInvitation({
+      recipientEmail,
+      recipientName: recipientEmail,
+      inviterName,
+      inviterEmail,
+      agencyName,
+      role,
+      invitationToken,
+      expiresAt,
+    });
+    return { sent: true, provider: 'resend' };
+  } catch (error) {
+    console.warn('[AgencyController] Failed to send agency invite email (continuing with link flow):', error?.message || error);
+    return { sent: false, provider: 'resend', error: error?.message || String(error) };
+  }
 }
 
 async function getMembership(userId) {
@@ -164,6 +661,19 @@ async function getAgencyContext(userId) {
     membership = await getMembership(userId);
   }
   if (!membership) throw apiError('Agency access is not enabled for this account', 'AGENCY_ACCESS_DENIED', 403);
+
+  const normalizedOwnerId = String(membership.agency?.ownerId || '').trim();
+  const normalizedMemberUserId = String(membership.member?.userId || '').trim();
+  const isAgencyOwner = normalizedOwnerId && normalizedMemberUserId && normalizedOwnerId === normalizedMemberUserId;
+
+  if (isAgencyOwner) {
+    const ownerPlanResult = await query('SELECT plan_type FROM users WHERE id = $1 LIMIT 1', [membership.member.userId]);
+    const ownerPlanType = cleanText(ownerPlanResult.rows[0]?.plan_type, 'free');
+    if (ownerPlanType !== 'agency') {
+      throw apiError('Agency owner access requires an active Agency plan', 'AGENCY_PLAN_REQUIRED', 403);
+    }
+  }
+
   return membership;
 }
 
@@ -173,12 +683,265 @@ async function getWorkspace(workspaceId, agencyId) {
   return result.rows[0];
 }
 
+function isAgencyHubEnabled() {
+  const raw = String(process.env.AGENCY_HUB_ENABLED || '').trim().toLowerCase();
+  if (raw === 'true') return true;
+  if (raw === 'false') return false;
+  return process.env.NODE_ENV !== 'production';
+}
+
 export const AgencyController = {
   async ensureEnabled(req, res, next) {
-    if (process.env.AGENCY_HUB_ENABLED !== 'true') {
+    if (!isAgencyHubEnabled()) {
       return res.status(503).json({ error: 'Agency Hub is disabled', code: 'AGENCY_HUB_DISABLED' });
     }
     next();
+  },
+
+  async getInvitationByToken(req, res) {
+    try {
+      if (!isAgencyHubEnabled()) {
+        return res.status(503).json({ success: false, error: 'Agency Hub is disabled', code: 'AGENCY_HUB_DISABLED' });
+      }
+
+      const token = cleanText(req.params.token, '');
+      if (!token) throw apiError('Invitation token is required', 'INVITATION_TOKEN_REQUIRED', 400);
+
+      const result = await query(
+        `SELECT
+           ai.id, ai.agency_id, ai.email, ai.role, ai.status, ai.token, ai.expires_at, ai.created_at,
+           aa.name AS agency_name, aa.status AS agency_status,
+           COALESCE(inviter.name, inviter.email) AS inviter_name,
+           inviter.email AS inviter_email
+         FROM agency_invitations ai
+         JOIN agency_accounts aa ON aa.id = ai.agency_id
+         LEFT JOIN users inviter ON inviter.id = ai.invited_by
+         WHERE ai.token = $1
+         LIMIT 1`,
+        [token]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Invitation not found', code: 'INVITATION_NOT_FOUND' });
+      }
+
+      const invitation = result.rows[0];
+      const isExpired = new Date(invitation.expires_at).getTime() <= Date.now();
+
+      if (invitation.status !== 'pending' || isExpired) {
+        if (invitation.status === 'pending' && isExpired) {
+          await query(
+            `UPDATE agency_invitations
+             SET status = 'expired', updated_at = NOW()
+             WHERE id = $1 AND status = 'pending'`,
+            [invitation.id]
+          );
+        }
+        return res.status(404).json({ success: false, error: 'Invitation not found or expired', code: 'INVITATION_NOT_AVAILABLE' });
+      }
+
+      if (invitation.agency_status === 'archived') {
+        return res.status(400).json({ success: false, error: 'This agency is archived', code: 'AGENCY_ARCHIVED' });
+      }
+
+      return res.json({
+        success: true,
+        invitation: {
+          id: invitation.id,
+          agency_id: invitation.agency_id,
+          agency_name: invitation.agency_name,
+          inviter_name: invitation.inviter_name,
+          inviter_email: invitation.inviter_email,
+          email: invitation.email,
+          role: invitation.role,
+          created_at: invitation.created_at,
+          expires_at: invitation.expires_at,
+          invite_url: getAgencyInviteUrl(token),
+        },
+      });
+    } catch (error) {
+      return handleError(res, error, 'Failed to load agency invitation');
+    }
+  },
+
+  async listPendingInvitations(req, res) {
+    try {
+      const userEmail = cleanEmail(req.user?.email);
+      if (!userEmail) throw apiError('User email is missing', 'EMAIL_REQUIRED', 400);
+
+      const result = await query(
+        `SELECT
+           ai.id, ai.token, ai.role, ai.created_at, ai.expires_at,
+           aa.id AS agency_id, aa.name AS agency_name,
+           COALESCE(inviter.name, inviter.email) AS inviter_name,
+           inviter.email AS inviter_email
+         FROM agency_invitations ai
+         JOIN agency_accounts aa ON aa.id = ai.agency_id
+         LEFT JOIN users inviter ON inviter.id = ai.invited_by
+         WHERE ai.email = $1
+           AND ai.status = 'pending'
+           AND ai.expires_at > NOW()
+         ORDER BY ai.created_at DESC`,
+        [userEmail]
+      );
+
+      return res.json({
+        invitations: result.rows.map((row) => ({
+          id: row.id,
+          agency_id: row.agency_id,
+          agency_name: row.agency_name,
+          inviter_name: row.inviter_name,
+          inviter_email: row.inviter_email,
+          role: row.role,
+          created_at: row.created_at,
+          expires_at: row.expires_at,
+          invite_url: getAgencyInviteUrl(row.token),
+        })),
+      });
+    } catch (error) {
+      return handleError(res, error, 'Failed to list pending agency invitations');
+    }
+  },
+
+  async acceptInvitationByToken(req, res) {
+    const client = await pool.connect();
+    try {
+      const token = cleanText(req.params.token, '');
+      if (!token) throw apiError('Invitation token is required', 'INVITATION_TOKEN_REQUIRED', 400);
+
+      const userId = req.user?.id;
+      const userEmail = cleanEmail(req.user?.email);
+      if (!userId || !userEmail) throw apiError('User authentication is required', 'AUTH_REQUIRED', 401);
+
+      await client.query('BEGIN');
+
+      const invitationResult = await client.query(
+        `SELECT ai.*, aa.name AS agency_name, aa.status AS agency_status
+         FROM agency_invitations ai
+         JOIN agency_accounts aa ON aa.id = ai.agency_id
+         WHERE ai.token = $1
+         FOR UPDATE`,
+        [token]
+      );
+
+      if (invitationResult.rows.length === 0) throw apiError('Invitation not found', 'INVITATION_NOT_FOUND', 404);
+      const invitation = invitationResult.rows[0];
+
+      if (invitation.status !== 'pending') throw apiError('Invitation is already processed', 'INVITATION_ALREADY_PROCESSED', 400);
+      if (new Date(invitation.expires_at).getTime() <= Date.now()) {
+        await client.query(
+          `UPDATE agency_invitations SET status = 'expired', updated_at = NOW() WHERE id = $1`,
+          [invitation.id]
+        );
+        throw apiError('Invitation has expired', 'INVITATION_EXPIRED', 400);
+      }
+      if (cleanEmail(invitation.email) !== userEmail) {
+        throw apiError('This invitation is for a different email address', 'INVITATION_EMAIL_MISMATCH', 403);
+      }
+      if (invitation.agency_status === 'archived') {
+        throw apiError('This agency is archived', 'AGENCY_ARCHIVED', 400);
+      }
+
+      let memberId = null;
+      const existingMember = await client.query(
+        `SELECT id, role
+         FROM agency_members
+         WHERE agency_id = $1 AND email = $2
+         ORDER BY created_at DESC
+         LIMIT 1
+         FOR UPDATE`,
+        [invitation.agency_id, userEmail]
+      );
+
+      if (existingMember.rows.length > 0) {
+        memberId = existingMember.rows[0].id;
+        await client.query(
+          `UPDATE agency_members
+           SET user_id = $1,
+               role = CASE WHEN role = 'owner' THEN role ELSE $2 END,
+               status = 'active',
+               joined_at = COALESCE(joined_at, NOW()),
+               updated_at = NOW()
+           WHERE id = $3`,
+          [userId, invitation.role, memberId]
+        );
+      } else {
+        const inserted = await client.query(
+          `INSERT INTO agency_members
+             (agency_id, user_id, email, role, status, invited_by, invited_at, joined_at, created_at, updated_at)
+           VALUES
+             ($1, $2, $3, $4, 'active', $5, NOW(), NOW(), NOW(), NOW())
+           RETURNING id`,
+          [invitation.agency_id, userId, userEmail, invitation.role, invitation.invited_by]
+        );
+        memberId = inserted.rows[0].id;
+      }
+
+      await client.query(
+        `UPDATE agency_invitations
+         SET status = 'accepted', updated_at = NOW()
+         WHERE id = $1`,
+        [invitation.id]
+      );
+
+      await client.query('COMMIT');
+      await logAudit(invitation.agency_id, userId, 'member_invitation_accepted', 'agency_invitation', invitation.id, {
+        memberId,
+        email: userEmail,
+      });
+
+      return res.json({
+        success: true,
+        message: `Welcome to ${invitation.agency_name}`,
+        agencyId: invitation.agency_id,
+        memberId,
+      });
+    } catch (error) {
+      await client.query('ROLLBACK');
+      return handleError(res, error, 'Failed to accept agency invitation');
+    } finally {
+      client.release();
+    }
+  },
+
+  async declineInvitationByToken(req, res) {
+    try {
+      if (!isAgencyHubEnabled()) {
+        return res.status(503).json({ success: false, error: 'Agency Hub is disabled', code: 'AGENCY_HUB_DISABLED' });
+      }
+
+      const token = cleanText(req.params.token, '');
+      if (!token) throw apiError('Invitation token is required', 'INVITATION_TOKEN_REQUIRED', 400);
+
+      const result = await query(
+        `UPDATE agency_invitations
+         SET status = 'declined', updated_at = NOW()
+         WHERE token = $1
+           AND status = 'pending'
+           AND expires_at > NOW()
+         RETURNING id, agency_id, email`,
+        [token]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Invitation not found or already processed', code: 'INVITATION_NOT_AVAILABLE' });
+      }
+
+      const invitation = result.rows[0];
+      await query(
+        `UPDATE agency_members
+         SET status = 'declined', updated_at = NOW()
+         WHERE agency_id = $1 AND email = $2 AND status = 'pending'`,
+        [invitation.agency_id, cleanEmail(invitation.email)]
+      );
+
+      await logAudit(invitation.agency_id, req.user?.id || null, 'member_invitation_declined', 'agency_invitation', invitation.id, {
+        email: cleanEmail(invitation.email),
+      });
+      return res.json({ success: true, message: 'Invitation declined' });
+    } catch (error) {
+      return handleError(res, error, 'Failed to decline agency invitation');
+    }
   },
 
   async getContext(req, res) {
@@ -433,9 +1196,36 @@ export const AgencyController = {
          RETURNING id, email, role, token, expires_at, status, created_at`,
         [agency.id, email, role, req.user.id, token, expiresAt]
       );
+      const invitationRow = invitation.rows[0];
+      const inviteUrl = getAgencyInviteUrl(invitationRow.token);
+
+      const inviterResult = await query(
+        `SELECT COALESCE(name, email) AS name, email FROM users WHERE id = $1 LIMIT 1`,
+        [req.user.id]
+      );
+      const inviterName = inviterResult.rows[0]?.name || req.user?.name || req.user?.email || 'Agency Admin';
+      const inviterEmail = inviterResult.rows[0]?.email || req.user?.email || null;
+
+      const emailDelivery = await sendAgencyInviteEmail({
+        recipientEmail: email,
+        invitationToken: invitationRow.token,
+        inviterName,
+        inviterEmail,
+        agencyName: agency.name,
+        role,
+        expiresAt: invitationRow.expires_at,
+      });
 
       await logAudit(agency.id, req.user.id, isResend ? 'member_invite_resent' : 'member_invited', 'agency_member', memberId, { email, role });
-      return res.json({ isResend, memberId, invitation: invitation.rows[0] });
+      return res.json({
+        isResend,
+        memberId,
+        emailDelivery,
+        invitation: {
+          ...invitationRow,
+          invite_url: inviteUrl,
+        },
+      });
     } catch (error) {
       return handleError(res, error, 'Failed to invite agency member');
     }
@@ -715,6 +1505,291 @@ export const AgencyController = {
     }
   },
 
+  async publishWorkspacePost(req, res) {
+    try {
+      const { agency, member } = await getAgencyContext(req.user.id);
+      if (member.role === 'viewer') {
+        throw apiError('Viewer role cannot publish from workspace', 'INSUFFICIENT_PERMISSIONS', 403);
+      }
+
+      const workspace = await getWorkspace(req.params.workspaceId, agency.id);
+      if (workspace.status !== 'active') {
+        throw apiError('Workspace must be active to publish', 'WORKSPACE_NOT_ACTIVE', 400);
+      }
+
+      const assignment = await query(
+        `SELECT 1 FROM agency_workspace_members WHERE workspace_id = $1 AND agency_member_id = $2 LIMIT 1`,
+        [workspace.id, member.id]
+      );
+      if (assignment.rows.length === 0 && !EDIT_ROLES.has(member.role)) {
+        throw apiError('You do not have access to this workspace', 'WORKSPACE_ACCESS_DENIED', 403);
+      }
+
+      const content = cleanText(req.body.content);
+      const postMode = cleanText(req.body.postMode, 'single') || 'single';
+      const threadParts = Array.isArray(req.body.threadParts)
+        ? req.body.threadParts.map((value) => cleanText(value)).filter(Boolean)
+        : [];
+      const media = normalizeMediaInputs(Array.isArray(req.body.media) ? req.body.media : req.body.mediaUrls);
+      const selectedAccountIds = normalizeWorkspaceAccountIds(
+        req.body.targetWorkspaceAccountIds || req.body.workspaceAccountIds || req.body.targets
+      );
+
+      const normalizedMode = String(postMode || 'single').toLowerCase() === 'thread' ? 'thread' : 'single';
+
+      if (!content && normalizedMode !== 'thread') {
+        throw apiError('content is required', 'PUBLISH_CONTENT_REQUIRED', 400);
+      }
+      if (normalizedMode === 'thread' && threadParts.length < 2 && !content) {
+        throw apiError('threadParts (2+) or content is required for thread mode', 'PUBLISH_THREAD_PARTS_REQUIRED', 400);
+      }
+      if (selectedAccountIds.length === 0) {
+        throw apiError('Select at least one attached account to publish', 'PUBLISH_TARGETS_REQUIRED', 400);
+      }
+
+      const accountResult = await query(
+        `SELECT *
+         FROM agency_workspace_accounts
+         WHERE workspace_id = $1
+           AND is_active = true
+           AND id::text = ANY($2::text[])`,
+        [workspace.id, selectedAccountIds]
+      );
+
+      if (accountResult.rows.length !== selectedAccountIds.length) {
+        throw apiError('One or more selected accounts are invalid for this workspace', 'WORKSPACE_ACCOUNT_SELECTION_INVALID', 400);
+      }
+
+      const byId = new Map(accountResult.rows.map((row) => [String(row.id), row]));
+      const orderedAccounts = selectedAccountIds
+        .map((id) => byId.get(id))
+        .filter(Boolean);
+
+      const settled = await Promise.allSettled(
+        orderedAccounts.map((account) =>
+          publishToWorkspaceAccount({
+            userId: req.user.id,
+            account,
+            content: content || threadParts[0] || '',
+            postMode: normalizedMode,
+            threadParts,
+            media,
+          })
+        )
+      );
+
+      const results = settled.map((entry, index) => {
+        const account = orderedAccounts[index];
+        const base = {
+          workspaceAccountId: String(account.id),
+          platform: normalizeWorkspacePlatform(account.platform),
+          accountDisplayName:
+            cleanText(account.account_display_name, null) ||
+            cleanText(account.account_username, null) ||
+            cleanText(account.account_id, null) ||
+            cleanText(account.source_id, 'account'),
+        };
+
+        if (entry.status === 'fulfilled') {
+          return {
+            ...base,
+            status: 'posted',
+            teamId: entry.value.teamId || null,
+            target: entry.value.target || null,
+            postId: entry.value.postId || null,
+            postUrl: entry.value.postUrl || null,
+            details: entry.value.payload || {},
+          };
+        }
+
+        const reason = entry.reason || {};
+        return {
+          ...base,
+          status: 'failed',
+          code: reason.code || 'PUBLISH_FAILED',
+          error: reason.message || 'Failed to publish',
+          teamId: reason?.downstream?.teamId || null,
+          details: reason?.downstream || null,
+        };
+      });
+
+      const successCount = results.filter((result) => result.status === 'posted').length;
+      const failedCount = results.length - successCount;
+
+      await logAudit(agency.id, req.user.id, 'workspace_publish_fanout', 'agency_workspace', workspace.id, {
+        workspaceId: workspace.id,
+        requestedTargets: selectedAccountIds.length,
+        successCount,
+        failedCount,
+        postMode: normalizedMode,
+      });
+
+      return res.status(200).json({
+        workspaceId: workspace.id,
+        summary: {
+          requestedTargets: selectedAccountIds.length,
+          successCount,
+          failedCount,
+          postMode: normalizedMode,
+        },
+        results,
+      });
+    } catch (error) {
+      return handleError(res, error, 'Failed to publish from workspace');
+    }
+  },
+
+  async getWorkspaceOperationsSnapshot(req, res) {
+    try {
+      const { agency, member } = await getAgencyContext(req.user.id);
+      const workspace = await getWorkspace(req.params.workspaceId, agency.id);
+
+      const assignment = await query(
+        `SELECT 1 FROM agency_workspace_members WHERE workspace_id = $1 AND agency_member_id = $2 LIMIT 1`,
+        [workspace.id, member.id]
+      );
+      if (assignment.rows.length === 0 && !EDIT_ROLES.has(member.role)) {
+        throw apiError('You do not have access to this workspace', 'WORKSPACE_ACCESS_DENIED', 403);
+      }
+
+      const limit = Math.max(1, Math.min(100, Number(req.query.limit || 50) || 50));
+      const queueLimit = Math.max(1, Math.min(100, Number(req.query.queueLimit || limit) || limit));
+
+      const accountResult = await query(
+        `SELECT *
+         FROM agency_workspace_accounts
+         WHERE workspace_id = $1
+           AND is_active = true
+         ORDER BY created_at DESC`,
+        [workspace.id]
+      );
+      const workspaceAccounts = accountResult.rows || [];
+      if (workspaceAccounts.length === 0) {
+        return res.json({
+          workspaceId: workspace.id,
+          summary: {
+            sourceCount: 0,
+            sourceHealthyCount: 0,
+            sourceFailedCount: 0,
+            queueCount: 0,
+            calendarCount: 0,
+            lastRefreshedAt: new Date().toISOString(),
+          },
+          queue: [],
+          calendar: [],
+          sources: [],
+        });
+      }
+
+      const groups = buildWorkspaceSnapshotGroups(workspaceAccounts);
+      const snapshots = await Promise.all(
+        groups.map(async (group) => {
+          const path = resolveSnapshotPath(group.channel);
+          if (!path) {
+            return {
+              channel: group.channel,
+              teamId: group.teamId,
+              status: 'failed',
+              queue: [],
+              calendar: [],
+              error: `Unsupported snapshot channel "${group.channel}"`,
+              code: 'SNAPSHOT_CHANNEL_UNSUPPORTED',
+              platforms: group.platforms,
+            };
+          }
+
+          const downstreamTool = group.channel === 'social' ? 'social' : group.channel;
+          try {
+            const payload = await invokeInternalPublishEndpoint({
+              tool: downstreamTool,
+              path,
+              userId: req.user.id,
+              teamId: group.teamId,
+              body: {
+                targetAccountIds: group.targetAccountIds,
+                limit,
+                queueLimit,
+              },
+            });
+
+            const mappedQueue = (Array.isArray(payload?.queue) ? payload.queue : []).map((item) => ({
+              ...item,
+              platform: normalizeWorkspacePlatform(item?.platform || group.platforms?.[0] || group.channel),
+              sourceChannel: group.channel,
+              teamId: item?.teamId || group.teamId || null,
+              workspaceId: workspace.id,
+            }));
+            const mappedCalendar = (Array.isArray(payload?.calendar) ? payload.calendar : []).map((item) => ({
+              ...item,
+              platform: normalizeWorkspacePlatform(item?.platform || group.platforms?.[0] || group.channel),
+              sourceChannel: group.channel,
+              teamId: item?.teamId || group.teamId || null,
+              workspaceId: workspace.id,
+            }));
+
+            return {
+              channel: group.channel,
+              teamId: group.teamId,
+              status: 'ok',
+              queue: mappedQueue,
+              calendar: mappedCalendar,
+              queueCount: mappedQueue.length,
+              calendarCount: mappedCalendar.length,
+              platforms: group.platforms,
+            };
+          } catch (error) {
+            return {
+              channel: group.channel,
+              teamId: group.teamId,
+              status: 'failed',
+              queue: [],
+              calendar: [],
+              error: error?.message || 'Failed to fetch source snapshot',
+              code: error?.code || 'SNAPSHOT_SOURCE_FAILED',
+              platforms: group.platforms,
+            };
+          }
+        })
+      );
+
+      const queue = sortByMostRecentTimestamp(
+        snapshots.flatMap((entry) => (entry.status === 'ok' ? entry.queue : []))
+      );
+      const calendar = sortByUpcomingTimestamp(
+        snapshots.flatMap((entry) => (entry.status === 'ok' ? entry.calendar : []))
+      );
+
+      const sourceHealthyCount = snapshots.filter((entry) => entry.status === 'ok').length;
+      const sourceFailedCount = snapshots.length - sourceHealthyCount;
+
+      return res.json({
+        workspaceId: workspace.id,
+        summary: {
+          sourceCount: snapshots.length,
+          sourceHealthyCount,
+          sourceFailedCount,
+          queueCount: queue.length,
+          calendarCount: calendar.length,
+          lastRefreshedAt: new Date().toISOString(),
+        },
+        queue,
+        calendar,
+        sources: snapshots.map((entry) => ({
+          channel: entry.channel,
+          teamId: entry.teamId || null,
+          status: entry.status,
+          queueCount: Number(entry.queueCount || 0),
+          calendarCount: Number(entry.calendarCount || 0),
+          error: entry.error || null,
+          code: entry.code || null,
+          platforms: entry.platforms || [],
+        })),
+      });
+    } catch (error) {
+      return handleError(res, error, 'Failed to fetch workspace operations snapshot');
+    }
+  },
+
   async createLaunchToken(req, res) {
     try {
       const { agency, member } = await getAgencyContext(req.user.id);
@@ -748,19 +1823,35 @@ export const AgencyController = {
         exp: Math.floor(Date.now() / 1000) + (30 * 60),
       };
       const token = jwt.sign(payload, process.env.JWT_SECRET || 'development-secret');
-      const selectedTool = cleanText(req.body.tool, 'twitter');
-      const launchUrls = {
-        twitter: `${String(TOOL_URLS.twitter).replace(/\/+$/, '')}/?agency_token=${encodeURIComponent(token)}&workspace_id=${encodeURIComponent(workspace.id)}&tool=twitter`,
-        linkedin: `${String(TOOL_URLS.linkedin).replace(/\/+$/, '')}/?agency_token=${encodeURIComponent(token)}&workspace_id=${encodeURIComponent(workspace.id)}&tool=linkedin`,
-        social: `${String(TOOL_URLS.social).replace(/\/+$/, '')}/?agency_token=${encodeURIComponent(token)}&workspace_id=${encodeURIComponent(workspace.id)}&tool=social`,
-      };
+      const requestedTool = cleanText(req.body.tool, 'twitter')?.toLowerCase() || 'twitter';
+      const selectedTool = Object.prototype.hasOwnProperty.call(TOOL_URLS, requestedTool) ? requestedTool : 'twitter';
+      const requestedTarget = cleanText(req.body.target, 'dashboard')?.toLowerCase() || 'dashboard';
+      const selectedTargetInfo = resolveTargetPath(selectedTool, requestedTarget);
 
-      await logAudit(agency.id, req.user.id, 'workspace_launch_token_created', 'agency_workspace', workspace.id, { selectedTool });
+      const launchUrls = Object.entries(TOOL_URLS).reduce((acc, [tool, baseUrl]) => {
+        const targetInfo = resolveTargetPath(tool, requestedTarget);
+        const launchUrl = buildToolLaunchUrl(baseUrl, targetInfo.path, {
+          agency_token: token,
+          workspace_id: workspace.id,
+          tool,
+          target: targetInfo.target,
+        });
+        if (launchUrl) acc[tool] = launchUrl;
+        return acc;
+      }, {});
+
+      await logAudit(agency.id, req.user.id, 'workspace_launch_token_created', 'agency_workspace', workspace.id, {
+        selectedTool,
+        selectedTarget: selectedTargetInfo.target,
+        requestedTarget,
+      });
       return res.json({
         token,
         expiresIn: 30 * 60,
         selectedTool,
-        launchUrl: launchUrls[selectedTool] || launchUrls.twitter,
+        selectedTarget: selectedTargetInfo.target,
+        launchPath: selectedTargetInfo.path,
+        launchUrl: launchUrls[selectedTool] || launchUrls.twitter || null,
         launchUrls,
       });
     } catch (error) {
