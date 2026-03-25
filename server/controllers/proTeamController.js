@@ -110,6 +110,138 @@ const mapLegacyLinkedInTeamAccountRow = (row = {}) => {
     };
 };
 
+const AGENCY_ROLE_TO_TEAM_ROLE = {
+    owner: 'owner',
+    admin: 'admin',
+    editor: 'editor',
+    viewer: 'viewer',
+};
+
+const ensureAgencyBackingTeam = async (userId) => {
+    if (!userId) return null;
+
+    const userResult = await query(
+        `SELECT id, email, name, plan_type FROM users WHERE id = $1 LIMIT 1`,
+        [userId]
+    );
+    const user = userResult.rows[0];
+    if (!user) return null;
+
+    const agencyResult = await query(
+        `SELECT
+             aa.id AS agency_id,
+             aa.name AS agency_name,
+             aa.owner_id,
+             am.role AS agency_role
+         FROM agency_members am
+         JOIN agency_accounts aa ON aa.id = am.agency_id
+         WHERE am.user_id = $1
+           AND am.status = 'active'
+         ORDER BY CASE am.role WHEN 'owner' THEN 0 WHEN 'admin' THEN 1 WHEN 'editor' THEN 2 ELSE 3 END
+         LIMIT 1`,
+        [userId]
+    );
+    const agencyMembership = agencyResult.rows[0];
+    if (!agencyMembership) return null;
+
+    const ownerTeam = await TeamService.getUserTeam(agencyMembership.owner_id);
+    let backingTeam = ownerTeam;
+
+    if (!backingTeam) {
+        const teamName = `${agencyMembership.agency_name || user.email || 'Agency'} Shared Connections`;
+        try {
+            backingTeam = await TeamService.createTeam(agencyMembership.owner_id, teamName);
+        } catch (error) {
+            const existingOwnerTeam = await TeamService.getUserTeam(agencyMembership.owner_id);
+            if (!existingOwnerTeam) {
+                throw error;
+            }
+            backingTeam = existingOwnerTeam;
+        }
+    }
+
+    if (!backingTeam) {
+        return null;
+    }
+
+    const backingMembership = await query(
+        `SELECT team_id, role, status
+         FROM team_members
+         WHERE user_id = $1
+           AND team_id = $2
+         ORDER BY CASE status WHEN 'active' THEN 0 ELSE 1 END, joined_at ASC NULLS LAST
+         LIMIT 1`,
+        [userId, backingTeam.id]
+    );
+
+    if (backingMembership.rows.length === 0) {
+        await query(
+            `INSERT INTO team_members (team_id, user_id, email, role, status, joined_at)
+             VALUES ($1, $2, $3, $4, 'active', CURRENT_TIMESTAMP)`,
+            [
+                backingTeam.id,
+                userId,
+                user.email,
+                AGENCY_ROLE_TO_TEAM_ROLE[agencyMembership.agency_role] || 'viewer',
+            ]
+        );
+        await query(
+            `UPDATE users SET current_team_id = $1 WHERE id = $2`,
+            [backingTeam.id, userId]
+        );
+    } else if (backingMembership.rows[0].status !== 'active') {
+        await query(
+            `UPDATE team_members
+             SET status = 'active',
+                 role = $1,
+                 joined_at = COALESCE(joined_at, CURRENT_TIMESTAMP)
+             WHERE user_id = $2 AND team_id = $3`,
+            [
+                AGENCY_ROLE_TO_TEAM_ROLE[agencyMembership.agency_role] || 'viewer',
+                userId,
+                backingTeam.id,
+            ]
+        );
+        await query(
+            `UPDATE users SET current_team_id = $1 WHERE id = $2`,
+            [backingTeam.id, userId]
+        );
+    } else {
+        await query(
+            `UPDATE team_members
+             SET role = $1
+             WHERE user_id = $2 AND team_id = $3 AND status = 'active'`,
+            [
+                AGENCY_ROLE_TO_TEAM_ROLE[agencyMembership.agency_role] || 'viewer',
+                userId,
+                backingTeam.id,
+            ]
+        );
+        await query(
+            `UPDATE users SET current_team_id = $1 WHERE id = $2`,
+            [backingTeam.id, userId]
+        );
+    }
+
+    const refreshedTeam = await query(
+        `SELECT t.*, tm.role AS user_role
+         FROM teams t
+         JOIN team_members tm
+           ON tm.team_id = t.id
+         WHERE t.id = $1
+           AND tm.user_id = $2
+           AND tm.status = 'active'
+         LIMIT 1`,
+        [backingTeam.id, userId]
+    );
+
+    if (refreshedTeam.rows.length > 0) {
+        return refreshedTeam.rows[0];
+    }
+
+    return await TeamService.getUserTeam(userId);
+};
+
 const fetchRegistryTeamSocialAccounts = async (teamId) => {
     const registryResult = await query(
         `SELECT
@@ -288,7 +420,7 @@ export const ProTeamController = {
             }
 
             const userId = req.user.id;
-            const team = await TeamService.getUserTeam(userId);
+            const team = await ensureAgencyBackingTeam(userId) || await TeamService.getUserTeam(userId);
             
             if (!team) {
                 return res.json({ team: null });
@@ -837,7 +969,8 @@ export const ProTeamController = {
     async getUserPermissions(req, res) {
         try {
             const userId = req.user.id;
-            
+
+            await ensureAgencyBackingTeam(userId);
             const permissions = await RolePermissionsService.getUserPermissions(userId);
             
             // For social accounts, return team-wide limit instead of individual limit
@@ -868,24 +1001,21 @@ export const ProTeamController = {
     async connectAccount(req, res) {
         try {
             const userId = req.user.id;
-            const { platform } = req.body;
+            const { platform, returnUrl: requestedReturnUrl } = req.body || {};
             
             if (!platform) {
                 return res.status(400).json({ error: 'Platform is required' });
             }
             
-            // Get user's team and role
-            const teamResult = await query(`
-                SELECT tm.team_id, tm.role
-                FROM team_members tm 
-                WHERE tm.user_id = $1 AND tm.status = 'active'
-            `, [userId]);
-            
-            if (teamResult.rows.length === 0) {
+            // Normalize agency users onto their shared connections team before resolving permissions.
+            await ensureAgencyBackingTeam(userId);
+            const userPermissions = await RolePermissionsService.getUserPermissions(userId);
+
+            if (!userPermissions?.team_id) {
                 return res.status(400).json({ error: 'User is not part of any team' });
             }
-            
-            const { team_id: teamId, role } = teamResult.rows[0];
+            const teamId = userPermissions.team_id;
+            const role = userPermissions.role;
             
             // Check if user can connect accounts (owner/admin only)
             if (!['owner', 'admin'].includes(role)) {
@@ -962,7 +1092,8 @@ export const ProTeamController = {
                 twitter: { path: '/api/twitter/team-connect', hostKey: 'twitter' },
                 linkedin: { path: '/api/oauth/linkedin/team-connect', hostKey: 'linkedin' },
                 threads: { path: '/api/oauth/threads/connect', hostKey: 'social' },
-                instagram: { path: '/api/oauth/instagram/connect', hostKey: 'social' }
+                instagram: { path: '/api/oauth/instagram/connect', hostKey: 'social' },
+                youtube: { path: '/api/oauth/youtube/connect', hostKey: 'social' }
             };
 
             const oauthTarget = oauthTargets[platformKey];
@@ -985,7 +1116,29 @@ export const ProTeamController = {
             const clientBaseUrl = isLocal
                 ? normalizeUrlBase(req.headers.origin || process.env.CLIENT_URL || 'http://localhost:5173')
                 : normalizeUrlBase(ensureUrl(process.env.CLIENT_URL || 'https://suitegenie.in'));
-            const returnUrl = `${clientBaseUrl}/team`;
+            const defaultReturnUrl = `${clientBaseUrl}/team`;
+            let returnUrl = defaultReturnUrl;
+            const normalizedRequestedReturnUrl = normalizeAccountIdentifier(requestedReturnUrl, 2048);
+
+            if (normalizedRequestedReturnUrl) {
+                try {
+                    const parsedReturnUrl = new URL(normalizedRequestedReturnUrl);
+                    const allowedOrigins = new Set(
+                        [
+                            clientBaseUrl,
+                            normalizeUrlBase(req.headers.origin || ''),
+                            normalizeUrlBase(process.env.CLIENT_URL || ''),
+                        ].filter(Boolean)
+                    );
+                    const requestedOrigin = `${parsedReturnUrl.protocol}//${parsedReturnUrl.host}`;
+                    if (allowedOrigins.has(requestedOrigin)) {
+                        returnUrl = parsedReturnUrl.toString();
+                    }
+                } catch (error) {
+                    console.warn('[connectAccount] Ignoring invalid custom returnUrl:', normalizedRequestedReturnUrl);
+                }
+            }
+
             const redirectUrl = `${ensureUrl(subdomain)}${oauthTarget.path}?teamId=${teamId}&userId=${userId}&returnUrl=${encodeURIComponent(returnUrl)}`;
             
             res.json({

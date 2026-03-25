@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
 import GuestRoute from './GuestRoute';
 import Layout from '../components/Layout';
@@ -35,17 +35,17 @@ import TeamPage from '../pages/TeamPage';
 import TeamInvitePage from '../pages/TeamInvitePage';
 import AgencyHubPage from '../pages/AgencyHubPage';
 import AgencyWorkspacePage from '../pages/AgencyWorkspacePage';
-import AgencyTeamPage from '../pages/AgencyTeamPage';
 import AgencyInvitePage from '../pages/AgencyInvitePage';
 
-// OnboardingPage import removed
-import { useEffect, useState } from 'react';
-import api from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
 
 // OnboardingGuard removed
 
 const AppRoutes = () => {
+  const { user } = useAuth();
+  const userPlanType = String(user?.planType || user?.plan_type || '').trim().toLowerCase();
+  const isAgencyPlan = userPlanType === 'agency';
+
   return (
     <Routes>
       {/* Public routes */}
@@ -112,9 +112,13 @@ const AppRoutes = () => {
 
       <Route path="/team" element={
         <ProtectedRoute>
-          <Layout>
-            <TeamPage />
-          </Layout>
+          {isAgencyPlan ? (
+            <Navigate to="/agency" replace />
+          ) : (
+            <Layout>
+              <TeamPage />
+            </Layout>
+          )}
         </ProtectedRoute>
       } />
 
@@ -128,17 +132,13 @@ const AppRoutes = () => {
 
       <Route path="/agency/workspaces/:workspaceId" element={
         <ProtectedRoute>
-          <Layout>
-            <AgencyWorkspacePage />
-          </Layout>
+          <AgencyWorkspacePage />
         </ProtectedRoute>
       } />
 
       <Route path="/agency/team" element={
         <ProtectedRoute>
-          <Layout>
-            <AgencyTeamPage />
-          </Layout>
+          <Navigate to="/agency" replace />
         </ProtectedRoute>
       } />
 

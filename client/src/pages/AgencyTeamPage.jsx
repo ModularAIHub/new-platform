@@ -106,7 +106,7 @@ const AgencyTeamPage = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Agency Team</h1>
-          <p className="text-gray-600">Seat usage: {context?.usage?.activeSeatCount || 0}/{context?.limits?.seatLimit || 6}</p>
+          <p className="text-gray-600">Agency members: {context?.usage?.activeSeatCount || 0} active. Client workspaces can each assign up to 5 collaborators.</p>
         </div>
         <button onClick={() => navigate('/agency')} className="text-sm text-blue-600 hover:text-blue-700">Back to Agency Hub</button>
       </div>

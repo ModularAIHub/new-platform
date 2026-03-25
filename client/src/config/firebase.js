@@ -14,21 +14,36 @@ const firebaseConfig = {
 };
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+
+const isLocalDevHost = () => {
+  if (typeof window === 'undefined') return false;
+  const hostname = window.location.hostname;
+  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
+};
+
+export const isFirebaseTelemetryEnabled = () => {
+  if (typeof window === 'undefined') return false;
+  if (isLocalDevHost()) return false;
+  return Boolean(firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId);
+};
+
 export const getFirebaseAnalytics = async () => {
   if (typeof window === 'undefined') return null;
+  if (!isFirebaseTelemetryEnabled()) return null;
   const supported = await analyticsSupported();
-  console.log('Analytics supported:', supported); // ← add this
   return supported ? getAnalytics(app) : null;
 };
 
 export const getFirebaseMessaging = async () => {
   if (typeof window === 'undefined') return null;
+  if (!isFirebaseTelemetryEnabled()) return null;
   const supported = await messagingSupported();
   return supported ? getMessaging(app) : null;
 };
 
 export const getFirebaseRemoteConfig = () => {
   if (typeof window === 'undefined') return null;
+  if (!isFirebaseTelemetryEnabled()) return null;
   const rc = getRemoteConfig(app);
   rc.settings = {
     minimumFetchIntervalMillis: 1000 * 60 * 60,
@@ -43,6 +58,5 @@ export const getFirebaseRemoteConfig = () => {
   };
   return rc;
 };
-
 
 export default app;

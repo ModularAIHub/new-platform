@@ -39,6 +39,14 @@ const Navbar = () => {
     setIsProfileOpen(false);
   };
 
+  const userPlanType = String(user?.planType || user?.plan_type || '').trim().toLowerCase();
+  const hasPaidPlanBadge = userPlanType === 'pro' || userPlanType === 'agency';
+  const isAgencyPlan = userPlanType === 'agency';
+  const planBadgeLabel = userPlanType === 'agency' ? 'AGENCY' : userPlanType === 'pro' ? 'PRO' : '';
+  const planBadgeClassName = userPlanType === 'agency'
+    ? 'bg-gradient-to-r from-sky-500 to-blue-700 text-white'
+    : 'bg-gradient-to-r from-amber-400 to-orange-500 text-white';
+
   return (
     <nav className="border-b border-neutral-200 sticky top-0 z-50 backdrop-blur-sm bg-white/95">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -112,9 +120,9 @@ const Navbar = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-sm">{user?.name}</span>
-                      {user?.planType === 'pro' && (
-                        <span className="px-2 py-0.5 text-xs font-semibold bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-full shadow-sm">
-                          PRO
+                      {hasPaidPlanBadge && (
+                        <span className={`px-2 py-0.5 text-xs font-semibold rounded-full shadow-sm ${planBadgeClassName}`}>
+                          {planBadgeLabel}
                         </span>
                       )}
                     </div>
@@ -131,11 +139,11 @@ const Navbar = () => {
                         {user?.planType && (
                           <div className="mt-2 flex items-center gap-2">
                             <span className={`px-2 py-1 text-xs font-semibold rounded-md ${
-                              user?.planType === 'pro' 
-                                ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-white' 
+                              hasPaidPlanBadge
+                                ? planBadgeClassName
                                 : 'bg-neutral-100 text-neutral-700'
                             }`}>
-                              {user?.planType === 'pro' ? 'PRO' : user?.planType?.toUpperCase() || 'FREE'}
+                              {hasPaidPlanBadge ? planBadgeLabel : userPlanType?.toUpperCase() || 'FREE'}
                             </span>
                             <span className="text-xs text-neutral-500">
                               {user?.creditsRemaining || 0} credits
@@ -143,14 +151,16 @@ const Navbar = () => {
                           </div>
                         )}
                       </div>
-                      <Link 
-                        to="/team" 
-                        className="flex items-center px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 hover:text-primary-600 transition-colors duration-200"
-                        onClick={() => setIsProfileOpen(false)}
-                      >
-                        <Users className="w-4 h-4 mr-3" />
-                        Team
-                      </Link>
+                      {!isAgencyPlan && (
+                        <Link 
+                          to="/team" 
+                          className="flex items-center px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 hover:text-primary-600 transition-colors duration-200"
+                          onClick={() => setIsProfileOpen(false)}
+                        >
+                          <Users className="w-4 h-4 mr-3" />
+                          Team
+                        </Link>
+                      )}
 
                       <Link 
                         to="/settings" 
@@ -247,9 +257,9 @@ const Navbar = () => {
                         <div>
                           <div className="flex items-center gap-2">
                             <p className="font-medium text-neutral-900">{user?.name}</p>
-                            {user?.planType === 'pro' && (
-                              <span className="px-2 py-0.5 text-xs font-semibold bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-full shadow-sm">
-                                PRO
+                            {hasPaidPlanBadge && (
+                              <span className={`px-2 py-0.5 text-xs font-semibold rounded-full shadow-sm ${planBadgeClassName}`}>
+                                {planBadgeLabel}
                               </span>
                             )}
                           </div>
@@ -265,14 +275,16 @@ const Navbar = () => {
                       <LayoutDashboard className="w-4 h-4 mr-3" />
                       Dashboard
                     </Link>
-                    <Link 
-                      to="/team" 
-                      className="flex items-center px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-lg font-medium transition-all duration-200"
-                      onClick={closeMenu}
-                    >
-                      <Users className="w-4 h-4 mr-3" />
-                      Team
-                    </Link>
+                    {!isAgencyPlan && (
+                      <Link 
+                        to="/team" 
+                        className="flex items-center px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-lg font-medium transition-all duration-200"
+                        onClick={closeMenu}
+                      >
+                        <Users className="w-4 h-4 mr-3" />
+                        Team
+                      </Link>
+                    )}
 
                     <Link 
                       to="/settings" 

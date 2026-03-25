@@ -1,8 +1,10 @@
 import express from 'express';
+import multer from 'multer';
 import { authenticateToken } from '../middleware/auth.js';
 import { AgencyController } from '../controllers/agencyController.js';
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
 // Authenticated invitation listing for current user.
 router.get('/invitations/pending', authenticateToken, AgencyController.ensureEnabled, AgencyController.listPendingInvitations);
@@ -35,8 +37,23 @@ router.get('/accounts/available', AgencyController.listAvailableAccounts);
 router.get('/workspaces/:workspaceId/accounts', AgencyController.listWorkspaceAccounts);
 router.post('/workspaces/:workspaceId/accounts', AgencyController.attachWorkspaceAccount);
 router.delete('/workspaces/:workspaceId/accounts/:workspaceAccountId', AgencyController.detachWorkspaceAccount);
-router.post('/workspaces/:workspaceId/publish', AgencyController.publishWorkspacePost);
-router.get('/workspaces/:workspaceId/operations/snapshot', AgencyController.getWorkspaceOperationsSnapshot);
+router.get('/workspaces/:workspaceId/settings', AgencyController.requireWorkspaceReadRole, AgencyController.getWorkspaceSettings);
+router.put('/workspaces/:workspaceId/settings', AgencyController.requireWorkspaceWriteRole, AgencyController.upsertWorkspaceSettings);
+router.get('/workspaces/:workspaceId/drafts', AgencyController.requireWorkspaceReadRole, AgencyController.listWorkspaceDrafts);
+router.post('/workspaces/:workspaceId/drafts', AgencyController.requireWorkspaceWriteRole, AgencyController.createWorkspaceDraft);
+router.post('/workspaces/:workspaceId/drafts/generate', AgencyController.requireWorkspaceWriteRole, AgencyController.generateWorkspaceDraft);
+router.post('/workspaces/:workspaceId/drafts/refine', AgencyController.requireWorkspaceWriteRole, AgencyController.refineWorkspaceContent);
+router.post('/workspaces/:workspaceId/media/upload', AgencyController.requireWorkspaceWriteRole, upload.single('file'), AgencyController.uploadWorkspaceMedia);
+router.patch('/workspaces/:workspaceId/drafts/:draftId', AgencyController.requireWorkspaceWriteRole, AgencyController.updateWorkspaceDraft);
+router.delete('/workspaces/:workspaceId/drafts/:draftId', AgencyController.requireWorkspaceWriteRole, AgencyController.deleteWorkspaceDraft);
+router.post('/workspaces/:workspaceId/drafts/:draftId/approve', AgencyController.requireWorkspaceApproveRole, AgencyController.approveWorkspaceDraft);
+router.post('/workspaces/:workspaceId/drafts/:draftId/reject', AgencyController.requireWorkspaceApproveRole, AgencyController.rejectWorkspaceDraft);
+router.post('/workspaces/:workspaceId/drafts/:draftId/schedule', AgencyController.requireWorkspaceApproveRole, AgencyController.scheduleWorkspaceDraft);
+router.post('/workspaces/:workspaceId/drafts/:draftId/publish', AgencyController.requireWorkspaceApproveRole, AgencyController.publishWorkspaceDraft);
+router.post('/workspaces/:workspaceId/publish', AgencyController.requireWorkspaceApproveRole, AgencyController.publishWorkspacePost);
+router.get('/workspaces/:workspaceId/operations/snapshot', AgencyController.requireWorkspaceReadRole, AgencyController.getWorkspaceOperationsSnapshot);
+router.get('/workspaces/:workspaceId/analytics/summary', AgencyController.requireWorkspaceReadRole, AgencyController.getWorkspaceAnalyticsSummary);
+router.get('/workspaces/:workspaceId/insights/summary', AgencyController.requireWorkspaceReadRole, AgencyController.getWorkspaceInsightsSummary);
 
 router.post('/workspaces/:workspaceId/launch-token', AgencyController.createLaunchToken);
 router.get('/access-matrix', AgencyController.getAccessMatrix);

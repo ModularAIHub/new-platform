@@ -3,6 +3,7 @@ import { body } from 'express-validator';
 import { authenticateToken } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import PaymentsController from '../controllers/paymentsController.js';
+import AgencyPaymentsController from '../controllers/agencyPaymentsController.js';
 
 const router = express.Router();
 
@@ -23,7 +24,19 @@ router.post('/verify', [
     validate
 ], PaymentsController.verify);
 
-// Webhook endpoints are intentionally removed for MVP per requirements
+// Agency recurring billing
+router.post('/agency/subscribe', authenticateToken, AgencyPaymentsController.subscribe);
+
+router.post('/agency/confirm', [
+    authenticateToken,
+    body('razorpaySubscriptionId').optional().trim().notEmpty(),
+    body('razorpay_subscription_id').optional().trim().notEmpty(),
+    validate
+], AgencyPaymentsController.confirm);
+
+router.get('/agency/status', authenticateToken, AgencyPaymentsController.status);
+
+router.post('/webhooks/razorpay', AgencyPaymentsController.webhook);
 
 // Get available packages
 router.get('/packages', authenticateToken, PaymentsController.packages);

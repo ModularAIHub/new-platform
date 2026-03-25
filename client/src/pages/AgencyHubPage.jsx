@@ -1,33 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  BarChart3,
-  Building2,
-  CalendarDays,
-  Clock3,
-  ExternalLink,
-  Layers3,
-  Link2,
-  PenSquare,
-  Plus,
-  Users,
-} from 'lucide-react';
+import { Building2, Layers3, Plus, Users } from 'lucide-react';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
-
-const TOOL_OPTIONS = [
-  { key: 'linkedin', label: 'LinkedIn Genie' },
-  { key: 'twitter', label: 'Tweet Genie' },
-  { key: 'social', label: 'Social Genie' },
-];
-
-const WORKSPACE_ACTIONS = [
-  { target: 'compose', label: 'Compose', icon: PenSquare },
-  { target: 'calendar', label: 'Calendar', icon: CalendarDays },
-  { target: 'scheduling', label: 'Queue', icon: Clock3 },
-  { target: 'connections', label: 'Connections', icon: Link2 },
-  { target: 'analytics', label: 'Analytics', icon: BarChart3 },
-];
 
 const AgencyHubPage = () => {
   const navigate = useNavigate();
@@ -37,8 +12,6 @@ const AgencyHubPage = () => {
   const [summary, setSummary] = useState({ active: 0, paused: 0, archived: 0 });
   const [form, setForm] = useState({ name: '', brand_name: '', timezone: 'Asia/Kolkata' });
   const [creating, setCreating] = useState(false);
-  const [launchingKey, setLaunchingKey] = useState(null);
-  const [workspaceToolSelection, setWorkspaceToolSelection] = useState({});
 
   const slotsRemaining = useMemo(() => {
     if (!context) return 0;
@@ -64,6 +37,32 @@ const AgencyHubPage = () => {
 
   useEffect(() => {
     fetchAgency();
+
+    const refreshOnFocus = () => {
+      fetchAgency();
+    };
+    const refreshOnVisibility = () => {
+      if (typeof document === 'undefined') return;
+      if (document.visibilityState === 'visible') {
+        fetchAgency();
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('focus', refreshOnFocus);
+    }
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', refreshOnVisibility);
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('focus', refreshOnFocus);
+      }
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', refreshOnVisibility);
+      }
+    };
   }, []);
 
   const onCreateWorkspace = async (event) => {
@@ -91,21 +90,13 @@ const AgencyHubPage = () => {
     }
   };
 
-  const resolveWorkspaceTool = (workspaceId) => workspaceToolSelection[workspaceId] || 'linkedin';
-
-  const launchTool = async (workspaceId, tool, target = 'dashboard') => {
-    const launchKey = `${workspaceId}:${tool}:${target}`;
-    setLaunchingKey(launchKey);
-    try {
-      const response = await api.post(`/agency/workspaces/${workspaceId}/launch-token`, { tool, target });
-      const url = response.data?.launchUrl;
-      if (url) window.open(url, '_blank', 'noopener,noreferrer');
-      else toast.error('Launch URL is unavailable');
-    } catch (error) {
-      toast.error(error?.response?.data?.error || 'Failed to create launch token');
-    } finally {
-      setLaunchingKey(null);
+  const openWorkspace = (workspaceId) => {
+    const path = `/agency/workspaces/${workspaceId}`;
+    if (typeof window !== 'undefined') {
+      window.open(path, '_blank', 'noopener,noreferrer');
+      return;
     }
+    navigate(path);
   };
 
   if (loading) {
@@ -116,7 +107,7 @@ const AgencyHubPage = () => {
     <div className="space-y-8">
       <div className="bg-white border border-gray-200 rounded-xl p-6">
         <h1 className="text-2xl font-semibold text-gray-900">Agency Hub</h1>
-        <p className="text-gray-600 mt-1">Workspace-first control center for client operations.</p>
+        <p className="text-gray-600 mt-1">Create client workspaces, manage access, and open each workspace when you want to work on that client.</p>
         {context && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
             <div className="rounded-lg border p-4 bg-gray-50">
@@ -124,8 +115,8 @@ const AgencyHubPage = () => {
               <p className="text-2xl font-semibold text-gray-900">{context.usage?.workspaceCount || 0}/{context.limits?.workspaceLimit || 6}</p>
             </div>
             <div className="rounded-lg border p-4 bg-gray-50">
-              <p className="text-xs uppercase tracking-wide text-gray-500">Seats</p>
-              <p className="text-2xl font-semibold text-gray-900">{context.usage?.activeSeatCount || 0}/{context.limits?.seatLimit || 6}</p>
+              <p className="text-xs uppercase tracking-wide text-gray-500">Agency Members</p>
+              <p className="text-2xl font-semibold text-gray-900">{context.usage?.activeSeatCount || 0}</p>
             </div>
             <div className="rounded-lg border p-4 bg-gray-50">
               <p className="text-xs uppercase tracking-wide text-gray-500">Active Clients</p>
@@ -142,23 +133,16 @@ const AgencyHubPage = () => {
       <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-white border border-blue-200 rounded-xl p-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="inline-flex items-center rounded-full bg-blue-100 text-blue-700 text-[11px] font-semibold px-2 py-1 uppercase tracking-wide">Agency Pro</p>
-            <h2 className="text-lg font-semibold text-gray-900 mt-2">Operations Guide</h2>
-            <p className="text-sm text-gray-600 mt-1">Create workspace → assign team → attach accounts → launch Compose/Calendar/Queue from each client card.</p>
+            <p className="inline-flex items-center rounded-full bg-blue-100 text-blue-700 text-[11px] font-semibold px-2 py-1 uppercase tracking-wide">Agency Workspace Model</p>
+            <h2 className="text-lg font-semibold text-gray-900 mt-2">One client, one workspace</h2>
+            <p className="text-sm text-gray-600 mt-1">Set the client name and brand, connect the client’s channels, assign your team, and do all work from inside that workspace.</p>
           </div>
-          <button
-            onClick={() => navigate('/agency/team')}
-            className="text-sm rounded-lg border border-blue-200 bg-white text-blue-700 px-3 py-2 hover:bg-blue-50"
-          >
-            Manage Team & Invites
-          </button>
         </div>
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2"><Plus className="h-5 w-5" />Create Client Workspace</h2>
-          <button onClick={() => navigate('/agency/team')} className="text-sm text-blue-600 hover:text-blue-700 font-medium">Manage Team</button>
         </div>
         <form onSubmit={onCreateWorkspace} className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <input className="border rounded-lg px-3 py-2" placeholder="Workspace name" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} required />
@@ -173,79 +157,54 @@ const AgencyHubPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {workspaces.map((workspace) => (
           <div key={workspace.id} className="bg-white border border-gray-200 rounded-xl p-5">
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2"><Building2 className="h-4 w-4" />{workspace.name}</h3>
-                <p className="text-sm text-gray-600">{workspace.brand_name} - {workspace.timezone}</p>
-                <p className="text-xs text-gray-500 mt-1">Status: <span className="font-medium">{workspace.status}</span></p>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                {workspace.logo_url ? (
+                  <img
+                    src={workspace.logo_url}
+                    alt={workspace.name}
+                    className="h-12 w-12 rounded-xl object-cover border border-gray-200"
+                  />
+                ) : (
+                  <div className="h-12 w-12 rounded-xl border border-gray-200 bg-blue-50 text-blue-700 flex items-center justify-center font-semibold">
+                    {String(workspace.name || 'W').trim().slice(0, 1).toUpperCase()}
+                  </div>
+                )}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2"><Building2 className="h-4 w-4" />{workspace.name}</h3>
+                  <p className="text-sm text-gray-600">{workspace.brand_name || 'No brand name yet'} • {workspace.timezone}</p>
+                  <p className="text-xs text-gray-500 mt-1">Status: <span className="font-medium">{workspace.status}</span></p>
+                </div>
               </div>
-              <button onClick={() => navigate(`/agency/workspaces/${workspace.id}`)} className="text-sm text-blue-600 hover:text-blue-700 font-medium">Open</button>
+              <button onClick={() => openWorkspace(workspace.id)} className="text-sm text-blue-600 hover:text-blue-700 font-medium">Open Workspace</button>
             </div>
 
             <div className="grid grid-cols-2 gap-3 mt-4">
               <div className="border rounded-lg p-3 bg-gray-50">
                 <p className="text-xs text-gray-500">Team Access</p>
-                <p className="text-sm font-semibold text-gray-900 flex items-center gap-1"><Users className="h-4 w-4" />{workspace.member_count || 0}</p>
+                <p className="text-sm font-semibold text-gray-900 flex items-center gap-1"><Users className="h-4 w-4" />{workspace.member_count || 0}/5</p>
               </div>
               <div className="border rounded-lg p-3 bg-gray-50">
-                <p className="text-xs text-gray-500">Attached Accounts</p>
+                <p className="text-xs text-gray-500">Connected Channels</p>
                 <p className="text-sm font-semibold text-gray-900 flex items-center gap-1"><Layers3 className="h-4 w-4" />{workspace.account_count || 0}/8</p>
               </div>
             </div>
 
-            <div className="mt-4 border rounded-lg p-3 bg-blue-50/60 border-blue-100">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <p className="text-xs font-semibold text-blue-900 uppercase tracking-wide">Client Operations</p>
-                <select
-                  value={resolveWorkspaceTool(workspace.id)}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setWorkspaceToolSelection((prev) => ({ ...prev, [workspace.id]: value }));
-                  }}
-                  className="text-xs border rounded-md px-2 py-1.5 bg-white"
-                >
-                  {TOOL_OPTIONS.map((tool) => (
-                    <option key={tool.key} value={tool.key}>{tool.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="mt-2 flex flex-wrap gap-2">
-                {WORKSPACE_ACTIONS.map((action) => {
-                  const Icon = action.icon;
-                  const selectedTool = resolveWorkspaceTool(workspace.id);
-                  const isLaunching = launchingKey === `${workspace.id}:${selectedTool}:${action.target}`;
-                  return (
-                    <button
-                      key={action.target}
-                      onClick={() => launchTool(workspace.id, selectedTool, action.target)}
-                      className="text-xs border rounded-md px-2.5 py-1.5 hover:bg-white flex items-center gap-1"
-                      disabled={isLaunching || workspace.status === 'archived'}
-                    >
-                      <Icon className="h-3 w-3" />
-                      {isLaunching ? 'Opening...' : action.label}
-                    </button>
-                  );
-                })}
-                <button
-                  onClick={() => navigate(`/agency/workspaces/${workspace.id}`)}
-                  className="text-xs border rounded-md px-2.5 py-1.5 hover:bg-white flex items-center gap-1"
-                >
-                  <ExternalLink className="h-3 w-3" />
-                  Manage Workspace
-                </button>
-              </div>
-            </div>
-
             <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                onClick={() => openWorkspace(workspace.id)}
+                className="text-xs rounded-md bg-blue-600 text-white px-3 py-2 hover:bg-blue-700"
+              >
+                Open Workspace
+              </button>
               {workspace.status !== 'paused' && (
-                <button onClick={() => onUpdateStatus(workspace.id, 'paused')} className="text-xs border rounded-md px-2.5 py-1.5 hover:bg-gray-50">Pause</button>
+                <button onClick={() => onUpdateStatus(workspace.id, 'paused')} className="text-xs border rounded-md px-2.5 py-2 hover:bg-gray-50">Pause</button>
               )}
               {workspace.status !== 'active' && (
-                <button onClick={() => onUpdateStatus(workspace.id, 'active')} className="text-xs border rounded-md px-2.5 py-1.5 hover:bg-gray-50">Activate</button>
+                <button onClick={() => onUpdateStatus(workspace.id, 'active')} className="text-xs border rounded-md px-2.5 py-2 hover:bg-gray-50">Activate</button>
               )}
               {workspace.status !== 'archived' && (
-                <button onClick={() => onUpdateStatus(workspace.id, 'archived')} className="text-xs border border-red-200 text-red-700 rounded-md px-2.5 py-1.5 hover:bg-red-50">Archive</button>
+                <button onClick={() => onUpdateStatus(workspace.id, 'archived')} className="text-xs border border-red-200 text-red-700 rounded-md px-2.5 py-2 hover:bg-red-50">Archive</button>
               )}
             </div>
           </div>

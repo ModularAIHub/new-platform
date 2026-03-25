@@ -419,6 +419,154 @@ const migrations = [
       CREATE INDEX IF NOT EXISTS idx_agency_audit_logs_agency_id ON agency_audit_logs(agency_id);
       CREATE INDEX IF NOT EXISTS idx_agency_audit_logs_created_at ON agency_audit_logs(created_at);
     `
+  },
+  {
+    version: 21,
+    name: 'agency_billing_and_workspace_drafts',
+    sql: `
+      CREATE TABLE IF NOT EXISTS agency_subscriptions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        agency_id UUID REFERENCES agency_accounts(id) ON DELETE SET NULL,
+        owner_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        razorpay_subscription_id VARCHAR(255) UNIQUE NOT NULL,
+        razorpay_customer_id VARCHAR(255),
+        razorpay_plan_id VARCHAR(255),
+        status VARCHAR(32) NOT NULL DEFAULT 'created',
+        cancel_at_cycle_end BOOLEAN NOT NULL DEFAULT false,
+        current_period_start TIMESTAMP,
+        current_period_end TIMESTAMP,
+        grace_until TIMESTAMP,
+        last_payment_id VARCHAR(255),
+        last_payment_at TIMESTAMP,
+        last_payment_status VARCHAR(64),
+        metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_agency_subscriptions_owner_unique
+        ON agency_subscriptions(owner_user_id);
+      CREATE INDEX IF NOT EXISTS idx_agency_subscriptions_agency_id
+        ON agency_subscriptions(agency_id);
+      CREATE INDEX IF NOT EXISTS idx_agency_subscriptions_status
+        ON agency_subscriptions(status);
+
+      CREATE TABLE IF NOT EXISTS agency_billing_events (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        event_id VARCHAR(255) UNIQUE NOT NULL,
+        event_type VARCHAR(255) NOT NULL,
+        signature TEXT,
+        payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+        processed_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_agency_billing_events_type
+        ON agency_billing_events(event_type);
+
+      CREATE TABLE IF NOT EXISTS agency_workspace_drafts (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        workspace_id UUID NOT NULL REFERENCES agency_workspaces(id) ON DELETE CASCADE,
+        created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+        updated_by UUID REFERENCES users(id) ON DELETE SET NULL,
+        title VARCHAR(255),
+        prompt TEXT,
+        content TEXT NOT NULL,
+        platform_targets JSONB NOT NULL DEFAULT '[]'::jsonb,
+        media_urls JSONB NOT NULL DEFAULT '[]'::jsonb,
+        status VARCHAR(32) NOT NULL DEFAULT 'draft',
+        generation_source VARCHAR(64),
+        generation_metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+        scheduled_for TIMESTAMP,
+        published_at TIMESTAMP,
+        last_error TEXT,
+        downstream_results JSONB NOT NULL DEFAULT '{}'::jsonb,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_agency_workspace_drafts_workspace_id
+        ON agency_workspace_drafts(workspace_id);
+      CREATE INDEX IF NOT EXISTS idx_agency_workspace_drafts_status
+        ON agency_workspace_drafts(status);
+      CREATE INDEX IF NOT EXISTS idx_agency_workspace_drafts_scheduled_for
+        ON agency_workspace_drafts(scheduled_for);
+    `
+  },
+  {
+    version: 22,
+    name: 'agency_workspace_settings',
+    sql: `
+      CREATE TABLE IF NOT EXISTS agency_workspace_settings (
+        workspace_id UUID PRIMARY KEY REFERENCES agency_workspaces(id) ON DELETE CASCADE,
+        profile_notes TEXT,
+        competitor_targets JSONB NOT NULL DEFAULT '[]'::jsonb,
+        automation_enabled BOOLEAN NOT NULL DEFAULT false,
+        require_admin_approval BOOLEAN NOT NULL DEFAULT true,
+        auto_generate_twitter BOOLEAN NOT NULL DEFAULT true,
+        auto_generate_linkedin BOOLEAN NOT NULL DEFAULT true,
+        auto_generate_social BOOLEAN NOT NULL DEFAULT false,
+        engagement_auto_reply BOOLEAN NOT NULL DEFAULT false,
+        posting_preferences JSONB NOT NULL DEFAULT '{}'::jsonb,
+        updated_by UUID REFERENCES users(id) ON DELETE SET NULL,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_agency_workspace_settings_updated_at
+        ON agency_workspace_settings(updated_at);
+    `
+  },
+  {
+    version: 23,
+    name: 'agency_workspace_rbac_state_machine',
+    sql: `
+      ALTER TABLE agency_workspace_members
+        ADD COLUMN IF NOT EXISTS role VARCHAR(20);
+
+      UPDATE agency_workspace_members awm
+      SET role = am.role
+      FROM agency_members am
+      WHERE am.id = awm.agency_member_id
+        AND (awm.role IS NULL OR awm.role <> am.role);
+
+      ALTER TABLE agency_workspace_members
+        DROP CONSTRAINT IF EXISTS agency_workspace_members_role_check;
+
+      ALTER TABLE agency_workspace_members
+        ADD CONSTRAINT agency_workspace_members_role_check
+        CHECK (role IN ('owner', 'admin', 'editor', 'viewer'));
+
+      ALTER TABLE agency_workspace_members
+        ALTER COLUMN role SET DEFAULT 'editor';
+
+      UPDATE agency_workspace_members
+      SET role = 'editor'
+      WHERE role IS NULL;
+
+      ALTER TABLE agency_workspace_members
+        ALTER COLUMN role SET NOT NULL;
+
+      ALTER TABLE agency_workspace_drafts
+        ADD COLUMN IF NOT EXISTS rejected_reason TEXT,
+        ADD COLUMN IF NOT EXISTS reviewed_by UUID REFERENCES users(id) ON DELETE SET NULL,
+        ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMP;
+
+      UPDATE agency_workspace_drafts
+      SET status = 'draft'
+      WHERE status IS NULL
+         OR status NOT IN ('draft', 'pending_approval', 'approved', 'rejected', 'scheduled', 'published', 'failed', 'archived');
+
+      ALTER TABLE agency_workspace_drafts
+        DROP CONSTRAINT IF EXISTS agency_workspace_drafts_status_check;
+
+      ALTER TABLE agency_workspace_drafts
+        ADD CONSTRAINT agency_workspace_drafts_status_check
+        CHECK (status IN ('draft', 'pending_approval', 'approved', 'rejected', 'scheduled', 'published', 'failed', 'archived'));
+
+      CREATE INDEX IF NOT EXISTS idx_agency_workspace_drafts_reviewed_at
+        ON agency_workspace_drafts(reviewed_at);
+    `
   }
 ];
 

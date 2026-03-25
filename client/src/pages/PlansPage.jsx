@@ -80,8 +80,9 @@ const PlansPage = () => {
     },
     {
       name: 'Agency',
-      price: 'Custom',
-      monthlyPrice: 'Contact Admin',
+      price: '₹1599',
+      monthlyPrice: '₹1599',
+      monthlyPriceUsdApprox: `~$${toUsdApprox(1599)}`,
       description: 'Workspace-first operations for agencies with multi-client delivery',
       features: [
         '6 client workspaces (included)',
@@ -91,12 +92,12 @@ const PlansPage = () => {
         'Roles: Admin, Editor, Viewer with workspace-level access control',
         'Attach workspace accounts across Twitter, LinkedIn, Threads, Instagram',
         'Launch Tweet Genie, LinkedIn Genie, and Social Genie from workspace context',
-        'Cross-platform compose and automation roadmap included',
-        'Approval workflow, calendar, analytics, and white-label reporting roadmap',
-        'Priority support and guided onboarding',
+        'Shared draft generation, publishing, scheduling, and unified client calendar',
+        'Shared analytics summary per workspace',
+        'Priority support',
       ],
       notIncluded: [],
-      buttonText: 'Contact Sales',
+      buttonText: 'Upgrade to Agency',
       popular: false
     },
 
@@ -154,7 +155,7 @@ const PlansPage = () => {
     },
     {
       question: 'How do I start with Agency plan?',
-      answer: 'Agency plan is currently activated manually. Contact sales/admin, then manage client workspaces from /agency once your account is enabled.'
+      answer: `Click 'Upgrade to Agency', complete the secure Razorpay subscription checkout, and your account will be upgraded to Agency for ₹1599/month (about $${toUsdApprox(1599)}/month).`
     }
   ];
 
@@ -289,13 +290,151 @@ const PlansPage = () => {
     }
   };
 
+  const handleAgencyUpgrade = async () => {
+    const latestPlan = await refreshPlanInfo();
+    const authoritativePlanType = String(
+      latestPlan?.individualPlan ||
+      latestPlan?.type ||
+      userPlan?.individualPlan ||
+      userPlan?.type ||
+      user?.planType ||
+      user?.plan_type ||
+      'free'
+    ).toLowerCase();
+
+    if (authoritativePlanType === 'agency') {
+      toast.success('Your Agency plan is already active.');
+      navigate('/agency');
+      return;
+    }
+
+    if (authoritativePlanType === 'enterprise') {
+      toast.success('Legacy plan detected. Contact support to change plan.');
+      return;
+    }
+
+    setUpgrading(true);
+
+    try {
+      const isScriptLoaded = await loadRazorpayScript();
+      if (!isScriptLoaded) {
+        toast.error('Failed to load payment gateway. Please try again.');
+        return;
+      }
+
+      const subscriptionResponse = await api.post('/payments/agency/subscribe');
+      const {
+        subscriptionId,
+        amount,
+        currency,
+        planName,
+        demo,
+        razorpayKey: responseKey,
+      } = subscriptionResponse.data || {};
+
+      if (!subscriptionId) {
+        toast.error('Agency subscription could not be created. Please try again.');
+        return;
+      }
+
+      if (demo) {
+        const confirmDemo = window.confirm(
+          'DEMO MODE: This is a simulated Agency subscription payment. Continue?'
+        );
+
+        if (!confirmDemo) {
+          return;
+        }
+
+        const confirmResponse = await api.post('/payments/agency/confirm', {
+          razorpaySubscriptionId: subscriptionId,
+          razorpayPaymentId: 'demo_payment_id',
+          razorpaySignature: 'demo_signature',
+        });
+
+        await refreshUser();
+        await refreshPlanInfo();
+        toast.success(confirmResponse.data?.message || 'Agency plan activated successfully.');
+        navigate('/agency');
+        return;
+      }
+
+      const razorpayKey = responseKey || import.meta.env.VITE_RAZORPAY_KEY_ID || '';
+      if (!razorpayKey) {
+        toast.error('Payment configuration is incomplete. Please contact support.');
+        return;
+      }
+
+      if (!window.Razorpay) {
+        toast.error('Payment gateway failed to initialize. Please refresh and try again.');
+        return;
+      }
+
+      await new Promise((resolve, reject) => {
+        const razorpay = new window.Razorpay({
+          key: razorpayKey,
+          subscription_id: subscriptionId,
+          name: 'SuiteGenie',
+          description: planName || 'SuiteGenie Agency subscription',
+          amount,
+          currency,
+          handler: async (response) => {
+            try {
+              const confirmResponse = await api.post('/payments/agency/confirm', {
+                razorpaySubscriptionId: response.razorpay_subscription_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature,
+              });
+
+              await refreshUser();
+              await refreshPlanInfo();
+              toast.success(confirmResponse.data?.message || 'Agency plan activated successfully.');
+              resolve(confirmResponse.data);
+            } catch (confirmationError) {
+              reject(confirmationError);
+            }
+          },
+          prefill: {
+            name: user?.name || 'SuiteGenie User',
+            email: user?.email || undefined,
+          },
+          theme: {
+            color: '#2563eb',
+          },
+          modal: {
+            ondismiss: () => {
+              reject(new Error('CHECKOUT_DISMISSED'));
+            },
+          },
+        });
+
+        razorpay.on('payment.failed', (failure) => {
+          const reason = failure?.error?.description || 'Subscription payment failed. Please try again.';
+          reject(new Error(reason));
+        });
+
+        razorpay.open();
+      });
+
+      navigate('/agency');
+    } catch (error) {
+      if (error?.message === 'CHECKOUT_DISMISSED') {
+        toast.error('Payment was cancelled.');
+      } else {
+        toast.error(error?.response?.data?.error || error?.message || 'Failed to upgrade to Agency.');
+      }
+    } finally {
+      setUpgrading(false);
+    }
+  };
+
   const getPlanButtonText = (plan) => {
     if (upgrading) return 'Processing...';
 
     if (plan.name === 'Agency') {
       if (currentIndividualPlanType === 'agency') return 'Current Plan - Agency';
       if (currentIndividualPlanType === 'enterprise') return 'Contact Support';
-      return 'Contact Sales';
+      return 'Upgrade to Agency';
     }
 
     if (plan.name === 'Pro') {
@@ -346,6 +485,8 @@ const PlansPage = () => {
               {
                 '@type': 'Offer',
                 name: 'SuiteGenie Agency',
+                price: '1599',
+                priceCurrency: 'INR',
                 availability: 'https://schema.org/InStock',
                 url: 'https://suitegenie.in/plans',
               },
@@ -434,7 +575,7 @@ const PlansPage = () => {
                     if (plan.name === 'Pro') {
                       navigate('/register?plan=pro');
                     } else if (plan.name === 'Agency') {
-                      navigate('/contact');
+                      navigate('/register?plan=agency');
                     } else {
                       navigate('/register');
                     }
@@ -446,7 +587,7 @@ const PlansPage = () => {
                       navigate('/agency');
                       return;
                     }
-                    navigate('/contact');
+                    await handleAgencyUpgrade();
                     return;
                   }
 

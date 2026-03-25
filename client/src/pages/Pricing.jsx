@@ -7,7 +7,7 @@ const PricingPage = () => (
       <title>Pricing - SuiteGenie Social Media Automation</title>
       <meta
         name="description"
-        content="Choose Free, Pro, or Agency for SuiteGenie. Free includes 15 platform credits and 50 BYOK credits monthly. Pro and Agency include 100 platform credits, 180 BYOK credits, and advanced team/workspace features."
+        content="Choose Free, Pro, or Agency for SuiteGenie. Free includes 15 platform credits and 50 BYOK credits monthly. Pro costs ₹399/month. Agency costs ₹1599/month with workspace-first client operations."
       />
       <meta
         name="keywords"
@@ -176,13 +176,13 @@ const PricingPage = () => (
 
         <div className="mb-2 font-semibold">Pricing:</div>
         <ul className="list-disc pl-6 mb-4 text-gray-600">
-          <li><strong>Manual activation in this phase</strong></li>
-          <li>Contact sales/admin for onboarding</li>
-          <li>Seat/workspace add-ons planned later</li>
+          <li><strong>&#8377;1599/month (about $19.27/month)</strong></li>
+          <li>Recurring subscription via Razorpay</li>
+          <li>Account upgrades instantly after first successful payment</li>
         </ul>
 
-        <a href="/contact" className="inline-block mt-2 text-blue-600 font-semibold underline">
-          Contact Sales for Agency
+        <a href="/plans?intent=agency" className="inline-block mt-2 text-blue-600 font-semibold underline">
+          Upgrade to Agency
         </a>
       </section>
 
@@ -231,7 +231,7 @@ const PricingPage = () => (
         <div className="mb-6">
           <h3 className="text-lg font-semibold mb-2">Can I switch between Free and Pro?</h3>
           <p className="mb-4 text-gray-700">
-            Yes. You can upgrade anytime to unlock advanced features and downgrade later if needed. Agency is currently manual activation.
+            Yes. You can upgrade anytime to unlock advanced features and downgrade later if needed. Agency is also self-serve now through Razorpay subscription checkout.
           </p>
         </div>
       </section>
@@ -242,7 +242,7 @@ const PricingPage = () => (
         <h2 className="text-2xl font-bold mb-2">Ready to get started?</h2>
         <ol className="list-decimal pl-6 mb-4 text-gray-600 text-left inline-block">
           <li>Create your SuiteGenie account</li>
-          <li>Choose Free, Pro, or request Agency activation</li>
+          <li>Choose Free, Pro, or Agency</li>
           <li>Start generating and automating content</li>
         </ol>
         <a href="/auth" className="inline-block mt-2 text-blue-600 font-semibold underline">

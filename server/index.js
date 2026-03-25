@@ -22,6 +22,7 @@ import apiRouter from './routes/index.js';
 import { sanitizeBody, sanitizeQuery, sanitizeParams } from './middleware/sanitize.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { query as dbQuery } from './config/database.js';
+import { getAgencySchemaStatus, invalidateAgencySchemaCache } from './utils/agencySchema.js';
 
 // Initialize Redis and sync worker
 import redisClient from './config/redis.js';
@@ -60,6 +61,13 @@ const platformRuntimeState = {
         lastCheckedAt: null,
         error: 'Database readiness not checked yet',
     },
+    agencySchema: {
+        ready: false,
+        lastCheckedAt: null,
+        error: 'Agency schema readiness not checked yet',
+        missingTables: [],
+        detectedMigrationVersion: null,
+    },
     syncWorkerStarted: false,
 };
 
@@ -76,13 +84,14 @@ const setDatabaseNotReady = (error) => {
 };
 
 const getPlatformReadinessPayload = () => ({
-    status: platformRuntimeState.database.ok ? 'OK' : 'DEGRADED',
+    status: platformRuntimeState.database.ok && platformRuntimeState.agencySchema.ready ? 'OK' : 'DEGRADED',
     live: true,
-    ready: platformRuntimeState.database.ok,
+    ready: platformRuntimeState.database.ok && platformRuntimeState.agencySchema.ready,
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV,
     checks: {
         database: { ...platformRuntimeState.database },
+        agencySchema: { ...platformRuntimeState.agencySchema },
         syncWorker: {
             started: platformRuntimeState.syncWorkerStarted,
         },
@@ -96,6 +105,30 @@ const refreshPlatformDatabaseReadiness = async () => {
         return true;
     } catch (error) {
         setDatabaseNotReady(error);
+        return false;
+    }
+};
+
+const refreshAgencySchemaReadiness = async () => {
+    try {
+        invalidateAgencySchemaCache();
+        const status = await getAgencySchemaStatus({ force: true });
+        platformRuntimeState.agencySchema.ready = Boolean(status.ready);
+        platformRuntimeState.agencySchema.lastCheckedAt = status.checkedAt || new Date().toISOString();
+        platformRuntimeState.agencySchema.error = status.ready
+            ? null
+            : (status.missingTables?.length
+                ? `Missing tables: ${status.missingTables.join(', ')}`
+                : `Required migration >= ${status.requiredMigrationVersion}`);
+        platformRuntimeState.agencySchema.missingTables = status.missingTables || [];
+        platformRuntimeState.agencySchema.detectedMigrationVersion = status.detectedMigrationVersion ?? null;
+        return status.ready;
+    } catch (error) {
+        platformRuntimeState.agencySchema.ready = false;
+        platformRuntimeState.agencySchema.lastCheckedAt = new Date().toISOString();
+        platformRuntimeState.agencySchema.error = error?.message || String(error);
+        platformRuntimeState.agencySchema.missingTables = error?.metadata?.missingTables || [];
+        platformRuntimeState.agencySchema.detectedMigrationVersion = error?.metadata?.detectedMigrationVersion ?? null;
         return false;
     }
 };
@@ -134,6 +167,7 @@ const startPlatformReadinessLoop = () => {
 
     const timer = setInterval(async () => {
         await refreshPlatformDatabaseReadiness();
+        await refreshAgencySchemaReadiness();
         await maybeStartSyncWorker();
     }, intervalMs);
 
@@ -243,7 +277,7 @@ const corsOptions = {
         return callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-CSRF-Token', 'X-Requested-With', 'X-Selected-Account-Id'],
     exposedHeaders: ['Set-Cookie'], // Allow client to see Set-Cookie if needed
     optionsSuccessStatus: 200,
@@ -254,10 +288,11 @@ app.use(cors(corsOptions));
 // Explicitly set CORS headers as a fallback and for non-cors-middleware-covered routes
 app.use((req, res, next) => {
     const origin = req.headers.origin;
-    if (origin) {
+        if (origin) {
         if (isAllowedOrigin(origin) || process.env.NODE_ENV === 'development') {
             res.header('Access-Control-Allow-Origin', origin);
             res.header('Access-Control-Allow-Credentials', 'true');
+            res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
             res.header('Vary', 'Origin');
             // Prevent caching of CORS responses to avoid cross-origin cache pollution
             res.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
@@ -272,7 +307,12 @@ app.use((req, res, next) => {
 app.options('*', cors(corsOptions));
 
 // Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({
+    limit: '10mb',
+    verify: (req, _res, buf) => {
+        req.rawBody = buf ? buf.toString('utf8') : '';
+    },
+}));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
@@ -322,6 +362,10 @@ const shouldSkipCsrf = (req) => {
 
     // Skip CSRF for webhook endpoints
     if (requestPath.startsWith('/api/webhooks/')) {
+        return true;
+    }
+
+    if (requestPath === '/api/payments/webhooks/razorpay' || requestPath.startsWith('/api/payments/webhooks/razorpay?')) {
         return true;
     }
 
@@ -463,6 +507,7 @@ app.listen(PORT, async () => {
     console.log(`Health check: http://localhost:${PORT}/health`);
 
     await refreshPlatformDatabaseReadiness();
+    await refreshAgencySchemaReadiness();
     await maybeStartSyncWorker();
     startPlatformReadinessLoop();
 });
