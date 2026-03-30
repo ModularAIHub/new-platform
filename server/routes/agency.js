@@ -54,6 +54,7 @@ router.post('/workspaces/:workspaceId/publish', AgencyController.requireWorkspac
 router.get('/workspaces/:workspaceId/operations/snapshot', AgencyController.requireWorkspaceReadRole, AgencyController.getWorkspaceOperationsSnapshot);
 router.get('/workspaces/:workspaceId/analytics/summary', AgencyController.requireWorkspaceReadRole, AgencyController.getWorkspaceAnalyticsSummary);
 router.get('/workspaces/:workspaceId/insights/summary', AgencyController.requireWorkspaceReadRole, AgencyController.getWorkspaceInsightsSummary);
+router.get('/workspaces/:workspaceId/analysis/summary', AgencyController.requireWorkspaceReadRole, AgencyController.getWorkspaceAnalysisSummary);
 
 router.post('/workspaces/:workspaceId/launch-token', AgencyController.createLaunchToken);
 router.get('/access-matrix', AgencyController.getAccessMatrix);

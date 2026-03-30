@@ -14,6 +14,7 @@ import {
   RefreshCw,
   ShieldCheck,
   ShieldAlert,
+  Sparkles,
   User,
 } from 'lucide-react';
 import {
@@ -42,6 +43,42 @@ import {
   WORKSPACE_PLATFORM_LIMITS,
   WORKSPACE_SECTION_DEFINITIONS,
 } from './agencyWorkspaceHelpers';
+
+const EMPTY_ANALYSIS_SUMMARY = {
+  refreshedAt: null,
+  overview: {
+    connectedAccountCount: 0,
+    platformCount: 0,
+    queueCount: 0,
+    calendarCount: 0,
+    competitorTargetCount: 0,
+    strongestChannel: null,
+    queuePressure: 'low',
+    ideaCount: 0,
+  },
+  ownAnalysis: {
+    topThemes: [],
+    platformCards: [],
+    summaryNotes: [],
+  },
+  competitors: {
+    status: 'missing',
+    targets: [],
+    watchlistNotes: [],
+  },
+  ideaBank: [],
+  sourceHealth: [],
+  analytics: null,
+};
+
+const parseCompetitorTargetsInput = (value) => (
+  [...new Set(
+    String(value || '')
+      .split(/[\n,]+/)
+      .map((item) => item.trim())
+      .filter(Boolean)
+  )].slice(0, 25)
+);
 
 const AgencyWorkspacePage = () => {
   const { workspaceId } = useParams();
@@ -128,6 +165,7 @@ const AgencyWorkspacePage = () => {
   const [workspaceCompetitorsInput, setWorkspaceCompetitorsInput] = useState('');
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [insightsLoading, setInsightsLoading] = useState(false);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
   const [insightsSummary, setInsightsSummary] = useState({
     workspace: null,
     platforms: {
@@ -141,6 +179,7 @@ const AgencyWorkspacePage = () => {
     automation: null,
     generatedAt: null,
   });
+  const [analysisSummary, setAnalysisSummary] = useState(EMPTY_ANALYSIS_SUMMARY);
   const [operationsLoading, setOperationsLoading] = useState(false);
   const [operationsView, setOperationsView] = useState('queue');
   const [activeWorkspaceTab, setActiveWorkspaceTab] = useState('overview');
@@ -369,6 +408,13 @@ const AgencyWorkspacePage = () => {
   const activeAccountCount = Number(analyticsSummary.activeAccounts || 0);
   const sourceHealthyCount = Number(operationsSnapshot.summary?.sourceHealthyCount || 0);
   const sourceFailedCount = Number(operationsSnapshot.summary?.sourceFailedCount || 0);
+  const analysisQueuePressureMeta = (
+    analysisSummary.overview?.queuePressure === 'high'
+      ? { label: 'High', className: 'bg-red-50 text-red-700 border-red-200' }
+      : analysisSummary.overview?.queuePressure === 'medium'
+        ? { label: 'Medium', className: 'bg-amber-50 text-amber-700 border-amber-200' }
+        : { label: 'Low', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
+  );
   const recentActivityEntries = useMemo(() => {
     const draftActivities = workspaceDrafts.map((draft) => {
       const status = String(draft?.status || 'draft').toLowerCase();
@@ -717,6 +763,20 @@ const AgencyWorkspacePage = () => {
     }
   };
 
+  const loadAnalysisSummary = async ({ silent = false } = {}) => {
+    if (!silent) setAnalysisLoading(true);
+    try {
+      const response = await api.get(`/agency/workspaces/${workspaceId}/analysis/summary`);
+      setAnalysisSummary((response?.data?.analysis) || EMPTY_ANALYSIS_SUMMARY);
+    } catch (error) {
+      if (!silent) {
+        toast.error(error?.response?.data?.error || 'Failed to load workspace analysis');
+      }
+    } finally {
+      if (!silent) setAnalysisLoading(false);
+    }
+  };
+
   const loadOperationsSnapshot = async ({ silent = false } = {}) => {
     if (!silent) setOperationsLoading(true);
     try {
@@ -801,6 +861,7 @@ const AgencyWorkspacePage = () => {
         loadAnalyticsSummary({ silent: true }),
         loadWorkspaceSettings({ silent: true }),
         loadInsightsSummary({ silent: true }),
+        loadAnalysisSummary({ silent: true }),
       ]);
     } catch (error) {
       toast.error(error?.response?.data?.error || 'Failed to load workspace');
@@ -2050,12 +2111,76 @@ const AgencyWorkspacePage = () => {
       await Promise.all([
         loadWorkspaceSettings({ silent: true }),
         loadInsightsSummary({ silent: true }),
+        loadAnalysisSummary({ silent: true }),
       ]);
     } catch (error) {
       toast.error(error?.response?.data?.error || 'Failed to save workspace settings');
     } finally {
       setSettingsSaving(false);
     }
+  };
+
+  const saveCompetitorTargets = async () => {
+    if (!canWrite) {
+      toast.error('Only owner/admin/editor can update competitor targets');
+      return;
+    }
+
+    const competitorTargets = parseCompetitorTargetsInput(workspaceCompetitorsInput);
+    setSettingsSaving(true);
+    try {
+      await api.put(`/agency/workspaces/${workspaceId}/settings`, {
+        profileNotes: profileContextForm.profile_notes,
+        competitorTargets,
+        automationEnabled: workspaceSettings.automation_enabled,
+        requireAdminApproval: workspaceSettings.require_admin_approval,
+        autoGenerateTwitter: workspaceSettings.auto_generate_twitter,
+        autoGenerateLinkedin: workspaceSettings.auto_generate_linkedin,
+        autoGenerateSocial: workspaceSettings.auto_generate_social,
+        engagementAutoReply: workspaceSettings.engagement_auto_reply,
+        industry: profileContextForm.industry,
+        brandColors: String(profileContextForm.brand_colors || '')
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean),
+        targetAudience: profileContextForm.target_audience,
+        tonePresets: normalizeTonePresetEntries(profileContextForm.tone_presets),
+      });
+      toast.success('Competitor watchlist saved');
+      await Promise.all([
+        loadWorkspaceSettings({ silent: true }),
+        loadInsightsSummary({ silent: true }),
+        loadAnalysisSummary({ silent: true }),
+      ]);
+    } catch (error) {
+      toast.error(error?.response?.data?.error || 'Failed to save competitor targets');
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
+
+  const useAnalysisIdeaInComposer = (idea) => {
+    const prompt = String(idea?.prompt || '').trim();
+    if (!prompt) {
+      toast.error('This idea is missing a compose prompt');
+      return;
+    }
+
+    const availableModeKeys = new Set(generationModeOptions.map((option) => option?.key).filter(Boolean));
+    const recommendedModes = Array.isArray(idea?.recommendedPlatforms)
+      ? idea.recommendedPlatforms.filter((mode) => availableModeKeys.has(mode))
+      : [];
+
+    setPublisherContent('');
+    setGenerationPrompt(prompt);
+    setGeneratedVariants([]);
+    setShowPromptInput(true);
+    if (recommendedModes.length > 0) {
+      setSelectedGenerationModes(recommendedModes);
+    }
+    setActiveWorkspaceTab('compose');
+    focusSection('compose');
+    toast.success('Idea moved into Compose');
   };
 
   const retryFailedDraft = async (draftId) => {
@@ -2710,6 +2835,315 @@ const AgencyWorkspacePage = () => {
           >
             Archive Workspace
           </button>
+        </div>
+      </div>
+      </>
+      )}
+
+      {isWorkspaceTab('analysis') && (
+      <>
+      <div id="agency-workspace-analysis" className="bg-white border border-gray-200 rounded-xl p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-violet-700">
+              <Sparkles className="h-3.5 w-3.5" />
+              Analysis Studio
+            </div>
+            <h2 className="mt-3 text-lg font-semibold text-gray-900">Workspace Analysis + Idea Bank</h2>
+            <p className="mt-1 text-sm text-gray-600">
+              Turn workspace signals, queue pressure, and competitor watchlists into clearer content directions before you open Compose.
+            </p>
+            <p className="mt-2 text-xs text-gray-500">
+              Refreshed: {analysisSummary.refreshedAt ? formatDateTime(analysisSummary.refreshedAt) : 'Not available'}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => loadAnalysisSummary()}
+            disabled={analysisLoading}
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 disabled:opacity-60"
+          >
+            <RefreshCw className={`h-4 w-4 ${analysisLoading ? 'animate-spin' : ''}`} />
+            {analysisLoading ? 'Refreshing...' : 'Refresh analysis'}
+          </button>
+        </div>
+
+        <div className="mt-6 grid grid-cols-2 gap-3 xl:grid-cols-5">
+          <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Connected accounts</p>
+            <p className="mt-2 text-2xl font-semibold text-gray-900">{formatMetric(analysisSummary.overview?.connectedAccountCount || 0)}</p>
+          </div>
+          <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Platforms with signal</p>
+            <p className="mt-2 text-2xl font-semibold text-gray-900">{formatMetric(analysisSummary.overview?.platformCount || 0)}</p>
+          </div>
+          <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Competitor targets</p>
+            <p className="mt-2 text-2xl font-semibold text-gray-900">{formatMetric(analysisSummary.overview?.competitorTargetCount || 0)}</p>
+          </div>
+          <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Idea bank</p>
+            <p className="mt-2 text-2xl font-semibold text-gray-900">{formatMetric(analysisSummary.overview?.ideaCount || 0)}</p>
+          </div>
+          <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Queue pressure</p>
+            <div className={`mt-2 inline-flex items-center rounded-full border px-2.5 py-1 text-sm font-semibold ${analysisQueuePressureMeta.className}`}>
+              {analysisQueuePressureMeta.label}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+          <div className="rounded-2xl border border-gray-200 p-5">
+            <div className="flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-blue-600" />
+              <h3 className="text-base font-semibold text-gray-900">Own Analysis</h3>
+            </div>
+            <p className="mt-1 text-sm text-gray-600">A quick read on what this workspace is already telling us.</p>
+
+            <div className="mt-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Top recurring themes</p>
+              {(analysisSummary.ownAnalysis?.topThemes || []).length === 0 ? (
+                <p className="mt-2 rounded-xl border border-dashed border-gray-300 px-4 py-4 text-sm text-gray-500">
+                  Not enough recent workspace copy yet. Publish or queue a few items and the theme layer will sharpen.
+                </p>
+              ) : (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {(analysisSummary.ownAnalysis?.topThemes || []).map((theme) => (
+                    <span key={theme} className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">
+                      {theme}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-5 space-y-4">
+              {(analysisSummary.ownAnalysis?.platformCards || []).length === 0 ? (
+                <div className="rounded-xl border border-dashed border-gray-300 px-4 py-5 text-sm text-gray-500">
+                  Connect a platform and start moving drafts through the workspace to unlock channel-specific analysis.
+                </div>
+              ) : (
+                (analysisSummary.ownAnalysis?.platformCards || []).map((card) => (
+                  <div key={card.key} className="rounded-2xl border border-gray-200 p-4">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-gray-900">{card.label}</span>
+                          <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                            card.status === 'ready'
+                              ? 'bg-emerald-50 text-emerald-700'
+                              : card.status === 'busy'
+                                ? 'bg-amber-50 text-amber-700'
+                                : card.status === 'warning'
+                                  ? 'bg-red-50 text-red-700'
+                                  : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            {card.status}
+                          </span>
+                        </div>
+                        <p className="mt-2 text-xs text-gray-500">
+                          {formatMetric(card.connectedAccounts || 0)} accounts • {formatMetric(card.postedCount || 0)} posted • {formatMetric(card.queueItems || 0)} queue • {formatMetric(card.scheduledItems || 0)} scheduled
+                        </p>
+                      </div>
+                      {(card.themes || []).length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {(card.themes || []).slice(0, 3).map((theme) => (
+                            <span key={`${card.key}-${theme}`} className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs text-gray-700">
+                              {theme}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {(card.strengths || []).length > 0 && (
+                      <div className="mt-4">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Strengths</p>
+                        <div className="mt-2 space-y-2">
+                          {(card.strengths || []).map((item) => (
+                            <p key={`${card.key}-strength-${item}`} className="text-sm text-gray-700">{item}</p>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {(card.gaps || []).length > 0 && (
+                      <div className="mt-4">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Gaps</p>
+                        <div className="mt-2 space-y-2">
+                          {(card.gaps || []).map((item) => (
+                            <p key={`${card.key}-gap-${item}`} className="text-sm text-gray-700">{item}</p>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {(card.nextMoves || []).length > 0 && (
+                      <div className="mt-4">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Next moves</p>
+                        <div className="mt-2 space-y-2">
+                          {(card.nextMoves || []).map((item) => (
+                            <p key={`${card.key}-next-${item}`} className="text-sm text-gray-700">{item}</p>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+
+            {(analysisSummary.ownAnalysis?.summaryNotes || []).length > 0 && (
+              <div className="mt-5 rounded-2xl border border-blue-100 bg-blue-50 p-4">
+                <div className="flex items-center gap-2">
+                  <ListChecks className="h-4 w-4 text-blue-700" />
+                  <p className="text-sm font-semibold text-blue-900">What this means right now</p>
+                </div>
+                <div className="mt-3 space-y-2">
+                  {(analysisSummary.ownAnalysis?.summaryNotes || []).map((item) => (
+                    <p key={`analysis-note-${item}`} className="text-sm text-blue-900">{item}</p>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-gray-200 p-5">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-violet-600" />
+                <h3 className="text-base font-semibold text-gray-900">Competitor Watchlist</h3>
+              </div>
+              <p className="mt-1 text-sm text-gray-600">
+                Save 3-5 competitor handles or URLs here. This feeds the workspace idea bank now and sets us up for deeper competitor analysis next.
+              </p>
+              <textarea
+                className="mt-4 min-h-[140px] w-full rounded-xl border border-gray-200 px-3 py-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                value={workspaceCompetitorsInput}
+                onChange={(event) => setWorkspaceCompetitorsInput(event.target.value)}
+                disabled={!canWrite || settingsSaving}
+                placeholder="Add competitor handles or profile URLs, separated by commas or new lines"
+              />
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={saveCompetitorTargets}
+                  disabled={!canWrite || settingsSaving}
+                  className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-60"
+                >
+                  {settingsSaving ? 'Saving...' : 'Save watchlist'}
+                </button>
+                <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                  analysisSummary.competitors?.status === 'ready'
+                    ? 'bg-emerald-50 text-emerald-700'
+                    : 'bg-amber-50 text-amber-700'
+                }`}>
+                  {analysisSummary.competitors?.status === 'ready' ? 'Configured' : 'Needs targets'}
+                </span>
+              </div>
+              <div className="mt-4 space-y-2">
+                {(analysisSummary.competitors?.watchlistNotes || []).map((note) => (
+                  <p key={`watchlist-note-${note}`} className="text-sm text-gray-700">{note}</p>
+                ))}
+              </div>
+              {(analysisSummary.competitors?.targets || []).length > 0 && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {(analysisSummary.competitors?.targets || []).map((target) => (
+                    <span key={target} className="rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-sm text-violet-700">
+                      {target}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-2xl border border-gray-200 p-5">
+              <div className="flex items-center gap-2">
+                <ShieldAlert className="h-4 w-4 text-amber-600" />
+                <h3 className="text-base font-semibold text-gray-900">Source Health</h3>
+              </div>
+              <p className="mt-1 text-sm text-gray-600">Which layers are contributing signal to analysis right now.</p>
+              <div className="mt-4 space-y-3">
+                {(analysisSummary.sourceHealth || []).length === 0 ? (
+                  <p className="rounded-xl border border-dashed border-gray-300 px-4 py-4 text-sm text-gray-500">
+                    Source health appears once the workspace has connected accounts or shared drafts.
+                  </p>
+                ) : (
+                  (analysisSummary.sourceHealth || []).map((source) => (
+                    <div key={`${source.channel}:${source.teamId || 'personal'}`} className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 px-3 py-3 text-sm">
+                      <div>
+                        <p className="font-medium text-gray-900">{String(source.channel || 'source').toUpperCase()}</p>
+                        <p className="text-xs text-gray-500">{formatMetric(source.queueCount || 0)} queue • {formatMetric(source.calendarCount || 0)} calendar</p>
+                      </div>
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                        source.status === 'ok'
+                          ? 'bg-emerald-50 text-emerald-700'
+                          : 'bg-red-50 text-red-700'
+                      }`}>
+                        {source.status === 'ok' ? 'Healthy' : 'Needs attention'}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 rounded-2xl border border-gray-200 p-5">
+          <div className="flex items-center gap-2">
+            <FileText className="h-4 w-4 text-emerald-600" />
+            <h3 className="text-base font-semibold text-gray-900">Idea Bank</h3>
+          </div>
+          <p className="mt-1 text-sm text-gray-600">
+            These are generation-ready directions built from workspace context, current queue pressure, and the competitor watchlist.
+          </p>
+
+          {(analysisSummary.ideaBank || []).length === 0 ? (
+            <p className="mt-4 rounded-xl border border-dashed border-gray-300 px-4 py-5 text-sm text-gray-500">
+              No idea bank yet. Refresh analysis after adding context, accounts, or competitor targets.
+            </p>
+          ) : (
+            <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
+              {(analysisSummary.ideaBank || []).map((idea) => (
+                <div key={idea.id} className="rounded-2xl border border-gray-200 p-4">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div>
+                      <div className="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">
+                        {String(idea.sourceType || 'idea').replace(/_/g, ' ')}
+                      </div>
+                      <h4 className="mt-3 text-base font-semibold text-gray-900">{idea.title}</h4>
+                      <p className="mt-2 text-sm text-gray-600">{idea.whyItFits}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => useAnalysisIdeaInComposer(idea)}
+                      disabled={!canWrite}
+                      className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white disabled:opacity-60"
+                    >
+                      Use in Compose
+                    </button>
+                  </div>
+
+                  {(idea.recommendedPlatforms || []).length > 0 && (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {(idea.recommendedPlatforms || []).map((platformKey) => (
+                        <span key={`${idea.id}-${platformKey}`} className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs text-gray-700">
+                          {getWorkspacePlatformLabel(platformKey)}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="mt-4 rounded-xl border border-gray-100 bg-gray-50 px-3 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Compose prompt</p>
+                    <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">{idea.prompt}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
       </>

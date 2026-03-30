@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, Layers3, Plus, Users } from 'lucide-react';
+import { ArrowRight, Building2, Layers3, Plus, Users } from 'lucide-react';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 
@@ -12,6 +12,7 @@ const AgencyHubPage = () => {
   const [summary, setSummary] = useState({ active: 0, paused: 0, archived: 0 });
   const [form, setForm] = useState({ name: '', brand_name: '', timezone: 'Asia/Kolkata' });
   const [creating, setCreating] = useState(false);
+  const [accessError, setAccessError] = useState(null);
 
   const slotsRemaining = useMemo(() => {
     if (!context) return 0;
@@ -28,8 +29,15 @@ const AgencyHubPage = () => {
       setContext(ctx.data);
       setWorkspaces(ws.data.workspaces || []);
       setSummary(ws.data.summary || { active: 0, paused: 0, archived: 0 });
+      setAccessError(null);
     } catch (error) {
-      toast.error(error?.response?.data?.error || 'Failed to load agency hub');
+      const code = String(error?.response?.data?.code || '').trim().toUpperCase();
+      const message = error?.response?.data?.error || 'Failed to load agency hub';
+      const requiresUpgrade = ['AGENCY_ACCESS_DENIED', 'AGENCY_PLAN_REQUIRED', 'AGENCY_SUBSCRIPTION_INACTIVE'].includes(code);
+      setAccessError({ code, message, requiresUpgrade });
+      if (!requiresUpgrade) {
+        toast.error(message);
+      }
     } finally {
       setLoading(false);
     }
@@ -101,6 +109,51 @@ const AgencyHubPage = () => {
 
   if (loading) {
     return <div className="text-gray-600">Loading agency hub...</div>;
+  }
+
+  if (accessError?.requiresUpgrade) {
+    const isInactiveSubscription = accessError.code === 'AGENCY_SUBSCRIPTION_INACTIVE';
+    return (
+      <div className="max-w-3xl mx-auto">
+        <div className="bg-white border border-amber-200 rounded-xl p-6">
+          <p className="inline-flex items-center rounded-full bg-amber-100 text-amber-700 text-[11px] font-semibold px-2 py-1 uppercase tracking-wide">
+            Agency Plan Required
+          </p>
+          <h1 className="text-2xl font-semibold text-gray-900 mt-3">
+            {isInactiveSubscription ? 'Reactivate Agency Plan' : 'Upgrade to Agency Plan'}
+          </h1>
+          <p className="text-gray-600 mt-2">
+            {isInactiveSubscription
+              ? 'Your Agency subscription is inactive. Reactivate it to continue using Agency Hub.'
+              : 'Agency Hub is available on the Agency plan. Upgrade to unlock client workspaces and team access controls.'}
+          </p>
+          <button
+            onClick={() => navigate('/plans?intent=agency')}
+            className="mt-5 inline-flex items-center gap-2 rounded-lg bg-blue-600 text-white px-4 py-2 hover:bg-blue-700"
+          >
+            {isInactiveSubscription ? 'Reactivate Agency Plan' : 'Upgrade to Agency Plan'}
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (accessError) {
+    return (
+      <div className="max-w-3xl mx-auto">
+        <div className="bg-white border border-red-200 rounded-xl p-6">
+          <h1 className="text-xl font-semibold text-gray-900">Agency Hub is unavailable</h1>
+          <p className="text-gray-600 mt-2">{accessError.message}</p>
+          <button
+            onClick={fetchAgency}
+            className="mt-4 rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
