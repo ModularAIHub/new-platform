@@ -69,6 +69,106 @@ async function getLatestAgencySubscription(userId) {
   return result.rows[0] || null;
 }
 
+function toIsoFromUnixSeconds(value, fallback = null) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return new Date(parsed * 1000).toISOString();
+}
+
+function normalizeBillingStatus(value) {
+  return cleanText(value, 'inactive')?.toLowerCase() || 'inactive';
+}
+
+function isSubscriptionActiveLike(status) {
+  return ['active', 'authenticated', 'created', 'pending'].includes(normalizeBillingStatus(status));
+}
+
+function canCancelSubscription(subscription) {
+  if (!subscription) return false;
+  const status = normalizeBillingStatus(subscription.status);
+  if (!isSubscriptionActiveLike(status)) return false;
+  return !Boolean(subscription.cancel_at_cycle_end);
+}
+
+function canResumeSubscription(subscription) {
+  if (!subscription) return false;
+  const status = normalizeBillingStatus(subscription.status);
+  if (!isSubscriptionActiveLike(status)) return false;
+  return Boolean(subscription.cancel_at_cycle_end);
+}
+
+function mapInvoiceItem(invoice = {}) {
+  return {
+    id: cleanText(invoice.id, null),
+    number: cleanText(invoice.invoice_number || invoice.number, null),
+    amount: Number(invoice.amount || 0),
+    currency: cleanText(invoice.currency, 'INR'),
+    status: cleanText(invoice.status, 'unknown'),
+    issuedAt: invoice.issued_at ? toIsoFromUnixSeconds(invoice.issued_at, null) : cleanText(invoice.issued_at, null),
+    paidAt: invoice.paid_at ? toIsoFromUnixSeconds(invoice.paid_at, null) : cleanText(invoice.paid_at, null),
+    dueAt: invoice.due_date ? toIsoFromUnixSeconds(invoice.due_date, null) : cleanText(invoice.due_at, null),
+    hostedUrl: cleanText(invoice.short_url || invoice.hosted_invoice_url || invoice.invoice_url, null),
+    paymentId: cleanText(invoice.payment_id || invoice.transaction_id, null),
+    raw: invoice,
+  };
+}
+
+async function buildFallbackInvoices(subscription) {
+  if (!subscription) return [];
+  const invoices = [];
+  const seen = new Set();
+
+  if (subscription.last_payment_id) {
+    invoices.push({
+      id: `local_${subscription.last_payment_id}`,
+      number: null,
+      amount: AGENCY_PLAN_AMOUNT_PAISE,
+      currency: 'INR',
+      status: cleanText(subscription.last_payment_status, 'captured'),
+      issuedAt: cleanText(subscription.last_payment_at, subscription.updated_at || subscription.created_at),
+      paidAt: cleanText(subscription.last_payment_at, null),
+      dueAt: null,
+      hostedUrl: null,
+      paymentId: subscription.last_payment_id,
+      source: 'subscription',
+    });
+    seen.add(subscription.last_payment_id);
+  }
+
+  const events = await query(
+    `SELECT event_type, payload, created_at
+     FROM agency_billing_events
+     ORDER BY created_at DESC
+     LIMIT 250`
+  );
+
+  for (const row of events.rows) {
+    const payment = row?.payload?.payload?.payment?.entity || null;
+    if (!payment) continue;
+    const paymentId = cleanText(payment.id, null);
+    if (!paymentId || seen.has(paymentId)) continue;
+    const paymentSubscriptionId = cleanText(payment.subscription_id, null);
+    if (paymentSubscriptionId && paymentSubscriptionId !== subscription.razorpay_subscription_id) continue;
+
+    seen.add(paymentId);
+    invoices.push({
+      id: `event_${paymentId}`,
+      number: null,
+      amount: Number(payment.amount || AGENCY_PLAN_AMOUNT_PAISE),
+      currency: cleanText(payment.currency, 'INR'),
+      status: cleanText(payment.status, 'captured'),
+      issuedAt: payment.created_at ? toIsoFromUnixSeconds(payment.created_at, row.created_at) : row.created_at,
+      paidAt: payment.created_at ? toIsoFromUnixSeconds(payment.created_at, row.created_at) : row.created_at,
+      dueAt: null,
+      hostedUrl: cleanText(payment.invoice_url || payment.short_url, null),
+      paymentId,
+      source: 'billing_event',
+    });
+  }
+
+  return invoices;
+}
+
 async function ensureAgencyPlanId(rp) {
   const envPlanId = cleanText(process.env.RAZORPAY_AGENCY_PLAN_ID, null);
   if (envPlanId) return envPlanId;
@@ -140,13 +240,16 @@ async function activateAgencySubscription({
       [nextCredits, ownerUserId]
     );
 
+    const agencyId = await bootstrapAgencyOwner(ownerUserId, { client });
+
     await client.query(
       `INSERT INTO agency_subscriptions
        (agency_id, owner_user_id, razorpay_subscription_id, razorpay_plan_id, status, cancel_at_cycle_end, current_period_start, current_period_end, grace_until, last_payment_id, last_payment_at, last_payment_status, metadata, created_at, updated_at)
        VALUES
-       (NULL, $1, $2, $3, $4, false, $5, $6, $7, $8, CASE WHEN $8 IS NULL THEN NULL ELSE NOW() END, $9, $10::jsonb, NOW(), NOW())
+       ($1, $2, $3, $4, $5, false, $6, $7, $8, $9, CASE WHEN $9 IS NULL THEN NULL ELSE NOW() END, $10, $11::jsonb, NOW(), NOW())
        ON CONFLICT (owner_user_id)
        DO UPDATE SET
+         agency_id = COALESCE(EXCLUDED.agency_id, agency_subscriptions.agency_id),
          razorpay_subscription_id = EXCLUDED.razorpay_subscription_id,
          razorpay_plan_id = COALESCE(EXCLUDED.razorpay_plan_id, agency_subscriptions.razorpay_plan_id),
          status = EXCLUDED.status,
@@ -160,6 +263,7 @@ async function activateAgencySubscription({
          metadata = agency_subscriptions.metadata || EXCLUDED.metadata,
          updated_at = NOW()`,
       [
+        agencyId,
         ownerUserId,
         subscriptionId,
         planId,
@@ -184,21 +288,11 @@ async function activateAgencySubscription({
     client.release();
   }
 
-  const agencyId = await bootstrapAgencyOwner(ownerUserId);
-  if (agencyId) {
-    await query(
-      `UPDATE agency_subscriptions
-       SET agency_id = $1, updated_at = NOW()
-       WHERE owner_user_id = $2`,
-      [agencyId, ownerUserId]
-    );
-  }
-
   invalidateAuthUserCache(ownerUserId);
   const latest = await getLatestAgencySubscription(ownerUserId);
 
   return {
-    agencyId: agencyId || latest?.agency_id || null,
+    agencyId: latest?.agency_id || null,
     subscription: latest,
   };
 }
@@ -416,6 +510,10 @@ const AgencyPaymentsController = {
       const subscription = await getLatestAgencySubscription(userId);
       return res.json({
         subscription,
+        actions: {
+          canCancel: canCancelSubscription(subscription),
+          canResume: canResumeSubscription(subscription),
+        },
         billingMode: 'recurring',
         amountInRupees: AGENCY_PLAN_AMOUNT_RUPEES,
       });
@@ -423,6 +521,181 @@ const AgencyPaymentsController = {
       return res.status(error?.status || 500).json({
         error: error?.message || 'Failed to fetch Agency billing status',
         code: error?.code || 'AGENCY_STATUS_ERROR',
+      });
+    }
+  },
+
+  async cancel(req, res) {
+    try {
+      await ensureAgencySchemaReady();
+
+      const userId = req.user?.id;
+      if (!userId) throw apiError('Authentication required', 'AUTH_REQUIRED', 401);
+
+      const current = await getLatestAgencySubscription(userId);
+      if (!current) throw apiError('No Agency subscription found', 'AGENCY_SUBSCRIPTION_NOT_FOUND', 404);
+      if (!canCancelSubscription(current)) {
+        throw apiError('Subscription is not eligible for cancellation', 'AGENCY_CANCEL_NOT_ALLOWED', 400);
+      }
+
+      const subscriptionId = cleanText(current.razorpay_subscription_id, null);
+      if (!subscriptionId) throw apiError('Missing subscription id', 'AGENCY_SUBSCRIPTION_ID_MISSING', 400);
+
+      let remoteSubscription = null;
+      if (!isDemoMode) {
+        const rp = getRazorpayInstance();
+        try {
+          remoteSubscription = await rp.subscriptions.cancel(subscriptionId, { cancel_at_cycle_end: 1 });
+        } catch (error) {
+          remoteSubscription = await rp.subscriptions.cancel(subscriptionId, true);
+        }
+      }
+
+      const nextStatus = cleanText(remoteSubscription?.status, current.status || 'active');
+      const nextCurrentEnd = remoteSubscription?.current_end
+        ? new Date(remoteSubscription.current_end * 1000).toISOString()
+        : current.current_period_end;
+
+      await query(
+        `UPDATE agency_subscriptions
+         SET status = $1,
+             cancel_at_cycle_end = true,
+             current_period_end = COALESCE($2, current_period_end),
+             grace_until = $3,
+             metadata = metadata || $4::jsonb,
+             updated_at = NOW()
+         WHERE id = $5`,
+        [
+          nextStatus,
+          nextCurrentEnd,
+          computeGraceUntil(nextCurrentEnd),
+          JSON.stringify({
+            cancelRequestedAt: new Date().toISOString(),
+            cancelMode: isDemoMode ? 'demo' : 'razorpay',
+          }),
+          current.id,
+        ]
+      );
+
+      invalidateAuthUserCache(userId);
+      const updated = await getLatestAgencySubscription(userId);
+      return res.json({
+        success: true,
+        message: 'Agency subscription will cancel at cycle end',
+        subscription: updated,
+      });
+    } catch (error) {
+      console.error('[AgencyPaymentsController.cancel] error:', error?.message || error);
+      return res.status(error?.status || 500).json({
+        error: error?.message || 'Failed to cancel Agency subscription',
+        code: error?.code || 'AGENCY_CANCEL_ERROR',
+      });
+    }
+  },
+
+  async resume(req, res) {
+    try {
+      await ensureAgencySchemaReady();
+
+      const userId = req.user?.id;
+      if (!userId) throw apiError('Authentication required', 'AUTH_REQUIRED', 401);
+
+      const current = await getLatestAgencySubscription(userId);
+      if (!current) throw apiError('No Agency subscription found', 'AGENCY_SUBSCRIPTION_NOT_FOUND', 404);
+      if (!canResumeSubscription(current)) {
+        throw apiError('Subscription is not eligible for resume', 'AGENCY_RESUME_NOT_ALLOWED', 400);
+      }
+
+      const subscriptionId = cleanText(current.razorpay_subscription_id, null);
+      if (!subscriptionId) throw apiError('Missing subscription id', 'AGENCY_SUBSCRIPTION_ID_MISSING', 400);
+
+      let remoteStatus = cleanText(current.status, 'active');
+      if (!isDemoMode) {
+        const rp = getRazorpayInstance();
+        try {
+          const resumed = await rp.subscriptions.resume(subscriptionId, { resume_at: 'now' });
+          remoteStatus = cleanText(resumed?.status, remoteStatus);
+        } catch (error) {
+          // Some Razorpay subscription states don't support resume via API.
+          // Keep local access active and clear cycle-end cancellation in our record.
+          remoteStatus = cleanText(current.status, 'active');
+        }
+      }
+
+      await query(
+        `UPDATE agency_subscriptions
+         SET status = $1,
+             cancel_at_cycle_end = false,
+             metadata = metadata || $2::jsonb,
+             updated_at = NOW()
+         WHERE id = $3`,
+        [
+          remoteStatus,
+          JSON.stringify({
+            resumeRequestedAt: new Date().toISOString(),
+            resumeMode: isDemoMode ? 'demo' : 'best_effort',
+          }),
+          current.id,
+        ]
+      );
+
+      invalidateAuthUserCache(userId);
+      const updated = await getLatestAgencySubscription(userId);
+      return res.json({
+        success: true,
+        message: 'Agency subscription resumed',
+        subscription: updated,
+      });
+    } catch (error) {
+      console.error('[AgencyPaymentsController.resume] error:', error?.message || error);
+      return res.status(error?.status || 500).json({
+        error: error?.message || 'Failed to resume Agency subscription',
+        code: error?.code || 'AGENCY_RESUME_ERROR',
+      });
+    }
+  },
+
+  async invoices(req, res) {
+    try {
+      await ensureAgencySchemaReady();
+      const userId = req.user?.id;
+      if (!userId) throw apiError('Authentication required', 'AUTH_REQUIRED', 401);
+
+      const subscription = await getLatestAgencySubscription(userId);
+      if (!subscription) {
+        return res.json({ invoices: [], source: 'none' });
+      }
+
+      const subscriptionId = cleanText(subscription.razorpay_subscription_id, null);
+      if (!subscriptionId) {
+        const fallback = await buildFallbackInvoices(subscription);
+        return res.json({ invoices: fallback, source: 'fallback' });
+      }
+
+      if (!isDemoMode) {
+        try {
+          const rp = getRazorpayInstance();
+          const response = await rp.invoices.all({
+            subscription_id: subscriptionId,
+            count: 30,
+          });
+          const items = Array.isArray(response?.items) ? response.items : [];
+          const invoices = items.map((item) => mapInvoiceItem(item));
+          if (invoices.length > 0) {
+            return res.json({ invoices, source: 'razorpay' });
+          }
+        } catch (error) {
+          console.warn('[AgencyPaymentsController.invoices] Falling back from Razorpay invoices:', error?.message || error);
+        }
+      }
+
+      const fallback = await buildFallbackInvoices(subscription);
+      return res.json({ invoices: fallback, source: 'fallback' });
+    } catch (error) {
+      console.error('[AgencyPaymentsController.invoices] error:', error?.message || error);
+      return res.status(error?.status || 500).json({
+        error: error?.message || 'Failed to fetch Agency invoices',
+        code: error?.code || 'AGENCY_INVOICES_ERROR',
       });
     }
   },

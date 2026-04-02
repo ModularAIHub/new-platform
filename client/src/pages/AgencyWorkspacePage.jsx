@@ -3,20 +3,28 @@ import { useNavigate, useParams } from 'react-router-dom';
 import api, { fetchCsrfToken } from '../utils/api';
 import toast from 'react-hot-toast';
 import {
-  Building2,
   CalendarDays,
   Clock3,
   FileText,
-  Linkedin,
   Link2,
-  ListChecks,
   PenSquare,
   RefreshCw,
-  ShieldCheck,
-  ShieldAlert,
-  Sparkles,
-  User,
 } from 'lucide-react';
+import AgencyWorkspaceAnalysisTab from '../components/agency/AgencyWorkspaceAnalysisTab.jsx';
+import AgencyWorkspaceAnalyticsTab from '../components/agency/AgencyWorkspaceAnalyticsTab.jsx';
+import AgencyWorkspaceCalendarPanel from '../components/agency/AgencyWorkspaceCalendarPanel.jsx';
+import AgencyWorkspaceConnectionsTab from '../components/agency/AgencyWorkspaceConnectionsTab.jsx';
+import AgencyLinkedInSelectionModal from '../components/agency/AgencyLinkedInSelectionModal.jsx';
+import AgencyWorkspaceOverviewTab from '../components/agency/AgencyWorkspaceOverviewTab.jsx';
+import AgencyWorkspaceShell from '../components/agency/AgencyWorkspaceShell.jsx';
+import AgencyWorkspaceSetupTab from '../components/agency/AgencyWorkspaceSetupTab.jsx';
+import AgencyWorkspaceTeamTab from '../components/agency/AgencyWorkspaceTeamTab.jsx';
+import {
+  getCalendarDateKey,
+  getCalendarMonthKey,
+  parseCalendarMonthKey,
+  shiftCalendarMonthKey,
+} from '../components/agency/agencyWorkspaceCalendar.js';
 import {
   countCharacters,
   cleanAgencyValue,
@@ -24,22 +32,14 @@ import {
   getAgencyAccountIdentityKey,
   getAgencyAccountSourceKey,
   getAgencyAccountTeamId,
-  getConnectionGrantedScopes,
-  getConnectionHandleLabel,
-  getConnectionLastSyncedLabel,
-  getConnectionTokenHealthMeta,
   getDraftStatusMeta,
   getWorkspaceAccountLabel,
-  getWorkspacePlatformIcon,
   getWorkspacePlatformLabel,
   getWorkspaceStatusMeta,
   normalizeTonePresetEntries,
   QUEUE_STATUS_FILTER_OPTIONS,
   splitTextByCharacterLimit,
-  WORKSPACE_CONNECTION_PLATFORMS,
   WORKSPACE_GENERATION_MODES,
-  WORKSPACE_OVERVIEW_ACTIONS,
-  WORKSPACE_OVERVIEW_HIGHLIGHTS,
   WORKSPACE_PLATFORM_LIMITS,
   WORKSPACE_SECTION_DEFINITIONS,
 } from './agencyWorkspaceHelpers';
@@ -155,6 +155,7 @@ const AgencyWorkspacePage = () => {
     brand_colors: [],
     target_audience: '',
     tone_presets: [],
+    detected_context: null,
     automation_enabled: false,
     require_admin_approval: true,
     auto_generate_twitter: true,
@@ -182,6 +183,8 @@ const AgencyWorkspacePage = () => {
   const [analysisSummary, setAnalysisSummary] = useState(EMPTY_ANALYSIS_SUMMARY);
   const [operationsLoading, setOperationsLoading] = useState(false);
   const [operationsView, setOperationsView] = useState('queue');
+  const [calendarMonthCursor, setCalendarMonthCursor] = useState(() => getCalendarMonthKey(new Date()));
+  const [selectedCalendarDateKey, setSelectedCalendarDateKey] = useState('');
   const [activeWorkspaceTab, setActiveWorkspaceTab] = useState('overview');
   const mediaInputRef = useRef(null);
   const [operationsSnapshot, setOperationsSnapshot] = useState({
@@ -536,19 +539,85 @@ const AgencyWorkspacePage = () => {
 
   const connectionSummaryCards = [];
 
-  const groupedCalendar = useMemo(() => {
+  const calendarItemsByDate = useMemo(() => {
     const groups = new Map();
     (operationsSnapshot.calendar || []).forEach((item) => {
-      const rawDate = item?.scheduledFor || item?.createdAt;
-      const date = rawDate ? new Date(rawDate) : null;
-      const key = date && !Number.isNaN(date.getTime())
-        ? date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
-        : 'No schedule time';
+      const key = getCalendarDateKey(item?.scheduledFor || item?.createdAt);
+      if (!key) return;
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key).push(item);
     });
-    return [...groups.entries()];
+
+    for (const [key, items] of groups.entries()) {
+      groups.set(
+        key,
+        [...items].sort((left, right) => {
+          const leftTime = new Date(left?.scheduledFor || left?.createdAt || 0).getTime();
+          const rightTime = new Date(right?.scheduledFor || right?.createdAt || 0).getTime();
+          return leftTime - rightTime;
+        })
+      );
+    }
+
+    return groups;
   }, [operationsSnapshot.calendar]);
+
+  const calendarMonthGrid = useMemo(() => {
+    const monthStart = parseCalendarMonthKey(calendarMonthCursor);
+    const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
+    const gridStart = new Date(monthStart);
+    gridStart.setDate(monthStart.getDate() - monthStart.getDay());
+    const gridEnd = new Date(monthEnd);
+    gridEnd.setDate(monthEnd.getDate() + (6 - monthEnd.getDay()));
+
+    const weeks = [];
+    const cursor = new Date(gridStart);
+
+    while (cursor <= gridEnd) {
+      const week = [];
+      for (let dayIndex = 0; dayIndex < 7; dayIndex += 1) {
+        const cellDate = new Date(cursor);
+        const dateKey = getCalendarDateKey(cellDate);
+        week.push({
+          dateKey,
+          label: cellDate.getDate(),
+          inMonth: cellDate.getMonth() === monthStart.getMonth(),
+          isToday: dateKey === getCalendarDateKey(new Date()),
+          items: dateKey ? (calendarItemsByDate.get(dateKey) || []) : [],
+        });
+        cursor.setDate(cursor.getDate() + 1);
+      }
+      weeks.push(week);
+    }
+
+    return {
+      label: monthStart.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }),
+      monthKey: getCalendarMonthKey(monthStart),
+      weeks,
+    };
+  }, [calendarItemsByDate, calendarMonthCursor]);
+
+  const visibleCalendarItems = useMemo(() => {
+    if (selectedCalendarDateKey && calendarItemsByDate.has(selectedCalendarDateKey)) {
+      return calendarItemsByDate.get(selectedCalendarDateKey) || [];
+    }
+
+    const monthItems = [...calendarItemsByDate.entries()].find(([dateKey]) => dateKey.startsWith(calendarMonthCursor));
+    if (monthItems) return monthItems[1];
+
+    return [];
+  }, [calendarItemsByDate, calendarMonthCursor, selectedCalendarDateKey]);
+
+  const visibleCalendarDateKey = useMemo(() => {
+    if (selectedCalendarDateKey && calendarItemsByDate.has(selectedCalendarDateKey)) {
+      return selectedCalendarDateKey;
+    }
+
+    const monthEntry = [...calendarItemsByDate.keys()].find((dateKey) => dateKey.startsWith(calendarMonthCursor));
+    if (monthEntry) return monthEntry;
+
+    return [...calendarItemsByDate.keys()][0] || '';
+  }, [calendarItemsByDate, calendarMonthCursor, selectedCalendarDateKey]);
 
   const workspaceControlMetrics = useMemo(() => ([
     {
@@ -592,6 +661,120 @@ const AgencyWorkspacePage = () => {
       context: (operationsSnapshot.summary?.calendarCount || 0) > 0 ? 'Calendar has upcoming activity' : 'Schedule appears after draft approval',
     },
   ]), [attachedAccounts.length, workspaceDrafts.length, analyticsSummary.drafts, operationsSnapshot.summary]);
+  const hasBrandContext = Boolean(
+    cleanAgencyValue(workspaceSettings.industry)
+    || cleanAgencyValue(workspaceSettings.target_audience)
+    || cleanAgencyValue(workspaceSettings.profile_notes)
+    || (Array.isArray(workspaceSettings.tone_presets) && workspaceSettings.tone_presets.length > 0)
+  );
+  const workspaceChecklist = useMemo(() => ([
+    {
+      key: 'connections',
+      label: 'Connect channels',
+      description: attachedAccounts.length > 0
+        ? `${formatMetric(attachedAccounts.length)} channels are attached and ready.`
+        : 'Attach the first client account to unlock scheduling and reporting.',
+      complete: attachedAccounts.length > 0,
+    },
+    {
+      key: 'setup',
+      label: 'Shape the brand system',
+      description: hasBrandContext
+        ? 'AI context, audience, or tone presets are already saved.'
+        : 'Add voice, audience, and brand rules so drafting feels on-brand.',
+      complete: hasBrandContext,
+    },
+    {
+      key: 'compose',
+      label: 'Create the working draft',
+      description: workspaceDrafts.length > 0
+        ? `${formatMetric(workspaceDrafts.length)} shared drafts are in motion.`
+        : 'Write or generate the first shared draft for this client.',
+      complete: workspaceDrafts.length > 0,
+    },
+    {
+      key: 'calendar',
+      label: 'Lock the publishing cadence',
+      description: Number(operationsSnapshot.summary?.calendarCount || 0) > 0
+        ? `${formatMetric(operationsSnapshot.summary?.calendarCount || 0)} items are already scheduled.`
+        : 'Nothing is scheduled yet. Move approved work into the calendar.',
+      complete: Number(operationsSnapshot.summary?.calendarCount || 0) > 0,
+    },
+  ]), [
+    attachedAccounts.length,
+    formatMetric,
+    hasBrandContext,
+    operationsSnapshot.summary,
+    workspaceDrafts.length,
+  ]);
+  const workspaceCompletionCount = workspaceChecklist.filter((step) => step.complete).length;
+  const workspaceCompletionPercent = Math.round((workspaceCompletionCount / workspaceChecklist.length) * 100);
+  const nextRecommendedAction = useMemo(() => {
+    if (attachedAccounts.length === 0) {
+      return {
+        key: 'connections',
+        eyebrow: 'Recommended next move',
+        title: 'Attach the first client profile',
+        description: 'Agency mode becomes useful once real channels are attached for drafting, queue reviews, and analytics.',
+        cta: 'Open connections',
+      };
+    }
+
+    if (!hasBrandContext) {
+      return {
+        key: 'setup',
+        eyebrow: 'Recommended next move',
+        title: 'Tune the brand system',
+        description: 'Refine voice, audience, and AI guardrails so every generated draft sounds like the client.',
+        cta: 'Open profile setup',
+      };
+    }
+
+    if (workspaceDrafts.length === 0) {
+      return {
+        key: 'compose',
+        eyebrow: 'Recommended next move',
+        title: 'Create the first shared draft',
+        description: 'Start the operating rhythm with a live draft the team can edit, approve, and schedule together.',
+        cta: 'Open compose studio',
+      };
+    }
+
+    if (pendingApprovalCount > 0) {
+      return {
+        key: 'calendar',
+        eyebrow: 'Recommended next move',
+        title: 'Clear the approval queue',
+        description: `${formatMetric(pendingApprovalCount)} item${pendingApprovalCount === 1 ? '' : 's'} are waiting for review before publishing can continue.`,
+        cta: 'Review queue',
+      };
+    }
+
+    if (Number(operationsSnapshot.summary?.calendarCount || 0) === 0) {
+      return {
+        key: 'calendar',
+        eyebrow: 'Recommended next move',
+        title: 'Schedule the next publishing block',
+        description: 'Turn approved content into a visible weekly cadence so the client sees momentum.',
+        cta: 'Open calendar',
+      };
+    }
+
+    return {
+      key: 'analytics',
+      eyebrow: 'Recommended next move',
+      title: 'Review performance and refine',
+      description: 'The workspace is active. Use analytics and analysis to sharpen the next batch of content.',
+      cta: 'Open analytics',
+    };
+  }, [
+    attachedAccounts.length,
+    formatMetric,
+    hasBrandContext,
+    operationsSnapshot.summary,
+    pendingApprovalCount,
+    workspaceDrafts.length,
+  ]);
 
   const formatDateTime = (value) => {
     if (!value) return 'Not set';
@@ -608,10 +791,10 @@ const AgencyWorkspacePage = () => {
     return `${parsed.getFullYear()}-${pad(parsed.getMonth() + 1)}-${pad(parsed.getDate())}T${pad(parsed.getHours())}:${pad(parsed.getMinutes())}`;
   };
 
-  const formatMetric = (value) => {
+  function formatMetric(value) {
     const numeric = Number(value || 0);
     return new Intl.NumberFormat().format(numeric);
-  };
+  }
 
   const isWorkspaceTab = (...keys) => keys.includes(activeWorkspaceTab);
 
@@ -712,6 +895,9 @@ const AgencyWorkspacePage = () => {
         brand_colors: brandColors,
         target_audience: postingPreferences.target_audience || postingPreferences.targetAudience || '',
         tone_presets: tonePresets,
+        detected_context: settings.detected_context && typeof settings.detected_context === 'object'
+          ? settings.detected_context
+          : null,
         automation_enabled: Boolean(settings.automation_enabled),
         require_admin_approval: Boolean(settings.require_admin_approval ?? true),
         auto_generate_twitter: Boolean(settings.auto_generate_twitter ?? true),
@@ -841,10 +1027,19 @@ const AgencyWorkspacePage = () => {
         logo_url: currentWorkspace.logo_url || '',
       });
       setProfileEditing(false);
-      setAssignedMembers(membersRes.data.assignedMembers || []);
-      setAvailableMembers(membersRes.data.availableMembers || []);
-      setSelectedMemberIds((membersRes.data.assignedMembers || []).map((item) => item.id));
-      setSeatUsage(Number(membersRes.data?.assignedUsage || (membersRes.data.assignedMembers || []).length || 0));
+      const assignedMembersRows = membersRes.data.assignedMembers || [];
+      const availableMembersRows = membersRes.data.availableMembers || [];
+      const effectiveAssignedIds = availableMembersRows
+        .filter((item) => item?.is_assigned)
+        .map((item) => item.id);
+      setAssignedMembers(assignedMembersRows);
+      setAvailableMembers(availableMembersRows);
+      setSelectedMemberIds(effectiveAssignedIds.length > 0 ? effectiveAssignedIds : assignedMembersRows.map((item) => item.id));
+      setSeatUsage(Math.max(
+        Number(membersRes.data?.assignedUsage || 0),
+        assignedMembersRows.length,
+        effectiveAssignedIds.length,
+      ));
       setSeatLimit(Number(membersRes.data?.memberLimit || 5));
       setAvailableAccounts(availableAccRes.data.accounts || []);
       setAttachedAccounts(attachedAccRes.data.accounts || []);
@@ -991,6 +1186,31 @@ const AgencyWorkspacePage = () => {
     setSelectedDraftIds((previous) => previous.filter((id) => validIds.has(String(id))));
   }, [workspaceDrafts]);
 
+  useEffect(() => {
+    const firstCalendarItem = (operationsSnapshot.calendar || []).find((item) =>
+      getCalendarMonthKey(item?.scheduledFor || item?.createdAt)
+    );
+
+    if (!firstCalendarItem) {
+      setSelectedCalendarDateKey('');
+      return;
+    }
+
+    const firstMonthKey = getCalendarMonthKey(firstCalendarItem?.scheduledFor || firstCalendarItem?.createdAt);
+    const hasVisibleMonthItems = [...calendarItemsByDate.keys()].some((dateKey) => dateKey.startsWith(calendarMonthCursor));
+
+    if (!hasVisibleMonthItems && firstMonthKey) {
+      setCalendarMonthCursor(firstMonthKey);
+    }
+
+    setSelectedCalendarDateKey((previous) => {
+      if (previous && calendarItemsByDate.has(previous)) {
+        return previous;
+      }
+      return [...calendarItemsByDate.keys()][0] || '';
+    });
+  }, [calendarItemsByDate, calendarMonthCursor, operationsSnapshot.calendar]);
+
   const saveOverview = async (event) => {
     event.preventDefault();
     setProfileSaving(true);
@@ -1062,99 +1282,6 @@ const AgencyWorkspacePage = () => {
     } finally {
       setConnectingPlatform(null);
     }
-  };
-
-  const renderConnectionAccountCard = ({
-    account,
-    platformKey,
-    variant,
-    primaryActionLabel,
-    onPrimaryAction,
-    secondaryActionLabel,
-    onSecondaryAction,
-    secondaryActionClassName = 'text-xs border border-gray-200 text-gray-700 rounded-lg px-3 py-1.5 disabled:opacity-50',
-  }) => {
-    const tokenHealth = getConnectionTokenHealthMeta(account);
-    const grantedScopes = getConnectionGrantedScopes(account);
-    const handleLabel = getConnectionHandleLabel(account);
-    const label = getWorkspaceAccountLabel(account);
-    const isAttached = variant === 'attached';
-
-    return (
-      <div
-        key={isAttached ? account.id : `${account.sourceType || account.source_type}:${account.sourceId || account.source_id}`}
-        className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              {getWorkspacePlatformIcon(platformKey, 'h-4 w-4')}
-              <p className="truncate text-sm font-semibold text-gray-900">{label}</p>
-            </div>
-            <p className="mt-1 text-xs text-gray-500">
-              {getWorkspacePlatformLabel(platformKey)} • {handleLabel}
-            </p>
-          </div>
-          <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${tokenHealth.className}`}>
-            {tokenHealth.label === 'Reconnect Needed' ? <ShieldAlert className="h-3.5 w-3.5" /> : <ShieldCheck className="h-3.5 w-3.5" />}
-            {tokenHealth.label}
-          </span>
-        </div>
-
-        <div className="mt-3 grid grid-cols-1 gap-2 text-xs text-gray-600 sm:grid-cols-2">
-          <div className="rounded-lg bg-gray-50 px-3 py-2">
-            <p className="font-medium text-gray-700">Last synced</p>
-            <p className="mt-1">{getConnectionLastSyncedLabel(account)}</p>
-          </div>
-          <div className="rounded-lg bg-gray-50 px-3 py-2">
-            <p className="font-medium text-gray-700">Token health</p>
-            <p className="mt-1">{tokenHealth.detail}</p>
-          </div>
-        </div>
-
-        <div className="mt-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Granted permissions</p>
-          {grantedScopes.length > 0 ? (
-            <div className="mt-2 flex flex-wrap gap-2">
-              {grantedScopes.map((scope) => (
-                <span key={scope} className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] text-gray-700">
-                  {scope}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <p className="mt-2 text-xs text-gray-500">Permission details are not stored for this legacy connection yet.</p>
-          )}
-        </div>
-
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          {primaryActionLabel && onPrimaryAction && (
-            <button
-              type="button"
-              onClick={onPrimaryAction}
-              disabled={!canMutate}
-              className={`text-xs rounded-lg px-3 py-1.5 disabled:opacity-50 ${
-                isAttached
-                  ? 'border border-red-200 text-red-700'
-                  : 'bg-blue-600 text-white'
-              }`}
-            >
-              {primaryActionLabel}
-            </button>
-          )}
-          {secondaryActionLabel && onSecondaryAction && (
-            <button
-              type="button"
-              onClick={onSecondaryAction}
-              disabled={!canMutate || connectingPlatform === platformKey}
-              className={secondaryActionClassName}
-            >
-              {secondaryActionLabel}
-            </button>
-          )}
-        </div>
-      </div>
-    );
   };
 
   const handleLinkedInSelection = async (accountType, organizationId = null) => {
@@ -2197,6 +2324,16 @@ const AgencyWorkspacePage = () => {
     }
   };
 
+  const cancelProfileEditing = () => {
+    setProfileForm({
+      name: workspace?.name || '',
+      brand_name: workspace?.brand_name || '',
+      timezone: workspace?.timezone || '',
+      logo_url: workspace?.logo_url || '',
+    });
+    setProfileEditing(false);
+  };
+
   const cancelProfileContextEditing = () => {
     setProfileContextForm({
       industry: workspaceSettings.industry || '',
@@ -2238,1163 +2375,109 @@ const AgencyWorkspacePage = () => {
   if (!workspace) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
-      <div className="mx-auto max-w-[1760px] px-4 py-6 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
+    <div className="min-h-screen bg-[linear-gradient(180deg,_#f8fafc_0%,_#f1f5f9_38%,_#eef2f7_100%)]">
+      <div className="mx-auto max-w-[1760px] px-3 py-4 sm:px-6 sm:py-6 lg:px-8 xl:px-10 2xl:px-12">
         <div className="space-y-6">
-          <div className="rounded-2xl border border-white/70 bg-white/90 shadow-sm backdrop-blur">
-            <div className="flex flex-col gap-4 px-5 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
-              <div className="space-y-3">
-                <button
-                  type="button"
-                  onClick={() => navigate('/agency')}
-                  className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 hover:border-blue-300 hover:bg-blue-100 hover:text-blue-800"
-                >
-                  <span aria-hidden="true">←</span>
-                  Back to Agency Hub
-                </button>
-                <div>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <h1 className="text-2xl font-semibold text-gray-900 sm:text-3xl">{workspace.name}</h1>
-                    <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700 shadow-sm">
-                      Workspace
-                    </span>
-                    <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide ${workspaceStatusMeta.className}`}>
-                      {workspaceStatusMeta.label}
-                    </span>
-                  </div>
-                  <p className="mt-2 text-sm text-gray-600">
-                    Dedicated client workspace for setup, shared drafts, scheduling, analytics, and operations.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => focusSection('compose')}
-                  className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                >
-                  <PenSquare className="h-4 w-4" />
-                  Go To Compose
-                </button>
-                <button
-                  type="button"
-                  onClick={() => focusSection('calendar')}
-                  className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800"
-                >
-                  <CalendarDays className="h-4 w-4" />
-                  Open Queue + Calendar
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="sticky top-4 z-30 rounded-2xl border border-gray-200/80 bg-white/95 p-3 shadow-sm backdrop-blur">
-            <div className="flex flex-wrap gap-2">
-              {WORKSPACE_SECTION_DEFINITIONS.map((section) => {
-                const Icon = section.icon;
-                const isActive = activeWorkspaceTab === section.key;
-                return (
-                  <button
-                    key={section.key}
-                    type="button"
-                    onClick={() => focusSection(section.key)}
-                    className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm transition ${
-                      isActive
-                        ? 'border-blue-600 bg-blue-600 text-white shadow-sm'
-                        : 'border-gray-200 bg-white text-gray-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700'
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {section.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <AgencyWorkspaceShell
+            workspace={workspace}
+            workspaceStatusMeta={workspaceStatusMeta}
+            attachedAccounts={attachedAccounts}
+            workspaceDrafts={workspaceDrafts}
+            analyticsSummary={analyticsSummary}
+            pendingApprovalCount={pendingApprovalCount}
+            lastActiveAt={lastActiveAt}
+            formatDateTime={formatDateTime}
+            formatMetric={formatMetric}
+            workspaceCompletionPercent={workspaceCompletionPercent}
+            workspaceCompletionCount={workspaceCompletionCount}
+            workspaceChecklist={workspaceChecklist}
+            nextRecommendedAction={nextRecommendedAction}
+            activeWorkspaceTab={activeWorkspaceTab}
+            focusSection={focusSection}
+            onBackToHub={() => navigate('/agency')}
+          />
 
       {isWorkspaceTab('overview') && (
-      <div id="agency-workspace-overview" className="rounded-3xl border border-blue-200 bg-gradient-to-br from-blue-50 via-indigo-50 to-white p-6 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="inline-flex items-center rounded-full border border-blue-200 bg-blue-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-700 shadow-sm">Agency Native Workspace</p>
-            <h2 className="mt-3 text-2xl font-semibold text-gray-950">Client Operations Control Center</h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-600">Run setup, connections, composing, scheduling, analytics, and team access directly here without leaving the Agency workspace.</p>
-          </div>
-          <div className={`rounded-full border px-3 py-2 text-xs shadow-sm ${workspaceStatusMeta.className}`}>
-            Workspace status: <span className="font-semibold">{workspaceStatusMeta.label}</span>
-          </div>
-        </div>
-
-        <div className="mt-6 grid grid-cols-1 gap-5 xl:grid-cols-[1.1fr_0.9fr]">
-          <div className="rounded-2xl border border-white/80 bg-white/90 p-5 shadow-sm">
-            <div className="flex items-start justify-between gap-4 flex-wrap">
-              <div>
-                <p className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-blue-700">Agency Pro</p>
-                <h3 className="mt-3 text-xl font-semibold text-gray-950">{workspace.brand_name || workspace.name}</h3>
-                <p className="mt-1 text-sm text-gray-600">Workspace for {workspace.name}.</p>
-              </div>
-              {(workspace.logo_url || profileForm.logo_url) ? (
-                <img
-                  src={workspace.logo_url || profileForm.logo_url}
-                  alt={`${workspace.name} logo`}
-                  className="h-16 w-16 rounded-2xl border border-gray-200 bg-white object-cover"
-                />
-              ) : (
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-gray-50 text-xs text-gray-500">
-                  No logo
-                </div>
-              )}
-            </div>
-
-            <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
-                <p className="text-xs uppercase tracking-wide text-gray-500">Plan</p>
-                <p className="mt-2 text-sm font-semibold text-blue-700">Agency Pro</p>
-              </div>
-              <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
-                <p className="text-xs uppercase tracking-wide text-gray-500">Connected accounts</p>
-                <p className="mt-2 text-2xl font-semibold text-gray-900">{formatMetric(attachedAccounts.length)}</p>
-              </div>
-              <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
-                <p className="text-xs uppercase tracking-wide text-gray-500">Last active</p>
-                <p className="mt-2 text-sm font-semibold text-gray-900">{lastActiveAt ? formatDateTime(lastActiveAt) : 'No recent activity'}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-slate-50/90 p-5 shadow-sm">
-            <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Quick Actions</h3>
-            <p className="mt-2 text-base font-semibold text-slate-900">Reduce time-to-action for this client.</p>
-
-            <div className="mt-4 grid grid-cols-1 gap-3">
-              <button
-                type="button"
-                onClick={() => focusSection('compose')}
-                className="rounded-2xl border border-white bg-white px-4 py-4 text-left transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md"
-              >
-                <p className="text-sm font-semibold text-gray-900">Compose new post</p>
-                <p className="mt-1 text-sm text-gray-600">Open the composer and create the next draft quickly.</p>
-              </button>
-              <button
-                type="button"
-                onClick={openPendingApprovals}
-                className="rounded-2xl border border-white bg-white px-4 py-4 text-left transition hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-md"
-              >
-                <p className="text-sm font-semibold text-gray-900">View pending approvals</p>
-                <p className="mt-1 text-sm text-gray-600">{pendingApprovalCount > 0 ? `${formatMetric(pendingApprovalCount)} approvals waiting right now.` : 'Jump straight into the review queue.'}</p>
-              </button>
-              <button
-                type="button"
-                onClick={openFailedSources}
-                className="rounded-2xl border border-white bg-white px-4 py-4 text-left transition hover:-translate-y-0.5 hover:border-red-300 hover:shadow-md"
-              >
-                <p className="text-sm font-semibold text-gray-900">Check failed sources</p>
-                <p className="mt-1 text-sm text-gray-600">{sourceFailedCount > 0 ? `${formatMetric(sourceFailedCount)} source failures need attention.` : 'All connected sources are currently healthy.'}</p>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 mt-6 md:grid-cols-2 xl:grid-cols-4">
-          {workspaceControlMetrics.map((metric) => {
-            const Icon = metric.icon;
-            return (
-              <div key={metric.label} className={`rounded-2xl border border-white/80 border-l-4 ${metric.borderTheme} bg-white/90 p-4 shadow-sm`}>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.18em] text-gray-500">{metric.label}</p>
-                    <p className={`mt-3 text-3xl font-semibold ${metric.accent}`}>{formatMetric(metric.value)}</p>
-                  </div>
-                  <div className={`rounded-2xl p-3 ${metric.iconTheme}`}>
-                    <Icon className="h-5 w-5" />
-                  </div>
-                </div>
-                <p className="mt-3 text-sm font-medium text-gray-700">{metric.context}</p>
-                <p className="mt-1 text-xs text-gray-500">{metric.hint}</p>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="mt-6 rounded-2xl border border-white/80 bg-white/75 p-5 shadow-sm">
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div>
-              <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-gray-500">Recent Activity</h3>
-              <p className="mt-2 text-base font-semibold text-gray-900">The latest drafting, approval, and publishing actions in this workspace.</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => focusSection('calendar')}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700"
-            >
-              Open review flow
-            </button>
-          </div>
-
-          <div className="mt-4 space-y-3">
-            {recentActivityEntries.length === 0 ? (
-              <p className="rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-6 text-center text-sm text-gray-500">
-                No recent workspace activity yet. Connect accounts or create the first draft to start the timeline.
-              </p>
-            ) : (
-              recentActivityEntries.map((item) => (
-                <div key={item.id} className="flex items-start justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className={`rounded-full border px-2 py-1 text-[11px] font-semibold uppercase tracking-wide ${item.tone}`}>
-                        {item.actionLabel}
-                      </span>
-                      <span className="rounded-full border border-gray-200 bg-gray-50 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-gray-700">
-                        {getWorkspacePlatformLabel(item.platform)}
-                      </span>
-                    </div>
-                    <p className="mt-2 truncate text-sm font-medium text-gray-900">{item.detail}</p>
-                  </div>
-                  <p className="shrink-0 text-xs text-gray-500">{formatDateTime(item.timestamp)}</p>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        <div className="mt-6 rounded-2xl border border-white/80 bg-white/75 p-5 shadow-sm">
-          <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-gray-500">How This Workspace Works</h3>
-          <p className="mt-2 text-base font-semibold text-gray-900">A clearer flow for connections, approvals, and publishing.</p>
-
-          <div className="grid grid-cols-1 gap-4 mt-4 lg:grid-cols-3">
-            {WORKSPACE_OVERVIEW_HIGHLIGHTS.map((card) => {
-              const Icon = card.icon;
-              return (
-                <div key={card.title} className={`rounded-2xl border bg-gradient-to-br ${card.theme} p-4 transition hover:-translate-y-0.5 hover:shadow-md`}>
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-2xl bg-white/80 p-3 shadow-sm">
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <h4 className="text-sm font-semibold text-gray-900">{card.title}</h4>
-                  </div>
-                  <p className="mt-3 text-sm leading-6 text-gray-600">{card.description}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50/80 p-5">
-          <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Jump Into Work</h3>
-          <p className="mt-2 text-base font-semibold text-slate-900">Move straight to the part of the workspace you need.</p>
-
-          <div className="grid grid-cols-1 gap-4 mt-4 md:grid-cols-2 xl:grid-cols-3">
-            {WORKSPACE_OVERVIEW_ACTIONS.map((action) => {
-              const Icon = action.icon;
-              return (
-                <button
-                  key={action.key}
-                  type="button"
-                  onClick={() => focusSection(action.key)}
-                  className="rounded-2xl border border-white bg-white p-4 text-left transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="rounded-2xl bg-blue-50 p-3 text-blue-700">
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900">{action.title}</p>
-                      <p className="mt-2 text-sm leading-6 text-gray-600">{action.description}</p>
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+        <AgencyWorkspaceOverviewTab
+          workspace={workspace}
+          profileForm={profileForm}
+          workspaceStatusMeta={workspaceStatusMeta}
+          attachedAccounts={attachedAccounts}
+          lastActiveAt={lastActiveAt}
+          formatDateTime={formatDateTime}
+          formatMetric={formatMetric}
+          pendingApprovalCount={pendingApprovalCount}
+          openPendingApprovals={openPendingApprovals}
+          openFailedSources={openFailedSources}
+          sourceFailedCount={sourceFailedCount}
+          workspaceControlMetrics={workspaceControlMetrics}
+          recentActivityEntries={recentActivityEntries}
+          focusSection={focusSection}
+        />
       )}
 
+
       {isWorkspaceTab('setup') && (
-      <>
-      <div id="agency-workspace-setup" className="bg-white border border-gray-200 rounded-xl p-6">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <p className="inline-flex items-center rounded-full bg-blue-100 text-blue-700 text-[11px] font-semibold px-2 py-1 uppercase tracking-wide">Client Profile</p>
-            <h2 className="text-lg font-semibold text-gray-900 mt-2">Workspace Identity</h2>
-            <p className="text-sm text-gray-600 mt-1">Use this page for the basics that actually define this client workspace.</p>
-          </div>
-          {(profileEditing ? profileForm.logo_url : workspace.logo_url) ? (
-            <img
-              src={profileEditing ? profileForm.logo_url : workspace.logo_url}
-              alt={`${workspace.name} logo`}
-              className="h-16 w-16 rounded-xl object-cover border border-gray-200 bg-white"
-            />
-          ) : (
-            <div className="h-16 w-16 rounded-xl border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-xs text-gray-500 text-center px-2">
-              No logo
-            </div>
-          )}
-        </div>
-
-        <div className="border rounded-xl p-4 bg-gray-50 mt-5">
-          <div className="flex items-start justify-between gap-3 flex-wrap">
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900">Client identity</h3>
-              <p className="text-xs text-gray-600 mt-1">These details define the shared workspace everyone operates from.</p>
-            </div>
-            {canMutate && !profileEditing && (
-              <button
-                type="button"
-                onClick={() => setProfileEditing(true)}
-                className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700"
-              >
-                Edit identity
-              </button>
-            )}
-          </div>
-
-          {profileEditing ? (
-            <form onSubmit={saveOverview} className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
-              <input
-                className="border rounded-lg px-3 py-2 bg-white"
-                value={profileForm.name}
-                placeholder="Workspace name"
-                onChange={(e) => setProfileForm((prev) => ({ ...prev, name: e.target.value }))}
-                disabled={!canMutate || profileSaving}
-              />
-              <input
-                className="border rounded-lg px-3 py-2 bg-white"
-                value={profileForm.brand_name}
-                placeholder="Brand name"
-                onChange={(e) => setProfileForm((prev) => ({ ...prev, brand_name: e.target.value }))}
-                disabled={!canMutate || profileSaving}
-              />
-              <input
-                className="border rounded-lg px-3 py-2 bg-white"
-                value={profileForm.timezone}
-                placeholder="Timezone"
-                onChange={(e) => setProfileForm((prev) => ({ ...prev, timezone: e.target.value }))}
-                disabled={!canMutate || profileSaving}
-              />
-              <input
-                className="border rounded-lg px-3 py-2 bg-white"
-                value={profileForm.logo_url}
-                placeholder="Logo URL (optional)"
-                onChange={(e) => setProfileForm((prev) => ({ ...prev, logo_url: e.target.value }))}
-                disabled={!canMutate || profileSaving}
-              />
-              <div className="md:col-span-2 flex flex-wrap gap-2">
-                <button
-                  disabled={!canMutate || profileSaving}
-                  className="rounded-lg bg-blue-600 text-white px-4 py-2 disabled:opacity-50"
-                >
-                  {profileSaving ? 'Saving...' : 'Save Workspace Identity'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setProfileForm({
-                      name: workspace?.name || '',
-                      brand_name: workspace?.brand_name || '',
-                      timezone: workspace?.timezone || '',
-                      logo_url: workspace?.logo_url || '',
-                    });
-                    setProfileEditing(false);
-                  }}
-                  disabled={profileSaving}
-                  className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          ) : (
-            <div className="grid grid-cols-1 gap-3 mt-4 md:grid-cols-2">
-              <div className="rounded-xl border border-white bg-white px-4 py-3">
-                <p className="text-xs uppercase tracking-wide text-gray-500">Workspace name</p>
-                <p className="mt-2 text-sm font-semibold text-gray-900">{workspace.name || 'Not set'}</p>
-              </div>
-              <div className="rounded-xl border border-white bg-white px-4 py-3">
-                <p className="text-xs uppercase tracking-wide text-gray-500">Brand name</p>
-                <p className="mt-2 text-sm font-semibold text-gray-900">{workspace.brand_name || 'Not set'}</p>
-              </div>
-              <div className="rounded-xl border border-white bg-white px-4 py-3">
-                <p className="text-xs uppercase tracking-wide text-gray-500">Timezone</p>
-                <p className="mt-2 text-sm font-semibold text-gray-900">{workspace.timezone || 'Not set'}</p>
-              </div>
-              <div className="rounded-xl border border-white bg-white px-4 py-3">
-                <p className="text-xs uppercase tracking-wide text-gray-500">Logo URL</p>
-                <p className="mt-2 text-sm font-semibold text-gray-900 break-all">{workspace.logo_url || 'No logo URL set'}</p>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <p className="inline-flex items-center rounded-full bg-amber-100 text-amber-700 text-[11px] font-semibold px-2 py-1 uppercase tracking-wide">AI Brand Context</p>
-            <h2 className="text-lg font-semibold text-gray-900 mt-2">Client Voice + Audience</h2>
-            <p className="text-sm text-gray-600 mt-1">Save the client context that should shape AI generation across Compose.</p>
-          </div>
-          {canMutate && !profileContextEditing && (
-            <button
-              type="button"
-              onClick={() => setProfileContextEditing(true)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700"
-            >
-              Edit AI context
-            </button>
-          )}
-        </div>
-
-        {profileContextEditing ? (
-          <div className="mt-5 space-y-4">
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              <div>
-                <label className="block text-sm font-medium text-gray-900">Industry</label>
-                <input
-                  className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2"
-                  value={profileContextForm.industry}
-                  placeholder="Anime merch, SaaS, DTC skincare..."
-                  onChange={(event) => setProfileContextForm((prev) => ({ ...prev, industry: event.target.value }))}
-                  disabled={!canMutate || settingsSaving}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-900">Brand colors</label>
-                <input
-                  className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2"
-                  value={profileContextForm.brand_colors}
-                  placeholder="Blue, black, warm cream"
-                  onChange={(event) => setProfileContextForm((prev) => ({ ...prev, brand_colors: event.target.value }))}
-                  disabled={!canMutate || settingsSaving}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-900">Target audience</label>
-              <textarea
-                className="mt-2 min-h-[104px] w-full rounded-xl border border-gray-200 bg-white px-3 py-3"
-                value={profileContextForm.target_audience}
-                placeholder="Our audience is..."
-                onChange={(event) => setProfileContextForm((prev) => ({ ...prev, target_audience: event.target.value }))}
-                disabled={!canMutate || settingsSaving}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-900">Brand notes for AI</label>
-              <textarea
-                className="mt-2 min-h-[120px] w-full rounded-xl border border-gray-200 bg-white px-3 py-3"
-                value={profileContextForm.profile_notes}
-                placeholder="What should AI remember about this brand, product angle, positioning, or no-go language?"
-                onChange={(event) => setProfileContextForm((prev) => ({ ...prev, profile_notes: event.target.value }))}
-                disabled={!canMutate || settingsSaving}
-              />
-            </div>
-
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-              <div className="flex items-start justify-between gap-3 flex-wrap">
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900">Saved tone presets</h3>
-                  <p className="mt-1 text-xs text-gray-600">Create up to 5 named tones that appear in the Compose dropdown.</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={addTonePresetRow}
-                  disabled={!canMutate || settingsSaving || profileContextForm.tone_presets.length >= 5}
-                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-700 disabled:opacity-50"
-                >
-                  Add preset
-                </button>
-              </div>
-
-              <div className="mt-4 space-y-3">
-                {profileContextForm.tone_presets.length === 0 ? (
-                  <p className="rounded-xl border border-dashed border-gray-300 bg-white px-4 py-4 text-sm text-gray-500">
-                    No custom tone presets yet. Add a named voice like “Casual Fridays” or “Product Launch”.
-                  </p>
-                ) : (
-                  profileContextForm.tone_presets.map((preset, index) => (
-                    <div key={`tone-preset-${index}`} className="rounded-xl border border-white bg-white p-4 shadow-sm">
-                      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[220px_minmax(0,1fr)_auto] lg:items-start">
-                        <input
-                          className="rounded-lg border border-gray-200 px-3 py-2"
-                          value={preset.name || ''}
-                          placeholder="Preset name"
-                          onChange={(event) => updateTonePresetRow(index, 'name', event.target.value)}
-                          disabled={!canMutate || settingsSaving}
-                        />
-                        <textarea
-                          className="min-h-[88px] rounded-xl border border-gray-200 px-3 py-3"
-                          value={preset.guidance || ''}
-                          placeholder="Describe the voice, pacing, and style this preset should follow."
-                          onChange={(event) => updateTonePresetRow(index, 'guidance', event.target.value)}
-                          disabled={!canMutate || settingsSaving}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeTonePresetRow(index)}
-                          disabled={!canMutate || settingsSaving}
-                          className="rounded-lg border border-red-200 bg-white px-3 py-2 text-xs text-red-700 disabled:opacity-50"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={saveProfileContext}
-                disabled={!canMutate || settingsSaving}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-white disabled:opacity-50"
-              >
-                {settingsSaving ? 'Saving...' : 'Save AI Context'}
-              </button>
-              <button
-                type="button"
-                onClick={cancelProfileContextEditing}
-                disabled={settingsSaving}
-                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 disabled:opacity-50"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="mt-5 space-y-4">
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-              <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
-                <p className="text-xs uppercase tracking-wide text-gray-500">Industry</p>
-                <p className="mt-2 text-sm font-semibold text-gray-900">{workspaceSettings.industry || 'Not set'}</p>
-              </div>
-              <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
-                <p className="text-xs uppercase tracking-wide text-gray-500">Brand colors</p>
-                <p className="mt-2 text-sm font-semibold text-gray-900">
-                  {Array.isArray(workspaceSettings.brand_colors) && workspaceSettings.brand_colors.length > 0
-                    ? workspaceSettings.brand_colors.join(', ')
-                    : 'Not set'}
-                </p>
-              </div>
-              <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
-                <p className="text-xs uppercase tracking-wide text-gray-500">Target audience</p>
-                <p className="mt-2 text-sm font-semibold text-gray-900 line-clamp-3">{workspaceSettings.target_audience || 'Not set'}</p>
-              </div>
-              <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
-                <p className="text-xs uppercase tracking-wide text-gray-500">Tone presets</p>
-                <p className="mt-2 text-sm font-semibold text-gray-900">{formatMetric((workspaceSettings.tone_presets || []).length)}</p>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-              <h3 className="text-sm font-semibold text-gray-900">Brand notes for AI</h3>
-              <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-gray-700">
-                {workspaceSettings.profile_notes || 'No extra brand notes saved yet.'}
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-              <h3 className="text-sm font-semibold text-gray-900">Saved tone presets</h3>
-              {(workspaceSettings.tone_presets || []).length === 0 ? (
-                <p className="mt-2 text-sm text-gray-500">No custom tone presets saved yet. Compose will use the default tones until you add some.</p>
-              ) : (
-                <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
-                  {(workspaceSettings.tone_presets || []).map((preset) => (
-                    <div key={preset.name} className="rounded-xl border border-white bg-white px-4 py-3 shadow-sm">
-                      <p className="text-sm font-semibold text-gray-900">{preset.name}</p>
-                      <p className="mt-2 text-sm leading-6 text-gray-600">{preset.guidance || 'No extra guidance saved.'}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">Workspace Status</h2>
-        <p className="text-sm text-gray-600 mb-4">Pause or archive the client when you want to stop active work without deleting its history.</p>
-        <div className="flex flex-wrap gap-2">
-          <button onClick={() => updateStatus('active')} className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">Activate</button>
-          <button onClick={() => updateStatus('paused')} className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700">Pause</button>
-        </div>
-
-        <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4">
-          <p className="text-sm font-semibold text-red-800">Archive workspace</p>
-          <p className="mt-1 text-sm text-red-700">This is a destructive state change. Active work stops, but history stays available.</p>
-          <button
-            type="button"
-            onClick={confirmArchiveWorkspace}
-            className="mt-4 rounded-lg border border-red-300 bg-white px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-100"
-          >
-            Archive Workspace
-          </button>
-        </div>
-      </div>
-      </>
+        <AgencyWorkspaceSetupTab
+          workspace={workspace}
+          profileEditing={profileEditing}
+          profileForm={profileForm}
+          setProfileForm={setProfileForm}
+          profileSaving={profileSaving}
+          canMutate={canMutate}
+          saveOverview={saveOverview}
+          cancelProfileEditing={cancelProfileEditing}
+          workspaceSettings={workspaceSettings}
+          profileContextEditing={profileContextEditing}
+          setProfileContextEditing={setProfileContextEditing}
+          profileContextForm={profileContextForm}
+          setProfileContextForm={setProfileContextForm}
+          settingsSaving={settingsSaving}
+          addTonePresetRow={addTonePresetRow}
+          updateTonePresetRow={updateTonePresetRow}
+          removeTonePresetRow={removeTonePresetRow}
+          saveProfileContext={saveProfileContext}
+          cancelProfileContextEditing={cancelProfileContextEditing}
+          formatMetric={formatMetric}
+          updateStatus={updateStatus}
+          confirmArchiveWorkspace={confirmArchiveWorkspace}
+        />
       )}
 
       {isWorkspaceTab('analysis') && (
-      <>
-      <div id="agency-workspace-analysis" className="bg-white border border-gray-200 rounded-xl p-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-violet-700">
-              <Sparkles className="h-3.5 w-3.5" />
-              Analysis Studio
-            </div>
-            <h2 className="mt-3 text-lg font-semibold text-gray-900">Workspace Analysis + Idea Bank</h2>
-            <p className="mt-1 text-sm text-gray-600">
-              Turn workspace signals, queue pressure, and competitor watchlists into clearer content directions before you open Compose.
-            </p>
-            <p className="mt-2 text-xs text-gray-500">
-              Refreshed: {analysisSummary.refreshedAt ? formatDateTime(analysisSummary.refreshedAt) : 'Not available'}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => loadAnalysisSummary()}
-            disabled={analysisLoading}
-            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 disabled:opacity-60"
-          >
-            <RefreshCw className={`h-4 w-4 ${analysisLoading ? 'animate-spin' : ''}`} />
-            {analysisLoading ? 'Refreshing...' : 'Refresh analysis'}
-          </button>
-        </div>
-
-        <div className="mt-6 grid grid-cols-2 gap-3 xl:grid-cols-5">
-          <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Connected accounts</p>
-            <p className="mt-2 text-2xl font-semibold text-gray-900">{formatMetric(analysisSummary.overview?.connectedAccountCount || 0)}</p>
-          </div>
-          <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Platforms with signal</p>
-            <p className="mt-2 text-2xl font-semibold text-gray-900">{formatMetric(analysisSummary.overview?.platformCount || 0)}</p>
-          </div>
-          <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Competitor targets</p>
-            <p className="mt-2 text-2xl font-semibold text-gray-900">{formatMetric(analysisSummary.overview?.competitorTargetCount || 0)}</p>
-          </div>
-          <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Idea bank</p>
-            <p className="mt-2 text-2xl font-semibold text-gray-900">{formatMetric(analysisSummary.overview?.ideaCount || 0)}</p>
-          </div>
-          <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Queue pressure</p>
-            <div className={`mt-2 inline-flex items-center rounded-full border px-2.5 py-1 text-sm font-semibold ${analysisQueuePressureMeta.className}`}>
-              {analysisQueuePressureMeta.label}
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-          <div className="rounded-2xl border border-gray-200 p-5">
-            <div className="flex items-center gap-2">
-              <Building2 className="h-4 w-4 text-blue-600" />
-              <h3 className="text-base font-semibold text-gray-900">Own Analysis</h3>
-            </div>
-            <p className="mt-1 text-sm text-gray-600">A quick read on what this workspace is already telling us.</p>
-
-            <div className="mt-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Top recurring themes</p>
-              {(analysisSummary.ownAnalysis?.topThemes || []).length === 0 ? (
-                <p className="mt-2 rounded-xl border border-dashed border-gray-300 px-4 py-4 text-sm text-gray-500">
-                  Not enough recent workspace copy yet. Publish or queue a few items and the theme layer will sharpen.
-                </p>
-              ) : (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {(analysisSummary.ownAnalysis?.topThemes || []).map((theme) => (
-                    <span key={theme} className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">
-                      {theme}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="mt-5 space-y-4">
-              {(analysisSummary.ownAnalysis?.platformCards || []).length === 0 ? (
-                <div className="rounded-xl border border-dashed border-gray-300 px-4 py-5 text-sm text-gray-500">
-                  Connect a platform and start moving drafts through the workspace to unlock channel-specific analysis.
-                </div>
-              ) : (
-                (analysisSummary.ownAnalysis?.platformCards || []).map((card) => (
-                  <div key={card.key} className="rounded-2xl border border-gray-200 p-4">
-                    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-gray-900">{card.label}</span>
-                          <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                            card.status === 'ready'
-                              ? 'bg-emerald-50 text-emerald-700'
-                              : card.status === 'busy'
-                                ? 'bg-amber-50 text-amber-700'
-                                : card.status === 'warning'
-                                  ? 'bg-red-50 text-red-700'
-                                  : 'bg-gray-100 text-gray-600'
-                          }`}>
-                            {card.status}
-                          </span>
-                        </div>
-                        <p className="mt-2 text-xs text-gray-500">
-                          {formatMetric(card.connectedAccounts || 0)} accounts • {formatMetric(card.postedCount || 0)} posted • {formatMetric(card.queueItems || 0)} queue • {formatMetric(card.scheduledItems || 0)} scheduled
-                        </p>
-                      </div>
-                      {(card.themes || []).length > 0 && (
-                        <div className="flex flex-wrap gap-2">
-                          {(card.themes || []).slice(0, 3).map((theme) => (
-                            <span key={`${card.key}-${theme}`} className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs text-gray-700">
-                              {theme}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {(card.strengths || []).length > 0 && (
-                      <div className="mt-4">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Strengths</p>
-                        <div className="mt-2 space-y-2">
-                          {(card.strengths || []).map((item) => (
-                            <p key={`${card.key}-strength-${item}`} className="text-sm text-gray-700">{item}</p>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {(card.gaps || []).length > 0 && (
-                      <div className="mt-4">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Gaps</p>
-                        <div className="mt-2 space-y-2">
-                          {(card.gaps || []).map((item) => (
-                            <p key={`${card.key}-gap-${item}`} className="text-sm text-gray-700">{item}</p>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {(card.nextMoves || []).length > 0 && (
-                      <div className="mt-4">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Next moves</p>
-                        <div className="mt-2 space-y-2">
-                          {(card.nextMoves || []).map((item) => (
-                            <p key={`${card.key}-next-${item}`} className="text-sm text-gray-700">{item}</p>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-
-            {(analysisSummary.ownAnalysis?.summaryNotes || []).length > 0 && (
-              <div className="mt-5 rounded-2xl border border-blue-100 bg-blue-50 p-4">
-                <div className="flex items-center gap-2">
-                  <ListChecks className="h-4 w-4 text-blue-700" />
-                  <p className="text-sm font-semibold text-blue-900">What this means right now</p>
-                </div>
-                <div className="mt-3 space-y-2">
-                  {(analysisSummary.ownAnalysis?.summaryNotes || []).map((item) => (
-                    <p key={`analysis-note-${item}`} className="text-sm text-blue-900">{item}</p>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-6">
-            <div className="rounded-2xl border border-gray-200 p-5">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-violet-600" />
-                <h3 className="text-base font-semibold text-gray-900">Competitor Watchlist</h3>
-              </div>
-              <p className="mt-1 text-sm text-gray-600">
-                Save 3-5 competitor handles or URLs here. This feeds the workspace idea bank now and sets us up for deeper competitor analysis next.
-              </p>
-              <textarea
-                className="mt-4 min-h-[140px] w-full rounded-xl border border-gray-200 px-3 py-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-                value={workspaceCompetitorsInput}
-                onChange={(event) => setWorkspaceCompetitorsInput(event.target.value)}
-                disabled={!canWrite || settingsSaving}
-                placeholder="Add competitor handles or profile URLs, separated by commas or new lines"
-              />
-              <div className="mt-3 flex flex-wrap items-center gap-3">
-                <button
-                  type="button"
-                  onClick={saveCompetitorTargets}
-                  disabled={!canWrite || settingsSaving}
-                  className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-60"
-                >
-                  {settingsSaving ? 'Saving...' : 'Save watchlist'}
-                </button>
-                <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                  analysisSummary.competitors?.status === 'ready'
-                    ? 'bg-emerald-50 text-emerald-700'
-                    : 'bg-amber-50 text-amber-700'
-                }`}>
-                  {analysisSummary.competitors?.status === 'ready' ? 'Configured' : 'Needs targets'}
-                </span>
-              </div>
-              <div className="mt-4 space-y-2">
-                {(analysisSummary.competitors?.watchlistNotes || []).map((note) => (
-                  <p key={`watchlist-note-${note}`} className="text-sm text-gray-700">{note}</p>
-                ))}
-              </div>
-              {(analysisSummary.competitors?.targets || []).length > 0 && (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {(analysisSummary.competitors?.targets || []).map((target) => (
-                    <span key={target} className="rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-sm text-violet-700">
-                      {target}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="rounded-2xl border border-gray-200 p-5">
-              <div className="flex items-center gap-2">
-                <ShieldAlert className="h-4 w-4 text-amber-600" />
-                <h3 className="text-base font-semibold text-gray-900">Source Health</h3>
-              </div>
-              <p className="mt-1 text-sm text-gray-600">Which layers are contributing signal to analysis right now.</p>
-              <div className="mt-4 space-y-3">
-                {(analysisSummary.sourceHealth || []).length === 0 ? (
-                  <p className="rounded-xl border border-dashed border-gray-300 px-4 py-4 text-sm text-gray-500">
-                    Source health appears once the workspace has connected accounts or shared drafts.
-                  </p>
-                ) : (
-                  (analysisSummary.sourceHealth || []).map((source) => (
-                    <div key={`${source.channel}:${source.teamId || 'personal'}`} className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 px-3 py-3 text-sm">
-                      <div>
-                        <p className="font-medium text-gray-900">{String(source.channel || 'source').toUpperCase()}</p>
-                        <p className="text-xs text-gray-500">{formatMetric(source.queueCount || 0)} queue • {formatMetric(source.calendarCount || 0)} calendar</p>
-                      </div>
-                      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                        source.status === 'ok'
-                          ? 'bg-emerald-50 text-emerald-700'
-                          : 'bg-red-50 text-red-700'
-                      }`}>
-                        {source.status === 'ok' ? 'Healthy' : 'Needs attention'}
-                      </span>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-6 rounded-2xl border border-gray-200 p-5">
-          <div className="flex items-center gap-2">
-            <FileText className="h-4 w-4 text-emerald-600" />
-            <h3 className="text-base font-semibold text-gray-900">Idea Bank</h3>
-          </div>
-          <p className="mt-1 text-sm text-gray-600">
-            These are generation-ready directions built from workspace context, current queue pressure, and the competitor watchlist.
-          </p>
-
-          {(analysisSummary.ideaBank || []).length === 0 ? (
-            <p className="mt-4 rounded-xl border border-dashed border-gray-300 px-4 py-5 text-sm text-gray-500">
-              No idea bank yet. Refresh analysis after adding context, accounts, or competitor targets.
-            </p>
-          ) : (
-            <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
-              {(analysisSummary.ideaBank || []).map((idea) => (
-                <div key={idea.id} className="rounded-2xl border border-gray-200 p-4">
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                    <div>
-                      <div className="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">
-                        {String(idea.sourceType || 'idea').replace(/_/g, ' ')}
-                      </div>
-                      <h4 className="mt-3 text-base font-semibold text-gray-900">{idea.title}</h4>
-                      <p className="mt-2 text-sm text-gray-600">{idea.whyItFits}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => useAnalysisIdeaInComposer(idea)}
-                      disabled={!canWrite}
-                      className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white disabled:opacity-60"
-                    >
-                      Use in Compose
-                    </button>
-                  </div>
-
-                  {(idea.recommendedPlatforms || []).length > 0 && (
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {(idea.recommendedPlatforms || []).map((platformKey) => (
-                        <span key={`${idea.id}-${platformKey}`} className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs text-gray-700">
-                          {getWorkspacePlatformLabel(platformKey)}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="mt-4 rounded-xl border border-gray-100 bg-gray-50 px-3 py-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Compose prompt</p>
-                    <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">{idea.prompt}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-      </>
+        <AgencyWorkspaceAnalysisTab
+          analysisSummary={analysisSummary}
+          analysisLoading={analysisLoading}
+          analysisQueuePressureMeta={analysisQueuePressureMeta}
+          formatDateTime={formatDateTime}
+          formatMetric={formatMetric}
+          loadAnalysisSummary={loadAnalysisSummary}
+          workspaceCompetitorsInput={workspaceCompetitorsInput}
+          setWorkspaceCompetitorsInput={setWorkspaceCompetitorsInput}
+          canWrite={canWrite}
+          settingsSaving={settingsSaving}
+          saveCompetitorTargets={saveCompetitorTargets}
+          useAnalysisIdeaInComposer={useAnalysisIdeaInComposer}
+        />
       )}
-
       {isWorkspaceTab('analytics') && (
-      <>
-      <div id="agency-workspace-analytics" className="bg-white border border-gray-200 rounded-xl p-6">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div>
-            <p className="inline-flex items-center rounded-full bg-blue-100 text-blue-700 text-[11px] font-semibold px-2 py-1 uppercase tracking-wide">Client Intelligence</p>
-            <h2 className="text-lg font-semibold text-gray-900 mt-2">Workspace Insights + Engagement Signals</h2>
-            <p className="text-sm text-gray-600 mt-1">Pull shared performance and engagement context directly into this client workspace.</p>
-          </div>
-          <div className="flex items-center gap-3 flex-wrap">
-            <p className="text-xs text-gray-500">
-              Refreshed: {insightsSummary.generatedAt ? formatDateTime(insightsSummary.generatedAt) : 'Not available'}
-            </p>
-            <button
-              type="button"
-              onClick={() => loadInsightsSummary()}
-              disabled={insightsLoading}
-              className="inline-flex items-center gap-2 text-sm border rounded-lg px-3 py-2 disabled:opacity-50"
-            >
-              <RefreshCw className={`h-4 w-4 ${insightsLoading ? 'animate-spin' : ''}`} />
-              {insightsLoading ? 'Refreshing...' : 'Refresh insights'}
-            </button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 mt-4">
-          <div className="border rounded-lg px-3 py-2">
-            <p className="text-xs text-gray-500">Connected accounts</p>
-            <p className="text-xl font-semibold text-gray-900">{formatMetric(insightsSummary.workspace?.activeAccounts || 0)}</p>
-          </div>
-          <div className="border rounded-lg px-3 py-2">
-            <p className="text-xs text-gray-500">Drafts in studio</p>
-            <p className="text-xl font-semibold text-gray-900">{formatMetric(insightsSummary.workspace?.drafts || 0)}</p>
-          </div>
-          <div className="border rounded-lg px-3 py-2">
-            <p className="text-xs text-gray-500">Scheduled</p>
-            <p className="text-xl font-semibold text-amber-700">{formatMetric(insightsSummary.workspace?.scheduled || 0)}</p>
-          </div>
-          <div className="border rounded-lg px-3 py-2">
-            <p className="text-xs text-gray-500">Published</p>
-            <p className="text-xl font-semibold text-emerald-700">{formatMetric(insightsSummary.workspace?.published || 0)}</p>
-          </div>
-          <div className="border rounded-lg px-3 py-2">
-            <p className="text-xs text-gray-500">Queue items</p>
-            <p className="text-xl font-semibold text-gray-900">{formatMetric(operationsSnapshot.summary?.queueCount || 0)}</p>
-          </div>
-          <div className="border rounded-lg px-3 py-2">
-            <p className="text-xs text-gray-500">Automation mode</p>
-            <p className={`text-sm font-semibold mt-2 ${insightsSummary.automation?.automationEnabled ? 'text-emerald-700' : 'text-gray-700'}`}>
-              {insightsSummary.automation?.automationEnabled ? 'Enabled' : 'Manual'}
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 mt-5">
-          <div className="border rounded-xl p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900">Twitter / X</h3>
-                <p className="text-xs text-gray-600 mt-1">Posting, approvals, and reach for X inside this workspace.</p>
-              </div>
-              <button type="button" onClick={() => focusSection('analytics')} className="text-xs border rounded-md px-2 py-1">Viewing in workspace</button>
-            </div>
-            <div className="grid grid-cols-2 gap-3 mt-4">
-              <div><p className="text-xs text-gray-500">Accounts</p><p className="text-lg font-semibold text-gray-900">{formatMetric(insightsSummary.platforms?.twitter?.connectedAccounts || 0)}</p></div>
-              <div><p className="text-xs text-gray-500">Posts</p><p className="text-lg font-semibold text-gray-900">{formatMetric(insightsSummary.platforms?.twitter?.totalPosts || 0)}</p></div>
-              <div><p className="text-xs text-gray-500">Impressions</p><p className="text-lg font-semibold text-gray-900">{formatMetric(insightsSummary.platforms?.twitter?.totalImpressions || 0)}</p></div>
-              <div><p className="text-xs text-gray-500">Engagement</p><p className="text-lg font-semibold text-blue-700">{formatMetric(insightsSummary.platforms?.twitter?.totalEngagement || 0)}</p></div>
-              <div><p className="text-xs text-gray-500">Pending approvals</p><p className="text-lg font-semibold text-amber-700">{formatMetric(insightsSummary.platforms?.twitter?.pendingApprovals || 0)}</p></div>
-              <div><p className="text-xs text-gray-500">Pending queue</p><p className="text-lg font-semibold text-gray-900">{formatMetric(insightsSummary.platforms?.twitter?.pendingQueue || 0)}</p></div>
-            </div>
-            {(insightsSummary.platforms?.twitter?.errors || []).length > 0 && (
-              <p className="text-xs text-red-600 mt-3">{insightsSummary.platforms.twitter.errors[0]}</p>
-            )}
-          </div>
-
-          <div className="border rounded-xl p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900">LinkedIn</h3>
-                <p className="text-xs text-gray-600 mt-1">Publishing, queue health, and performance for LinkedIn profiles and pages.</p>
-              </div>
-              <button type="button" onClick={() => focusSection('analytics')} className="text-xs border rounded-md px-2 py-1">Viewing in workspace</button>
-            </div>
-            <div className="grid grid-cols-2 gap-3 mt-4">
-              <div><p className="text-xs text-gray-500">Accounts</p><p className="text-lg font-semibold text-gray-900">{formatMetric(insightsSummary.platforms?.linkedin?.connectedAccounts || 0)}</p></div>
-              <div><p className="text-xs text-gray-500">Posts</p><p className="text-lg font-semibold text-gray-900">{formatMetric(insightsSummary.platforms?.linkedin?.totalPosts || 0)}</p></div>
-              <div><p className="text-xs text-gray-500">Views</p><p className="text-lg font-semibold text-gray-900">{formatMetric(insightsSummary.platforms?.linkedin?.totalViews || 0)}</p></div>
-              <div><p className="text-xs text-gray-500">Engagement</p><p className="text-lg font-semibold text-blue-700">{formatMetric(insightsSummary.platforms?.linkedin?.totalEngagement || 0)}</p></div>
-              <div><p className="text-xs text-gray-500">Pending approvals</p><p className="text-lg font-semibold text-amber-700">{formatMetric(insightsSummary.platforms?.linkedin?.pendingApprovals || 0)}</p></div>
-              <div><p className="text-xs text-gray-500">Approved queue</p><p className="text-lg font-semibold text-gray-900">{formatMetric(insightsSummary.platforms?.linkedin?.approvedQueue || 0)}</p></div>
-            </div>
-            {(insightsSummary.platforms?.linkedin?.errors || []).length > 0 && (
-              <p className="text-xs text-red-600 mt-3">{insightsSummary.platforms.linkedin.errors[0]}</p>
-            )}
-          </div>
-
-          <div className="border rounded-xl p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900">Cross-platform Social</h3>
-                <p className="text-xs text-gray-600 mt-1">Threads, Instagram, YouTube, and shared social execution from this workspace.</p>
-              </div>
-              <button type="button" onClick={() => focusSection('connections')} className="text-xs border rounded-md px-2 py-1">Open connections</button>
-            </div>
-            <div className="grid grid-cols-2 gap-3 mt-4">
-              <div><p className="text-xs text-gray-500">Accounts</p><p className="text-lg font-semibold text-gray-900">{formatMetric(insightsSummary.platforms?.social?.connectedAccounts || 0)}</p></div>
-              <div><p className="text-xs text-gray-500">Posted</p><p className="text-lg font-semibold text-emerald-700">{formatMetric(insightsSummary.platforms?.social?.totalPosted || 0)}</p></div>
-              <div><p className="text-xs text-gray-500">Scheduled</p><p className="text-lg font-semibold text-amber-700">{formatMetric(insightsSummary.platforms?.social?.totalScheduled || 0)}</p></div>
-              <div><p className="text-xs text-gray-500">Failed</p><p className="text-lg font-semibold text-red-700">{formatMetric(insightsSummary.platforms?.social?.totalFailed || 0)}</p></div>
-              <div><p className="text-xs text-gray-500">Threads posts</p><p className="text-lg font-semibold text-gray-900">{formatMetric(insightsSummary.platforms?.social?.threadsPosts || 0)}</p></div>
-              <div><p className="text-xs text-gray-500">Instagram posts</p><p className="text-lg font-semibold text-gray-900">{formatMetric(insightsSummary.platforms?.social?.instagramPosts || 0)}</p></div>
-            </div>
-            {(insightsSummary.platforms?.social?.connectedAccounts || 0) === 0 && (
-              <div className="mt-4 rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 py-3">
-                <p className="text-sm font-medium text-gray-800">No social accounts connected yet</p>
-                <p className="mt-1 text-xs text-gray-600">Connect Threads, Instagram, or YouTube in the Connections tab to populate this card.</p>
-              </div>
-            )}
-            {(insightsSummary.platforms?.social?.errors || []).length > 0 && (
-              <p className="text-xs text-red-600 mt-3">{insightsSummary.platforms.social.errors[0]}</p>
-            )}
-          </div>
-
-          <div className="border rounded-xl p-4 bg-gray-50">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900">Engagement + Approvals</h3>
-                <p className="text-xs text-gray-600 mt-1">Reply workload, approvals, and moderation signals for this workspace.</p>
-              </div>
-              <button type="button" onClick={() => focusSection('analytics')} className="text-xs border rounded-md px-2 py-1 bg-white">Engagement signals</button>
-            </div>
-
-            <div className="space-y-3 mt-4">
-              <div className="flex items-center justify-between gap-3 border rounded-lg px-3 py-2 bg-white">
-                <p className="text-sm text-gray-700">LinkedIn reply drafts ready</p>
-                <p className="text-lg font-semibold text-gray-900">{formatMetric(insightsSummary.engagement?.linkedin?.readyReplyDrafts || 0)}</p>
-              </div>
-              <div className="flex items-center justify-between gap-3 border rounded-lg px-3 py-2 bg-white">
-                <p className="text-sm text-gray-700">LinkedIn replies sent</p>
-                <p className="text-lg font-semibold text-emerald-700">{formatMetric(insightsSummary.engagement?.linkedin?.sentReplies || 0)}</p>
-              </div>
-              <div className="flex items-center justify-between gap-3 border rounded-lg px-3 py-2 bg-white">
-                <p className="text-sm text-gray-700">Posts with comments</p>
-                <p className="text-lg font-semibold text-blue-700">{formatMetric(insightsSummary.engagement?.linkedin?.postsWithComments || 0)}</p>
-              </div>
-            </div>
-
-            <div className="border rounded-lg px-3 py-3 mt-4 bg-white">
-              <p className="text-xs text-gray-500 uppercase tracking-wide">Automation policy</p>
-              <div className="flex flex-wrap gap-2 mt-3">
-                {insightsSummary.automation?.requireAdminApproval && (
-                  <span className="text-xs bg-amber-50 text-amber-700 border border-amber-100 rounded-full px-2 py-1">Admin approval required</span>
-                )}
-                {insightsSummary.automation?.autoGenerateTwitter && (
-                  <span className="text-xs bg-blue-50 text-blue-700 border border-blue-100 rounded-full px-2 py-1">Twitter generation on</span>
-                )}
-                {insightsSummary.automation?.autoGenerateLinkedin && (
-                  <span className="text-xs bg-blue-50 text-blue-700 border border-blue-100 rounded-full px-2 py-1">LinkedIn generation on</span>
-                )}
-                {insightsSummary.automation?.autoGenerateSocial && (
-                  <span className="text-xs bg-blue-50 text-blue-700 border border-blue-100 rounded-full px-2 py-1">Cross-post generation on</span>
-                )}
-                {insightsSummary.automation?.engagementAutoReply && (
-                  <span className="text-xs bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-full px-2 py-1">Auto-reply drafts on</span>
-                )}
-                {!insightsSummary.automation?.automationEnabled && (
-                  <span className="text-xs bg-gray-100 text-gray-700 border border-gray-200 rounded-full px-2 py-1">Manual workspace mode</span>
-                )}
-              </div>
-            </div>
-
-            {(insightsSummary.engagement?.linkedin?.errors || []).length > 0 && (
-              <p className="text-xs text-red-600 mt-3">{insightsSummary.engagement.linkedin.errors[0]}</p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div>
-            <p className="inline-flex items-center rounded-full bg-blue-100 text-blue-700 text-[11px] font-semibold px-2 py-1 uppercase tracking-wide">Agency Pro</p>
-            <h2 className="text-lg font-semibold text-gray-900 mt-2">Workspace Analytics Summary</h2>
-            <p className="text-sm text-gray-600 mt-1">A shared snapshot of draft activity and attached client accounts.</p>
-          </div>
-          <p className="text-xs text-gray-500">
-            Refreshed: {analyticsSummary.generatedAt ? formatDateTime(analyticsSummary.generatedAt) : 'Not available'}
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mt-4">
-          <div className="border rounded-lg px-3 py-2">
-            <p className="text-xs text-gray-500">Drafts</p>
-            <p className="text-xl font-semibold text-gray-900">{analyticsSummary.drafts || 0}</p>
-          </div>
-          <div className="border rounded-lg px-3 py-2">
-            <p className="text-xs text-gray-500">Scheduled</p>
-            <p className="text-xl font-semibold text-amber-700">{analyticsSummary.scheduled || 0}</p>
-          </div>
-          <div className="border rounded-lg px-3 py-2">
-            <p className="text-xs text-gray-500">Published</p>
-            <p className="text-xl font-semibold text-emerald-700">{analyticsSummary.published || 0}</p>
-          </div>
-          <div className="border rounded-lg px-3 py-2">
-            <p className="text-xs text-gray-500">Failed</p>
-            <p className="text-xl font-semibold text-red-700">{analyticsSummary.failed || 0}</p>
-          </div>
-          <div className="border rounded-lg px-3 py-2">
-            <p className="text-xs text-gray-500">Accounts</p>
-            <p className="text-xl font-semibold text-gray-900">{analyticsSummary.totalAccounts || 0}</p>
-          </div>
-          <div className="border rounded-lg px-3 py-2">
-            <p className="text-xs text-gray-500">Active accounts</p>
-            <p className="text-xl font-semibold text-blue-700">{analyticsSummary.activeAccounts || 0}</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 mt-5 xl:grid-cols-3">
-          <div className="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Publishing Health</p>
-            <p className="mt-2 text-2xl font-semibold text-gray-900">{formatMetric(publishedCount)} published</p>
-            <p className="mt-1 text-sm text-gray-600">{failedCount > 0 ? `${formatMetric(failedCount)} failures need review` : 'No publish failures recorded in this workspace yet.'}</p>
-          </div>
-
-          <div className="rounded-2xl border border-blue-100 bg-blue-50/60 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Review Load</p>
-            <p className="mt-2 text-2xl font-semibold text-gray-900">{formatMetric(pendingApprovalCount)} awaiting approval</p>
-            <p className="mt-1 text-sm text-gray-600">{formatMetric(operationsSnapshot.summary?.queueCount || 0)} total queue items across drafts and channel queues.</p>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Workspace Readiness</p>
-            <p className="mt-2 text-2xl font-semibold text-gray-900">{formatMetric(activeAccountCount)} active accounts</p>
-            <p className="mt-1 text-sm text-gray-600">
-              {sourceFailedCount > 0
-                ? `${formatMetric(sourceHealthyCount)} healthy sources, ${formatMetric(sourceFailedCount)} failing`
-                : `${formatMetric(sourceHealthyCount)} healthy connected sources.`}
-            </p>
-            {socialConnectedCount === 0 && (
-              <p className="mt-2 text-xs text-gray-500">Social analytics stays empty until Threads, Instagram, or YouTube is connected.</p>
-            )}
-          </div>
-        </div>
-      </div>
-      </>
+        <AgencyWorkspaceAnalyticsTab
+          insightsSummary={insightsSummary}
+          formatDateTime={formatDateTime}
+          loadInsightsSummary={loadInsightsSummary}
+          insightsLoading={insightsLoading}
+          formatMetric={formatMetric}
+          operationsSnapshot={operationsSnapshot}
+          focusSection={focusSection}
+          analyticsSummary={analyticsSummary}
+          publishedCount={publishedCount}
+          failedCount={failedCount}
+          pendingApprovalCount={pendingApprovalCount}
+          activeAccountCount={activeAccountCount}
+          sourceHealthyCount={sourceHealthyCount}
+          sourceFailedCount={sourceFailedCount}
+          socialConnectedCount={socialConnectedCount}
+        />
       )}
 
       {isWorkspaceTab('compose') && (
@@ -4178,470 +3261,62 @@ const AgencyWorkspacePage = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mt-4">
-          <div className="border rounded-lg px-3 py-2">
-            <p className="text-xs text-gray-500">Queue items</p>
-            <p className="text-xl font-semibold text-gray-900">{operationsSnapshot.summary?.queueCount || 0}</p>
-          </div>
-          <div className="border rounded-lg px-3 py-2">
-            <p className="text-xs text-gray-500">Calendar posts</p>
-            <p className="text-xl font-semibold text-gray-900">{operationsSnapshot.summary?.calendarCount || 0}</p>
-          </div>
-          <div className="border rounded-lg px-3 py-2">
-            <p className="text-xs text-gray-500">Healthy sources</p>
-            <p className="text-xl font-semibold text-emerald-700">{operationsSnapshot.summary?.sourceHealthyCount || 0}</p>
-          </div>
-          <div className="border rounded-lg px-3 py-2">
-            <p className="text-xs text-gray-500">Failed sources</p>
-            <p className="text-xl font-semibold text-red-700">{operationsSnapshot.summary?.sourceFailedCount || 0}</p>
-          </div>
-        </div>
-
-        <div className="mt-4 flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setOperationsView('queue')}
-            className={`inline-flex items-center gap-1.5 text-sm border rounded-md px-3 py-1.5 ${operationsView === 'queue' ? 'bg-blue-600 text-white border-blue-600' : 'text-gray-700'}`}
-          >
-            <ListChecks className="h-4 w-4" />
-            Queue
-          </button>
-          <button
-            type="button"
-            onClick={() => setOperationsView('calendar')}
-            className={`inline-flex items-center gap-1.5 text-sm border rounded-md px-3 py-1.5 ${operationsView === 'calendar' ? 'bg-blue-600 text-white border-blue-600' : 'text-gray-700'}`}
-          >
-            <CalendarDays className="h-4 w-4" />
-            Calendar
-          </button>
-          <p className="text-xs text-gray-500 ml-1">
-            Last refresh: {operationsSnapshot.summary?.lastRefreshedAt ? formatDateTime(operationsSnapshot.summary.lastRefreshedAt) : 'Not available'}
-          </p>
-        </div>
-
-        {operationsView === 'queue' ? (
-          <div className="mt-4 space-y-2">
-            {(operationsSnapshot.queue || []).length === 0 ? (
-              <p className="text-sm text-gray-500 border rounded-lg px-3 py-6 text-center">No queue items in attached workspace channels.</p>
-            ) : (
-              (operationsSnapshot.queue || []).map((item) => (
-                <div key={`${item.platform}:${item.id}`} className="border rounded-lg px-3 py-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] uppercase tracking-wide bg-blue-50 text-blue-700 border border-blue-100 px-2 py-1 rounded-full">{item.platform}</span>
-                      <span className="text-[11px] uppercase tracking-wide bg-gray-100 text-gray-700 border border-gray-200 px-2 py-1 rounded-full">{item.status || 'pending'}</span>
-                    </div>
-                    <span className="text-xs text-gray-500">Workspace queue</span>
-                  </div>
-                  {item.title && <p className="text-sm font-semibold text-gray-900 mt-2">{item.title}</p>}
-                  <p className="text-sm text-gray-700 mt-1 whitespace-pre-wrap">{String(item.content || '').slice(0, 280)}</p>
-                  <p className="text-xs text-gray-500 mt-2">
-                    {item.scheduledFor ? `Suggested/Scheduled: ${formatDateTime(item.scheduledFor)}` : 'No suggested time'}
-                  </p>
-                </div>
-              ))
-            )}
-          </div>
-        ) : (
-          <div className="mt-4 space-y-4">
-            {(operationsSnapshot.calendar || []).length === 0 ? (
-              <p className="text-sm text-gray-500 border rounded-lg px-3 py-6 text-center">No scheduled calendar posts in attached workspace channels.</p>
-            ) : (
-              groupedCalendar.map(([dateLabel, items]) => (
-                <div key={dateLabel} className="border rounded-lg">
-                  <div className="px-3 py-2 border-b bg-gray-50">
-                    <p className="text-sm font-semibold text-gray-900">{dateLabel}</p>
-                  </div>
-                  <div className="divide-y">
-                    {items.map((item) => (
-                      <div key={`${item.platform}:${item.id}`} className="px-3 py-3">
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[11px] uppercase tracking-wide bg-blue-50 text-blue-700 border border-blue-100 px-2 py-1 rounded-full">{item.platform}</span>
-                            <span className="text-[11px] uppercase tracking-wide bg-gray-100 text-gray-700 border border-gray-200 px-2 py-1 rounded-full">{item.status || 'scheduled'}</span>
-                          </div>
-                          <span className="text-xs text-gray-500">Workspace calendar</span>
-                        </div>
-                        <p className="text-sm text-gray-800 mt-2 whitespace-pre-wrap">{String(item.content || '').slice(0, 280)}</p>
-                        <p className="text-xs text-gray-500 mt-2">
-                          {item.scheduledFor ? `Scheduled: ${formatDateTime(item.scheduledFor)}` : `Created: ${formatDateTime(item.createdAt)}`}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-
-        {(operationsSnapshot.sources || []).length > 0 && (
-          <div id="agency-workspace-source-health" className="mt-4 border rounded-lg px-3 py-3">
-            <p className="text-sm font-medium text-gray-900 mb-2">Source health</p>
-            <div className="space-y-2">
-              {(operationsSnapshot.sources || []).map((source) => (
-                <div key={`${source.channel}:${source.teamId || 'personal'}`} className="flex items-center justify-between gap-3 text-sm">
-                  <p className="text-gray-700">
-                    <span className="font-medium uppercase">{source.channel}</span>
-                    {source.teamId ? <span className="text-gray-500"> • team {source.teamId}</span> : <span className="text-gray-500"> • personal</span>}
-                  </p>
-                  {source.status === 'ok' ? (
-                    <span className="text-emerald-700 text-xs bg-emerald-50 border border-emerald-100 rounded-full px-2 py-1">
-                      ok • q:{source.queueCount} c:{source.calendarCount}
-                    </span>
-                  ) : (
-                    <span className="text-red-700 text-xs bg-red-50 border border-red-100 rounded-full px-2 py-1">
-                      failed • {source.error || source.code || 'unknown'}
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        <AgencyWorkspaceCalendarPanel
+          operationsSnapshot={operationsSnapshot}
+          operationsView={operationsView}
+          setOperationsView={setOperationsView}
+          calendarMonthGrid={calendarMonthGrid}
+          setCalendarMonthCursor={setCalendarMonthCursor}
+          shiftCalendarMonthKey={shiftCalendarMonthKey}
+          getCalendarMonthKey={getCalendarMonthKey}
+          setSelectedCalendarDateKey={setSelectedCalendarDateKey}
+          visibleCalendarDateKey={visibleCalendarDateKey}
+          visibleCalendarItems={visibleCalendarItems}
+          formatDateTime={formatDateTime}
+        />
       </div>
       )}
-
       {isWorkspaceTab('team') && (
-      <div id="agency-workspace-team" className="bg-white border border-gray-200 rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">Team Access</h2>
-        <p className="text-sm text-gray-600 mb-4">Invite agency members, then decide who can access this client workspace.</p>
-
-        <div className="grid grid-cols-1 xl:grid-cols-[1.15fr_0.85fr] gap-6 mb-6">
-          <div className="border rounded-xl p-4 bg-gray-50">
-            <div className="flex items-center justify-between gap-3 mb-4">
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900">Invite Agency Member</h3>
-                <p className="text-xs text-gray-600 mt-1">Invite people to the agency directory, then assign up to 5 collaborators to this client.</p>
-              </div>
-              <span className="text-xs rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-blue-700">
-                Client seats {seatUsage}/{seatLimit || 5}
-              </span>
-            </div>
-
-            <form onSubmit={inviteAgencyMember} className="grid grid-cols-1 md:grid-cols-[1fr_160px_auto] gap-3">
-              <input
-                type="email"
-                value={inviteEmail}
-                onChange={(event) => setInviteEmail(event.target.value)}
-                placeholder="teammate@client.com"
-                className="border rounded-lg px-3 py-2"
-                disabled={!canMutate || inviteSending}
-              />
-              <select
-                value={inviteRole}
-                onChange={(event) => setInviteRole(event.target.value)}
-                className="border rounded-lg px-3 py-2 bg-white"
-                disabled={!canMutate || inviteSending}
-              >
-                <option value="admin">Admin</option>
-                <option value="editor">Editor</option>
-                <option value="viewer">Viewer</option>
-              </select>
-              <button
-                type="submit"
-                disabled={!canMutate || inviteSending}
-                className="rounded-lg bg-blue-600 text-white px-4 py-2 disabled:opacity-50"
-              >
-                {inviteSending ? 'Sending...' : 'Invite'}
-              </button>
-            </form>
-          </div>
-
-          <div className="border rounded-xl p-4">
-            <h3 className="text-sm font-semibold text-gray-900">Agency Members</h3>
-            <div className="mt-3 space-y-2 max-h-48 overflow-auto pr-1">
-              {agencyMembers.length === 0 ? (
-                <p className="text-sm text-gray-500">No agency members yet.</p>
-              ) : (
-                agencyMembers.map((member) => (
-                  <div key={member.id} className="flex items-center justify-between border rounded-lg px-3 py-2">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{member.display_name || member.email}</p>
-                      <p className="text-xs text-gray-500">{member.email} - {member.role}</p>
-                    </div>
-                    <span className={`text-xs rounded-full px-2 py-1 border ${member.status === 'active' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>
-                      {member.status}
-                    </span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-          {availableMembers.map((member) => (
-            <label key={member.id} className="flex items-center gap-2 border rounded-lg px-3 py-2">
-              <input
-                type="checkbox"
-                checked={selectedMap.has(member.id)}
-                onChange={(e) => {
-                  setSelectedMemberIds((prev) => {
-                    if (e.target.checked) {
-                      if (prev.includes(member.id)) {
-                        return prev;
-                      }
-                      if (prev.length >= seatLimit) {
-                        toast.error(`This client can have up to ${seatLimit} assigned members.`);
-                        return prev;
-                      }
-                      return [...new Set([...prev, member.id])];
-                    }
-                    return prev.filter((id) => id !== member.id);
-                  });
-                }}
-                disabled={!canMutate}
-              />
-              <span className="text-sm">{member.display_name || member.email} <span className="text-gray-500">({member.role})</span></span>
-            </label>
-          ))}
-        </div>
-        <button onClick={saveAssignments} disabled={!canMutate} className="mt-4 rounded-lg bg-blue-600 text-white px-4 py-2 disabled:opacity-50">Save Access Matrix</button>
-      </div>
+        <AgencyWorkspaceTeamTab
+          canMutate={canMutate}
+          inviteSending={inviteSending}
+          inviteEmail={inviteEmail}
+          setInviteEmail={setInviteEmail}
+          inviteRole={inviteRole}
+          setInviteRole={setInviteRole}
+          inviteAgencyMember={inviteAgencyMember}
+          agencyMembers={agencyMembers}
+          seatUsage={seatUsage}
+          seatLimit={seatLimit}
+          availableMembers={availableMembers}
+          selectedMap={selectedMap}
+          setSelectedMemberIds={setSelectedMemberIds}
+          saveAssignments={saveAssignments}
+        />
       )}
-
       {isWorkspaceTab('connections') && (
-      <div id="agency-workspace-connections" className="bg-white border border-gray-200 rounded-xl p-6">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">Connections</h2>
-            <p className="text-sm text-gray-600">Connect the client's channels here, audit token health and scopes, then add those shared profiles into this workspace for compose, scheduling, calendar, and analytics.</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => loadData()}
-            className="inline-flex items-center gap-2 text-sm border rounded-lg px-3 py-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Refresh connections
-          </button>
-        </div>
-
-        {!teamPermissions?.team_id && (
-          <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4">
-            <p className="text-sm font-medium text-amber-900">Preparing shared connections for this agency</p>
-            <p className="mt-1 text-sm text-amber-800">
-              SuiteGenie is setting up the shared connections layer used behind Agency. If this banner stays visible after a refresh, restart the platform server once.
-            </p>
-          </div>
-        )}
-
-        <div className="mt-5 rounded-xl border border-blue-100 bg-blue-50/60 p-4">
-          <p className="text-sm font-medium text-blue-900">OAuth audit trail</p>
-          <p className="mt-1 text-sm text-blue-800">Each connection now shows platform identity, token health, last sync, granted permissions, and a reconnect path before you attach it to this client workspace.</p>
-        </div>
-
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-5">
-          {WORKSPACE_CONNECTION_PLATFORMS.map((platform) => {
-            const attachedForPlatform = attachedAccountsByPlatform[platform.key] || [];
-            const availableForPlatform = availableAccountsByPlatform[platform.key] || [];
-            const isConnecting = connectingPlatform === platform.key;
-            const providerLabel = ['threads', 'instagram'].includes(platform.key)
-              ? 'Meta OAuth shared connection'
-              : platform.key === 'youtube'
-                ? 'Google OAuth shared connection'
-                : 'Shared team OAuth connection';
-            const connectLabel = platform.key === 'threads'
-              ? 'Connect Threads'
-              : platform.key === 'instagram'
-                ? 'Connect Instagram'
-                : platform.key === 'youtube'
-                  ? 'Connect YouTube'
-                  : `Connect ${platform.label}`;
-
-            return (
-              <div key={platform.key} className="border rounded-2xl p-5 bg-white">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3">
-                    <div className={`h-12 w-12 rounded-2xl border flex items-center justify-center text-sm font-semibold ${platform.theme}`}>
-                      {platform.badge}
-                    </div>
-                    <div>
-                      <h3 className="text-base font-semibold text-gray-900">{platform.label}</h3>
-                      <p className="mt-1 text-sm text-gray-600">{platform.description}</p>
-                      <p className="mt-2 text-xs font-medium text-gray-500">{providerLabel}</p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => connectWorkspacePlatform(platform.key)}
-                    disabled={!canMutate || isConnecting}
-                    className="rounded-lg bg-blue-600 text-white px-3 py-2 text-sm disabled:opacity-50"
-                  >
-                    {isConnecting ? 'Connecting...' : connectLabel}
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 mt-4">
-                  <div className="rounded-xl border bg-gray-50 px-4 py-3">
-                    <p className="text-xs uppercase tracking-wide text-gray-500">In Workspace</p>
-                    <p className="mt-2 text-2xl font-semibold text-gray-900">{formatMetric(attachedForPlatform.length)}</p>
-                  </div>
-                  <div className="rounded-xl border bg-gray-50 px-4 py-3">
-                    <p className="text-xs uppercase tracking-wide text-gray-500">Ready To Add</p>
-                    <p className="mt-2 text-2xl font-semibold text-gray-900">{formatMetric(availableForPlatform.length)}</p>
-                  </div>
-                </div>
-
-                <div className="mt-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Connected in this workspace</p>
-                  <div className="mt-2 space-y-2">
-                    {attachedForPlatform.length === 0 ? (
-                      <div className="rounded-xl border border-dashed border-gray-200 px-4 py-4 text-sm text-gray-500">
-                        <p>No {platform.label} account added to this workspace yet.</p>
-                        <p className="mt-1 text-xs text-gray-500">Connect one first, then attach it here for compose, queue, calendar, and analytics.</p>
-                      </div>
-                    ) : (
-                      attachedForPlatform.map((account) => (
-                        renderConnectionAccountCard({
-                          account,
-                          platformKey: platform.key,
-                          variant: 'attached',
-                          primaryActionLabel: 'Remove',
-                          onPrimaryAction: () => detachAccount(account.id),
-                          secondaryActionLabel: 'Reconnect',
-                          onSecondaryAction: () => connectWorkspacePlatform(platform.key),
-                        })
-                      ))
-                    )}
-                  </div>
-                </div>
-
-                <div className="mt-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Existing shared connections</p>
-                  <div className="mt-2 space-y-2">
-                    {availableForPlatform.length === 0 ? (
-                      <div className="rounded-xl border border-dashed border-gray-200 px-4 py-4 text-sm text-gray-500">
-                        <p>No shared {platform.label} connections waiting to be added.</p>
-                        <p className="mt-1 text-xs text-gray-500">
-                          {platform.key === 'threads' || platform.key === 'instagram'
-                            ? `Use ${connectLabel} to start the Meta OAuth flow for this agency team.`
-                            : `Use ${connectLabel} to create a new shared team connection.`}
-                        </p>
-                      </div>
-                    ) : (
-                      availableForPlatform.map((account) => (
-                        renderConnectionAccountCard({
-                          account,
-                          platformKey: platform.key,
-                          variant: 'available',
-                          primaryActionLabel: 'Add To Workspace',
-                          onPrimaryAction: () => attachAccount(account),
-                          secondaryActionLabel: 'Reconnect',
-                          onSecondaryAction: () => connectWorkspacePlatform(platform.key),
-                        })
-                      ))
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-4 mt-5">
-          <p className="text-sm font-medium text-blue-900">Agency-safe connection rule</p>
-          <p className="mt-1 text-sm text-blue-800">
-            Personal Pro-mode profiles are intentionally hidden from Agency workspaces. Only shared team-scope connections can be added here, which keeps this client's workspace separated from personal publishing.
-          </p>
-        </div>
-      </div>
+        <AgencyWorkspaceConnectionsTab
+          canMutate={canMutate}
+          teamPermissions={teamPermissions}
+          loadData={loadData}
+          availableAccountsByPlatform={availableAccountsByPlatform}
+          attachedAccountsByPlatform={attachedAccountsByPlatform}
+          connectingPlatform={connectingPlatform}
+          connectWorkspacePlatform={connectWorkspacePlatform}
+          detachAccount={detachAccount}
+          attachAccount={attachAccount}
+          formatMetric={formatMetric}
+        />
       )}
-
       {showLinkedInSelection && linkedInSelectionData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl">
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
-              <h3 className="flex items-center gap-2 text-lg font-semibold text-white">
-                <Linkedin className="h-5 w-5" />
-                Select LinkedIn Account
-              </h3>
-              <p className="mt-1 text-sm text-blue-100">
-                Choose which LinkedIn profile or page should become a shared team connection.
-              </p>
-            </div>
-
-            <div className="space-y-4 p-6">
-              {!linkedInSelectionData.personalConnected && (
-                <button
-                  type="button"
-                  onClick={() => handleLinkedInSelection('personal')}
-                  disabled={selectingLinkedInAccount}
-                  className="flex w-full items-center gap-4 rounded-xl border-2 border-gray-200 p-4 text-left transition hover:border-blue-500 hover:bg-blue-50 disabled:opacity-50"
-                >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
-                    <User className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="font-semibold text-gray-900">Personal Profile</div>
-                    <div className="truncate text-sm text-gray-500">
-                      {linkedInSelectionData.userName || 'Use the connected LinkedIn profile'}
-                    </div>
-                  </div>
-                </button>
-              )}
-
-              {linkedInSelectionData.personalConnected && (
-                <div className="flex items-center gap-3 rounded-xl bg-gray-100 p-4 text-sm text-gray-600">
-                  <User className="h-5 w-5" />
-                  Personal profile already connected for this team.
-                </div>
-              )}
-
-              <div className="border-t pt-4">
-                <div className="mb-3 flex items-center gap-2 text-sm font-medium text-gray-500">
-                  <Building2 className="h-4 w-4" />
-                  Organization Pages
-                </div>
-
-                <div className="space-y-2">
-                  {linkedInSelectionData.organizations.map((organization) => (
-                    <button
-                      key={organization.id}
-                      type="button"
-                      onClick={() => handleLinkedInSelection('organization', organization.id)}
-                      disabled={selectingLinkedInAccount}
-                      className="flex w-full items-center gap-4 rounded-xl border-2 border-gray-200 p-4 text-left transition hover:border-blue-500 hover:bg-blue-50 disabled:opacity-50"
-                    >
-                      {organization.logo ? (
-                        <img
-                          src={organization.logo}
-                          alt={organization.name}
-                          className="h-12 w-12 rounded-lg object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-200">
-                          <Building2 className="h-6 w-6 text-gray-400" />
-                        </div>
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <div className="font-semibold text-gray-900">{organization.name}</div>
-                        <div className="text-sm text-gray-500">LinkedIn organization page</div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end border-t bg-gray-50 px-6 py-4">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowLinkedInSelection(false);
-                  setLinkedInSelectionData(null);
-                }}
-                disabled={selectingLinkedInAccount}
-                className="rounded-lg px-4 py-2 text-sm text-gray-600 transition hover:text-gray-900 disabled:opacity-50"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
+        <AgencyLinkedInSelectionModal
+          linkedInSelectionData={linkedInSelectionData}
+          selectingLinkedInAccount={selectingLinkedInAccount}
+          handleLinkedInSelection={handleLinkedInSelection}
+          setShowLinkedInSelection={setShowLinkedInSelection}
+          setLinkedInSelectionData={setLinkedInSelectionData}
+        />
       )}
-
         </div>
       </div>
     </div>
@@ -4649,4 +3324,8 @@ const AgencyWorkspacePage = () => {
 };
 
 export default AgencyWorkspacePage;
+
+
+
+
 

@@ -45,6 +45,7 @@ const migrations = [
         name VARCHAR(255) NOT NULL,
         plan_type VARCHAR(50) DEFAULT 'free' CHECK (plan_type IN ('free', 'pro', 'enterprise')),
         credits_remaining NUMERIC(10,2) DEFAULT 0,
+        trial_ends_at TIMESTAMP,
         notification_email_enabled BOOLEAN DEFAULT true,
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
@@ -63,6 +64,7 @@ const migrations = [
         user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         type VARCHAR(50) NOT NULL CHECK (type IN ('purchase', 'usage', 'refund', 'bonus')),
         credits_amount NUMERIC(10,2) NOT NULL,
+        team_id UUID,
         cost_in_rupees DECIMAL(10,2),
         razorpay_order_id VARCHAR(255),
         razorpay_payment_id VARCHAR(255),
@@ -73,6 +75,7 @@ const migrations = [
       );
       
       CREATE INDEX IF NOT EXISTS idx_credit_transactions_user_type ON credit_transactions(user_id, type);
+      CREATE INDEX IF NOT EXISTS idx_credit_transactions_team_id ON credit_transactions(team_id);
       CREATE INDEX IF NOT EXISTS idx_credit_transactions_created_at ON credit_transactions(created_at);
       CREATE INDEX IF NOT EXISTS idx_credit_transactions_service ON credit_transactions(service_name);
     `
@@ -566,6 +569,60 @@ const migrations = [
 
       CREATE INDEX IF NOT EXISTS idx_agency_workspace_drafts_reviewed_at
         ON agency_workspace_drafts(reviewed_at);
+    `
+  },
+  {
+    version: 24,
+    name: 'add_team_id_to_credit_transactions',
+    sql: `
+      ALTER TABLE credit_transactions
+        ADD COLUMN IF NOT EXISTS team_id UUID REFERENCES teams(id) ON DELETE SET NULL;
+
+      CREATE INDEX IF NOT EXISTS idx_credit_transactions_team_id
+        ON credit_transactions(team_id);
+    `
+  },
+  {
+    version: 25,
+    name: 'add_trial_ends_at_to_users',
+    sql: `
+      ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMP;
+
+      CREATE INDEX IF NOT EXISTS idx_users_trial_ends_at
+        ON users(trial_ends_at);
+    `
+  },
+  {
+    version: 26,
+    name: 'agency_client_onboarding_links',
+    sql: `
+      CREATE TABLE IF NOT EXISTS agency_client_onboarding (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        workspace_id UUID NOT NULL REFERENCES agency_workspaces(id) ON DELETE CASCADE,
+        agency_id UUID NOT NULL REFERENCES agency_accounts(id) ON DELETE CASCADE,
+        client_email VARCHAR(255),
+        client_name VARCHAR(255),
+        token VARCHAR(255) NOT NULL UNIQUE,
+        expires_at TIMESTAMP NOT NULL,
+        status VARCHAR(20) NOT NULL DEFAULT 'pending'
+          CHECK (status IN ('pending', 'completed', 'expired', 'revoked')),
+        allowed_platforms TEXT[] NOT NULL DEFAULT ARRAY['twitter','linkedin'],
+        max_accounts INTEGER NOT NULL DEFAULT 8,
+        accounts_connected INTEGER NOT NULL DEFAULT 0,
+        created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+        completed_at TIMESTAMP,
+        metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_agency_client_onboarding_token
+        ON agency_client_onboarding(token);
+      CREATE INDEX IF NOT EXISTS idx_agency_client_onboarding_workspace
+        ON agency_client_onboarding(workspace_id);
+      CREATE INDEX IF NOT EXISTS idx_agency_client_onboarding_agency
+        ON agency_client_onboarding(agency_id);
     `
   }
 ];

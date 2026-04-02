@@ -3,6 +3,13 @@ import jwt from 'jsonwebtoken';
 import { pool, query } from '../config/database.js';
 import EmailService from '../services/emailService.js';
 import { ensureAgencySchemaReady } from '../utils/agencySchema.js';
+import { createAgencyClientOnboardingController } from './agencyClientOnboardingController.js';
+import {
+  buildAnalysisContentCorpus,
+  buildPlatformAnalysisCard,
+  buildWorkspaceIdeaBank,
+  extractTopThemesFromContents,
+} from './agencyAnalysisHelpers.js';
 import {
   assertAgencyDraftApproverRole,
   assertAgencyDraftWriteRole,
@@ -37,6 +44,25 @@ const ANALYSIS_THEME_STOP_WORDS = new Set([
   'pending', 'scheduled', 'published', 'failed', 'social', 'instagram', 'youtube',
 ]);
 const ANALYSIS_THEME_ALLOWLIST = new Set(['ai', 'ux', 'ui', 'api', 'b2b', 'b2c', 'seo', 'saas']);
+const AUTO_CONTEXT_AUDIENCE_HINTS = [
+  'founders',
+  'marketers',
+  'developers',
+  'designers',
+  'creators',
+  'agencies',
+  'agency teams',
+  'recruiters',
+  'operators',
+  'sales teams',
+  'b2b teams',
+  'product teams',
+  'small businesses',
+  'startup teams',
+  'ecommerce brands',
+  'consultants',
+  'coaches',
+];
 
 const TOOL_FRONTEND_HOST_BY_KEY = Object.freeze({
   twitter: 'tweet.suitegenie.in',
@@ -364,7 +390,7 @@ function isAgencyAllowedAccountSourceType(value) {
 
 async function listAgencyEligibleWorkspaceAccounts(workspaceId, { workspaceAccountIds = [] } = {}) {
   const selectedIds = normalizeWorkspaceAccountIds(workspaceAccountIds);
-  const result = await query(
+  const rows = await safeQuery(
     `SELECT
        awa.id,
        awa.workspace_id,
@@ -401,11 +427,11 @@ async function listAgencyEligibleWorkspaceAccounts(workspaceId, { workspaceAccou
     [workspaceId, selectedIds.length > 0, selectedIds]
   );
 
-  return result.rows || [];
+  return rows || [];
 }
 
 async function countAgencyEligibleWorkspaceAccounts(workspaceId) {
-  const result = await query(
+  const rows = await safeQuery(
     `SELECT COUNT(*)::int AS count
      FROM agency_workspace_accounts awa
      ${AGENCY_WORKSPACE_ACCOUNT_JOINS_SQL}
@@ -415,7 +441,7 @@ async function countAgencyEligibleWorkspaceAccounts(workspaceId) {
     [workspaceId]
   );
 
-  return Number(result.rows[0]?.count || 0);
+  return Number(rows[0]?.count || 0);
 }
 
 async function findAgencyAttachableAccount(userId, { sourceType, sourceId }) {
@@ -426,7 +452,7 @@ async function findAgencyAttachableAccount(userId, { sourceType, sourceId }) {
   }
 
   if (normalizedSourceType === 'social_connected_accounts') {
-    const result = await query(
+    const rows = await safeQuery(
       `SELECT
          sca.id::text AS source_id,
          sca.platform,
@@ -451,11 +477,11 @@ async function findAgencyAttachableAccount(userId, { sourceType, sourceId }) {
        LIMIT 1`,
       [userId, normalizedSourceId]
     );
-    return result.rows[0] || null;
+    return rows[0] || null;
   }
 
   if (normalizedSourceType === 'team_accounts') {
-    const result = await query(
+    const rows = await safeQuery(
       `SELECT
          ta.id::text AS source_id,
          'twitter' AS platform,
@@ -474,11 +500,11 @@ async function findAgencyAttachableAccount(userId, { sourceType, sourceId }) {
        LIMIT 1`,
       [userId, normalizedSourceId]
     );
-    return result.rows[0] || null;
+    return rows[0] || null;
   }
 
   if (normalizedSourceType === 'linkedin_team_accounts') {
-    const result = await query(
+    const rows = await safeQuery(
       `SELECT
          lta.id::text AS source_id,
          'linkedin' AS platform,
@@ -498,7 +524,7 @@ async function findAgencyAttachableAccount(userId, { sourceType, sourceId }) {
        LIMIT 1`,
       [userId, normalizedSourceId]
     );
-    return result.rows[0] || null;
+    return rows[0] || null;
   }
 
   return null;
@@ -568,7 +594,7 @@ function resolveAgencyAccountIdentityKey(account = {}) {
 }
 
 async function listAgencyAssignedWorkspaceAccounts(agencyId) {
-  const result = await query(
+  const rows = await safeQuery(
     `SELECT
        awa.*,
        aw.name AS workspace_name,
@@ -583,7 +609,7 @@ async function listAgencyAssignedWorkspaceAccounts(agencyId) {
     [agencyId]
   );
 
-  return result.rows || [];
+  return rows || [];
 }
 
 function findAgencyWorkspaceAccountAssignment(assignedAccounts = [], candidate = {}) {
@@ -1258,6 +1284,532 @@ function buildWorkspaceAiContextBlock({ workspace, settings, style = null }) {
   return lines.length > 0 ? `Client context:\n${lines.map((line) => `- ${line}`).join('\n')}` : null;
 }
 
+async function safeSchemaQuery(text, params = []) {
+  try {
+    const result = await query(text, params);
+    return result.rows || [];
+  } catch (error) {
+    if (isRelationMissing(error) || error?.code === '42703') return [];
+    throw error;
+  }
+}
+
+function dedupeCaseInsensitiveStrings(items = [], maxItems = 10) {
+  const values = [];
+  const seen = new Set();
+
+  for (const item of Array.isArray(items) ? items : []) {
+    const normalized = cleanText(item, null);
+    if (!normalized) continue;
+    const key = normalized.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    values.push(normalized);
+    if (values.length >= maxItems) break;
+  }
+
+  return values;
+}
+
+function titleCasePhrase(value = '') {
+  return String(value || '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => (ANALYSIS_THEME_ALLOWLIST.has(part.toLowerCase()) ? part.toUpperCase() : `${part.charAt(0).toUpperCase()}${part.slice(1)}`))
+    .join(' ');
+}
+
+function normalizeAudienceSnippet(value = '') {
+  const normalized = cleanText(
+    String(value || '')
+      .replace(/^[\s:,-]+/, '')
+      .replace(/[|.;]+.*$/, '')
+      .trim(),
+    null
+  );
+
+  if (!normalized) return null;
+
+  const compact = normalized
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 90);
+
+  return compact.length >= 4 ? compact : null;
+}
+
+function extractAudienceFromSignals(signalTexts = [], industry = null) {
+  const patternCandidates = [
+    /\b(?:for|help(?:ing)?|serving|supporting|teaching)\s+([a-z0-9/&,+\-\s]{4,80})/i,
+    /\b(?:audience|community|customers?|clients?)\s*[:\-]\s*([a-z0-9/&,+\-\s]{4,80})/i,
+  ];
+
+  for (const rawText of Array.isArray(signalTexts) ? signalTexts : []) {
+    const text = String(rawText || '').replace(/\s+/g, ' ').trim();
+    if (!text) continue;
+
+    for (const pattern of patternCandidates) {
+      const match = text.match(pattern);
+      const candidate = normalizeAudienceSnippet(match?.[1] || '');
+      if (!candidate) continue;
+      return candidate;
+    }
+
+    const lower = text.toLowerCase();
+    const explicitHint = AUTO_CONTEXT_AUDIENCE_HINTS.find((hint) => lower.includes(hint));
+    if (explicitHint) return explicitHint;
+  }
+
+  if (industry) {
+    return `Prospects, peers, and customers interested in ${industry}`;
+  }
+
+  return null;
+}
+
+function extractCompetitorCandidatesFromCorpus(contents = [], { workspace, workspaceAccounts = [] } = {}) {
+  const ownTokens = new Set();
+  const addOwnToken = (value) => {
+    const normalized = String(value || '').trim().toLowerCase();
+    if (!normalized) return;
+    ownTokens.add(normalized.replace(/^@/, ''));
+    ownTokens.add(normalized.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/+$/, ''));
+  };
+
+  addOwnToken(workspace?.name);
+  addOwnToken(workspace?.brand_name);
+  for (const account of Array.isArray(workspaceAccounts) ? workspaceAccounts : []) {
+    addOwnToken(account?.account_username);
+    addOwnToken(account?.account_display_name);
+    addOwnToken(account?.account_id);
+    const metadata = parseMetadataObject(account?.metadata);
+    addOwnToken(metadata?.organization_name);
+  }
+
+  const counts = new Map();
+  const addCandidate = (rawValue, score = 1) => {
+    const value = cleanText(rawValue, null);
+    if (!value) return;
+    const normalized = value.toLowerCase().replace(/^@/, '');
+    if (!normalized || ownTokens.has(normalized)) return;
+    if (normalized === 'twitter' || normalized === 'linkedin' || normalized === 'instagram') return;
+    counts.set(value, (counts.get(value) || 0) + score);
+  };
+
+  for (const rawContent of Array.isArray(contents) ? contents : []) {
+    const content = String(rawContent || '');
+    if (!content) continue;
+
+    for (const match of content.matchAll(/(^|[\s(])@([a-z0-9_]{2,30})\b/gi)) {
+      addCandidate(`@${String(match[2] || '').toLowerCase()}`, 3);
+    }
+
+    for (const match of content.matchAll(/(?:twitter|x)\.com\/([a-z0-9_]{2,30})/gi)) {
+      addCandidate(`@${String(match[1] || '').toLowerCase()}`, 2);
+    }
+
+    for (const match of content.matchAll(/linkedin\.com\/(?:company|in)\/([a-z0-9-]{2,80})/gi)) {
+      addCandidate(`linkedin.com/${String(match[1] || '').toLowerCase()}`, 2);
+    }
+  }
+
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, 5)
+    .map(([value]) => value);
+}
+
+async function collectWorkspaceAccountSignals(workspaceAccounts = []) {
+  const accounts = Array.isArray(workspaceAccounts) ? workspaceAccounts : [];
+  const twitterSourceIds = new Set();
+  const linkedinSourceIds = new Set();
+
+  for (const account of accounts) {
+    const metadata = parseMetadataObject(account?.metadata);
+    const metadataSourceTable = cleanText(metadata?.source_table, '')?.toLowerCase() || '';
+    const metadataSourceId = cleanText(metadata?.source_id, null) || cleanText(metadata?.legacy_row_id, null);
+    const sourceType = cleanText(account?.source_type, '')?.toLowerCase() || '';
+
+    if (sourceType === 'team_accounts') {
+      const sourceId = cleanText(account?.source_id, null);
+      if (sourceId) twitterSourceIds.add(sourceId);
+    } else if (sourceType === 'linkedin_team_accounts') {
+      const sourceId = cleanText(account?.source_id, null);
+      if (sourceId) linkedinSourceIds.add(sourceId);
+    } else if (metadataSourceId && metadataSourceTable === 'team_accounts') {
+      twitterSourceIds.add(metadataSourceId);
+    } else if (metadataSourceId && metadataSourceTable === 'linkedin_team_accounts') {
+      linkedinSourceIds.add(metadataSourceId);
+    }
+  }
+
+  const [twitterRows, linkedinRows] = await Promise.all([
+    twitterSourceIds.size > 0
+      ? safeSchemaQuery(
+          `SELECT
+             id::text AS id,
+             twitter_username,
+             twitter_display_name,
+             bio,
+             website_url,
+             followers_count
+           FROM team_accounts
+           WHERE id::text = ANY($1::text[])`,
+          [[...twitterSourceIds]]
+        )
+      : Promise.resolve([]),
+    linkedinSourceIds.size > 0
+      ? safeSchemaQuery(
+          `SELECT
+             id::text AS id,
+             linkedin_username,
+             linkedin_display_name,
+             headline,
+             connections_count,
+             account_type,
+             organization_name
+           FROM linkedin_team_accounts
+           WHERE id::text = ANY($1::text[])`,
+          [[...linkedinSourceIds]]
+        )
+      : Promise.resolve([]),
+  ]);
+
+  const twitterById = new Map(twitterRows.map((row) => [String(row.id), row]));
+  const linkedinById = new Map(linkedinRows.map((row) => [String(row.id), row]));
+
+  return accounts.map((account) => {
+    const metadata = parseMetadataObject(account?.metadata);
+    const sourceType = cleanText(account?.source_type, '')?.toLowerCase() || '';
+    const metadataSourceTable = cleanText(metadata?.source_table, '')?.toLowerCase() || '';
+    const metadataSourceId = cleanText(metadata?.source_id, null) || cleanText(metadata?.legacy_row_id, null);
+
+    const twitterRow =
+      (sourceType === 'team_accounts' && twitterById.get(String(account?.source_id || ''))) ||
+      (metadataSourceTable === 'team_accounts' && metadataSourceId ? twitterById.get(metadataSourceId) : null) ||
+      null;
+    const linkedinRow =
+      (sourceType === 'linkedin_team_accounts' && linkedinById.get(String(account?.source_id || ''))) ||
+      (metadataSourceTable === 'linkedin_team_accounts' && metadataSourceId ? linkedinById.get(metadataSourceId) : null) ||
+      null;
+
+    return {
+      platform: normalizeWorkspacePlatform(account?.platform),
+      displayName:
+        cleanText(account?.account_display_name, null) ||
+        cleanText(linkedinRow?.organization_name, null) ||
+        cleanText(twitterRow?.twitter_display_name, null),
+      username:
+        cleanText(account?.account_username, null) ||
+        cleanText(linkedinRow?.linkedin_username, null) ||
+        cleanText(twitterRow?.twitter_username, null),
+      bio: cleanText(twitterRow?.bio, null),
+      websiteUrl: cleanText(twitterRow?.website_url, null),
+      headline:
+        cleanText(linkedinRow?.headline, null) ||
+        cleanText(metadata?.profile_headline, null) ||
+        cleanText(metadata?.headline, null),
+      organizationName:
+        cleanText(linkedinRow?.organization_name, null) ||
+        cleanText(metadata?.organization_name, null),
+      accountType:
+        cleanText(linkedinRow?.account_type, null) ||
+        cleanText(metadata?.account_type, null),
+      followersCount:
+        Number(linkedinRow?.connections_count || twitterRow?.followers_count || metadata?.followers_count || 0) || 0,
+    };
+  });
+}
+
+function resolveWorkspaceAnalysisTargetAccountId(account = {}) {
+  const metadata = parseMetadataObject(account?.metadata);
+  const sourceType = cleanText(account?.source_type, '')?.toLowerCase() || '';
+  const metadataSourceTable = cleanText(metadata?.source_table, '')?.toLowerCase() || '';
+  const metadataSourceId = cleanText(metadata?.source_id, null) || cleanText(metadata?.legacy_row_id, null);
+
+  if (sourceType === 'team_accounts' || sourceType === 'linkedin_team_accounts') {
+    return cleanText(account?.source_id, null);
+  }
+
+  if (sourceType === 'social_connected_accounts') {
+    if (metadataSourceTable === 'team_accounts' || metadataSourceTable === 'linkedin_team_accounts') {
+      return metadataSourceId;
+    }
+    return cleanText(account?.source_id, null) || cleanText(account?.account_id, null);
+  }
+
+  return cleanText(account?.source_id, null) || metadataSourceId || cleanText(account?.account_id, null);
+}
+
+async function fetchWorkspaceRemoteAnalysisContexts({ userId, workspaceAccounts = [] } = {}) {
+  const contexts = [];
+  const seen = new Set();
+
+  for (const account of Array.isArray(workspaceAccounts) ? workspaceAccounts : []) {
+    const platform = normalizeWorkspacePlatform(account?.platform);
+    if (!['twitter', 'linkedin'].includes(platform)) continue;
+
+    const targetAccountId = resolveWorkspaceAnalysisTargetAccountId(account);
+    const teamId = resolveAccountTeamId(account);
+    const dedupeKey = `${platform}:${targetAccountId || resolveAgencyAccountSourceKey(account) || resolveAgencyAccountIdentityKey(account) || account?.id || ''}`;
+    if (!dedupeKey || seen.has(dedupeKey)) continue;
+    seen.add(dedupeKey);
+
+    try {
+      const payload = await invokeInternalToolEndpoint({
+        tool: platform,
+        path: platform === 'twitter'
+          ? '/api/internal/twitter/analysis-context'
+          : '/api/internal/analysis-context',
+        userId,
+        teamId,
+        body: targetAccountId ? { targetAccountId } : {},
+      });
+
+      contexts.push({
+        platform,
+        account,
+        targetAccountId,
+        payload,
+      });
+    } catch (error) {
+      contexts.push({
+        platform,
+        account,
+        targetAccountId,
+        error: error?.message || String(error),
+      });
+    }
+  }
+
+  return contexts;
+}
+
+async function buildWorkspaceDerivedContext({
+  workspace,
+  userId,
+  settings,
+  workspaceAccounts = [],
+  operationsSnapshot = null,
+} = {}) {
+  const accountSignals = await collectWorkspaceAccountSignals(workspaceAccounts);
+  const remoteAnalysisContexts = userId
+    ? await fetchWorkspaceRemoteAnalysisContexts({ userId, workspaceAccounts })
+    : [];
+  const corpusItems = [
+    ...(Array.isArray(operationsSnapshot?.queue) ? operationsSnapshot.queue : []),
+    ...(Array.isArray(operationsSnapshot?.calendar) ? operationsSnapshot.calendar : []),
+  ];
+  const contentCorpus = buildAnalysisContentCorpus(corpusItems);
+  const contentThemes = extractTopThemesFromContents(contentCorpus, {
+    workspace,
+    settings,
+    limit: 8,
+    normalizeWorkspacePostingPreferences,
+  });
+
+  const signalTexts = accountSignals.flatMap((signal) => ([
+    signal?.bio,
+    signal?.headline,
+    signal?.organizationName,
+    signal?.websiteUrl,
+  ].filter(Boolean)));
+  const remoteAnalysisTopics = remoteAnalysisContexts.flatMap((entry) => {
+    const payload = entry?.payload && typeof entry.payload === 'object' ? entry.payload : {};
+    const analysis = payload?.analysis && typeof payload.analysis === 'object' ? payload.analysis : {};
+    const discoveries = payload?.discoveries && typeof payload.discoveries === 'object' ? payload.discoveries : {};
+    return [
+      ...(Array.isArray(analysis?.top_topics) ? analysis.top_topics : []),
+      ...(Array.isArray(discoveries?.topTopics) ? discoveries.topTopics : []),
+      ...(Array.isArray(discoveries?.themes) ? discoveries.themes : []),
+    ];
+  });
+  const profileThemes = extractTopThemesFromContents(signalTexts, {
+    workspace,
+    settings,
+    limit: 6,
+    normalizeWorkspacePostingPreferences,
+  });
+  const topThemes = dedupeCaseInsensitiveStrings([...remoteAnalysisTopics, ...contentThemes, ...profileThemes], 8);
+  const remoteNiche = dedupeCaseInsensitiveStrings(
+    remoteAnalysisContexts.map((entry) => entry?.payload?.analysis?.niche).filter(Boolean),
+    2
+  )[0] || null;
+  const remoteAudience = dedupeCaseInsensitiveStrings(
+    remoteAnalysisContexts.map((entry) => entry?.payload?.analysis?.audience).filter(Boolean),
+    2
+  )[0] || null;
+  const industry = remoteNiche || (
+    topThemes.length > 0
+      ? topThemes.slice(0, Math.min(3, topThemes.length)).map((item) => titleCasePhrase(item)).join(' / ')
+      : null
+  );
+  const audience = remoteAudience || extractAudienceFromSignals(signalTexts, industry);
+  const competitorTargets = dedupeCaseInsensitiveStrings([
+    ...remoteAnalysisContexts.flatMap((entry) => {
+      const payload = entry?.payload && typeof entry.payload === 'object' ? entry.payload : {};
+      const discoveries = payload?.discoveries && typeof payload.discoveries === 'object' ? payload.discoveries : {};
+      const references = Array.isArray(discoveries?.competitorReferences) ? discoveries.competitorReferences : [];
+      return [
+        ...(Array.isArray(discoveries?.competitorCandidates) ? discoveries.competitorCandidates : []),
+        ...references.map((item) => item?.handle || item?.label || null).filter(Boolean),
+      ];
+    }),
+    ...extractCompetitorCandidatesFromCorpus(contentCorpus, {
+      workspace,
+      workspaceAccounts,
+    }),
+  ], 5);
+
+  const remoteStrengthSignals = remoteAnalysisContexts.flatMap((entry) => {
+    const discoveries = entry?.payload?.discoveries && typeof entry.payload.discoveries === 'object'
+      ? entry.payload.discoveries
+      : {};
+    return [
+      ...(Array.isArray(discoveries?.strengths) ? discoveries.strengths : []),
+      ...(Array.isArray(discoveries?.opportunities) ? discoveries.opportunities : []),
+      ...(Array.isArray(discoveries?.nextAngles) ? discoveries.nextAngles : []),
+    ];
+  });
+
+  const autoSummaryNotes = dedupeCaseInsensitiveStrings([
+    ...remoteStrengthSignals,
+    ...remoteAnalysisContexts.map((entry) => entry?.payload?.analysis?.confidence_reason).filter(Boolean),
+  ], 4);
+
+  const localCompetitorCandidates = extractCompetitorCandidatesFromCorpus(contentCorpus, {
+    workspace,
+    workspaceAccounts,
+  });
+
+  const noteFragments = [];
+  const bioSignals = dedupeCaseInsensitiveStrings(
+    accountSignals
+      .map((signal) => signal?.bio)
+      .filter(Boolean)
+      .map((bio) => String(bio).replace(/\s+/g, ' ').slice(0, 180)),
+    2
+  );
+  const headlineSignals = dedupeCaseInsensitiveStrings(
+    accountSignals
+      .map((signal) => signal?.headline || signal?.organizationName)
+      .filter(Boolean)
+      .map((value) => String(value).replace(/\s+/g, ' ').slice(0, 140)),
+    2
+  );
+
+  if (headlineSignals.length > 0) {
+    noteFragments.push(`Connected account signals: ${headlineSignals.join(' | ')}`);
+  }
+  if (bioSignals.length > 0) {
+    noteFragments.push(`Profile context: ${bioSignals.join(' | ')}`);
+  }
+  if (topThemes.length > 0) {
+    noteFragments.push(`Recurring themes already visible in this workspace: ${topThemes.slice(0, 5).join(', ')}`);
+  }
+  if (autoSummaryNotes.length > 0) {
+    noteFragments.push(`Platform analysis discoveries: ${autoSummaryNotes.join(' | ')}`);
+  }
+  if (localCompetitorCandidates.length > 0 && competitorTargets.length > 0) {
+    noteFragments.push(`Competitor/reference candidates surfaced from recent content: ${localCompetitorCandidates.slice(0, 3).join(', ')}`);
+  }
+
+  const profileNotes = noteFragments.length > 0 ? noteFragments.join('. ') : null;
+
+  return {
+    hasAny: Boolean(industry || audience || profileNotes || competitorTargets.length > 0 || topThemes.length > 0),
+    industry,
+    target_audience: audience,
+    brand_colors: [],
+    tone_presets: [],
+    competitor_targets: competitorTargets,
+    profile_notes: profileNotes,
+    top_themes: topThemes,
+    account_signals: accountSignals,
+    remote_analysis_contexts: remoteAnalysisContexts,
+  };
+}
+
+async function buildWorkspaceEffectiveSettings({
+  workspace,
+  userId,
+  persistedSettings = null,
+  workspaceAccounts = null,
+  operationsSnapshot = null,
+} = {}) {
+  const baseSettings = persistedSettings || await getWorkspaceSettings(workspace.id);
+  const resolvedWorkspaceAccounts = Array.isArray(workspaceAccounts)
+    ? workspaceAccounts
+    : await listAgencyEligibleWorkspaceAccounts(workspace.id);
+  const resolvedOperationsSnapshot = operationsSnapshot || await buildWorkspaceOperationsSnapshotData({
+    workspace,
+    userId,
+    limit: 50,
+    queueLimit: 60,
+  });
+
+  const postingPreferences = normalizeWorkspacePostingPreferences(baseSettings?.posting_preferences);
+  const hasMeaningfulContext = Boolean(
+    cleanText(baseSettings?.profile_notes, null) ||
+    normalizeStringArray(baseSettings?.competitor_targets, 25).length > 0 ||
+    postingPreferences.industry ||
+    postingPreferences.target_audience ||
+    postingPreferences.brand_colors.length > 0 ||
+    postingPreferences.tone_presets.length > 0
+  );
+
+  const derivedContext = await buildWorkspaceDerivedContext({
+    workspace,
+    userId,
+    settings: baseSettings,
+    workspaceAccounts: resolvedWorkspaceAccounts,
+    operationsSnapshot: resolvedOperationsSnapshot,
+  });
+
+  const shouldApplyDerivedDefaults = !hasMeaningfulContext && derivedContext.hasAny;
+  const effectivePostingPreferences = normalizeWorkspacePostingPreferences({
+    ...postingPreferences,
+    brand_colors: postingPreferences.brand_colors.length > 0
+      ? postingPreferences.brand_colors
+      : shouldApplyDerivedDefaults
+        ? derivedContext.brand_colors
+        : postingPreferences.brand_colors,
+    industry: postingPreferences.industry || (shouldApplyDerivedDefaults ? derivedContext.industry : null),
+    target_audience: postingPreferences.target_audience || (shouldApplyDerivedDefaults ? derivedContext.target_audience : null),
+    tone_presets: postingPreferences.tone_presets.length > 0
+      ? postingPreferences.tone_presets
+      : shouldApplyDerivedDefaults
+        ? derivedContext.tone_presets
+        : postingPreferences.tone_presets,
+  });
+
+  return {
+    ...baseSettings,
+    profile_notes: cleanText(baseSettings?.profile_notes, null) || (shouldApplyDerivedDefaults ? derivedContext.profile_notes : null),
+    competitor_targets: normalizeStringArray(baseSettings?.competitor_targets, 25).length > 0
+      ? normalizeStringArray(baseSettings.competitor_targets, 25)
+      : shouldApplyDerivedDefaults
+        ? derivedContext.competitor_targets
+        : [],
+    posting_preferences: effectivePostingPreferences,
+    detected_context: {
+      status: derivedContext.hasAny
+        ? shouldApplyDerivedDefaults
+          ? 'applied'
+          : 'available'
+        : 'unavailable',
+      fields: {
+        industry: derivedContext.industry,
+        target_audience: derivedContext.target_audience,
+        profile_notes: derivedContext.profile_notes,
+        competitor_targets: derivedContext.competitor_targets,
+        top_themes: derivedContext.top_themes,
+        remote_analysis_contexts: derivedContext.remote_analysis_contexts,
+      },
+    },
+  };
+}
+
 function computeBillingState(row = {}) {
   if (!row || !row.id) {
     return {
@@ -1822,292 +2374,40 @@ async function buildWorkspaceOperationsSnapshotData({
   };
 }
 
-function normalizeAnalysisToken(token) {
-  return String(token || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9+#@-]/g, '')
-    .trim();
-}
-
-function extractHashtags(text = '', limit = 10) {
-  const matches = String(text || '').match(/#[a-z0-9_]+/gi) || [];
-  return [...new Set(matches.map((item) => item.toLowerCase()))].slice(0, limit);
-}
-
-function buildAnalysisExcludedTerms({ workspace, settings }) {
-  const postingPreferences = normalizeWorkspacePostingPreferences(settings?.posting_preferences);
-  return new Set(
-    [
-      workspace?.name,
-      workspace?.brand_name,
-      postingPreferences.industry,
-      postingPreferences.target_audience,
-      ...(Array.isArray(settings?.competitor_targets) ? settings.competitor_targets : []),
-      ...(Array.isArray(postingPreferences.brand_colors) ? postingPreferences.brand_colors : []),
-      ...(Array.isArray(postingPreferences.tone_presets)
-        ? postingPreferences.tone_presets.map((preset) => preset?.name)
-        : []),
-    ]
-      .flatMap((value) => String(value || '').split(/[\s,/]+/))
-      .map((value) => normalizeAnalysisToken(value))
-      .filter(Boolean)
-  );
-}
-
-function extractTopThemesFromContents(contents = [], { workspace, settings, limit = 8 } = {}) {
-  const scores = new Map();
-  const excludedTerms = buildAnalysisExcludedTerms({ workspace, settings });
-
-  const addScore = (rawToken, score = 1) => {
-    const token = normalizeAnalysisToken(rawToken);
-    if (!token) return;
-    if (excludedTerms.has(token)) return;
-    if (ANALYSIS_THEME_STOP_WORDS.has(token)) return;
-    if (!ANALYSIS_THEME_ALLOWLIST.has(token) && token.length < 4) return;
-    scores.set(token, (scores.get(token) || 0) + score);
-  };
-
-  for (const content of Array.isArray(contents) ? contents : []) {
-    const normalizedContent = String(content || '').trim();
-    if (!normalizedContent) continue;
-
-    extractHashtags(normalizedContent, limit).forEach((tag) => addScore(tag.replace(/^#/, ''), 3));
-    normalizedContent
-      .replace(/https?:\/\/\S+/gi, ' ')
-      .split(/[^a-zA-Z0-9+#@-]+/)
-      .forEach((token) => addScore(token, 1));
-  }
-
-  return [...scores.entries()]
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-    .slice(0, limit)
-    .map(([token]) => token.replace(/^#/, ''));
-}
-
-function buildAnalysisContentCorpus(items = []) {
-  return (Array.isArray(items) ? items : [])
-    .map((item) => [item?.title, item?.content].filter(Boolean).join('. '))
-    .map((value) => String(value || '').trim())
-    .filter((value) => value.length >= 16);
-}
-
-function buildAnalysisHealthStatus({ connectedAccounts = 0, queueItems = 0, errors = [] }) {
-  if (connectedAccounts <= 0) return 'missing';
-  if (Array.isArray(errors) && errors.length > 0) return 'warning';
-  if (queueItems >= 8) return 'busy';
-  return 'ready';
-}
-
-function buildPlatformAnalysisCard({
-  platformKey,
-  label,
-  connectedAccounts = 0,
-  postedCount = 0,
-  engagementCount = 0,
-  queueItems = 0,
-  scheduledItems = 0,
-  pendingApprovals = 0,
-  sourceErrors = [],
-  contentItems = [],
-  workspace,
-  settings,
-} = {}) {
-  const themes = extractTopThemesFromContents(buildAnalysisContentCorpus(contentItems), {
-    workspace,
-    settings,
-    limit: 6,
-  });
-
-  const strengths = [];
-  const gaps = [];
-  const nextMoves = [];
-
-  if (connectedAccounts > 0) {
-    strengths.push(`${connectedAccounts} connected ${label.toLowerCase()} account${connectedAccounts === 1 ? '' : 's'} ready inside this workspace.`);
-  } else {
-    gaps.push(`No ${label.toLowerCase()} account is connected yet.`);
-  }
-
-  if (postedCount > 0) {
-    strengths.push(`${postedCount} recent post${postedCount === 1 ? '' : 's'} provide real performance signal.`);
-  } else if (connectedAccounts > 0) {
-    gaps.push(`No recent posted volume detected for ${label.toLowerCase()}, so strategy confidence is still light.`);
-  }
-
-  if (engagementCount > 0) {
-    strengths.push(`${engagementCount} engagement events give us useful feedback for follow-up ideas.`);
-  }
-
-  if (themes.length > 0) {
-    strengths.push(`Recurring themes: ${themes.slice(0, 3).join(', ')}.`);
-  } else if (connectedAccounts > 0) {
-    gaps.push(`We do not have enough recent ${label.toLowerCase()} copy to detect stable themes yet.`);
-  }
-
-  if (pendingApprovals > 0) {
-    nextMoves.push(`${pendingApprovals} item${pendingApprovals === 1 ? '' : 's'} need review before this channel can move faster.`);
-  }
-  if (queueItems > 0) {
-    nextMoves.push(`${queueItems} queue item${queueItems === 1 ? '' : 's'} can be mined for topic patterns and sharper hooks.`);
-  }
-  if (scheduledItems > 0) {
-    nextMoves.push(`${scheduledItems} scheduled post${scheduledItems === 1 ? '' : 's'} already give this channel forward momentum.`);
-  }
-  if (Array.isArray(sourceErrors) && sourceErrors.length > 0) {
-    gaps.push(sourceErrors[0]);
-  }
-  if (nextMoves.length === 0 && connectedAccounts > 0) {
-    nextMoves.push(`Use this channel's strongest theme to generate a tighter batch of client-specific ideas.`);
-  }
-
-  return {
-    key: platformKey,
-    label,
-    status: buildAnalysisHealthStatus({ connectedAccounts, queueItems, errors: sourceErrors }),
-    connectedAccounts,
-    postedCount,
-    engagementCount,
-    queueItems,
-    scheduledItems,
-    pendingApprovals,
-    themes,
-    strengths: strengths.slice(0, 3),
-    gaps: gaps.slice(0, 3),
-    nextMoves: nextMoves.slice(0, 3),
-  };
-}
-
-function dedupeIdeasByTitle(items = [], limit = 8) {
-  const deduped = [];
-  const seen = new Set();
-
-  for (const item of Array.isArray(items) ? items : []) {
-    const title = cleanText(item?.title, null);
-    if (!title) continue;
-    const key = title.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    deduped.push({
-      ...item,
-      id: cleanText(item?.id, null) || `idea-${seen.size}`,
-      title,
-    });
-    if (deduped.length >= limit) break;
-  }
-
-  return deduped;
-}
-
-function buildWorkspaceIdeaBank({
-  workspace,
-  settings,
-  topThemes = [],
-  competitorTargets = [],
-  platformCards = [],
-  operationsSnapshot,
-} = {}) {
-  const postingPreferences = normalizeWorkspacePostingPreferences(settings?.posting_preferences);
-  const audience = cleanText(postingPreferences.target_audience, 'the client audience');
-  const brandLabel = cleanText(workspace?.brand_name, null) || cleanText(workspace?.name, 'this client');
-  const profileNotes = cleanText(settings?.profile_notes, null);
-  const recommendedPlatforms = platformCards
-    .filter((card) => Number(card.connectedAccounts || 0) > 0)
-    .map((card) => card.key);
-
-  const ideas = [];
-  const primaryTheme = topThemes[0] || cleanText(postingPreferences.industry, 'industry insight');
-  const secondaryTheme = topThemes[1] || topThemes[0] || cleanText(postingPreferences.industry, 'customer pain point');
-
-  ideas.push({
-    id: 'theme-deep-dive',
-    sourceType: 'theme',
-    title: `Own the conversation around ${primaryTheme}`,
-    whyItFits: `This theme is already visible in the workspace queue and fits ${audience}.`,
-    prompt: `Create a strong post for ${brandLabel} about ${primaryTheme}. Audience: ${audience}. Make it specific, practical, and brand-aligned.`,
-    recommendedPlatforms,
-  });
-
-  ideas.push({
-    id: 'audience-pain-point',
-    sourceType: 'audience',
-    title: `Solve one sharp pain point for ${audience}`,
-    whyItFits: 'Audience-driven ideas usually outperform generic promotional copy.',
-    prompt: `Write a post for ${brandLabel} that addresses one painful problem faced by ${audience}. Use a clear hook, one concrete takeaway, and a soft CTA.`,
-    recommendedPlatforms,
-  });
-
-  if (profileNotes) {
-    ideas.push({
-      id: 'proof-point-story',
-      sourceType: 'brand',
-      title: 'Turn brand context into a proof-backed story',
-      whyItFits: 'The saved brand notes are currently underused and should inform stronger, less generic posts.',
-      prompt: `Use this brand context for ${brandLabel}: ${profileNotes}. Turn it into a proof-backed social post for ${audience} with one clear takeaway.`,
-      recommendedPlatforms,
-    });
-  }
-
-  if (competitorTargets.length > 0) {
-    ideas.push({
-      id: 'competitor-gap',
-      sourceType: 'competitor',
-      title: `Differentiate from ${competitorTargets[0]}`,
-      whyItFits: `The workspace already has competitor targets configured, so the next useful move is sharper positioning.`,
-      prompt: `Create a post for ${brandLabel} that clearly differentiates us from ${competitorTargets[0]} without naming them directly. Focus on ${secondaryTheme} and speak to ${audience}.`,
-      recommendedPlatforms,
-    });
-  }
-
-  const pendingQueueCount = Number(operationsSnapshot?.summary?.queueCount || 0);
-  if (pendingQueueCount > 0) {
-    ideas.push({
-      id: 'queue-cleanup-angle',
-      sourceType: 'queue',
-      title: 'Generate a cleaner approval-friendly angle',
-      whyItFits: `${pendingQueueCount} queue item${pendingQueueCount === 1 ? '' : 's'} means the team likely needs clearer hooks and proof.`,
-      prompt: `Write a clean, low-fluff post for ${brandLabel} about ${primaryTheme}. Make it approval-friendly: clear hook, direct value, no hype, audience ${audience}.`,
-      recommendedPlatforms,
-    });
-  }
-
-  ideas.push({
-    id: 'myth-vs-reality',
-    sourceType: 'theme',
-    title: `Myth vs reality on ${secondaryTheme}`,
-    whyItFits: 'This is a reliable format for authority-building across Twitter and LinkedIn.',
-    prompt: `Create a myth-vs-reality post for ${brandLabel} around ${secondaryTheme}. Audience: ${audience}. Keep it confident and useful, not salesy.`,
-    recommendedPlatforms,
-  });
-
-  ideas.push({
-    id: 'series-seed',
-    sourceType: 'series',
-    title: `Start a short series on ${primaryTheme}`,
-    whyItFits: 'A repeatable series gives the workspace a more consistent content spine.',
-    prompt: `Draft the first post in a short recurring series for ${brandLabel} on ${primaryTheme}. Make it repeatable across upcoming weeks for ${audience}.`,
-    recommendedPlatforms,
-  });
-
-  return dedupeIdeasByTitle(ideas, 8);
-}
-
 async function buildWorkspaceAnalysisSummary({ workspace, userId }) {
-  const [settings, analyticsSummary, insightsSummary, operationsSnapshot, workspaceAccounts] = await Promise.all([
+  const [persistedSettings, analyticsSummary, insightsSummary, operationsSnapshot, workspaceAccounts] = await Promise.all([
     getWorkspaceSettings(workspace.id),
     buildWorkspaceAnalyticsSummary({ workspaceId: workspace.id }),
     buildWorkspaceInsightsSummary({ workspace, userId }),
     buildWorkspaceOperationsSnapshotData({ workspace, userId, limit: 50, queueLimit: 60 }),
     listAgencyEligibleWorkspaceAccounts(workspace.id),
   ]);
+  const settings = await buildWorkspaceEffectiveSettings({
+    workspace,
+    userId,
+    persistedSettings,
+    workspaceAccounts,
+    operationsSnapshot,
+  });
 
   const competitorTargets = normalizeStringArray(settings?.competitor_targets, 25);
-  const topThemes = extractTopThemesFromContents(
-    buildAnalysisContentCorpus([
-      ...(Array.isArray(operationsSnapshot.queue) ? operationsSnapshot.queue : []),
-      ...(Array.isArray(operationsSnapshot.calendar) ? operationsSnapshot.calendar : []),
-    ]),
-    { workspace, settings, limit: 8 }
-  );
+  const topThemes = dedupeCaseInsensitiveStrings([
+    ...extractTopThemesFromContents(
+      buildAnalysisContentCorpus([
+        ...(Array.isArray(operationsSnapshot.queue) ? operationsSnapshot.queue : []),
+        ...(Array.isArray(operationsSnapshot.calendar) ? operationsSnapshot.calendar : []),
+      ]),
+      {
+        workspace,
+        settings,
+        limit: 8,
+        normalizeWorkspacePostingPreferences,
+      }
+    ),
+    ...(Array.isArray(settings?.detected_context?.fields?.top_themes)
+      ? settings.detected_context.fields.top_themes
+      : []),
+  ], 8);
 
   const twitterItems = (operationsSnapshot.queue || []).concat(operationsSnapshot.calendar || []).filter((item) => item?.platform === 'twitter');
   const linkedinItems = (operationsSnapshot.queue || []).concat(operationsSnapshot.calendar || []).filter((item) => item?.platform === 'linkedin');
@@ -2129,6 +2429,7 @@ async function buildWorkspaceAnalysisSummary({ workspace, userId }) {
       contentItems: twitterItems,
       workspace,
       settings,
+      normalizeWorkspacePostingPreferences,
     }),
     buildPlatformAnalysisCard({
       platformKey: 'linkedin',
@@ -2143,6 +2444,7 @@ async function buildWorkspaceAnalysisSummary({ workspace, userId }) {
       contentItems: linkedinItems,
       workspace,
       settings,
+      normalizeWorkspacePostingPreferences,
     }),
     buildPlatformAnalysisCard({
       platformKey: 'threads',
@@ -2163,6 +2465,7 @@ async function buildWorkspaceAnalysisSummary({ workspace, userId }) {
       contentItems: socialItems,
       workspace,
       settings,
+      normalizeWorkspacePostingPreferences,
     }),
   ].filter((card) => card.connectedAccounts > 0 || card.queueItems > 0 || card.scheduledItems > 0);
 
@@ -2185,6 +2488,8 @@ async function buildWorkspaceAnalysisSummary({ workspace, userId }) {
     competitorTargets,
     platformCards,
     operationsSnapshot,
+    cleanText,
+    normalizeWorkspacePostingPreferences,
   });
 
   return {
@@ -2203,6 +2508,9 @@ async function buildWorkspaceAnalysisSummary({ workspace, userId }) {
       topThemes,
       platformCards,
       summaryNotes: [
+        settings?.detected_context?.status === 'applied'
+          ? 'Account profile context and competitor references were auto-detected from connected accounts and recent workspace activity.'
+          : null,
         strongestChannel?.label
           ? `${strongestChannel.label} currently has the strongest usable signal in this workspace.`
           : 'Connect at least one active platform to unlock stronger own-account analysis.',
@@ -2216,14 +2524,26 @@ async function buildWorkspaceAnalysisSummary({ workspace, userId }) {
     competitors: {
       status: competitorTargets.length > 0 ? 'ready' : 'missing',
       targets: competitorTargets,
+      autoDetectedCount: Array.isArray(settings?.detected_context?.fields?.competitor_targets)
+        ? settings.detected_context.fields.competitor_targets.length
+        : 0,
       watchlistNotes: competitorTargets.length > 0
-        ? [
-            `Tracking ${competitorTargets.length} competitor reference${competitorTargets.length === 1 ? '' : 's'} from the workspace watchlist.`,
-            'Use these as positioning anchors now, then we can deepen this into true scraped competitor intel next.',
-          ]
+        ? (
+            settings?.detected_context?.status === 'applied'
+              ? [
+                  `Auto-detected ${competitorTargets.length} competitor/reference signal${competitorTargets.length === 1 ? '' : 's'} from recent workspace mentions.`,
+                  'You can edit the watchlist any time, but the workspace now starts with competitor context instead of a blank state.',
+                ]
+              : [
+                  `Tracking ${competitorTargets.length} competitor reference${competitorTargets.length === 1 ? '' : 's'} from the workspace watchlist.`,
+                  'Use these as positioning anchors now, then we can deepen this into true scraped competitor intel next.',
+                ]
+          )
         : [
-            'Add 3-5 competitor handles or profile URLs to sharpen the idea bank.',
-            'Right now the workspace can still generate ideas from your own signals and client context.',
+            settings?.detected_context?.status === 'available'
+              ? 'We found competitor/reference candidates from account signals, but your saved workspace context is taking priority.'
+              : 'We could not confidently auto-detect competitor references from the current workspace signal yet.',
+            'The workspace can still generate ideas from your own account signals and client context in the meantime.',
           ],
     },
     ideaBank,
@@ -2313,30 +2633,39 @@ async function getMembership(userId) {
   };
 }
 
-export async function bootstrapAgencyOwner(userId) {
-  const client = await pool.connect();
+export async function bootstrapAgencyOwner(userId, options = {}) {
+  const externalClient = options?.client || null;
+  const client = externalClient || await pool.connect();
+  const ownsTransaction = !externalClient;
   try {
-    await client.query('BEGIN');
+    if (ownsTransaction) {
+      await client.query('BEGIN');
+    }
     const userResult = await client.query('SELECT id, email, name, plan_type FROM users WHERE id = $1 FOR UPDATE', [userId]);
     if (userResult.rows.length === 0) throw apiError('User not found', 'USER_NOT_FOUND', 404);
     const user = userResult.rows[0];
     if (user.plan_type !== 'agency') {
-      await client.query('ROLLBACK');
+      if (ownsTransaction) {
+        await client.query('ROLLBACK');
+      }
       return null;
     }
 
-    let agencyId = null;
-    const accountResult = await client.query('SELECT id FROM agency_accounts WHERE owner_id = $1 LIMIT 1', [userId]);
-    if (accountResult.rows.length > 0) {
-      agencyId = accountResult.rows[0].id;
-    } else {
-      const created = await client.query(
-        `INSERT INTO agency_accounts (owner_id, name, status, seat_limit, workspace_limit, workspace_account_limit, created_at, updated_at)
-         VALUES ($1, $2, 'active', $3, $4, $5, NOW(), NOW()) RETURNING id`,
-        [userId, `${cleanText(user.name, user.email)} Workspace Hub`, AGENCY_LIMITS.seatLimit, AGENCY_LIMITS.workspaceLimit, AGENCY_LIMITS.workspaceAccountLimit]
-      );
-      agencyId = created.rows[0].id;
+    await client.query(
+      `INSERT INTO agency_accounts (owner_id, name, status, seat_limit, workspace_limit, workspace_account_limit, created_at, updated_at)
+       VALUES ($1, $2, 'active', $3, $4, $5, NOW(), NOW())
+       ON CONFLICT (owner_id) DO NOTHING`,
+      [userId, `${cleanText(user.name, user.email)} Workspace Hub`, AGENCY_LIMITS.seatLimit, AGENCY_LIMITS.workspaceLimit, AGENCY_LIMITS.workspaceAccountLimit]
+    );
+
+    const accountResult = await client.query(
+      'SELECT id FROM agency_accounts WHERE owner_id = $1 LIMIT 1 FOR UPDATE',
+      [userId]
+    );
+    if (accountResult.rows.length === 0) {
+      throw apiError('Failed to initialize agency account', 'AGENCY_BOOTSTRAP_FAILED', 500);
     }
+    const agencyId = accountResult.rows[0].id;
 
     const ownerMember = await client.query(
       `SELECT id FROM agency_members WHERE agency_id = $1 AND user_id = $2 AND role = 'owner' LIMIT 1`,
@@ -2357,14 +2686,20 @@ export async function bootstrapAgencyOwner(userId) {
       );
     }
 
-    await client.query('COMMIT');
-    await logAudit(agencyId, userId, 'agency_owner_bootstrap', 'agency_account', agencyId, {});
+    if (ownsTransaction) {
+      await client.query('COMMIT');
+      await logAudit(agencyId, userId, 'agency_owner_bootstrap', 'agency_account', agencyId, {});
+    }
     return agencyId;
   } catch (error) {
-    await client.query('ROLLBACK');
+    if (ownsTransaction) {
+      await client.query('ROLLBACK');
+    }
     throw error;
   } finally {
-    client.release();
+    if (ownsTransaction) {
+      client.release();
+    }
   }
 }
 
@@ -2413,6 +2748,29 @@ function isAgencyHubEnabled() {
   // Keep Agency Hub enabled by default in every environment unless explicitly disabled.
   return true;
 }
+
+const agencyClientOnboardingController = createAgencyClientOnboardingController({
+  crypto,
+  jwt,
+  pool,
+  query,
+  EmailService,
+  apiError,
+  cleanText,
+  cleanEmail,
+  handleError,
+  logAudit,
+  getAgencyContext,
+  getWorkspace,
+  listAgencyEligibleWorkspaceAccounts,
+  ensureApiBaseUrl,
+  normalizeWorkspacePlatform,
+  safeQuery,
+  TOOL_API_BASE_URLS,
+  AGENCY_INVITE_URL_BASE,
+  AGENCY_LIMITS,
+  EDIT_ROLES,
+});
 
 export const AgencyController = {
   async ensureEnabled(req, res, next) {
@@ -2688,6 +3046,8 @@ export const AgencyController = {
     }
   },
 
+  ...agencyClientOnboardingController,
+
   async getContext(req, res) {
     try {
       const context = await getAgencyContext(req.user.id);
@@ -2743,13 +3103,29 @@ export const AgencyController = {
         summaryVisibilityParams
       );
       const rows = await query(
-        `SELECT aw.*,
+         `SELECT aw.*,
                 COALESCE(m.member_count, 0) AS member_count,
                 COALESCE(a.account_count, 0) AS account_count,
                 awm_current.role AS current_member_role
          FROM agency_workspaces aw
          LEFT JOIN (
-           SELECT workspace_id, COUNT(*) AS member_count FROM agency_workspace_members GROUP BY workspace_id
+           SELECT
+             aw_inner.id AS workspace_id,
+             COUNT(DISTINCT workspace_member_ids.agency_member_id) AS member_count
+           FROM agency_workspaces aw_inner
+           LEFT JOIN agency_members creator_am
+             ON creator_am.agency_id = aw_inner.agency_id
+            AND creator_am.user_id = aw_inner.created_by
+            AND creator_am.status = 'active'
+           LEFT JOIN LATERAL (
+             SELECT awm.agency_member_id
+             FROM agency_workspace_members awm
+             WHERE awm.workspace_id = aw_inner.id
+             UNION
+             SELECT creator_am.id
+             WHERE creator_am.id IS NOT NULL
+           ) workspace_member_ids ON true
+           GROUP BY aw_inner.id
          ) m ON m.workspace_id = aw.id
          LEFT JOIN (
            SELECT awa.workspace_id, COUNT(*) AS account_count
@@ -3055,23 +3431,34 @@ export const AgencyController = {
       const { agency, member, workspace, workspaceRole } = await getRequestWorkspaceAccess(req);
 
       const assigned = await query(
-        `SELECT am.id, am.user_id, am.email, COALESCE(awm.role, am.role) AS role, am.status, COALESCE(u.name, SPLIT_PART(am.email, '@', 1)) AS display_name
-         FROM agency_workspace_members awm
-         JOIN agency_members am ON am.id = awm.agency_member_id
+        `SELECT
+                am.id,
+                am.user_id,
+                am.email,
+                COALESCE(MAX(awm.role), CASE WHEN am.user_id = $3 THEN 'owner' ELSE am.role END) AS role,
+                am.status,
+                COALESCE(u.name, SPLIT_PART(am.email, '@', 1)) AS display_name
+         FROM agency_members am
+         LEFT JOIN agency_workspace_members awm
+           ON awm.workspace_id = $1
+          AND awm.agency_member_id = am.id
          LEFT JOIN users u ON u.id = am.user_id
-         WHERE awm.workspace_id = $1 AND am.status = 'active'
-         ORDER BY CASE COALESCE(awm.role, am.role) WHEN 'owner' THEN 0 WHEN 'admin' THEN 1 WHEN 'editor' THEN 2 ELSE 3 END, am.created_at ASC`,
-        [workspace.id]
+         WHERE am.agency_id = $2
+           AND am.status = 'active'
+           AND (awm.id IS NOT NULL OR am.user_id = $3)
+         GROUP BY am.id, am.user_id, am.email, am.role, am.status, u.name, am.created_at
+         ORDER BY CASE COALESCE(MAX(awm.role), CASE WHEN am.user_id = $3 THEN 'owner' ELSE am.role END) WHEN 'owner' THEN 0 WHEN 'admin' THEN 1 WHEN 'editor' THEN 2 ELSE 3 END, am.created_at ASC`,
+        [workspace.id, agency.id, workspace.created_by]
       );
 
       const available = await query(
         `SELECT am.id, am.user_id, am.email, am.role, am.status, COALESCE(u.name, SPLIT_PART(am.email, '@', 1)) AS display_name,
-                EXISTS(SELECT 1 FROM agency_workspace_members x WHERE x.workspace_id = $2 AND x.agency_member_id = am.id) AS is_assigned
+                (EXISTS(SELECT 1 FROM agency_workspace_members x WHERE x.workspace_id = $2 AND x.agency_member_id = am.id) OR am.user_id = $3) AS is_assigned
          FROM agency_members am
          LEFT JOIN users u ON u.id = am.user_id
          WHERE am.agency_id = $1 AND am.status = 'active'
          ORDER BY CASE am.role WHEN 'owner' THEN 0 WHEN 'admin' THEN 1 WHEN 'editor' THEN 2 ELSE 3 END, am.created_at ASC`,
-        [agency.id, workspace.id]
+        [agency.id, workspace.id, workspace.created_by]
       );
 
       return res.json({
@@ -3137,23 +3524,37 @@ export const AgencyController = {
 
   async listAvailableAccounts(req, res) {
     try {
-      const { agency } = await getAgencyContext(req.user.id);
+      const { agency, member } = await getAgencyContext(req.user.id);
+      const workspaceId = cleanText(req.query.workspaceId || req.query.workspace_id, null);
+      const isEditorLike = !EDIT_ROLES.has(member.role);
+      let scopedWorkspace = null;
+      if (workspaceId) {
+        scopedWorkspace = await assertWorkspaceAccess({
+          workspaceId,
+          agencyId: agency.id,
+          memberRole: member.role,
+          memberId: member.id,
+        });
+      }
+
       const accounts = [];
+      const toApiAccount = (row = {}, fallbackSourceType = null) => ({
+        sourceType: cleanText(row.sourceType ?? row.source_type, fallbackSourceType),
+        sourceId: String(row.sourceId ?? row.source_id ?? row.id ?? ''),
+        platform: row.platform || null,
+        accountId: row.accountId ?? row.account_id ?? null,
+        accountUsername: row.accountUsername ?? row.account_username ?? null,
+        accountDisplayName: row.accountDisplayName ?? row.account_display_name ?? null,
+        profileImageUrl: row.profileImageUrl ?? row.profile_image_url ?? null,
+        updatedAt: row.updatedAt ?? row.updated_at ?? null,
+        sourceUpdatedAt: row.sourceUpdatedAt ?? row.source_updated_at ?? row.updated_at ?? null,
+        tokenExpiresAt: row.tokenExpiresAt ?? row.token_expires_at ?? null,
+        metadata: row.metadata || {},
+        workspaceId: cleanText(row.workspace_id, null),
+      });
       const pushRows = (rows, sourceType) => {
         for (const row of rows) {
-          accounts.push({
-            sourceType,
-            sourceId: String(row.source_id || row.id || ''),
-            platform: row.platform || null,
-            accountId: row.account_id || null,
-            accountUsername: row.account_username || null,
-            accountDisplayName: row.account_display_name || null,
-            profileImageUrl: row.profile_image_url || null,
-            updatedAt: row.updated_at || null,
-            sourceUpdatedAt: row.source_updated_at || row.updated_at || null,
-            tokenExpiresAt: row.token_expires_at || null,
-            metadata: row.metadata || {},
-          });
+          accounts.push(toApiAccount(row, sourceType));
         }
       };
 
@@ -3220,6 +3621,66 @@ export const AgencyController = {
       }
 
       const assignedAccounts = await listAgencyAssignedWorkspaceAccounts(agency.id);
+      const assignedWorkspaceIds = isEditorLike
+        ? await safeQuery(
+            `SELECT workspace_id::text AS workspace_id
+             FROM agency_workspace_members
+             WHERE agency_member_id = $1`,
+            [member.id]
+          )
+        : [];
+      const allowedWorkspaceIdSet = new Set(assignedWorkspaceIds.map((row) => String(row.workspace_id || '')));
+
+      const visibleAssignedAccounts = assignedAccounts.filter((account) => (
+        !isEditorLike || allowedWorkspaceIdSet.has(String(account.workspace_id))
+      ));
+
+      if (scopedWorkspace) {
+        const scopedWorkspaceId = String(scopedWorkspace.id);
+        const attachedToScopedWorkspace = visibleAssignedAccounts.filter(
+          (account) => String(account.workspace_id) === scopedWorkspaceId
+        );
+
+        if (isEditorLike) {
+          return res.json({
+            accounts: attachedToScopedWorkspace.map((account) => toApiAccount(account)),
+            workspaceId: scopedWorkspaceId,
+          });
+        }
+
+        const availableForScopedWorkspace = deduped.filter((account) => {
+          const assignment = findAgencyWorkspaceAccountAssignment(assignedAccounts, account);
+          if (!assignment) return true;
+          return String(assignment.workspace_id) === scopedWorkspaceId;
+        });
+
+        const merged = [];
+        const mergedSeen = new Set();
+        const pushMerged = (account) => {
+          const sourceType = cleanText(account.sourceType ?? account.source_type, '');
+          const sourceId = cleanText(account.sourceId ?? account.source_id, '');
+          if (!sourceType || !sourceId) return;
+          const key = `${sourceType}:${sourceId}`.toLowerCase();
+          if (mergedSeen.has(key)) return;
+          mergedSeen.add(key);
+          merged.push(account);
+        };
+
+        availableForScopedWorkspace.forEach(pushMerged);
+        attachedToScopedWorkspace.forEach(pushMerged);
+
+        return res.json({
+          accounts: merged,
+          workspaceId: scopedWorkspaceId,
+        });
+      }
+
+      if (isEditorLike) {
+        return res.json({
+          accounts: visibleAssignedAccounts.map((account) => toApiAccount(account)),
+        });
+      }
+
       const availableAccounts = deduped.filter((account) => (
         !findAgencyWorkspaceAccountAssignment(assignedAccounts, account)
       ));
@@ -4216,7 +4677,10 @@ export const AgencyController = {
     try {
       const { workspace, workspaceRole } = await getRequestWorkspaceAccess(req);
 
-      const settings = await getWorkspaceSettings(workspace.id);
+      const settings = await buildWorkspaceEffectiveSettings({
+        workspace,
+        userId: req.user.id,
+      });
       return res.json({
         workspaceId: workspace.id,
         currentMemberRole: workspaceRole,

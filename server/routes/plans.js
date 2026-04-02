@@ -13,7 +13,7 @@ router.get('/limits', authenticateToken, PlansController.getLimits);
 // Upgrade plan
 router.post('/upgrade', [
     authenticateToken,
-    body('planType').isIn(['pro', 'agency']).withMessage('Invalid plan type'),
+    body('planType').isIn(['pro']).withMessage('Invalid plan type'),
     validate
 ], PlansController.upgradePlan);
 

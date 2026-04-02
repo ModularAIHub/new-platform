@@ -56,12 +56,6 @@ export const usePlanAccess = () => {
     return currentCount < planLimits.profilesPerPlatform;
   };
 
-  const upgradeToPro = async () => {
-    const paymentRequiredError = new Error('Direct upgrades are disabled. Use the paid checkout flow to upgrade.');
-    paymentRequiredError.code = 'PAYMENT_REQUIRED';
-    throw paymentRequiredError;
-  };
-
   return {
     userPlan,
     planLimits,
@@ -69,7 +63,6 @@ export const usePlanAccess = () => {
     hasFeatureAccess,
     canAddMoreAccounts,
     canAddMoreProfiles,
-    upgradeToPro,
     refreshPlanInfo: fetchPlanInfo
   };
 };

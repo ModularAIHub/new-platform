@@ -35,6 +35,9 @@ router.post('/agency/confirm', [
 ], AgencyPaymentsController.confirm);
 
 router.get('/agency/status', authenticateToken, AgencyPaymentsController.status);
+router.post('/agency/cancel', authenticateToken, AgencyPaymentsController.cancel);
+router.post('/agency/resume', authenticateToken, AgencyPaymentsController.resume);
+router.get('/agency/invoices', authenticateToken, AgencyPaymentsController.invoices);
 
 router.post('/webhooks/razorpay', AgencyPaymentsController.webhook);
 

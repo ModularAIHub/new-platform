@@ -42,6 +42,7 @@ const PLAN_LIMITS = {
 };
 
 const PUBLIC_PLAN_ORDER = ['free', 'pro', 'agency'];
+const AGENCY_PLAN_PRICE_RUPEES = 1599;
 
 function isTransientDbError(error) {
     const code = error?.code;
@@ -74,7 +75,7 @@ function getRequiredPlanForFeature(featureName) {
 function getPlanPrice(planType) {
     if (planType === 'free') return 0;
     if (planType === 'pro') return 399;
-    if (planType === 'agency') return 0;
+    if (planType === 'agency') return AGENCY_PLAN_PRICE_RUPEES;
     return 1100;
 }
 
@@ -205,10 +206,10 @@ class PlansController {
             if (!PLAN_LIMITS[planType]) {
                 return res.status(400).json({ error: 'Invalid plan type', code: 'INVALID_PLAN_TYPE' });
             }
-            if (planType === 'agency') {
-                return res.status(402).json({
-                    error: 'Agency upgrades are manual-only right now. Please contact admin.',
-                    code: 'MANUAL_AGENCY_UPGRADE_REQUIRED'
+            if (planType !== 'pro') {
+                return res.status(400).json({
+                    error: 'Use dedicated checkout endpoints for this plan type.',
+                    code: 'PLAN_UPGRADE_ENDPOINT_NOT_SUPPORTED'
                 });
             }
             if (!isTrial) {

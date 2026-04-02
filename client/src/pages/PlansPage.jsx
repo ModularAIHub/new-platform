@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Check, X, ChevronDown, ChevronUp } from 'lucide-react';
 import Footer from '../components/Footer';
@@ -19,6 +19,9 @@ const PlansPage = () => {
   const { userPlan, refreshPlanInfo } = usePlanAccess();
   const [openFaq, setOpenFaq] = useState(null);
   const [upgrading, setUpgrading] = useState(false);
+  const [agencyBillingLoading, setAgencyBillingLoading] = useState(false);
+  const [agencyBillingBusyAction, setAgencyBillingBusyAction] = useState('');
+  const [agencyBilling, setAgencyBilling] = useState({ subscription: null, invoices: [] });
   const pendingIntent = searchParams.get('intent');
   const currentIndividualPlanType = String(
     userPlan?.individualPlan ||
@@ -30,6 +33,30 @@ const PlansPage = () => {
   const toggleFaq = (index) => {
     setOpenFaq(openFaq === index ? null : index);
   };
+
+  const refreshAgencyBilling = async () => {
+    if (!user) return;
+    setAgencyBillingLoading(true);
+    try {
+      const [statusResponse, invoicesResponse] = await Promise.all([
+        api.get('/payments/agency/status'),
+        api.get('/payments/agency/invoices'),
+      ]);
+      setAgencyBilling({
+        subscription: statusResponse.data?.subscription || null,
+        actions: statusResponse.data?.actions || { canCancel: false, canResume: false },
+        invoices: Array.isArray(invoicesResponse.data?.invoices) ? invoicesResponse.data.invoices : [],
+      });
+    } catch (error) {
+      setAgencyBilling({ subscription: null, actions: { canCancel: false, canResume: false }, invoices: [] });
+    } finally {
+      setAgencyBillingLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    refreshAgencyBilling();
+  }, [user?.id]);
 
   const plans = [
     {
@@ -428,6 +455,36 @@ const PlansPage = () => {
     }
   };
 
+  const handleAgencyCancel = async () => {
+    setAgencyBillingBusyAction('cancel');
+    try {
+      const response = await api.post('/payments/agency/cancel');
+      toast.success(response.data?.message || 'Agency cancellation scheduled.');
+      await refreshAgencyBilling();
+      await refreshPlanInfo();
+      await refreshUser();
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error?.message || 'Failed to cancel Agency subscription.');
+    } finally {
+      setAgencyBillingBusyAction('');
+    }
+  };
+
+  const handleAgencyResume = async () => {
+    setAgencyBillingBusyAction('resume');
+    try {
+      const response = await api.post('/payments/agency/resume');
+      toast.success(response.data?.message || 'Agency subscription resumed.');
+      await refreshAgencyBilling();
+      await refreshPlanInfo();
+      await refreshUser();
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error?.message || 'Failed to resume Agency subscription.');
+    } finally {
+      setAgencyBillingBusyAction('');
+    }
+  };
+
   const getPlanButtonText = (plan) => {
     if (upgrading) return 'Processing...';
 
@@ -521,6 +578,75 @@ const PlansPage = () => {
           </div> */}
         </div>
       </div>
+
+      {user && (currentIndividualPlanType === 'agency' || agencyBilling?.subscription) && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4">
+          <div className="bg-white border border-gray-200 rounded-2xl p-6">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Agency Billing</h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  Manage cancellation, resume access, and recent invoices.
+                </p>
+                <p className="text-sm text-gray-700 mt-3">
+                  Status: <span className="font-semibold">{agencyBilling?.subscription?.status || 'not_started'}</span>
+                  {agencyBilling?.subscription?.cancel_at_cycle_end ? ' • Cancels at cycle end' : ''}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={handleAgencyCancel}
+                  disabled={agencyBillingLoading || agencyBillingBusyAction !== '' || !agencyBilling?.actions?.canCancel}
+                  className="rounded-lg border border-red-200 text-red-700 px-4 py-2 text-sm hover:bg-red-50 disabled:opacity-50"
+                >
+                  {agencyBillingBusyAction === 'cancel' ? 'Cancelling...' : 'Cancel at Cycle End'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAgencyResume}
+                  disabled={agencyBillingLoading || agencyBillingBusyAction !== '' || !agencyBilling?.actions?.canResume}
+                  className="rounded-lg border border-green-200 text-green-700 px-4 py-2 text-sm hover:bg-green-50 disabled:opacity-50"
+                >
+                  {agencyBillingBusyAction === 'resume' ? 'Resuming...' : 'Resume Subscription'}
+                </button>
+              </div>
+            </div>
+            <div className="mt-5">
+              <p className="text-sm font-medium text-gray-900 mb-2">Recent Invoices</p>
+              {agencyBillingLoading ? (
+                <p className="text-sm text-gray-500">Loading billing history...</p>
+              ) : agencyBilling?.invoices?.length > 0 ? (
+                <div className="space-y-2">
+                  {agencyBilling.invoices.slice(0, 8).map((invoice) => (
+                    <div key={invoice.id} className="flex flex-wrap items-center justify-between gap-3 border rounded-lg px-3 py-2">
+                      <p className="text-sm text-gray-800">
+                        {invoice.status || 'unknown'} • {invoice.currency || 'INR'} {(Number(invoice.amount || 0) / 100).toFixed(2)}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500">
+                          {invoice.paidAt ? new Date(invoice.paidAt).toLocaleString() : 'No paid date'}
+                        </span>
+                        {invoice.hostedUrl && (
+                          <button
+                            type="button"
+                            onClick={() => window.open(invoice.hostedUrl, '_blank', 'noopener,noreferrer')}
+                            className="text-sm text-blue-600 hover:text-blue-700"
+                          >
+                            Open
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">No invoices yet.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Pricing Cards */}
       <div className="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">

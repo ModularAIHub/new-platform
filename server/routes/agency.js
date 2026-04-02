@@ -6,12 +6,24 @@ import { AgencyController } from '../controllers/agencyController.js';
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
+const requireInternalApiKey = (req, res, next) => {
+  const expected = String(process.env.INTERNAL_API_KEY || '').trim();
+  const provided = String(req.headers['x-internal-api-key'] || '').trim();
+  if (!expected || !provided || expected !== provided) {
+    return res.status(401).json({ error: 'Unauthorized', code: 'UNAUTHORIZED_INTERNAL_CALL' });
+  }
+  next();
+};
+
 // Authenticated invitation listing for current user.
 router.get('/invitations/pending', authenticateToken, AgencyController.ensureEnabled, AgencyController.listPendingInvitations);
 
 // Public invitation routes (token-based).
 router.get('/invitations/:token', AgencyController.getInvitationByToken);
 router.post('/invitations/:token/decline', AgencyController.declineInvitationByToken);
+router.get('/client/onboarding/:token', AgencyController.ensureEnabled, AgencyController.getClientOnboardingStatus);
+router.post('/client/onboarding/:token/connect', AgencyController.ensureEnabled, AgencyController.initiateClientOAuth);
+router.post('/client-oauth-callback', AgencyController.ensureEnabled, requireInternalApiKey, AgencyController.handleClientOAuthCallback);
 
 router.use(authenticateToken);
 router.use(AgencyController.ensureEnabled);
@@ -37,6 +49,10 @@ router.get('/accounts/available', AgencyController.listAvailableAccounts);
 router.get('/workspaces/:workspaceId/accounts', AgencyController.listWorkspaceAccounts);
 router.post('/workspaces/:workspaceId/accounts', AgencyController.attachWorkspaceAccount);
 router.delete('/workspaces/:workspaceId/accounts/:workspaceAccountId', AgencyController.detachWorkspaceAccount);
+router.post('/workspaces/:workspaceId/onboarding-link', AgencyController.createClientOnboardingLink);
+router.get('/workspaces/:workspaceId/onboarding-links', AgencyController.listClientOnboardingLinks);
+router.delete('/workspaces/:workspaceId/onboarding-link/:linkId', AgencyController.revokeClientOnboardingLink);
+router.post('/workspaces/:workspaceId/onboarding-link/:linkId/complete', AgencyController.markClientOnboardingComplete);
 router.get('/workspaces/:workspaceId/settings', AgencyController.requireWorkspaceReadRole, AgencyController.getWorkspaceSettings);
 router.put('/workspaces/:workspaceId/settings', AgencyController.requireWorkspaceWriteRole, AgencyController.upsertWorkspaceSettings);
 router.get('/workspaces/:workspaceId/drafts', AgencyController.requireWorkspaceReadRole, AgencyController.listWorkspaceDrafts);

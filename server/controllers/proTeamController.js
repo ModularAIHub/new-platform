@@ -16,6 +16,10 @@ const subdomains = {
     instagram:
         process.env.SOCIAL_GENIE_API_URL ||
         process.env.SOCIAL_API_URL ||
+        'https://metaapi.suitegenie.in',
+    youtube:
+        process.env.SOCIAL_GENIE_API_URL ||
+        process.env.SOCIAL_API_URL ||
         'https://metaapi.suitegenie.in'
 };
 // proTeamController.js 
@@ -644,118 +648,6 @@ export const ProTeamController = {
         }
     },
 
-    // Connect a new social account
-    async connectAccount(req, res) {
-                    // Detect if running locally
-                    const isLocal = process.env.NODE_ENV === 'development' || (req.headers.origin && req.headers.origin.includes('localhost'));
-        try {
-            const userId = req.user.id;
-            let { platform, accountData } = req.body;
-
-            // Validate required fields
-            if (!platform) {
-                return res.status(400).json({ error: 'Missing platform in request body.' });
-            }
-            if (!accountData || typeof accountData !== 'object') {
-                return res.status(400).json({ error: 'Missing accountData in request body.' });
-            }
-            // Check required accountData fields for Twitter
-            if (platform === 'twitter' && !accountData.account_id) {
-                return res.status(400).json({ error: 'Missing account_id in accountData for Twitter.' });
-            }
-
-            // Support twitter-oauth1 as a valid platform for media upload
-            if (platform === 'twitter-oauth1') {
-                platform = 'twitter';
-                accountData = { ...accountData, oauthType: 'oauth1' };
-            }
-
-            // Check permissions
-            const canConnect = await RolePermissionsService.canUserPerformAction(userId, 'connect_profiles');
-            if (!canConnect) {
-                console.error('[connectAccount] Permission denied for user:', userId);
-                return res.status(403).json({ 
-                    error: 'You do not have permission to connect social accounts' 
-                });
-            }
-
-            // Get user's team and role limits
-            const userPermissions = await RolePermissionsService.getUserPermissions(userId);
-            if (!userPermissions.team_id) {
-                console.error('[connectAccount] No team_id for user:', userId, 'Permissions:', userPermissions);
-                return res.status(404).json({ error: 'You are not part of any team' });
-            }
-
-            // Check if user has reached their connection limit
-            const userAccountsCount = await query(`
-                SELECT COUNT(*) as count 
-                FROM user_social_accounts 
-                WHERE user_id = $1 AND team_id = $2 AND is_active = true
-            `, [userId, userPermissions.team_id]);
-
-            const currentCount = parseInt(userAccountsCount.rows[0].count);
-            const maxConnections = userPermissions.limits.max_profile_connections;
-
-            if (currentCount >= maxConnections) {
-                console.error('[connectAccount] Connection limit reached:', currentCount, 'Max:', maxConnections, 'User:', userId);
-                return res.status(400).json({ 
-                    error: `You have reached your connection limit (${maxConnections} accounts)` 
-                });
-            }
-
-            // Special handling for Twitter OAuth1.0a flow
-            if (platform === 'twitter' && accountData?.oauthType === 'oauth1') {
-                // Redirect to Twitter OAuth1.0a flow
-                return res.json({
-                    success: true,
-                    redirectUrl: `${process.env.TWITTER_OAUTH1_URL || 'http://localhost:3002'}/api/twitter/team-connect-oauth1?team_id=${userPermissions.team_id}`
-                });
-            }
-
-            // Check if account is already connected to the team
-            const existingAccount = await query(`
-                SELECT id FROM user_social_accounts 
-                WHERE team_id = $1 AND platform = $2 AND account_id = $3 AND is_active = true
-            `, [userPermissions.team_id, platform, accountData.account_id]);
-
-            if (existingAccount.rows.length > 0) {
-                console.error('[connectAccount] Account already connected:', accountData.account_id, 'User:', userId, 'Team:', userPermissions.team_id);
-                return res.status(400).json({ 
-                    error: 'This account is already connected to your team' 
-                });
-            }
-
-            // Create social account connection
-            const result = await query(`
-                INSERT INTO user_social_accounts (
-                    user_id, team_id, platform, account_username, account_display_name,
-                    account_id, access_token, refresh_token, token_expires_at, profile_image_url
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-                RETURNING id
-            `, [
-                userId,
-                userPermissions.team_id,
-                platform,
-                accountData.username,
-                accountData.displayName,
-                accountData.account_id,
-                accountData.accessToken,
-                accountData.refreshToken || null,
-                accountData.expiresAt || null,
-                accountData.profileImage || null
-            ]);
-
-            res.json({
-                success: true,
-                message: `${platform} account connected successfully`,
-                accountId: result.rows[0].id
-            });
-        } catch (error) {
-            console.error('Connect account error:', error);
-            res.status(500).json({ error: 'Failed to connect social account' });
-        }
-    },
-
     // Leave team
     async leaveTeam(req, res) {
         try {
@@ -904,42 +796,6 @@ export const ProTeamController = {
             res.status(500).json({ 
                 success: false,
                 error: 'Failed to decline invitation' 
-            });
-        }
-    },
-
-    // Get user's role permissions and limits
-    async getUserPermissions(req, res) {
-        try {
-            const userId = req.user.id;
-            const permissions = await RolePermissionsService.getUserPermissions(userId);
-            
-            res.json({
-                success: true,
-                ...permissions
-            });
-        } catch (error) {
-            console.error('Get user permissions error:', error);
-            res.status(500).json({ 
-                error: 'Failed to get user permissions' 
-            });
-        }
-    },
-
-    // Get user's role permissions and limits
-    async getUserPermissions(req, res) {
-        try {
-            const userId = req.user.id;
-            const permissions = await RolePermissionsService.getUserPermissions(userId);
-            
-            res.json({
-                success: true,
-                ...permissions
-            });
-        } catch (error) {
-            console.error('Get user permissions error:', error);
-            res.status(500).json({ 
-                error: 'Failed to get user permissions' 
             });
         }
     },

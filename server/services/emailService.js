@@ -160,6 +160,73 @@ class EmailService {
     }
 
     /**
+     * Send client onboarding invitation email using Resend
+     */
+    async sendClientOnboardingInvitation({
+        recipientEmail,
+        recipientName,
+        agencyName,
+        workspaceName,
+        brandName,
+        platforms = [],
+        onboardingUrl,
+        expiresAt,
+        createdByName,
+    }) {
+        try {
+            const expiryDate = new Date(expiresAt).toLocaleDateString();
+            const normalizedPlatforms = Array.isArray(platforms)
+                ? [...new Set(platforms.map((item) => String(item || '').trim().toLowerCase()).filter(Boolean))]
+                : [];
+
+            const htmlTemplate = this.getClientOnboardingInvitationTemplate({
+                recipientName: recipientName || recipientEmail,
+                agencyName,
+                workspaceName,
+                brandName,
+                platforms: normalizedPlatforms,
+                onboardingUrl,
+                expiryDate,
+                createdByName,
+                platformName: this.platformName,
+            });
+
+            const textContent = this.getClientOnboardingInvitationTextTemplate({
+                recipientName: recipientName || recipientEmail,
+                agencyName,
+                workspaceName,
+                brandName,
+                platforms: normalizedPlatforms,
+                onboardingUrl,
+                expiryDate,
+                createdByName,
+                platformName: this.platformName,
+            });
+
+            const { data, error } = await this.resend.emails.send({
+                from: `${this.platformName} <${this.fromEmail}>`,
+                to: recipientEmail,
+                subject: `${agencyName} invited you to connect accounts for ${workspaceName}`,
+                html: htmlTemplate,
+                text: textContent,
+            });
+
+            if (error) {
+                throw new Error(`Resend API error: ${error.message}`);
+            }
+
+            return {
+                success: true,
+                messageId: data.id,
+                provider: 'resend',
+            };
+        } catch (error) {
+            console.error('Failed to send client onboarding invitation email:', error);
+            throw new Error(`Client onboarding email failed: ${error.message}`);
+        }
+    }
+
+    /**
      * Send reminder email for pending invitation using Resend
      */
     async sendInvitationReminder({
@@ -403,6 +470,98 @@ Role: ${String(role || '').toUpperCase()}
 Accept your invitation: ${inviteUrl}
 
 This invitation expires on ${expiryDate}.
+        `.trim();
+    }
+
+    /**
+     * HTML template for client onboarding invitation
+     */
+    getClientOnboardingInvitationTemplate({
+        recipientName,
+        agencyName,
+        workspaceName,
+        brandName,
+        platforms,
+        onboardingUrl,
+        expiryDate,
+        createdByName,
+        platformName,
+    }) {
+        const platformLabel = Array.isArray(platforms) && platforms.length > 0
+            ? platforms.map((item) => String(item || '').toUpperCase()).join(', ')
+            : 'TWITTER, LINKEDIN';
+
+        return `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Client Onboarding</title>
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background: linear-gradient(135deg, #0f766e 0%, #0ea5e9 100%); color: white; padding: 28px 20px; text-align: center; border-radius: 8px 8px 0 0; }
+                .content { background: white; padding: 28px; border: 1px solid #e0e0e0; border-top: none; }
+                .cta { display: inline-block; background: #0f766e; color: white; padding: 14px 26px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 16px 0; }
+                .footer { background: #f8f9fa; padding: 18px; text-align: center; font-size: 12px; color: #666; border-radius: 0 0 8px 8px; }
+                .pill { display: inline-block; background: #e0f2fe; color: #075985; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 700; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>Connect Your Social Accounts</h1>
+            </div>
+            <div class="content">
+                <p>Hi ${recipientName},</p>
+                <p>${createdByName ? `<strong>${createdByName}</strong> from ` : ''}<strong>${agencyName}</strong> invited you to connect social accounts for <strong>${workspaceName}</strong>${brandName ? ` (${brandName})` : ''}.</p>
+                <p>Required platforms: <span class="pill">${platformLabel}</span></p>
+                <div style="text-align: center;">
+                    <a href="${onboardingUrl}" class="cta">Start Onboarding</a>
+                </div>
+                <p><strong>This secure onboarding link expires on ${expiryDate}.</strong></p>
+                <p>If the button does not work, use this link:</p>
+                <p style="word-break: break-all; background: #f5f5f5; padding: 10px; border-radius: 4px;">${onboardingUrl}</p>
+            </div>
+            <div class="footer">
+                <p>© 2026 ${platformName}. All rights reserved.</p>
+            </div>
+        </body>
+        </html>
+        `;
+    }
+
+    /**
+     * Plain text template for client onboarding invitation
+     */
+    getClientOnboardingInvitationTextTemplate({
+        recipientName,
+        agencyName,
+        workspaceName,
+        brandName,
+        platforms,
+        onboardingUrl,
+        expiryDate,
+        createdByName,
+        platformName,
+    }) {
+        const platformLabel = Array.isArray(platforms) && platforms.length > 0
+            ? platforms.map((item) => String(item || '').toUpperCase()).join(', ')
+            : 'TWITTER, LINKEDIN';
+
+        return `
+Client Onboarding
+
+Hi ${recipientName},
+
+${createdByName ? `${createdByName} from ` : ''}${agencyName} invited you to connect social accounts for ${workspaceName}${brandName ? ` (${brandName})` : ''}.
+
+Required platforms: ${platformLabel}
+
+Start onboarding: ${onboardingUrl}
+
+This link expires on ${expiryDate}.
+
+© 2026 ${platformName}. All rights reserved.
         `.trim();
     }
 
