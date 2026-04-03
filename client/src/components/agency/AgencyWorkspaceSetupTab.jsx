@@ -52,7 +52,7 @@ const AgencyWorkspaceSetupTab = ({
           />
         ) : (
           <div className="h-16 w-16 rounded-xl border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-xs text-gray-500 text-center px-2">
-            No logo
+            Add logo
           </div>
         )}
       </div>
@@ -137,7 +137,7 @@ const AgencyWorkspaceSetupTab = ({
             </div>
             <div className="rounded-xl border border-white bg-white px-4 py-3">
               <p className="text-xs uppercase tracking-wide text-gray-500">Logo URL</p>
-              <p className="mt-2 text-sm font-semibold text-gray-900 break-all">{workspace.logo_url || 'No logo URL set'}</p>
+              <p className="mt-2 text-sm font-semibold text-gray-900 break-all">{workspace.logo_url || 'Add a logo URL for client-facing polish'}</p>
             </div>
           </div>
         )}

@@ -43,6 +43,8 @@ export function createAgencyWorkspaceContentController(deps) {
     buildWorkspaceInsightsSummary,
     buildWorkspaceAnalysisSummary,
     buildWorkspaceOperationsSnapshotData,
+    deductAgencyWorkspaceCredits,
+    refundAgencyWorkspaceCredits,
     safeQuery,
     handleError,
   } = deps;
@@ -108,8 +110,13 @@ export function createAgencyWorkspaceContentController(deps) {
   },
 
   async generateWorkspaceDraft(req, res) {
+    let reservedCredits = 0;
+    let creditAgency = null;
+    let creditWorkspace = null;
     try {
       const { agency, workspace, workspaceRole } = await getRequestWorkspaceAccess(req);
+      creditAgency = agency;
+      creditWorkspace = workspace;
       assertAgencyDraftWriteRole(workspaceRole, 'Only owner/admin/editor can generate drafts');
 
       const prompt = cleanText(req.body.prompt);
@@ -242,6 +249,24 @@ export function createAgencyWorkspaceContentController(deps) {
         throw apiError('No supported workspace accounts found for draft generation', 'WORKSPACE_GENERATION_TARGETS_INVALID', 400);
       }
 
+      const estimatedCreditCost = Math.max(1, generators.length);
+      const creditReservation = await deductAgencyWorkspaceCredits({
+        agency,
+        workspace,
+        userId: req.user.id,
+        amount: estimatedCreditCost,
+        operation: 'agency_workspace_generate',
+        description: `Generated workspace drafts for ${workspace.name}`,
+      });
+      if (!creditReservation.success) {
+        throw apiError(
+          `Insufficient agency credits. Required: ${creditReservation.creditsRequired ?? estimatedCreditCost}, Available: ${creditReservation.creditsAvailable ?? 0}`,
+          'INSUFFICIENT_AGENCY_CREDITS',
+          400
+        );
+      }
+      reservedCredits = estimatedCreditCost;
+
       const settled = await Promise.allSettled(generators);
       const createdDrafts = [];
       const errors = [];
@@ -281,23 +306,52 @@ export function createAgencyWorkspaceContentController(deps) {
         createdDrafts.push(inserted.rows[0]);
       }
 
+      const consumedCredits = Math.max(1, createdDrafts.length);
+      const refundAmount = Math.max(0, estimatedCreditCost - consumedCredits);
+      if (refundAmount > 0) {
+        await refundAgencyWorkspaceCredits({
+          agency,
+          workspace,
+          userId: req.user.id,
+          amount: refundAmount,
+          reason: 'agency_workspace_generate_adjustment',
+          description: `Refunded unused workspace generation credits for ${workspace.name}`,
+        }).catch(() => {});
+      }
+
       await logAudit(agency.id, req.user.id, 'workspace_draft_generated', 'agency_workspace', workspace.id, {
         createdCount: createdDrafts.length,
         errorCount: errors.length,
       });
+      reservedCredits = 0;
 
       return res.json({
         drafts: createdDrafts,
         errors,
       });
     } catch (error) {
+      if (reservedCredits > 0 && creditAgency && creditWorkspace) {
+        await refundAgencyWorkspaceCredits({
+          agency: creditAgency,
+          workspace: creditWorkspace,
+          userId: req.user.id,
+          amount: reservedCredits,
+          reason: 'agency_workspace_generate_failed',
+          description: `Refunded failed workspace generation credits for ${creditWorkspace.name}`,
+        }).catch(() => {});
+      }
       return handleError(res, error, 'Failed to generate workspace draft');
     }
   },
 
   async refineWorkspaceContent(req, res) {
+    let reservedCredits = 0;
+    let creditAgency = null;
+    let creditWorkspace = null;
     try {
-      const { workspace } = await getRequestWorkspaceAccess(req);
+      const { agency, workspace } = await getRequestWorkspaceAccess(req);
+      creditAgency = agency;
+      creditWorkspace = workspace;
 
       const content = cleanText(req.body.content, null);
       const instruction = cleanText(req.body.prompt || req.body.instruction, null);
@@ -317,6 +371,24 @@ export function createAgencyWorkspaceContentController(deps) {
       const clientLabel = cleanText(workspace.brand_name, null) || cleanText(workspace.name, 'this client');
       const variants = [];
       const errors = [];
+      const estimatedCreditCost = Math.max(0.5, generationModes.length * 0.5);
+      const creditReservation = await deductAgencyWorkspaceCredits({
+        agency,
+        workspace,
+        userId: req.user.id,
+        amount: estimatedCreditCost,
+        operation: 'agency_workspace_refine',
+        description: `Refined workspace content for ${workspace.name}`,
+      });
+
+      if (!creditReservation.success) {
+        throw apiError(
+          `Insufficient agency credits. Required: ${creditReservation.creditsRequired ?? estimatedCreditCost}, Available: ${creditReservation.creditsAvailable ?? 0}`,
+          'INSUFFICIENT_AGENCY_CREDITS',
+          400
+        );
+      }
+      reservedCredits = estimatedCreditCost;
 
       for (const generationMode of generationModes) {
         const platformLabel = generationMode === 'generic' ? 'social media' : generationMode;
@@ -363,10 +435,33 @@ export function createAgencyWorkspaceContentController(deps) {
       }
 
       if (variants.length === 0) {
+        await refundAgencyWorkspaceCredits({
+          agency,
+          workspace,
+          userId: req.user.id,
+          amount: estimatedCreditCost,
+          reason: 'agency_workspace_refine_failed',
+          description: `Refunded failed refinement credits for ${workspace.name}`,
+        }).catch(() => {});
+        reservedCredits = 0;
         throw apiError(errors[0] || 'Refinement returned empty content', 'WORKSPACE_REFINE_EMPTY', 502);
       }
 
+      const consumedCredits = Math.max(0.5, variants.length * 0.5);
+      const refundAmount = Math.max(0, estimatedCreditCost - consumedCredits);
+      if (refundAmount > 0) {
+        await refundAgencyWorkspaceCredits({
+          agency,
+          workspace,
+          userId: req.user.id,
+          amount: refundAmount,
+          reason: 'agency_workspace_refine_adjustment',
+          description: `Refunded unused refinement credits for ${workspace.name}`,
+        }).catch(() => {});
+      }
+
       if (variants.length === 1) {
+        reservedCredits = 0;
         return res.json({
           content: variants[0].content,
           mode: variants[0].mode,
@@ -377,6 +472,7 @@ export function createAgencyWorkspaceContentController(deps) {
         });
       }
 
+      reservedCredits = 0;
       return res.json({
         action: content ? 'refined' : 'generated',
         modes: variants.map((variant) => variant.mode),
@@ -384,6 +480,16 @@ export function createAgencyWorkspaceContentController(deps) {
         errors,
       });
     } catch (error) {
+      if (reservedCredits > 0 && creditAgency && creditWorkspace) {
+        await refundAgencyWorkspaceCredits({
+          agency: creditAgency,
+          workspace: creditWorkspace,
+          userId: req.user.id,
+          amount: reservedCredits,
+          reason: 'agency_workspace_refine_failed',
+          description: `Refunded failed refinement credits for ${creditWorkspace.name}`,
+        }).catch(() => {});
+      }
       return handleError(res, error, 'Failed to refine workspace content');
     }
   },

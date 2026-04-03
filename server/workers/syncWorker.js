@@ -1,7 +1,7 @@
 import { isDatabaseUnavailableError, query } from '../config/database.js';
 import redisClient from '../config/redis.js';
 import CreditService from '../services/creditService.js';
-import { CREDIT_TIERS } from '../utils/creditTiers.js';
+import { AGENCY_POOL_CREDIT_TIERS, CREDIT_TIERS } from '../utils/creditTiers.js';
 
 class SyncWorker {
     constructor() {
@@ -180,7 +180,27 @@ class SyncWorker {
                   )
             `);
 
-            if (updateResult.rowCount === 0 && teamResetResult.rowCount === 0) {
+            const agencyResetResult = await query(`
+                UPDATE agency_accounts aa
+                SET
+                  credits_remaining = CASE
+                    WHEN u.plan_type = 'enterprise' AND u.api_key_preference = 'platform' THEN ${AGENCY_POOL_CREDIT_TIERS.enterprise.platform}
+                    WHEN u.plan_type = 'enterprise' AND u.api_key_preference = 'byok' THEN ${AGENCY_POOL_CREDIT_TIERS.enterprise.byok}
+                    WHEN u.plan_type = 'agency' AND u.api_key_preference = 'platform' THEN ${AGENCY_POOL_CREDIT_TIERS.agency.platform}
+                    WHEN u.plan_type = 'agency' AND u.api_key_preference = 'byok' THEN ${AGENCY_POOL_CREDIT_TIERS.agency.byok}
+                    ELSE ${AGENCY_POOL_CREDIT_TIERS.agency.platform}
+                  END,
+                  last_credit_reset = CURRENT_TIMESTAMP AT TIME ZONE 'UTC',
+                  updated_at = CURRENT_TIMESTAMP
+                FROM users u
+                WHERE aa.owner_id = u.id
+                  AND (
+                    aa.last_credit_reset IS NULL
+                    OR aa.last_credit_reset < DATE_TRUNC('month', CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
+                  )
+            `);
+
+            if (updateResult.rowCount === 0 && teamResetResult.rowCount === 0 && agencyResetResult.rowCount === 0) {
                 this.databaseCooldownUntil = 0;
                 this.lastDatabaseCooldownReason = null;
                 return;
@@ -191,6 +211,7 @@ class SyncWorker {
             console.log(`[CREDIT RESET] Monthly credit reset completed for ${utcMonth + 1}/${utcYear} (UTC month boundary)`);
             console.log(`[CREDIT RESET] User DB updates: ${updateResult.rowCount}, Redis updates: ${redisUpdates}`);
             console.log(`[CREDIT RESET] Team updates: ${teamResetResult.rowCount}`);
+            console.log(`[CREDIT RESET] Agency pool updates: ${agencyResetResult.rowCount}`);
             console.log('[CREDIT RESET] Credit allocation by tier:');
             console.log(`   Free+Platform (${CREDIT_TIERS.free.platform}): ${statsByTier['free-platform']} users`);
             console.log(`   Free+BYOK (${CREDIT_TIERS.free.byok}): ${statsByTier['free-byok']} users`);

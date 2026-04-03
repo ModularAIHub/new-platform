@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { pool, query } from '../config/database.js';
 import EmailService from '../services/emailService.js';
+import agencyCreditService from '../services/agencyCreditService.js';
 import { ensureAgencySchemaReady } from '../utils/agencySchema.js';
 import { createAgencyClientOnboardingController } from './agencyClientOnboardingController.js';
 import { createAgencyWorkspaceContentController } from './agencyWorkspaceContentController.js';
@@ -797,11 +798,18 @@ async function uploadWorkspaceMediaToSocialStorage(file) {
       body: form,
     });
   } catch (error) {
-    throw apiError(
-      `social service is unavailable at ${baseUrl}. Start that service and try again.`,
+    const err = apiError(
+      'Social channels are temporarily unavailable. Our team has been notified.',
       'DOWNSTREAM_SERVICE_UNAVAILABLE',
       502
     );
+    err.downstream = {
+      tool: 'social',
+      path: '/api/internal/media/upload',
+      baseUrl,
+      message: error?.message || 'fetch failed',
+    };
+    throw err;
   }
 
   let payload = {};
@@ -2790,6 +2798,46 @@ async function getWorkspace(workspaceId, agencyId) {
   return result.rows[0];
 }
 
+async function deductAgencyWorkspaceCredits({
+  agency,
+  workspace,
+  userId,
+  amount,
+  operation,
+  description,
+  serviceName = 'agency-workspace',
+}) {
+  return agencyCreditService.deductCredits({
+    agencyId: agency.id,
+    workspaceId: workspace.id,
+    userId,
+    amount,
+    operation,
+    description,
+    serviceName,
+  });
+}
+
+async function refundAgencyWorkspaceCredits({
+  agency,
+  workspace,
+  userId,
+  amount,
+  reason,
+  description,
+  serviceName = 'agency-workspace',
+}) {
+  return agencyCreditService.addCredits({
+    agencyId: agency.id,
+    workspaceId: workspace.id,
+    userId,
+    amount,
+    description: description || `${reason} - ${amount} credits refunded`,
+    serviceName,
+    type: 'refund',
+  });
+}
+
 function isAgencyHubEnabled() {
   const raw = String(process.env.AGENCY_HUB_ENABLED || '').trim().toLowerCase();
   if (raw === 'true') return true;
@@ -2865,6 +2913,8 @@ const agencyWorkspaceContentController = createAgencyWorkspaceContentController(
   buildWorkspaceInsightsSummary,
   buildWorkspaceAnalysisSummary,
   buildWorkspaceOperationsSnapshotData,
+  deductAgencyWorkspaceCredits,
+  refundAgencyWorkspaceCredits,
   safeQuery,
   handleError,
 });

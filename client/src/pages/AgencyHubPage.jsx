@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Building2, Layers3, Plus, Users } from 'lucide-react';
 import api from '../utils/api';
@@ -13,7 +13,7 @@ const AgencyHubPage = () => {
   const [form, setForm] = useState({ name: '', brand_name: '', timezone: 'Asia/Kolkata' });
   const [creating, setCreating] = useState(false);
   const [accessError, setAccessError] = useState(null);
-  const [lastLoadedAt, setLastLoadedAt] = useState(0);
+  const lastLoadedAtRef = useRef(0);
 
   const slotsRemaining = useMemo(() => {
     if (!context) return 0;
@@ -30,7 +30,7 @@ const AgencyHubPage = () => {
       setContext(ctx.data);
       setWorkspaces(ws.data.workspaces || []);
       setSummary(ws.data.summary || { active: 0, paused: 0, archived: 0 });
-      setLastLoadedAt(Date.now());
+      lastLoadedAtRef.current = Date.now();
       setAccessError(null);
     } catch (error) {
       const code = String(error?.response?.data?.code || '').trim().toUpperCase();
@@ -49,12 +49,12 @@ const AgencyHubPage = () => {
     fetchAgency();
 
     const refreshOnFocus = () => {
-      if (Date.now() - lastLoadedAt < 30000) return;
+      if (Date.now() - lastLoadedAtRef.current < 30000) return;
       fetchAgency();
     };
     const refreshOnVisibility = () => {
       if (typeof document === 'undefined') return;
-      if (document.visibilityState === 'visible' && Date.now() - lastLoadedAt >= 30000) {
+      if (document.visibilityState === 'visible' && Date.now() - lastLoadedAtRef.current >= 30000) {
         fetchAgency();
       }
     };
@@ -74,7 +74,7 @@ const AgencyHubPage = () => {
         document.removeEventListener('visibilitychange', refreshOnVisibility);
       }
     };
-  }, [lastLoadedAt]);
+  }, []);
 
   const onCreateWorkspace = async (event) => {
     event.preventDefault();

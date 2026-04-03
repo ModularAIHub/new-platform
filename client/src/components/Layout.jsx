@@ -1,6 +1,7 @@
-import { useState, Suspense } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import api from '../utils/api'
 import {
     Home,
     CreditCard,
@@ -17,6 +18,49 @@ const Layout = ({ children }) => {
     const { user, logout } = useAuth()
     const location = useLocation()
     const [sidebarOpen, setSidebarOpen] = useState(false)
+    const [creditBalance, setCreditBalance] = useState(null)
+    const [creditScope, setCreditScope] = useState('personal')
+
+    useEffect(() => {
+        if (!user) {
+            setCreditBalance(null)
+            setCreditScope('personal')
+            return
+        }
+
+        let cancelled = false
+        const fetchCredits = async () => {
+            try {
+                const response = await api.get('/credits/balance')
+                if (cancelled) return
+                const balance = Number.parseFloat(
+                    response?.data?.balance ?? response?.data?.creditsRemaining ?? '0'
+                )
+                setCreditBalance(Number.isFinite(balance) ? balance : 0)
+                setCreditScope(response?.data?.scope || response?.data?.source || 'personal')
+            } catch {
+                if (!cancelled) {
+                    setCreditBalance(null)
+                    setCreditScope('personal')
+                }
+            }
+        }
+
+        fetchCredits()
+        const onFocus = () => fetchCredits()
+        window.addEventListener('focus', onFocus)
+        return () => {
+            cancelled = true
+            window.removeEventListener('focus', onFocus)
+        }
+    }, [user?.id])
+
+    const creditScopeLabel =
+        creditScope === 'agency'
+            ? 'Agency'
+            : creditScope === 'team'
+                ? 'Team'
+                : 'Credits'
 
     const navigation = [
         { name: 'Dashboard', href: '/dashboard', icon: Home },
@@ -161,7 +205,7 @@ const Layout = ({ children }) => {
                         <div className="flex items-center gap-x-4 lg:gap-x-6">
                             <div className="text-sm text-gray-500 flex items-center gap-3">
                                 <span>
-                                    Credits: <span className="font-medium text-gray-900">{user?.creditsRemaining || 0}</span>
+                                    {creditScopeLabel}: <span className="font-medium text-gray-900">{creditBalance !== null ? creditBalance : (user?.creditsRemaining || 0)}</span>
                                 </span>
                                 {(user?.planType === 'pro' || user?.planType === 'agency') && (
                                     <span className="px-2 py-0.5 text-xs font-semibold bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-full">

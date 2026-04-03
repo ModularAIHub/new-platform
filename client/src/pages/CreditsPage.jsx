@@ -18,6 +18,7 @@ import {
 const CreditsPage = () => {
     const { user, loading: authLoading } = useAuth()
     const [balance, setBalance] = useState(0)
+    const [creditScope, setCreditScope] = useState('personal')
     const [transactions, setTransactions] = useState([])
     const [loading, setLoading] = useState(true)
     const [purchasing, setPurchasing] = useState(null)
@@ -43,6 +44,7 @@ const CreditsPage = () => {
             ])
 
             setBalance(balanceRes.data.creditsRemaining)
+            setCreditScope(balanceRes.data.scope || balanceRes.data.source || 'personal')
             setTransactions(historyRes.data.transactions || [])
         } catch (error) {
             console.error('Failed to fetch credit data:', error)
@@ -204,7 +206,29 @@ const CreditsPage = () => {
             {/* Header */}
             <div className="bg-white shadow rounded-lg p-6">
                 <h1 className="text-2xl font-bold text-gray-900">Credits</h1>
-                <p className="text-gray-600 mt-2">Manage your credit balance and purchase additional credits when needed.</p>
+                <p className="text-gray-600 mt-2">
+                    {creditScope === 'agency'
+                        ? 'You are viewing the pooled agency credit balance for this workspace context.'
+                        : creditScope === 'team'
+                            ? 'You are viewing your shared team credit balance.'
+                            : 'Manage your credit balance and purchase additional credits when needed.'}
+                </p>
+            </div>
+
+            <div className="bg-white shadow rounded-lg p-6">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                        <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">Current balance</p>
+                        <p className="mt-2 text-4xl font-bold text-gray-900">{Number(balance || 0).toLocaleString()}</p>
+                    </div>
+                    <div className="rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700">
+                        {creditScope === 'agency'
+                            ? 'Agency pooled credits'
+                            : creditScope === 'team'
+                                ? 'Team shared credits'
+                                : 'Personal credits'}
+                    </div>
+                </div>
             </div>
 
             {/* Credit balance section removed as requested */}

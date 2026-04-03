@@ -663,6 +663,40 @@ const migrations = [
       CREATE INDEX IF NOT EXISTS idx_agency_approval_tokens_token
         ON agency_approval_tokens(token);
     `
+  },
+  {
+    version: 28,
+    name: 'agency_credit_pooling',
+    sql: `
+      ALTER TABLE agency_accounts
+        ADD COLUMN IF NOT EXISTS credits_remaining NUMERIC(10,2) NOT NULL DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS last_credit_reset TIMESTAMP;
+
+      ALTER TABLE credit_transactions
+        ADD COLUMN IF NOT EXISTS agency_id UUID REFERENCES agency_accounts(id) ON DELETE SET NULL,
+        ADD COLUMN IF NOT EXISTS agency_workspace_id UUID REFERENCES agency_workspaces(id) ON DELETE SET NULL;
+
+      CREATE INDEX IF NOT EXISTS idx_credit_transactions_agency_id
+        ON credit_transactions(agency_id);
+      CREATE INDEX IF NOT EXISTS idx_credit_transactions_agency_workspace_id
+        ON credit_transactions(agency_workspace_id);
+      CREATE INDEX IF NOT EXISTS idx_agency_accounts_credits
+        ON agency_accounts(credits_remaining);
+
+      UPDATE agency_accounts aa
+      SET
+        credits_remaining = CASE
+          WHEN COALESCE(u.plan_type, 'free') = 'enterprise' AND u.api_key_preference = 'byok' THEN 4000
+          WHEN COALESCE(u.plan_type, 'free') = 'enterprise' AND u.api_key_preference = 'platform' THEN 2500
+          WHEN COALESCE(u.plan_type, 'free') = 'agency' AND u.api_key_preference = 'byok' THEN 1400
+          WHEN COALESCE(u.plan_type, 'free') = 'agency' AND u.api_key_preference = 'platform' THEN 800
+          ELSE aa.credits_remaining
+        END,
+        last_credit_reset = COALESCE(aa.last_credit_reset, NOW())
+      FROM users u
+      WHERE aa.owner_id = u.id
+        AND (aa.last_credit_reset IS NULL OR aa.credits_remaining = 0);
+    `
   }
 ];
 

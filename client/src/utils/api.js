@@ -2,6 +2,7 @@ import axios from 'axios'
 
 // CSRF token cache
 let csrfToken = null;
+const AGENCY_WORKSPACE_STORAGE_KEY = 'suitegenie:agency-workspace-context';
 
 // Fetch CSRF token from backend
 export async function fetchCsrfToken() {
@@ -68,6 +69,33 @@ const processQueue = (error, token = null) => {
     failedQueue = [];
 };
 
+const readAgencyWorkspaceContext = () => {
+    if (typeof window === 'undefined') return null;
+
+    try {
+        const params = new URLSearchParams(window.location.search || '');
+        const token = String(params.get('agency_token') || '').trim();
+        const workspaceId = String(params.get('workspace_id') || '').trim();
+        const tool = String(params.get('tool') || '').trim();
+        const target = String(params.get('target') || '').trim();
+
+        if (token && workspaceId) {
+            const context = { token, workspaceId, tool: tool || null, target: target || null };
+            window.sessionStorage?.setItem(AGENCY_WORKSPACE_STORAGE_KEY, JSON.stringify(context));
+            return context;
+        }
+    } catch {
+        // Ignore malformed URL params and fall back to stored context.
+    }
+
+    try {
+        const stored = window.sessionStorage?.getItem(AGENCY_WORKSPACE_STORAGE_KEY);
+        return stored ? JSON.parse(stored) : null;
+    } catch {
+        return null;
+    }
+};
+
 // All public routes that should never redirect to home on 401
 const isGuestPage = () => {
     const path = window.location.pathname;
@@ -103,6 +131,24 @@ api.interceptors.request.use(
                 config.headers['X-CSRF-Token'] = csrfToken;
             }
         }
+
+        delete config.headers['x-agency-token'];
+        delete config.headers['x-agency-workspace-id'];
+        delete config.headers['x-agency-tool'];
+        delete config.headers['x-agency-target'];
+
+        const agencyWorkspace = readAgencyWorkspaceContext();
+        if (agencyWorkspace?.token && agencyWorkspace?.workspaceId) {
+            config.headers['x-agency-token'] = agencyWorkspace.token;
+            config.headers['x-agency-workspace-id'] = agencyWorkspace.workspaceId;
+            if (agencyWorkspace.tool) {
+                config.headers['x-agency-tool'] = agencyWorkspace.tool;
+            }
+            if (agencyWorkspace.target) {
+                config.headers['x-agency-target'] = agencyWorkspace.target;
+            }
+        }
+
         return config;
     },
     (error) => {

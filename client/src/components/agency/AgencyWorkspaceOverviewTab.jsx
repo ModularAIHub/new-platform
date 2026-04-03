@@ -55,7 +55,7 @@ const AgencyWorkspaceOverviewTab = ({
             />
           ) : (
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-dashed border-white/20 bg-white/5 text-center text-xs text-slate-300">
-              No logo
+              Add logo
             </div>
           )}
         </div>

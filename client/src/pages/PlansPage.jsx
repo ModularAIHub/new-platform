@@ -63,19 +63,16 @@ const PlansPage = () => {
       name: 'Free',
       price: 'Free',
       monthlyPrice: '$0',
-      description: 'Perfect for solo creators',
+      description: 'For solo testing and light publishing.',
       features: [
-        'All core SuiteGenie features',
-        'Content generation with AI (text only, no image generation)',
-        'Basic AI mode (good for everyday drafts)',
-        'Basic analytics & automation',
-        'Cross-platform posting',
-        'Bulk automation for already generated content',
+        'Manual publishing across supported Genie modules',
+        'Basic AI drafting with platform credits or BYOK',
+        'Text generation only',
+        'Basic analytics and scheduling',
         'Connection of Tweet Genie and LinkedIn Genie',
         'Encrypted BYOK (OpenAI, Perplexity, Gemini)',
-        'Community support',
-        '50 credits per month (BYOK mode)',
-        '15 credits per month (platform mode)',
+        '15 platform credits per month',
+        '50 BYOK credits per month',
       ],
       notIncluded: [],
       buttonText: 'Start Free',
@@ -83,22 +80,21 @@ const PlansPage = () => {
     },
     {
       name: 'Pro',
-      price: '₹399',
-      monthlyPrice: '₹399',
+      price: 'Rs 399',
+      monthlyPrice: 'Rs 399',
       monthlyPriceUsdApprox: `~$${toUsdApprox(399)}`,
-      description: 'Best for individual creators and small teams with multiple accounts',
+      description: 'Best for solo operators and internal teams that need stronger AI, more accounts, and collaboration.',
       features: [
         'Everything in Free',
-        'Upgraded AI',
-        'Image generation with AI',
-        'Bulk Content Generation (AI-powered)',
-        'Content Strategy Builder',
+        'Higher-quality AI generation and image generation',
+        'Bulk content generation and strategy builder',
         'Teams mode: collaborate with up to 5 members',
         'Connect up to 8 social accounts (any mix: Twitter, LinkedIn, etc.)',
         'Role-based access control (Owner, Admin, Editor, Viewer)',
-        'Complete analytics with advanced insights',
-        '100 credits in platform mode',
-        '180 credits in BYOK mode',
+        'Automation scales with your included credits or BYOK usage',
+        'Advanced analytics and insights',
+        '100 platform credits per month',
+        '180 BYOK credits per month',
         'Priority support',
       ],
       notIncluded: [],
@@ -107,10 +103,10 @@ const PlansPage = () => {
     },
     {
       name: 'Agency',
-      price: '₹1599',
-      monthlyPrice: '₹1599',
+      price: 'Rs 1599',
+      monthlyPrice: 'Rs 1599',
       monthlyPriceUsdApprox: `~$${toUsdApprox(1599)}`,
-      description: 'Workspace-first operations for agencies with multi-client delivery',
+      description: 'Client workspaces, approvals, pooled credits, and delivery ops for agencies.',
       features: [
         '6 client workspaces (included)',
         '6 seats total including owner (included)',
@@ -119,37 +115,38 @@ const PlansPage = () => {
         'Roles: Admin, Editor, Viewer with workspace-level access control',
         'Attach workspace accounts across Twitter, LinkedIn, Threads, Instagram',
         'Launch Tweet Genie, LinkedIn Genie, and Social Genie from workspace context',
-        'Shared draft generation, publishing, scheduling, and unified client calendar',
+        'Client approval links, workspace publishing, and a shared client calendar',
+        'Pooled agency credits across all workspaces',
+        '800 platform credits per month for the agency pool',
+        '1400 BYOK credits per month for the agency pool',
         'Shared analytics summary per workspace',
         'Priority support',
       ],
       notIncluded: [],
       buttonText: 'Upgrade to Agency',
       popular: false
-    },
-
+    }
   ];
 
   const comparisonFeatures = [
-    { name: 'AI Quality Mode', free: 'Basic AI', pro: 'Upgraded AI' },
-    { name: 'Monthly Credits (Platform)', free: '15', pro: '100' },
-    { name: 'Monthly Credits (BYOK)', free: '50', pro: '180' },
-    { name: 'Social Accounts', free: '2 (Tweet + LinkedIn)', pro: '8 (any mix)' },
-    { name: 'Analytics', free: 'Basic', pro: 'Complete' },
-    { name: 'Image Generation', free: false, pro: true },
-    { name: 'Bulk Content Generation (AI)', free: false, pro: true },
-    { name: 'Bulk Automation', free: 'Already generated', pro: 'Already generated' },
-    { name: 'Content Strategy Builder', free: false, pro: true },
-    { name: 'Teams Mode (Collaboration)', free: false, pro: true },
-    { name: 'Team Members', free: '0', pro: '5' },
-    { name: 'Priority Support', free: false, pro: true },
-    { name: 'All Core Features', free: true, pro: true },
+    { name: 'Primary use case', free: 'Solo testing', pro: 'Solo + internal teams', agency: 'Client workspaces' },
+    { name: 'AI quality mode', free: 'Basic AI', pro: 'Upgraded AI', agency: 'Upgraded AI + workspace context' },
+    { name: 'Monthly credits (Platform)', free: '15', pro: '100', agency: '800 pooled' },
+    { name: 'Monthly credits (BYOK)', free: '50', pro: '180', agency: '1400 pooled' },
+    { name: 'Social accounts', free: '2 starter connections', pro: '8 (any mix)', agency: 'Per workspace allocation' },
+    { name: 'Analytics', free: 'Basic', pro: 'Advanced', agency: 'Workspace-level reporting' },
+    { name: 'Image generation', free: false, pro: true, agency: true },
+    { name: 'Bulk generation', free: false, pro: true, agency: true },
+    { name: 'Team collaboration', free: false, pro: true, agency: true },
+    { name: 'Client approvals', free: false, pro: false, agency: true },
+    { name: 'Client workspaces', free: false, pro: false, agency: true },
+    { name: 'Priority support', free: false, pro: true, agency: true },
   ];
 
   const faqs = [
     {
       question: 'How do I upgrade to Pro?',
-      answer: `Click 'Upgrade to Pro', complete the secure Razorpay checkout, and your account will be upgraded for ₹399/month (about $${toUsdApprox(399)}/month).`
+      answer: `Click 'Upgrade to Pro', complete the secure Razorpay checkout, and your account will be upgraded for Rs 399/month (about $${toUsdApprox(399)}/month).`
     },
     {
       question: 'Can I change plans at any time?',
@@ -182,7 +179,15 @@ const PlansPage = () => {
     },
     {
       question: 'How do I start with Agency plan?',
-      answer: `Click 'Upgrade to Agency', complete the secure Razorpay subscription checkout, and your account will be upgraded to Agency for ₹1599/month (about $${toUsdApprox(1599)}/month).`
+      answer: `Click 'Upgrade to Agency', complete the secure Razorpay subscription checkout, and your account will be upgraded to Agency for Rs 1599/month (about $${toUsdApprox(1599)}/month).`
+    },
+    {
+      question: 'Is automation a separate plan?',
+      answer: 'No. Automation depth rides on top of your base plan through credits and BYOK. Pro is the best fit for solo operators or internal teams, while Agency is for client workspaces and pooled delivery.'
+    },
+    {
+      question: 'How do agency credits work?',
+      answer: 'Agency credits are pooled at the agency level and can be used across client workspaces. Publishing, approvals, comments, and scheduling stay workflow-native, while AI-heavy actions consume credits.'
     }
   ];
 
@@ -508,7 +513,7 @@ const PlansPage = () => {
     <div className="min-h-screen bg-gray-50 relative">
       <PublicSeo
         title="SuiteGenie Plans and Pricing | Free, Pro, and Agency"
-        description="Compare SuiteGenie Free, Pro, and Agency plans for AI social media automation, BYOK, workspace management, team collaboration, analytics, and flow automation."
+        description="Compare SuiteGenie Free, Pro, and Agency plans for AI social media operations, BYOK, internal teams, client workspaces, pooled credits, and automation-friendly publishing."
         canonicalPath="/plans"
         keywords="SuiteGenie pricing, SuiteGenie plans, social media automation pricing, BYOK pricing, AI content automation plans"
         schema={[
@@ -570,12 +575,40 @@ const PlansPage = () => {
             Choose Your Plan
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Pick the workflow depth you need today, from solo creation to full client workspaces with approvals,
-            BYOK AI, and multi-channel publishing.
+            Choose the right operating layer for how you work: solo, internal team, or agency client delivery.
+            AI-heavy usage scales through credits and BYOK instead of pushing you into a confusing extra plan.
           </p>
-          {/* <div className="inline-flex items-center bg-blue-50 rounded-full px-4 py-2 text-blue-700">
-            <span className="text-sm font-medium">No credit card required for trial</span>
-          </div> */}
+          <div className="inline-flex flex-wrap items-center justify-center gap-2 rounded-full bg-blue-50 px-4 py-2 text-sm text-blue-700">
+            <span className="font-medium">Base plan = ownership scope</span>
+            <span className="text-blue-300">•</span>
+            <span>Credits + BYOK = AI usage depth</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-white border border-gray-200 rounded-2xl p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-600">Ownership Scope</p>
+            <h2 className="text-lg font-semibold text-gray-900 mt-3">Pick the workspace model first</h2>
+            <p className="text-sm text-gray-600 mt-2">
+              Free is for solo testing. Pro is for creators and internal teams. Agency is for client workspaces, approvals, and pooled delivery.
+            </p>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-2xl p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-600">AI Usage</p>
+            <h2 className="text-lg font-semibold text-gray-900 mt-3">Credits meter expensive work</h2>
+            <p className="text-sm text-gray-600 mt-2">
+              AI-heavy actions consume credits. Publishing, approvals, scheduling, comments, and calendar workflows stay operational instead of charging you per click.
+            </p>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-2xl p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-600">Automation + BYOK</p>
+            <h2 className="text-lg font-semibold text-gray-900 mt-3">Scale usage without changing products</h2>
+            <p className="text-sm text-gray-600 mt-2">
+              BYOK lowers hosted AI cost pressure, while higher plans give you more room for bulk generation, analysis refreshes, and automation-heavy workflows.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -751,6 +784,7 @@ const PlansPage = () => {
                   <th className="text-left py-4 px-6 font-medium text-gray-900">Features</th>
                   <th className="text-center py-4 px-6 font-medium text-gray-900">Free</th>
                   <th className="text-center py-4 px-6 font-medium text-gray-900 bg-blue-50">Pro</th>
+                  <th className="text-center py-4 px-6 font-medium text-gray-900 bg-indigo-50">Agency</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -779,6 +813,17 @@ const PlansPage = () => {
                         <span className="text-gray-700 font-medium">{feature.pro}</span>
                       )}
                     </td>
+                    <td className="py-4 px-6 text-center bg-indigo-50">
+                      {typeof feature.agency === 'boolean' ? (
+                        feature.agency ? (
+                          <Check className="h-5 w-5 text-green-500 mx-auto" />
+                        ) : (
+                          <X className="h-5 w-5 text-gray-400 mx-auto" />
+                        )
+                      ) : (
+                        <span className="text-gray-700 font-medium">{feature.agency}</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -787,45 +832,45 @@ const PlansPage = () => {
         </div>
       </div>
 
-      {/* Team Collaboration Feature Section */}
+      {/* Pricing Model Section */}
       <div className="py-16 bg-gradient-to-r from-blue-50 to-indigo-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Team Collaboration</h2>
-            <p className="text-xl text-gray-600">Bring your team together and collaborate on content</p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">How the Model Works</h2>
+            <p className="text-xl text-gray-600">Choose the operating layer you need, then scale AI usage through credits and BYOK.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
               <div className="text-4xl mb-4">01</div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Invite Members</h3>
-              <p className="text-gray-600">Invite up to 5 team members to collaborate on your social media strategy. Assign roles based on permissions.</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Pick the Base Layer</h3>
+              <p className="text-gray-600">Use Free for solo testing, Pro for creators and internal teams, and Agency when your work revolves around client workspaces and approvals.</p>
             </div>
 
             <div className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
               <div className="text-4xl mb-4">02</div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Shared Accounts</h3>
-              <p className="text-gray-600">Connect and share up to 8 social media accounts with your team. Everyone can create content together.</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Use Credits for AI Work</h3>
+              <p className="text-gray-600">Draft generation, refinements, and heavier analysis use credits. Scheduling, publishing, approvals, and collaboration stay workflow-native.</p>
             </div>
 
             <div className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
               <div className="text-4xl mb-4">03</div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Team Analytics</h3>
-              <p className="text-gray-600">View performance metrics across all team accounts. Track engagement and optimize together.</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Scale with BYOK</h3>
+              <p className="text-gray-600">Bring your own keys when you want tighter AI cost control and a higher usage ceiling without changing how the product works.</p>
             </div>
           </div>
 
           <div className="mt-12 bg-white rounded-lg p-8 border-2 border-blue-500">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center">Get Started with Your Team</h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center">Start with the Workflow You Actually Need</h3>
             <p className="text-gray-600 text-center mb-6">
-              After upgrading to Pro, you'll be able to visit the <span className="font-semibold text-blue-600">/team</span> dashboard where you can create a team, invite members, and start collaborating.
+              Pro is the best fit when you need stronger AI and team collaboration. Agency is the right move when you need client workspaces, approvals, and pooled credits across delivery.
             </p>
             <div className="text-center">
               <button
-                onClick={() => navigate('/plans')}
+                onClick={() => navigate(currentIndividualPlanType === 'agency' ? '/agency' : currentIndividualPlanType === 'pro' ? '/team' : '/register')}
                 className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
               >
-                Upgrade to Pro
+                {currentIndividualPlanType === 'agency' ? 'Open Agency Hub' : currentIndividualPlanType === 'pro' ? 'Open Team Workspace' : 'Get Started'}
               </button>
             </div>
           </div>

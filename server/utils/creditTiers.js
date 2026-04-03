@@ -8,6 +8,13 @@ export const CREDIT_TIERS = Object.freeze({
   enterprise: Object.freeze({ platform: 500, byok: 1000 })
 });
 
+// Agency work is pooled across client workspaces, so the included balance
+// needs to be materially larger than an individual user's personal balance.
+export const AGENCY_POOL_CREDIT_TIERS = Object.freeze({
+  agency: Object.freeze({ platform: 800, byok: 1400 }),
+  enterprise: Object.freeze({ platform: 2500, byok: 4000 }),
+});
+
 export const isValidApiPreference = (preference) =>
   preference === 'platform' || preference === 'byok';
 
