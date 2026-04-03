@@ -6,10 +6,11 @@ import AppRoutes from './routes/AppRoutes';
 function App() {
   const location = useLocation();
   const isAgencyWorkspaceRoute = location.pathname.startsWith('/agency/workspaces/');
+  const isAgencyPublicApprovalRoute = location.pathname.startsWith('/agency/approve/');
 
   return (
     <AuthProvider>
-      {!isAgencyWorkspaceRoute && <Navbar />}
+      {!isAgencyWorkspaceRoute && !isAgencyPublicApprovalRoute && <Navbar />}
       <AppRoutes />
     </AuthProvider>
   );

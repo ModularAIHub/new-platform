@@ -2,30 +2,30 @@ const WorkflowSection = () => {
   const steps = [
     {
       step: '01',
-      title: 'Run Strategy Analysis',
+      title: 'Set up the workspace',
       description:
-        'Analyze your recent content, profile context, and positioning so the system starts from your real baseline instead of generic assumptions.',
+        'Capture client identity, connect the right channels, and let SuiteGenie pull in audience and brand context before the first draft is generated.',
       tone: 'border-blue-200 bg-blue-50 text-blue-900'
     },
     {
       step: '02',
-      title: 'Generate High-Signal Prompt Pack',
+      title: 'Generate or refine drafts with context',
       description:
-        'Create a quality-first prompt pack (11-14 prompts) tuned to your niche, audience, and goals so every generation starts with strong direction.',
+        'Use channel-specific generation, prompt guidance, and BYOK options without losing the workspace context that keeps content on-brand.',
       tone: 'border-purple-200 bg-purple-50 text-purple-900'
     },
     {
       step: '03',
-      title: 'Create Publish-Ready Content Plan',
+      title: 'Send clients a clean approval flow',
       description:
-        'Auto-generate 4 publish-ready posts with schedule suggestions, approve or reject quickly, and push selected posts to Compose in one click.',
+        'Share a no-login approval link so feedback, comments, approve, and reject actions happen inside the draft flow instead of email threads.',
       tone: 'border-green-200 bg-green-50 text-green-900'
     },
     {
       step: '04',
-      title: 'Learn and Improve Automatically',
+      title: 'Queue, publish, and learn',
       description:
-        'Context Vault ingests queue reviews and analytics performance so the next strategy cycle learns what worked and avoids what failed.',
+        'Move approved work into the calendar, publish from connected channels, and use the next cycle of analytics and comments to sharpen what comes next.',
       tone: 'border-orange-200 bg-orange-50 text-orange-900'
     }
   ]
@@ -35,10 +35,10 @@ const WorkflowSection = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-14">
           <h2 className="text-4xl font-extrabold text-neutral-900 mb-4 tracking-tight">
-            From Strategy to Reliable Publishing
+            From client setup to approval to publishing
           </h2>
           <p className="text-xl text-neutral-600 max-w-3xl mx-auto">
-            A practical loop for creators and teams: analyze, generate quality prompts, publish ready-to-use content, and learn from real outcomes.
+            A practical loop for creators, teams, and agencies that want less operational mess around social media execution.
           </p>
         </div>
 

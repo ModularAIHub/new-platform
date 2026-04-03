@@ -87,7 +87,8 @@ const isGuestPage = () => {
            path === '/features' ||
            path.startsWith('/blogs') ||
            path.startsWith('/team/invite') ||
-           path.startsWith('/agency/invite');
+           path.startsWith('/agency/invite') ||
+           path.startsWith('/agency/approve');
 };
 
 // Request interceptor

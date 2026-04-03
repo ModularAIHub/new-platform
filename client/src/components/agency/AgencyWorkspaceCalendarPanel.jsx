@@ -51,8 +51,17 @@ const AgencyWorkspaceCalendarPanel = ({
   visibleCalendarDateKey,
   visibleCalendarItems,
   formatDateTime,
-}) => (
-  <div className="space-y-4 sm:space-y-5">
+}) => {
+  const calendarItems = Array.isArray(operationsSnapshot.calendar) ? operationsSnapshot.calendar : [];
+  const daysWithPosts = new Set(
+    calendarItems
+      .map((item) => String(item?.scheduledFor || item?.createdAt || '').slice(0, 10))
+      .filter(Boolean)
+  ).size;
+  const upcomingCalendarItems = [...calendarItems].slice(0, 6);
+
+  return (
+    <div className="space-y-4 sm:space-y-5">
     <div className="rounded-[26px] border border-slate-200/80 bg-[linear-gradient(180deg,_rgba(255,255,255,0.98)_0%,_rgba(246,250,255,0.98)_100%)] p-4 shadow-[0_20px_60px_rgba(15,23,42,0.06)] sm:rounded-[30px] sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
@@ -84,7 +93,7 @@ const AgencyWorkspaceCalendarPanel = ({
         ))}
       </div>
 
-      <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <div className="inline-flex w-full rounded-2xl border border-slate-200 bg-slate-100/80 p-1 sm:w-auto">
           <button
             type="button"
@@ -117,6 +126,12 @@ const AgencyWorkspaceCalendarPanel = ({
             ? 'Review approval pressure and unscheduled work before it slips.'
             : 'Use the month view to spot posting clusters and quiet days.'}
         </p>
+        {operationsView === 'calendar' ? (
+          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+            <span className="rounded-full border border-slate-200 bg-white px-3 py-1">Days with posts: {daysWithPosts}</span>
+            <span className="rounded-full border border-slate-200 bg-white px-3 py-1">Upcoming scheduled items: {calendarItems.length}</span>
+          </div>
+        ) : null}
       </div>
     </div>
 
@@ -203,43 +218,16 @@ const AgencyWorkspaceCalendarPanel = ({
                 </div>
               </div>
 
-              <div className="block md:hidden">
-                <div className="space-y-3 p-4">
-                  {(operationsSnapshot.calendar || []).slice(0, 8).map((item) => (
-                    <button
-                      key={`mobile-calendar:${item.platform}:${item.id}`}
-                      type="button"
-                      onClick={() => item.scheduledFor && setSelectedCalendarDateKey(String(item.scheduledFor).slice(0, 10))}
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-4 text-left"
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-blue-700">
-                            {item.platform}
-                          </span>
-                          <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-700">
-                            {item.status || 'scheduled'}
-                          </span>
-                        </div>
-                        <span className="text-xs text-slate-500">
-                          {item.scheduledFor ? formatDateTime(item.scheduledFor) : formatDateTime(item.createdAt)}
-                        </span>
-                      </div>
-                      <p className="mt-3 text-sm leading-6 text-slate-700 whitespace-pre-wrap">{String(item.content || '').slice(0, 180)}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="hidden md:grid md:grid-cols-7 border-b border-slate-200 bg-slate-50/70">
+              <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50/70">
                 {CALENDAR_WEEKDAY_LABELS.map((label) => (
-                  <div key={label} className="px-2 py-3 text-center text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-                    {label}
+                  <div key={label} className="px-1 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500 sm:px-2 sm:py-3 sm:text-[11px] sm:tracking-[0.22em]">
+                    <span className="sm:hidden">{label.slice(0, 1)}</span>
+                    <span className="hidden sm:inline">{label}</span>
                   </div>
                 ))}
               </div>
 
-              <div className="hidden bg-white md:grid md:grid-cols-7">
+              <div className="grid grid-cols-7 bg-white">
                 {calendarMonthGrid.weeks.flat().map((cell) => {
                   const isActiveDay = visibleCalendarDateKey && cell.dateKey === visibleCalendarDateKey;
 
@@ -248,12 +236,12 @@ const AgencyWorkspaceCalendarPanel = ({
                       key={cell.dateKey}
                       type="button"
                       onClick={() => cell.items.length > 0 && setSelectedCalendarDateKey(cell.dateKey)}
-                      className={`min-h-[124px] border-b border-r border-slate-100 p-2 text-left align-top transition ${
+                      className={`min-h-[76px] border-b border-r border-slate-100 p-1.5 text-left align-top transition sm:min-h-[124px] sm:p-2 ${
                         cell.inMonth ? 'bg-white' : 'bg-slate-50/80 text-slate-400'
                       } ${isActiveDay ? 'ring-2 ring-inset ring-blue-500' : ''} ${cell.items.length > 0 ? 'hover:bg-blue-50/35' : ''}`}
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold ${
+                      <div className="flex items-center justify-between gap-1 sm:gap-2">
+                        <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold sm:h-8 sm:w-8 sm:text-sm ${
                           cell.isToday
                             ? 'bg-slate-950 text-white'
                             : cell.inMonth
@@ -264,22 +252,29 @@ const AgencyWorkspaceCalendarPanel = ({
                           {cell.label}
                         </span>
                         {cell.items.length > 0 && (
-                          <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-medium text-blue-700">
+                          <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 sm:px-2 sm:text-[11px]">
                             {cell.items.length}
                           </span>
                         )}
                       </div>
 
-                      <div className="mt-2 space-y-1">
-                        {cell.items.slice(0, 2).map((item) => (
-                          <div key={`${cell.dateKey}:${item.platform}:${item.id}`} className="rounded-lg bg-blue-50 px-2 py-1.5 text-[11px] text-blue-800">
-                            <p className="font-medium uppercase tracking-wide">{item.platform}</p>
-                            <p className="mt-0.5 truncate">{String(item.content || '').slice(0, 42)}</p>
+                      <div className="mt-1.5 space-y-1 sm:mt-2">
+                        {cell.items.length > 0 && (
+                          <div className="block rounded-md bg-blue-50 px-1.5 py-1 text-[10px] text-blue-800 sm:hidden">
+                            <p className="truncate font-medium uppercase tracking-wide">{cell.items[0].platform}</p>
                           </div>
-                        ))}
-                        {cell.items.length > 2 && (
-                          <p className="text-[11px] text-slate-500">+{cell.items.length - 2} more</p>
                         )}
+                        <div className="hidden space-y-1 sm:block">
+                          {cell.items.slice(0, 2).map((item) => (
+                            <div key={`${cell.dateKey}:${item.platform}:${item.id}`} className="rounded-lg bg-blue-50 px-2 py-1.5 text-[11px] text-blue-800">
+                              <p className="font-medium uppercase tracking-wide">{item.platform}</p>
+                              <p className="mt-0.5 truncate">{String(item.content || '').slice(0, 42)}</p>
+                            </div>
+                          ))}
+                          {cell.items.length > 2 && (
+                            <p className="text-[11px] text-slate-500">+{cell.items.length - 2} more</p>
+                          )}
+                        </div>
                       </div>
                     </button>
                   );
@@ -339,6 +334,45 @@ const AgencyWorkspaceCalendarPanel = ({
             </div>
           </div>
 
+          <div className="rounded-[26px] border border-slate-200/80 bg-white/92 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.06)] sm:rounded-[30px] sm:p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Upcoming schedule</p>
+                <p className="mt-2 text-base font-semibold text-slate-950">Next posts in the pipeline</p>
+              </div>
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
+                {upcomingCalendarItems.length} visible
+              </span>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              {upcomingCalendarItems.length === 0 ? (
+                <p className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
+                  No scheduled items yet. Approved posts will surface here as soon as they are placed on the calendar.
+                </p>
+              ) : (
+                upcomingCalendarItems.map((item) => (
+                  <div key={`upcoming:${item.platform}:${item.id}`} className="rounded-[24px] border border-slate-200 bg-slate-50/70 px-4 py-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-blue-700">
+                          {item.platform}
+                        </span>
+                        <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-700">
+                          {item.status || 'scheduled'}
+                        </span>
+                      </div>
+                      <span className="text-xs text-slate-500">
+                        {item.scheduledFor ? formatDateTime(item.scheduledFor) : formatDateTime(item.createdAt)}
+                      </span>
+                    </div>
+                    <p className="mt-3 text-sm leading-6 text-slate-700 whitespace-pre-wrap">{String(item.content || '').slice(0, 180)}</p>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
           {(operationsSnapshot.sources || []).length > 0 && (
             <div id="agency-workspace-source-health" className="rounded-[26px] border border-slate-200/80 bg-white/92 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.06)] sm:rounded-[30px] sm:p-5">
               <div className="flex items-start gap-3">
@@ -376,7 +410,8 @@ const AgencyWorkspaceCalendarPanel = ({
         </div>
       </div>
     )}
-  </div>
-);
+    </div>
+  );
+};
 
 export default AgencyWorkspaceCalendarPanel;

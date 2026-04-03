@@ -34,6 +34,7 @@ router.get('/context', AgencyController.getContext);
 
 router.get('/workspaces', AgencyController.listWorkspaces);
 router.post('/workspaces', AgencyController.createWorkspace);
+router.get('/workspaces/:workspaceId', AgencyController.requireWorkspaceReadRole, AgencyController.getWorkspaceDetail);
 router.patch('/workspaces/:workspaceId', AgencyController.updateWorkspace);
 router.post('/workspaces/:workspaceId/status', AgencyController.updateWorkspaceStatus);
 
@@ -53,6 +54,10 @@ router.post('/workspaces/:workspaceId/onboarding-link', AgencyController.createC
 router.get('/workspaces/:workspaceId/onboarding-links', AgencyController.listClientOnboardingLinks);
 router.delete('/workspaces/:workspaceId/onboarding-link/:linkId', AgencyController.revokeClientOnboardingLink);
 router.post('/workspaces/:workspaceId/onboarding-link/:linkId/complete', AgencyController.markClientOnboardingComplete);
+router.get('/workspaces/:workspaceId/approval-links', AgencyController.requireWorkspaceApproveRole, AgencyController.listApprovalTokens);
+router.get('/workspaces/:workspaceId/approval-token', AgencyController.requireWorkspaceApproveRole, AgencyController.getApprovalToken);
+router.post('/workspaces/:workspaceId/approval-token', AgencyController.requireWorkspaceApproveRole, AgencyController.createApprovalToken);
+router.delete('/workspaces/:workspaceId/approval-link/:tokenId', AgencyController.requireWorkspaceApproveRole, AgencyController.revokeApprovalToken);
 router.get('/workspaces/:workspaceId/settings', AgencyController.requireWorkspaceReadRole, AgencyController.getWorkspaceSettings);
 router.put('/workspaces/:workspaceId/settings', AgencyController.requireWorkspaceWriteRole, AgencyController.upsertWorkspaceSettings);
 router.get('/workspaces/:workspaceId/drafts', AgencyController.requireWorkspaceReadRole, AgencyController.listWorkspaceDrafts);
@@ -60,6 +65,7 @@ router.post('/workspaces/:workspaceId/drafts', AgencyController.requireWorkspace
 router.post('/workspaces/:workspaceId/drafts/generate', AgencyController.requireWorkspaceWriteRole, AgencyController.generateWorkspaceDraft);
 router.post('/workspaces/:workspaceId/drafts/refine', AgencyController.requireWorkspaceWriteRole, AgencyController.refineWorkspaceContent);
 router.post('/workspaces/:workspaceId/media/upload', AgencyController.requireWorkspaceWriteRole, upload.single('file'), AgencyController.uploadWorkspaceMedia);
+router.post('/workspaces/:workspaceId/drafts/:draftId/comments', AgencyController.requireWorkspaceReadRole, AgencyController.addWorkspaceDraftComment);
 router.patch('/workspaces/:workspaceId/drafts/:draftId', AgencyController.requireWorkspaceWriteRole, AgencyController.updateWorkspaceDraft);
 router.delete('/workspaces/:workspaceId/drafts/:draftId', AgencyController.requireWorkspaceWriteRole, AgencyController.deleteWorkspaceDraft);
 router.post('/workspaces/:workspaceId/drafts/:draftId/approve', AgencyController.requireWorkspaceApproveRole, AgencyController.approveWorkspaceDraft);

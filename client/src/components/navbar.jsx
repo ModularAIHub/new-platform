@@ -1,8 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X, User, Users, Settings, LogOut, LayoutDashboard } from 'lucide-react';
+import { LayoutDashboard, LogOut, Menu, Settings, User, Users, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui';
+
+const NAV_LINKS = [
+  { to: '/features', label: 'Features' },
+  { to: '/plans', label: 'Pricing' },
+  { to: '/docs', label: 'Docs' },
+  { to: '/blogs', label: 'Blog' },
+  { to: '/contact', label: 'Contact' },
+];
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -10,19 +18,6 @@ const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const profileRef = useRef(null);
 
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
-
-  const closeMenu = () => {
-    setIsMenuOpen(false);
-  };
-
-  const toggleProfile = () => {
-    setIsProfileOpen(!isProfileOpen);
-  };
-
-  // Close profile dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (profileRef.current && !profileRef.current.contains(event.target)) {
@@ -34,310 +29,214 @@ const Navbar = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleLogout = async () => {
-    await logout();
-    setIsProfileOpen(false);
-  };
-
   const userPlanType = String(user?.planType || user?.plan_type || '').trim().toLowerCase();
   const hasPaidPlanBadge = userPlanType === 'pro' || userPlanType === 'agency';
   const isAgencyPlan = userPlanType === 'agency';
   const planBadgeLabel = userPlanType === 'agency' ? 'AGENCY' : userPlanType === 'pro' ? 'PRO' : '';
   const planBadgeClassName = userPlanType === 'agency'
-    ? 'bg-gradient-to-r from-sky-500 to-blue-700 text-white'
-    : 'bg-gradient-to-r from-amber-400 to-orange-500 text-white';
+    ? 'bg-slate-950 text-white'
+    : 'bg-blue-600 text-white';
+
+  const closeMenu = () => setIsMenuOpen(false);
+  const toggleMenu = () => setIsMenuOpen((previous) => !previous);
+  const toggleProfile = () => setIsProfileOpen((previous) => !previous);
+
+  const handleLogout = async () => {
+    await logout();
+    setIsProfileOpen(false);
+  };
 
   return (
-    <nav className="border-b border-neutral-200 sticky top-0 z-50 backdrop-blur-sm bg-white/95">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* SuiteGenie Brand */}
-          <div className="flex items-center">
-            <Link to="/" className="flex items-center group" onClick={closeMenu}>
-              <img src="/suitegenie-logo-icon.png" alt="SuiteGenie logo" className="h-11 w-auto mr-3 object-contain transition-transform duration-200 group-hover:scale-[1.03]" />
-              <span className="font-bold text-xl tracking-tight text-neutral-900 group-hover:text-primary-600 transition-colors duration-200">
-                SuiteGenie
-              </span>
-              <span className="sr-only">Suite Genie</span>
-            </Link>
+    <nav className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur">
+      <div className="border-b border-slate-100 bg-slate-950 text-white">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 text-xs sm:px-6 lg:px-8">
+          <p className="font-medium text-slate-200">Built for Indian creators, operators, and agencies.</p>
+          <p className="hidden text-slate-300 sm:block">BYOK multi-LLM, client approvals, and workspace-aware publishing.</p>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between py-3 sm:h-[72px]">
+          <Link to="/" className="group flex items-center gap-3" onClick={closeMenu}>
+            <img src="/suitegenie-logo-icon.png" alt="SuiteGenie logo" className="h-11 w-auto object-contain transition-transform duration-200 group-hover:scale-[1.03]" />
+            <div>
+              <span className="block text-lg font-semibold tracking-tight text-slate-950">SuiteGenie</span>
+              <span className="block text-xs text-slate-500">AI social media operating system</span>
+            </div>
+          </Link>
+
+          <div className="hidden items-center gap-1 lg:flex">
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                className="rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-950"
+              >
+                {link.label}
+              </Link>
+            ))}
           </div>
 
-          {/* Desktop Navigation Links */}
-          <div className="hidden md:flex items-center space-x-1">
-            <Link 
-              to="/" 
-              className="px-3 py-2 text-sm font-medium text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-lg transition-all duration-200"
-            >
-              Home
-            </Link>
-            <Link 
-              to="/plans" 
-              className="px-3 py-2 text-sm font-medium text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-lg transition-all duration-200"
-            >
-              Plans & Pricing
-            </Link>
-            <Link 
-              to="/about" 
-              className="px-3 py-2 text-sm font-medium text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-lg transition-all duration-200"
-            >
-              About
-            </Link>
-            <Link
-              to="/blogs"
-              className="px-3 py-2 text-sm font-medium text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-lg transition-all duration-200"
-            >
-              Blog
-            </Link>
-            <Link 
-              to="/contact" 
-              className="px-3 py-2 text-sm font-medium text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-lg transition-all duration-200"
-            >
-              Contact
-            </Link>
-          </div>
-
-          {/* Desktop Login/Signup Links or Profile */}
-          <div className="hidden md:flex items-center space-x-3">
+          <div className="hidden items-center gap-3 lg:flex">
             {isAuthenticated ? (
-              // Authenticated user - show dashboard link and profile dropdown
               <>
                 <Button
                   variant="ghost"
                   size="sm"
-                  icon={<LayoutDashboard className="w-4 h-4" />}
+                  icon={<LayoutDashboard className="h-4 w-4" />}
                   iconPosition="left"
-                  onClick={() => window.location.href = '/dashboard'}
+                  onClick={() => { window.location.href = isAgencyPlan ? '/agency' : '/dashboard'; }}
+                  className="rounded-xl"
                 >
-                  Dashboard
+                  {isAgencyPlan ? 'Agency' : 'Dashboard'}
                 </Button>
+
                 <div className="relative" ref={profileRef}>
                   <button
+                    type="button"
                     onClick={toggleProfile}
-                    className="flex items-center space-x-2 px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all duration-200"
+                    className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 transition hover:border-slate-300 hover:bg-slate-50"
                   >
-                    <div className="w-8 h-8 bg-gradient-to-br from-primary-600 to-primary-700 rounded-full flex items-center justify-center shadow-sm">
-                      <User className="w-4 h-4 text-white" />
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-950 text-white">
+                      <User className="h-4 w-4" />
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm">{user?.name}</span>
-                      {hasPaidPlanBadge && (
-                        <span className={`px-2 py-0.5 text-xs font-semibold rounded-full shadow-sm ${planBadgeClassName}`}>
-                          {planBadgeLabel}
-                        </span>
-                      )}
-                    </div>
-                    <svg className="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-                  
-                  {isProfileOpen && (
-                    <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-neutral-200 py-2 z-50 animate-scale-in">
-                      <div className="px-4 py-2 border-b border-neutral-100">
-                        <p className="text-sm font-medium text-neutral-900">{user?.name}</p>
-                        <p className="text-xs text-neutral-500">{user?.email}</p>
-                        {user?.planType && (
-                          <div className="mt-2 flex items-center gap-2">
-                            <span className={`px-2 py-1 text-xs font-semibold rounded-md ${
-                              hasPaidPlanBadge
-                                ? planBadgeClassName
-                                : 'bg-neutral-100 text-neutral-700'
-                            }`}>
-                              {hasPaidPlanBadge ? planBadgeLabel : userPlanType?.toUpperCase() || 'FREE'}
-                            </span>
-                            <span className="text-xs text-neutral-500">
-                              {user?.creditsRemaining || 0} credits
-                            </span>
-                          </div>
-                        )}
+                    <div className="text-left">
+                      <p className="text-sm font-medium text-slate-900">{user?.name}</p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-slate-500">{user?.email}</span>
+                        {hasPaidPlanBadge ? (
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${planBadgeClassName}`}>
+                            {planBadgeLabel}
+                          </span>
+                        ) : null}
                       </div>
-                      {!isAgencyPlan && (
-                        <Link 
-                          to="/team" 
-                          className="flex items-center px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 hover:text-primary-600 transition-colors duration-200"
+                    </div>
+                  </button>
+
+                  {isProfileOpen ? (
+                    <div className="absolute right-0 mt-3 w-64 rounded-[22px] border border-slate-200 bg-white p-2 shadow-[0_20px_60px_rgba(15,23,42,0.10)]">
+                      {!isAgencyPlan ? (
+                        <Link
+                          to="/team"
+                          className="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm text-slate-700 transition hover:bg-slate-50 hover:text-slate-950"
                           onClick={() => setIsProfileOpen(false)}
                         >
-                          <Users className="w-4 h-4 mr-3" />
+                          <Users className="h-4 w-4" />
                           Team
                         </Link>
-                      )}
-
-                      <Link 
-                        to="/settings" 
-                        className="flex items-center px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 hover:text-primary-600 transition-colors duration-200"
+                      ) : null}
+                      <Link
+                        to="/settings"
+                        className="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm text-slate-700 transition hover:bg-slate-50 hover:text-slate-950"
                         onClick={() => setIsProfileOpen(false)}
                       >
-                        <Settings className="w-4 h-4 mr-3" />
+                        <Settings className="h-4 w-4" />
                         Settings
                       </Link>
                       <button
+                        type="button"
                         onClick={handleLogout}
-                        className="flex items-center w-full px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 hover:text-error-600 transition-colors duration-200"
+                        className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-sm text-slate-700 transition hover:bg-slate-50 hover:text-rose-700"
                       >
-                        <LogOut className="w-4 h-4 mr-3" />
+                        <LogOut className="h-4 w-4" />
                         Logout
                       </button>
                     </div>
-                  )}
+                  ) : null}
                 </div>
               </>
             ) : (
-              // Not authenticated - show login/signup
               <>
-                <Button variant="ghost" size="sm" onClick={() => window.location.href = '/login'}>
+                <Button variant="ghost" size="sm" onClick={() => { window.location.href = '/login'; }} className="rounded-xl">
                   Login
                 </Button>
-                <Button variant="primary" size="sm" onClick={() => window.location.href = '/register'}>
-                  Sign Up
+                <Button variant="primary" size="sm" onClick={() => { window.location.href = '/register'; }} className="rounded-xl bg-slate-950 hover:bg-slate-800">
+                  Start Free
                 </Button>
               </>
             )}
           </div>
 
-          {/* Mobile hamburger menu button */}
-          <div className="md:hidden">
-            <Button
-              variant="ghost"
-              size="sm"
+          <div className="lg:hidden">
+            <button
+              type="button"
               onClick={toggleMenu}
-              icon={isMenuOpen ? <X size={20} /> : <Menu size={20} />}
+              className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50"
               aria-label="Toggle navigation menu"
-            />
+            >
+              {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
           </div>
         </div>
 
-        {/* Mobile Navigation Menu */}
-        {isMenuOpen && (
-          <div className="md:hidden animate-slide-down">
-            <div className="px-4 pt-4 pb-6 space-y-2 bg-white border-t border-neutral-200">
-              <Link 
-                to="/" 
-                className="block px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-lg font-medium transition-all duration-200"
-                onClick={closeMenu}
-              >
-                Home
-              </Link>
-              <Link 
-                to="/plans" 
-                className="block px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-lg font-medium transition-all duration-200"
-                onClick={closeMenu}
-              >
-                Plans & Pricing
-              </Link>
-              <Link 
-                to="/about" 
-                className="block px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-lg font-medium transition-all duration-200"
-                onClick={closeMenu}
-              >
-                About
-              </Link>
-              <Link 
-                to="/contact" 
-                className="block px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-lg font-medium transition-all duration-200"
-                onClick={closeMenu}
-              >
-                Contact
-              </Link>
-              <Link
-                to="/blogs"
-                className="block px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-lg font-medium transition-all duration-200"
-                onClick={closeMenu}
-              >
-                Blog
-              </Link>
-              <div className="border-t border-neutral-200 pt-4 mt-4">
-                {isAuthenticated ? (
-                  // Authenticated user mobile menu
-                  <>
-                    <div className="px-3 py-3 mb-3 bg-neutral-50 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-primary-600 to-primary-700 rounded-full flex items-center justify-center">
-                          <User className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium text-neutral-900">{user?.name}</p>
-                            {hasPaidPlanBadge && (
-                              <span className={`px-2 py-0.5 text-xs font-semibold rounded-full shadow-sm ${planBadgeClassName}`}>
-                                {planBadgeLabel}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-sm text-neutral-500">{user?.email}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <Link 
-                      to="/dashboard" 
-                      className="flex items-center px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-lg font-medium transition-all duration-200"
-                      onClick={closeMenu}
+        {isMenuOpen ? (
+          <div className="border-t border-slate-200 py-4 lg:hidden">
+            <div className="space-y-2">
+              {NAV_LINKS.map((link) => (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-950"
+                  onClick={closeMenu}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+
+            <div className="mt-4 rounded-[24px] border border-slate-200 bg-slate-50 p-4">
+              {isAuthenticated ? (
+                <>
+                  <div className="rounded-2xl bg-white px-4 py-4">
+                    <p className="text-sm font-semibold text-slate-900">{user?.name}</p>
+                    <p className="mt-1 text-xs text-slate-500">{user?.email}</p>
+                    {hasPaidPlanBadge ? (
+                      <span className={`mt-3 inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold ${planBadgeClassName}`}>
+                        {planBadgeLabel}
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="mt-3 space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => { closeMenu(); window.location.href = isAgencyPlan ? '/agency' : '/dashboard'; }}
+                      className="w-full rounded-2xl bg-slate-950 px-4 py-3 text-sm font-medium text-white"
                     >
-                      <LayoutDashboard className="w-4 h-4 mr-3" />
-                      Dashboard
-                    </Link>
-                    {!isAgencyPlan && (
-                      <Link 
-                        to="/team" 
-                        className="flex items-center px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-lg font-medium transition-all duration-200"
-                        onClick={closeMenu}
-                      >
-                        <Users className="w-4 h-4 mr-3" />
+                      {isAgencyPlan ? 'Open Agency' : 'Open Dashboard'}
+                    </button>
+                    {!isAgencyPlan ? (
+                      <Link to="/team" onClick={closeMenu} className="block rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700">
                         Team
                       </Link>
-                    )}
-
-                    <Link 
-                      to="/settings" 
-                      className="flex items-center px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-lg font-medium transition-all duration-200"
-                      onClick={closeMenu}
-                    >
-                      <Settings className="w-4 h-4 mr-3" />
+                    ) : null}
+                    <Link to="/settings" onClick={closeMenu} className="block rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700">
                       Settings
                     </Link>
                     <button
-                      onClick={() => {
-                        handleLogout();
-                        closeMenu();
-                      }}
-                      className="flex items-center w-full px-3 py-2 text-neutral-700 hover:text-error-600 hover:bg-error-50 rounded-lg font-medium transition-all duration-200"
+                      type="button"
+                      onClick={() => { closeMenu(); handleLogout(); }}
+                      className="w-full rounded-2xl border border-rose-200 bg-white px-4 py-3 text-sm font-medium text-rose-700"
                     >
-                      <LogOut className="w-4 h-4 mr-3" />
                       Logout
                     </button>
-                  </>
-                ) : (
-                  // Not authenticated mobile menu
-                  <div className="space-y-3">
-                    <Button 
-                      variant="outline" 
-                      fullWidth 
-                      onClick={() => {
-                        window.location.href = '/login';
-                        closeMenu();
-                      }}
-                    >
-                      Login
-                    </Button>
-                    <Button 
-                      variant="primary" 
-                      fullWidth
-                      onClick={() => {
-                        window.location.href = '/register';
-                        closeMenu();
-                      }}
-                    >
-                      Sign Up
-                    </Button>
                   </div>
-                )}
-              </div>
+                </>
+              ) : (
+                <div className="space-y-2">
+                  <Button variant="ghost" size="md" fullWidth onClick={() => { closeMenu(); window.location.href = '/login'; }} className="rounded-2xl">
+                    Login
+                  </Button>
+                  <Button variant="primary" size="md" fullWidth onClick={() => { closeMenu(); window.location.href = '/register'; }} className="rounded-2xl bg-slate-950 hover:bg-slate-800">
+                    Start Free
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
-        )}
+        ) : null}
       </div>
     </nav>
   );
 };
 
 export default Navbar;
-

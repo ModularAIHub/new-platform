@@ -570,8 +570,8 @@ const PlansPage = () => {
             Choose Your Plan
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Choose the perfect plan for your social media automation needs.
-            Scale your content creation with AI-powered tools across Twitter, LinkedIn, and WordPress.
+            Pick the workflow depth you need today, from solo creation to full client workspaces with approvals,
+            BYOK AI, and multi-channel publishing.
           </p>
           {/* <div className="inline-flex items-center bg-blue-50 rounded-full px-4 py-2 text-blue-700">
             <span className="text-sm font-medium">No credit card required for trial</span>
@@ -879,10 +879,10 @@ const PlansPage = () => {
       <div className="bg-blue-600 py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold text-white mb-4">
-            Ready to Automate Your Social Media?
+            Ready to run calmer content operations?
           </h2>
           <p className="text-xl text-blue-100 mb-8">
-            Join thousands of content creators and businesses already using our platform
+            Start free, move to Pro when you need more output, or switch to Agency when client delivery needs a real system.
           </p>
           <button
             onClick={() => navigate('/register')}

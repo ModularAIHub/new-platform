@@ -6,71 +6,71 @@ const TabbedFeaturesSection = () => {
   const tabs = [
     {
       id: 'strategy',
-      label: 'Strategy Builder',
-      desc: 'Turn signals into a clear plan.',
+      label: 'Agency Workspaces',
+      desc: 'Client operations, not just drafts.',
       content: {
-        title: 'Strategy Builder That Removes Guesswork',
-        body: 'Run setup -> review -> prompt pack -> content plan -> context vault in one guided flow. You get execution-ready output, not vague strategy notes.',
+        title: 'A client workspace is the unit of work, not an afterthought',
+        body: 'Each client gets brand context, connections, drafts, queue, calendar, analytics, approvals, and team access in one place so agencies can stop stitching together separate tools.',
         bullets: [
-          'Niche, audience, tone, and goals synced before generation',
-          'Clear next-best-step guidance for first-time users',
-          'Quality-first flow designed for repeatable weekly output'
+          'Workspace setup, comments, review, and publishing stay attached to the same client',
+          'Team assignment and launch context keep the right accounts visible to the right people',
+          'Mobile and desktop flows now reflect actual day-to-day agency operations'
         ]
       }
     },
     {
       id: 'competitor',
-      label: 'Prompt Pack',
-      desc: 'High-signal prompts, not filler.',
+      label: 'BYOK AI',
+      desc: 'Use your own model stack when needed.',
       content: {
-        title: 'Prompt Packs Built for Quality Over Quantity',
-        body: 'LinkedIn prompt packs now target a tighter 11-14 range with better specificity so users can actually execute instead of sorting through generic prompts.',
+        title: 'Bring your own models without losing workflow control',
+        body: 'SuiteGenie supports platform credits and BYOK mode together, which matters when creators want flexibility and agencies need tighter AI cost control.',
         bullets: [
-          'Prompt usage tracking with used-state persistence',
-          'Regeneration signals based on stale/used prompts',
-          'Prompt-to-compose handoff with cleaner context payloads'
+          'OpenAI, Gemini, and Perplexity keys can sit inside the same product flow',
+          'BYOK credits run higher so heavier users are not boxed into one provider choice',
+          'Generation still uses workspace context instead of dropping to a blank prompt box'
         ]
       }
     },
     {
       id: 'content',
-      label: 'Content Plan',
-      desc: 'Publish-ready posts generated for you.',
+      label: 'Approval Portal',
+      desc: 'Client review without account creation.',
       content: {
-        title: 'Generate a Publish-Ready Queue Automatically',
-        body: 'After prompt generation, SuiteGenie can auto-generate a strategy-scoped Content Plan with ready-to-edit posts, schedule suggestions, and approval controls.',
+        title: 'Client approval should not require another login',
+        body: 'Public approval links let clients review pending drafts, approve them, reject them, and leave comments in-context instead of emailing screenshots and feedback chains.',
         bullets: [
-          'Fixed queue target for quality control',
-          'Approve, reject, schedule, and compose handoff in one place',
-          'Fallback hardening to avoid identity-like low-quality outputs'
+          'One secure link can unlock a clean approval surface for the client',
+          'Comments stay attached to the draft so agency and client context stays together',
+          'Approvals feed directly back into the queue and publishing workflow'
         ]
       }
     },
     {
       id: 'queue',
-      label: 'Context Vault',
-      desc: 'Memory that improves each cycle.',
+      label: 'Client Onboarding',
+      desc: 'Safer account connection flow.',
       content: {
-        title: 'Context Vault Learns from Real Outcomes',
-        body: 'Context Vault stores strategy, profile, usage, review, and analytics signals. It refreshes after key actions so the next generation cycle gets smarter.',
+        title: 'Clients can connect their own accounts through guided links',
+        body: 'Instead of asking for raw credentials, agencies can send expiring onboarding links so clients connect accounts to the right workspace with clearer trust and less friction.',
         bullets: [
-          'Learns from approve/reject/schedule actions',
-          'Learns from analytics sync and post outcomes',
-          'Feeds recommendations back into strategy and prompts'
+          'Workspace-aware onboarding keeps accounts routed to the correct client',
+          'OAuth-first flows reduce password sharing and manual cleanup',
+          'Setup feels more premium when the client sees a purpose-built handoff'
         ],
       }
     },
     {
       id: 'pro',
-      label: 'Pro Team Mode',
-      desc: 'Operate cleanly across clients and brands.',
+      label: 'Idea Bank',
+      desc: 'Signal-driven ideas with next actions.',
       content: {
-        title: 'Team Workspaces + Account Model',
-        body: 'Power users and agencies can run structured operations with shared account pools, role-based execution, and account-aware publishing controls.',
+        title: 'Idea generation is stronger when it reads the workspace first',
+        body: 'SuiteGenie can propose ideas from connected account signals, competitor references, themes, queue pressure, and the brand context already saved in the workspace.',
         bullets: [
-          'Shared account pool in team context',
-          'Cross-post to authorized connected accounts',
-          'Team-ready workflows for multiple handles and clients'
+          'Ideas are more useful when they already know the audience and platform mix',
+          'Draft handoff into Compose keeps planning and writing close together',
+          'The system can suggest next moves instead of just dumping prompts'
         ]
       }
     }
@@ -83,10 +83,10 @@ const TabbedFeaturesSection = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-14">
           <h2 className="text-sm font-bold tracking-widest text-primary-400 uppercase mb-3">
-            This Is More Than Execution
+            Product Depth
           </h2>
           <p className="text-3xl sm:text-4xl font-extrabold text-white leading-tight">
-            Strategy, prompt quality, publish-ready execution, and learning loops in one workflow.
+            The product story is stronger when the workflow reads like real client operations.
           </p>
         </div>
 

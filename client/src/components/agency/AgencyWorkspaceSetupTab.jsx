@@ -2,6 +2,7 @@ import React from 'react';
 
 const AgencyWorkspaceSetupTab = ({
   workspace,
+  canApproveOrPublish,
   profileEditing,
   profileForm,
   setProfileForm,
@@ -21,6 +22,17 @@ const AgencyWorkspaceSetupTab = ({
   saveProfileContext,
   cancelProfileContextEditing,
   formatMetric,
+  approvalLink,
+  approvalLinks,
+  approvalLinkLoading,
+  approvalLinkCreating,
+  approvalLinkRevokingId,
+  approvalLinkLabel,
+  setApprovalLinkLabel,
+  createApprovalLink,
+  refreshApprovalLink,
+  copyApprovalLink,
+  revokeApprovalLink,
   updateStatus,
   confirmArchiveWorkspace,
 }) => (
@@ -202,6 +214,33 @@ const AgencyWorkspaceSetupTab = ({
             />
           </div>
 
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4">
+            <h3 className="text-sm font-semibold text-emerald-950">Client approval portal copy</h3>
+            <p className="mt-1 text-xs text-emerald-800">Control the headline and intro that clients see when they open the no-login review page.</p>
+            <div className="mt-4 grid grid-cols-1 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-900">Portal headline</label>
+                <input
+                  className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2"
+                  value={profileContextForm.portal_title || ''}
+                  placeholder="Review and approve this week's content"
+                  onChange={(event) => setProfileContextForm((prev) => ({ ...prev, portal_title: event.target.value }))}
+                  disabled={!canMutate || settingsSaving}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-900">Portal intro</label>
+                <textarea
+                  className="mt-2 min-h-[96px] w-full rounded-xl border border-gray-200 bg-white px-3 py-3"
+                  value={profileContextForm.portal_message || ''}
+                  placeholder="Add a short note that explains how the client should review and approve drafts."
+                  onChange={(event) => setProfileContextForm((prev) => ({ ...prev, portal_message: event.target.value }))}
+                  disabled={!canMutate || settingsSaving}
+                />
+              </div>
+            </div>
+          </div>
+
           <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div>
@@ -326,6 +365,236 @@ const AgencyWorkspaceSetupTab = ({
                 ))}
               </div>
             )}
+          </div>
+
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4">
+            <h3 className="text-sm font-semibold text-emerald-950">Client approval portal copy</h3>
+            <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
+              <div className="rounded-xl border border-white bg-white px-4 py-3 shadow-sm">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Headline</p>
+                <p className="mt-2 text-sm font-semibold text-gray-900">{workspaceSettings.portal_title || 'Review pending social drafts'}</p>
+              </div>
+              <div className="rounded-xl border border-white bg-white px-4 py-3 shadow-sm">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Intro</p>
+                <p className="mt-2 text-sm leading-6 text-gray-700">
+                  {workspaceSettings.portal_message || 'Approve what is ready, reject anything that needs changes, and leave comments without creating an account.'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+
+    <div className="bg-white border border-gray-200 rounded-xl p-6">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <p className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-semibold px-2 py-1 uppercase tracking-wide">Client Review Link</p>
+          <h2 className="text-lg font-semibold text-gray-900 mt-2">No-login approval portal</h2>
+          <p className="text-sm text-gray-600 mt-1">Share one secure link so clients can approve, reject, and comment on drafts without creating a SuiteGenie account.</p>
+        </div>
+        {canApproveOrPublish ? (
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={refreshApprovalLink}
+              disabled={approvalLinkLoading || approvalLinkCreating}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 disabled:opacity-50"
+            >
+              Refresh
+            </button>
+            <button
+              type="button"
+              onClick={createApprovalLink}
+              disabled={approvalLinkCreating}
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+            >
+              {approvalLinkCreating ? 'Creating...' : approvalLink?.approvalUrl ? 'Create another link' : 'Create link'}
+            </button>
+          </div>
+        ) : null}
+      </div>
+
+      {!canApproveOrPublish ? (
+        <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-700">
+          Only owners and admins can generate or refresh the client approval link.
+        </div>
+      ) : (
+        <div className="mt-5 space-y-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+              <div>
+                <label className="block text-sm font-medium text-gray-900">Link label</label>
+                <input
+                  className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2"
+                  value={approvalLinkLabel}
+                  placeholder="Brand manager review link"
+                  onChange={(event) => setApprovalLinkLabel(event.target.value)}
+                  disabled={approvalLinkCreating}
+                />
+                <p className="mt-2 text-xs text-gray-500">Create separate labeled links for different reviewers instead of rotating the same URL every time.</p>
+              </div>
+              <button
+                type="button"
+                onClick={createApprovalLink}
+                disabled={approvalLinkCreating}
+                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+              >
+                {approvalLinkCreating ? 'Creating...' : 'Create labeled link'}
+              </button>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-3">
+                {workspace.logo_url ? (
+                  <img
+                    src={workspace.logo_url}
+                    alt={`${workspace.brand_name || workspace.name} logo`}
+                    className="h-14 w-14 rounded-2xl border border-gray-200 bg-white object-cover"
+                  />
+                ) : (
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-900 text-lg font-semibold text-white">
+                    {(workspace.brand_name || workspace.name || 'C').charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-gray-500">Client-facing preview</p>
+                  <p className="mt-1 text-base font-semibold text-gray-900">{workspace.brand_name || workspace.name}</p>
+                  <p className="mt-1 text-sm text-gray-600">Clients see your workspace brand, logo, review counts, comments, and approval actions without needing a SuiteGenie login.</p>
+                </div>
+              </div>
+              <div className="rounded-xl border border-white bg-white px-4 py-3">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Portal accent</p>
+                <p className="mt-2 text-sm font-semibold text-gray-900">
+                  {Array.isArray(workspaceSettings.brand_colors) && workspaceSettings.brand_colors.length > 0
+                    ? workspaceSettings.brand_colors.join(', ')
+                    : 'Default brand accent'}
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 rounded-xl border border-white bg-white px-4 py-3">
+              <p className="text-xs uppercase tracking-wide text-gray-500">Client portal copy</p>
+              <p className="mt-2 text-sm font-semibold text-gray-900">{workspaceSettings.portal_title || 'Review pending social drafts'}</p>
+              <p className="mt-2 text-sm leading-6 text-gray-600">
+                {workspaceSettings.portal_message || 'Approve what is ready, reject anything that needs changes, and leave comments without creating an account.'}
+              </p>
+            </div>
+          </div>
+
+          {approvalLink?.approvalUrl ? (
+            <>
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4">
+                <p className="text-sm font-semibold text-emerald-900">Newest approval link</p>
+                <p className="mt-2 break-all rounded-xl border border-emerald-100 bg-white px-3 py-3 text-sm text-slate-700">
+                  {approvalLink.approvalUrl}
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => copyApprovalLink(approvalLink.approvalUrl)}
+                    className="rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm text-emerald-800"
+                  >
+                    Copy link
+                  </button>
+                  <a
+                    href={approvalLink.approvalUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700"
+                  >
+                    Open portal
+                  </a>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                  <p className="text-xs uppercase tracking-wide text-gray-500">Label</p>
+                  <p className="mt-2 text-sm font-semibold text-gray-900">{approvalLink.label || 'Client approval link'}</p>
+                </div>
+                <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                  <p className="text-xs uppercase tracking-wide text-gray-500">Created</p>
+                  <p className="mt-2 text-sm font-semibold text-gray-900">{approvalLink.created_at ? new Date(approvalLink.created_at).toLocaleString() : 'Just now'}</p>
+                </div>
+                <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                  <p className="text-xs uppercase tracking-wide text-gray-500">Last used</p>
+                  <p className="mt-2 text-sm font-semibold text-gray-900">{approvalLink.last_used_at ? new Date(approvalLink.last_used_at).toLocaleString() : 'Not used yet'}</p>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-4 py-5 text-sm text-gray-600">
+              No client approval link exists yet. Create one to start collecting approvals and comments without requiring client logins.
+            </div>
+          )}
+
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900">Approval link history</h3>
+                <p className="mt-1 text-xs text-gray-600">Keep separate review links for stakeholders, then revoke any link when a review cycle is over.</p>
+              </div>
+              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                {Array.isArray(approvalLinks) ? approvalLinks.filter((item) => item.is_active).length : 0} active
+              </p>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              {(approvalLinks || []).length === 0 ? (
+                <p className="rounded-xl border border-dashed border-gray-300 bg-white px-4 py-4 text-sm text-gray-500">
+                  No approval links yet.
+                </p>
+              ) : (
+                (approvalLinks || []).map((link) => (
+                  <div key={link.id} className="rounded-xl border border-white bg-white px-4 py-4 shadow-sm">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-sm font-semibold text-gray-900">{link.label || 'Client approval link'}</p>
+                          <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${link.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>
+                            {link.is_active ? 'Active' : 'Revoked'}
+                          </span>
+                        </div>
+                        <p className="mt-2 break-all text-sm text-gray-600">{link.approvalUrl}</p>
+                        <div className="mt-3 flex flex-wrap gap-4 text-xs text-gray-500">
+                          <span>Created {link.created_at ? new Date(link.created_at).toLocaleString() : 'Just now'}</span>
+                          <span>Last used {link.last_used_at ? new Date(link.last_used_at).toLocaleString() : 'Not used yet'}</span>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => copyApprovalLink(link.approvalUrl)}
+                          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700"
+                        >
+                          Copy
+                        </button>
+                        <a
+                          href={link.approvalUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700"
+                        >
+                          Open
+                        </a>
+                        {link.is_active ? (
+                          <button
+                            type="button"
+                            onClick={() => revokeApprovalLink(link.id)}
+                            disabled={approvalLinkRevokingId === String(link.id)}
+                            className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 disabled:opacity-50"
+                          >
+                            {approvalLinkRevokingId === String(link.id) ? 'Revoking...' : 'Revoke'}
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       )}

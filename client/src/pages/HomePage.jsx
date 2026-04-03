@@ -8,7 +8,6 @@ import HeroSection from '../components/homepage/HeroSection';
 import FeaturesSection from '../components/homepage/FeaturesSection';
 import TabbedFeaturesSection from '../components/homepage/TabbedFeaturesSection';
 import WorkflowSection from '../components/homepage/WorkflowSection';
-import TestimonialsSection from '../components/homepage/TestimonialsSection';
 // import PricingSection from '../components/homepage/PricingSection';
 import ComparisonSection from '../components/homepage/ComparisonSection';
 import CTASection from '../components/homepage/CTASection';
@@ -19,22 +18,22 @@ const HomePage = () => {
     <>
       <Helmet>
         {/* Primary Meta Tags */}
-        <title>SuiteGenie | Strategy Builder, Content Plan, and AI Content Ops</title>
-        <meta name="title" content="SuiteGenie | Strategy Builder, Content Plan, and AI Content Ops" />
-        <meta name="description" content="Build high-signal prompts, generate publish-ready content plans, and improve each cycle with Context Vault learning from approvals and analytics." />
-        <meta name="keywords" content="AI content ops, strategy builder, competitor analysis, content automation, cross-post automation, social media automation for creators, social media automation for agencies, Twitter automation, LinkedIn automation" />
+        <title>SuiteGenie | AI Social Media Operating System for Indian Creators and Agencies</title>
+        <meta name="title" content="SuiteGenie | AI Social Media Operating System for Indian Creators and Agencies" />
+        <meta name="description" content="Run strategy, generation, client approvals, publishing, and workspace-aware social media operations with INR-friendly pricing and BYOK multi-LLM support." />
+        <meta name="keywords" content="AI social media software India, agency approval portal, BYOK social media AI, Indian social media automation, LinkedIn automation, Twitter automation, Threads automation" />
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://suitegenie.in/" />
-        <meta property="og:title" content="SuiteGenie | Strategy Builder, Content Plan, and AI Content Ops" />
-        <meta property="og:description" content="Generate high-signal prompts, create publish-ready content plans, and run a strategy loop that learns from real analytics." />
+        <meta property="og:title" content="SuiteGenie | AI Social Media Operating System for Indian Creators and Agencies" />
+        <meta property="og:description" content="Run client approvals, brand-aware generation, publishing, and BYOK workflows inside one calmer social media operating system." />
         <meta property="og:image" content="https://suitegenie.in/og-default.svg" />
         <meta property="og:site_name" content="SuiteGenie" />
         {/* Twitter */}
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:url" content="https://suitegenie.in/" />
-        <meta property="twitter:title" content="SuiteGenie | Strategy Builder, Content Plan, and AI Content Ops" />
-        <meta property="twitter:description" content="Create better prompts, publish-ready content, and continuously improve with Context Vault feedback loops." />
+        <meta property="twitter:title" content="SuiteGenie | AI Social Media Operating System for Indian Creators and Agencies" />
+        <meta property="twitter:description" content="Run AI generation, no-login approvals, publishing, and workspace-aware social ops with INR-friendly pricing." />
         <meta property="twitter:image" content="https://suitegenie.in/og-default.svg" />
         <meta name="twitter:site" content="@Suitegenie1" />
         <meta name="twitter:creator" content="@Suitegenie1" />
@@ -53,7 +52,7 @@ const HomePage = () => {
             "name": "SuiteGenie",
             "alternateName": ["Suite Genie", "SuiteGenie Platform"],
             "applicationCategory": "BusinessApplication",
-            "applicationSubCategory": "AI Content and Social Media Operations",
+            "applicationSubCategory": "AI Social Media Operations",
             "operatingSystem": "Web",
             "offers": {
               "@type": "Offer",
@@ -80,15 +79,15 @@ const HomePage = () => {
             },
             "featureList": [
               "AI Content Generation",
-              "Platform-Specific Content Engine",
-              "Strategy Builder",
-              "High-Signal Prompt Pack",
-              "Publish-Ready Content Plan",
-              "Context Vault Learning",
-              "Content Automation",
-              "Multi-platform Automation",
+              "Client Approval Portal",
+              "Agency Workspaces",
+              "BYOK Multi-LLM",
+              "Brand Context Automation",
+              "Multi-platform Publishing",
               "Twitter Automation",
               "LinkedIn Automation",
+              "Threads Workflow",
+              "Client Onboarding Links"
             ],
             "screenshot": "https://suitegenie.in/og-default.svg",
             "author": {
@@ -101,7 +100,7 @@ const HomePage = () => {
                 "https://linkedin.com/company/suitegenie"
               ]
             },
-            "description": "SuiteGenie, also searched as Suite Genie, is an AI content operations platform for creators, power users, and agencies. Analyze competitors, build strategy, generate platform-native content, automate, and cross-post."
+            "description": "SuiteGenie, also searched as Suite Genie, is an AI social media operating system for creators, power users, and agencies. Manage workspaces, approvals, brand-aware generation, and multi-platform publishing in one place."
           }
         `}</script>
         {/* Organization Schema */}
@@ -113,7 +112,7 @@ const HomePage = () => {
             "alternateName": ["Suite Genie"],
             "url": "https://suitegenie.in",
             "logo": "https://suitegenie.in/suitegenie-logo.png",
-            "description": "AI content operations platform with strategy builder, competitor analysis, platform-specific generation, and cross-post workflows",
+            "description": "AI social media operating system with agency workspaces, client approvals, BYOK multi-LLM, platform-specific generation, and publishing workflows",
             "foundingDate": "2024",
             "founder": {
               "@type": "Person",

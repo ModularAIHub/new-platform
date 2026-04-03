@@ -8,14 +8,14 @@ import {
   FileText,
   Link2,
   PenSquare,
-  RefreshCw,
 } from 'lucide-react';
 import AgencyWorkspaceAnalysisTab from '../components/agency/AgencyWorkspaceAnalysisTab.jsx';
 import AgencyWorkspaceAnalyticsTab from '../components/agency/AgencyWorkspaceAnalyticsTab.jsx';
-import AgencyWorkspaceCalendarPanel from '../components/agency/AgencyWorkspaceCalendarPanel.jsx';
+import AgencyWorkspaceComposeTab from '../components/agency/AgencyWorkspaceComposeTab.jsx';
 import AgencyWorkspaceConnectionsTab from '../components/agency/AgencyWorkspaceConnectionsTab.jsx';
 import AgencyLinkedInSelectionModal from '../components/agency/AgencyLinkedInSelectionModal.jsx';
 import AgencyWorkspaceOverviewTab from '../components/agency/AgencyWorkspaceOverviewTab.jsx';
+import AgencyWorkspaceOperationsTab from '../components/agency/AgencyWorkspaceOperationsTab.jsx';
 import AgencyWorkspaceShell from '../components/agency/AgencyWorkspaceShell.jsx';
 import AgencyWorkspaceSetupTab from '../components/agency/AgencyWorkspaceSetupTab.jsx';
 import AgencyWorkspaceTeamTab from '../components/agency/AgencyWorkspaceTeamTab.jsx';
@@ -43,6 +43,17 @@ import {
   WORKSPACE_PLATFORM_LIMITS,
   WORKSPACE_SECTION_DEFINITIONS,
 } from './agencyWorkspaceHelpers';
+
+const TAB_DATA_REQUIREMENTS = {
+  overview: ['operations', 'drafts', 'analytics'],
+  setup: ['settings', 'approval'],
+  analysis: ['analysis', 'settings'],
+  analytics: ['insights', 'analytics', 'operations'],
+  compose: [],
+  calendar: ['operations', 'drafts'],
+  connections: [],
+  team: ['members'],
+};
 
 const EMPTY_ANALYSIS_SUMMARY = {
   refreshedAt: null,
@@ -101,6 +112,8 @@ const AgencyWorkspacePage = () => {
     target_audience: '',
     profile_notes: '',
     tone_presets: [],
+    portal_title: '',
+    portal_message: '',
   });
   const [availableMembers, setAvailableMembers] = useState([]);
   const [assignedMembers, setAssignedMembers] = useState([]);
@@ -155,6 +168,8 @@ const AgencyWorkspacePage = () => {
     brand_colors: [],
     target_audience: '',
     tone_presets: [],
+    portal_title: '',
+    portal_message: '',
     detected_context: null,
     automation_enabled: false,
     require_admin_approval: true,
@@ -165,6 +180,13 @@ const AgencyWorkspacePage = () => {
   });
   const [workspaceCompetitorsInput, setWorkspaceCompetitorsInput] = useState('');
   const [settingsSaving, setSettingsSaving] = useState(false);
+  const [approvalLink, setApprovalLink] = useState(null);
+  const [approvalLinks, setApprovalLinks] = useState([]);
+  const [approvalLinkLoading, setApprovalLinkLoading] = useState(false);
+  const [approvalLinkCreating, setApprovalLinkCreating] = useState(false);
+  const [approvalLinkRevokingId, setApprovalLinkRevokingId] = useState('');
+  const [approvalLinkLabel, setApprovalLinkLabel] = useState('');
+  const [loadedDataKeys, setLoadedDataKeys] = useState(() => new Set());
   const [insightsLoading, setInsightsLoading] = useState(false);
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [insightsSummary, setInsightsSummary] = useState({
@@ -182,10 +204,12 @@ const AgencyWorkspacePage = () => {
   });
   const [analysisSummary, setAnalysisSummary] = useState(EMPTY_ANALYSIS_SUMMARY);
   const [operationsLoading, setOperationsLoading] = useState(false);
-  const [operationsView, setOperationsView] = useState('queue');
+  const [operationsView, setOperationsView] = useState('calendar');
   const [calendarMonthCursor, setCalendarMonthCursor] = useState(() => getCalendarMonthKey(new Date()));
   const [selectedCalendarDateKey, setSelectedCalendarDateKey] = useState('');
   const [activeWorkspaceTab, setActiveWorkspaceTab] = useState('overview');
+  const [draftCommentById, setDraftCommentById] = useState({});
+  const [rejectReasonById, setRejectReasonById] = useState({});
   const mediaInputRef = useRef(null);
   const [operationsSnapshot, setOperationsSnapshot] = useState({
     summary: {
@@ -839,6 +863,11 @@ const AgencyWorkspacePage = () => {
         ));
       }
       setWorkspaceDrafts(Array.isArray(response?.data?.drafts) ? response.data.drafts : []);
+      setQueueDrafts((previous) => (
+        previous.length > 0 && draftStatusFilter !== 'all'
+          ? previous
+          : (Array.isArray(response?.data?.drafts) ? response.data.drafts : [])
+      ));
       setDraftScheduleById((previous) => {
         const next = { ...previous };
         (response?.data?.drafts || []).forEach((draft) => {
@@ -895,6 +924,8 @@ const AgencyWorkspacePage = () => {
         brand_colors: brandColors,
         target_audience: postingPreferences.target_audience || postingPreferences.targetAudience || '',
         tone_presets: tonePresets,
+        portal_title: postingPreferences.portal_title || postingPreferences.portalTitle || '',
+        portal_message: postingPreferences.portal_message || postingPreferences.portalMessage || '',
         detected_context: settings.detected_context && typeof settings.detected_context === 'object'
           ? settings.detected_context
           : null,
@@ -911,6 +942,8 @@ const AgencyWorkspacePage = () => {
         target_audience: postingPreferences.target_audience || postingPreferences.targetAudience || '',
         profile_notes: settings.profile_notes || '',
         tone_presets: tonePresets,
+        portal_title: postingPreferences.portal_title || postingPreferences.portalTitle || '',
+        portal_message: postingPreferences.portal_message || postingPreferences.portalMessage || '',
       });
       setProfileContextEditing(false);
       setWorkspaceCompetitorsInput(
@@ -920,6 +953,31 @@ const AgencyWorkspacePage = () => {
       if (!silent) {
         toast.error(error?.response?.data?.error || 'Failed to load workspace settings');
       }
+    }
+  };
+
+  const loadApprovalLink = async ({ silent = false } = {}) => {
+    if (!canApproveOrPublish) {
+      setApprovalLink(null);
+      setApprovalLinks([]);
+      return;
+    }
+
+    if (!silent) setApprovalLinkLoading(true);
+    try {
+      const [response, linksResponse] = await Promise.all([
+        api.get(`/agency/workspaces/${workspaceId}/approval-token`),
+        api.get(`/agency/workspaces/${workspaceId}/approval-links`),
+      ]);
+      const nextApprovalLink = response?.data?.approvalUrl ? response.data : null;
+      setApprovalLink(nextApprovalLink);
+      setApprovalLinks(Array.isArray(linksResponse?.data?.links) ? linksResponse.data.links : []);
+    } catch (error) {
+      if (!silent) {
+        toast.error(error?.response?.data?.error || 'Failed to load client approval link');
+      }
+    } finally {
+      if (!silent) setApprovalLinkLoading(false);
     }
   };
 
@@ -998,17 +1056,17 @@ const AgencyWorkspacePage = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [agencyContextRes, workspacesRes, membersRes, availableAccRes, attachedAccRes, teamPermissionsRes, agencyMembersRes] = await Promise.all([
+      setLoadedDataKeys(new Set());
+      const [agencyContextRes, workspaceRes, membersRes, availableAccRes, attachedAccRes, teamPermissionsRes] = await Promise.all([
         api.get('/agency/context').catch(() => null),
-        api.get('/agency/workspaces?includeArchived=true'),
+        api.get(`/agency/workspaces/${workspaceId}`),
         api.get(`/agency/workspaces/${workspaceId}/members`),
         api.get('/agency/accounts/available'),
         api.get(`/agency/workspaces/${workspaceId}/accounts`),
         api.get('/pro-team/permissions').catch(() => null),
-        api.get('/agency/members').catch(() => null),
       ]);
 
-      const currentWorkspace = (workspacesRes.data.workspaces || []).find((item) => item.id === workspaceId);
+      const currentWorkspace = workspaceRes?.data?.workspace || null;
       if (!currentWorkspace) {
         toast.error('Workspace not found');
         navigate('/agency');
@@ -1044,25 +1102,58 @@ const AgencyWorkspacePage = () => {
       setAvailableAccounts(availableAccRes.data.accounts || []);
       setAttachedAccounts(attachedAccRes.data.accounts || []);
       setTeamPermissions(teamPermissionsRes?.data?.success ? teamPermissionsRes.data : null);
-      setAgencyMembers(Array.isArray(agencyMembersRes?.data?.members) ? agencyMembersRes.data.members : []);
 
       // Let the workspace shell render immediately, then hydrate heavier panels in the background.
       setLoading(false);
 
       Promise.allSettled([
-        loadAgencyMembers({ silent: true }),
         loadOperationsSnapshot({ silent: true }),
         loadWorkspaceDrafts({ silent: true }),
         loadAnalyticsSummary({ silent: true }),
         loadWorkspaceSettings({ silent: true }),
-        loadInsightsSummary({ silent: true }),
-        loadAnalysisSummary({ silent: true }),
-      ]);
+      ]).then(() => {
+        setLoadedDataKeys(new Set(['operations', 'drafts', 'analytics', 'settings']));
+      });
     } catch (error) {
       toast.error(error?.response?.data?.error || 'Failed to load workspace');
     }
 
     setLoading(false);
+  };
+
+  const ensureTabData = async (tabKey) => {
+    try {
+      const requirements = TAB_DATA_REQUIREMENTS[tabKey] || [];
+      const nextLoaders = [];
+
+      if (requirements.includes('members') && !loadedDataKeys.has('members')) {
+        nextLoaders.push(loadAgencyMembers({ silent: true }).then(() => 'members'));
+      }
+      if (requirements.includes('approval') && !loadedDataKeys.has('approval') && canApproveOrPublish) {
+        nextLoaders.push(loadApprovalLink({ silent: true }).then(() => 'approval'));
+      }
+      if (requirements.includes('analysis') && !loadedDataKeys.has('analysis')) {
+        nextLoaders.push(loadAnalysisSummary({ silent: true }).then(() => 'analysis'));
+      }
+      if (requirements.includes('insights') && !loadedDataKeys.has('insights')) {
+        nextLoaders.push(loadInsightsSummary({ silent: true }).then(() => 'insights'));
+      }
+
+      if (nextLoaders.length === 0) return;
+
+      const settled = await Promise.allSettled(nextLoaders);
+      setLoadedDataKeys((previous) => {
+        const next = new Set(previous);
+        settled.forEach((entry) => {
+          if (entry.status === 'fulfilled' && entry.value) {
+            next.add(entry.value);
+          }
+        });
+        return next;
+      });
+    } catch (error) {
+      toast.error(error?.response?.data?.error || 'Failed to prepare workspace tab');
+    }
   };
 
   useEffect(() => {
@@ -1071,8 +1162,14 @@ const AgencyWorkspacePage = () => {
 
   useEffect(() => {
     if (!workspaceId) return;
+    if (activeWorkspaceTab !== 'calendar') return;
     loadQueueDrafts({ statusView: draftStatusFilter });
-  }, [workspaceId, draftStatusFilter]);
+  }, [workspaceId, draftStatusFilter, activeWorkspaceTab]);
+
+  useEffect(() => {
+    if (!workspaceId) return;
+    ensureTabData(activeWorkspaceTab);
+  }, [workspaceId, activeWorkspaceTab, canApproveOrPublish]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -1504,6 +1601,87 @@ const AgencyWorkspacePage = () => {
       }
     } finally {
       if (!silent) setDraftsLoading(false);
+    }
+  };
+
+  const createApprovalLink = async () => {
+    if (!canApproveOrPublish) return;
+    setApprovalLinkCreating(true);
+    try {
+      const response = await api.post(`/agency/workspaces/${workspaceId}/approval-token`, {
+        label: String(approvalLinkLabel || '').trim() || `${workspace?.brand_name || workspace?.name || 'Client'} approval link`,
+      });
+      setApprovalLink(response?.data || null);
+      setApprovalLinkLabel('');
+      await loadApprovalLink({ silent: true });
+      toast.success('Client approval link ready');
+    } catch (error) {
+      toast.error(error?.response?.data?.error || 'Failed to create client approval link');
+    } finally {
+      setApprovalLinkCreating(false);
+    }
+  };
+
+  const copyApprovalLink = async (value = approvalLink?.approvalUrl) => {
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      toast.success('Approval link copied');
+    } catch (error) {
+      toast.error('Failed to copy the approval link');
+    }
+  };
+
+  const revokeApprovalLink = async (tokenId) => {
+    if (!tokenId || !canApproveOrPublish) return;
+    if (typeof window !== 'undefined') {
+      const confirmed = window.confirm('Revoke this client approval link? People using it will lose access immediately.');
+      if (!confirmed) return;
+    }
+
+    setApprovalLinkRevokingId(String(tokenId));
+    try {
+      await api.delete(`/agency/workspaces/${workspaceId}/approval-link/${tokenId}`);
+      await loadApprovalLink({ silent: true });
+      toast.success('Approval link revoked');
+    } catch (error) {
+      toast.error(error?.response?.data?.error || 'Failed to revoke approval link');
+    } finally {
+      setApprovalLinkRevokingId('');
+    }
+  };
+
+  const addDraftComment = async (draftId) => {
+    const comment = String(draftCommentById[draftId] || '').trim();
+    if (!comment) {
+      toast.error('Write a comment first');
+      return;
+    }
+
+    setDraftActionKey(`comment:${draftId}`);
+    try {
+      const response = await api.post(`/agency/workspaces/${workspaceId}/drafts/${draftId}/comments`, {
+        comment,
+      });
+      const nextComment = response?.data?.comment || null;
+      if (nextComment) {
+        setWorkspaceDrafts((previous) => previous.map((draft) => (
+          String(draft.id) === String(draftId)
+            ? { ...draft, comments: [...(Array.isArray(draft.comments) ? draft.comments : []), nextComment] }
+            : draft
+        )));
+        setQueueDrafts((previous) => previous.map((draft) => (
+          String(draft.id) === String(draftId)
+            ? { ...draft, comments: [...(Array.isArray(draft.comments) ? draft.comments : []), nextComment] }
+            : draft
+        )));
+      }
+      setDraftCommentById((previous) => ({ ...previous, [draftId]: '' }));
+      toast.success('Comment added');
+    } catch (error) {
+      toast.error(error?.response?.data?.error || 'Failed to add comment');
+    } finally {
+      setDraftActionKey(null);
     }
   };
 
@@ -1950,17 +2128,17 @@ const AgencyWorkspacePage = () => {
     }
   };
 
-  const rejectDraft = async (draftId) => {
+  const rejectDraft = async (draftId, explicitReason = null) => {
     if (!canApproveOrPublish) {
       toast.error('Only owner/admin can reject workspace drafts');
       return;
     }
 
-    const reason = typeof window !== 'undefined'
+    const fallbackPrompt = typeof window !== 'undefined'
       ? window.prompt('Why are you rejecting this draft? This reason will be shown back to the editor.', '')
       : '';
 
-    const normalizedReason = String(reason || '').trim();
+    const normalizedReason = String(explicitReason ?? fallbackPrompt ?? '').trim();
     if (!normalizedReason) {
       toast.error('Enter a rejection reason first');
       return;
@@ -1971,6 +2149,7 @@ const AgencyWorkspacePage = () => {
       await api.post(`/agency/workspaces/${workspaceId}/drafts/${draftId}/reject`, {
         rejectedReason: normalizedReason,
       });
+      setRejectReasonById((previous) => ({ ...previous, [draftId]: '' }));
       toast.success('Draft rejected');
       await Promise.all([
         loadWorkspaceDrafts({ silent: true }),
@@ -2232,6 +2411,8 @@ const AgencyWorkspacePage = () => {
           .filter(Boolean),
         targetAudience: profileContextForm.target_audience,
         tonePresets: normalizeTonePresetEntries(profileContextForm.tone_presets),
+        portalTitle: profileContextForm.portal_title,
+        portalMessage: profileContextForm.portal_message,
       });
       toast.success('Client AI context saved');
       setProfileContextEditing(false);
@@ -2272,6 +2453,8 @@ const AgencyWorkspacePage = () => {
           .filter(Boolean),
         targetAudience: profileContextForm.target_audience,
         tonePresets: normalizeTonePresetEntries(profileContextForm.tone_presets),
+        portalTitle: profileContextForm.portal_title,
+        portalMessage: profileContextForm.portal_message,
       });
       toast.success('Competitor watchlist saved');
       await Promise.all([
@@ -2341,6 +2524,8 @@ const AgencyWorkspacePage = () => {
       target_audience: workspaceSettings.target_audience || '',
       profile_notes: workspaceSettings.profile_notes || '',
       tone_presets: normalizeTonePresetEntries(workspaceSettings.tone_presets),
+      portal_title: workspaceSettings.portal_title || '',
+      portal_message: workspaceSettings.portal_message || '',
     });
     setProfileContextEditing(false);
   };
@@ -2375,9 +2560,9 @@ const AgencyWorkspacePage = () => {
   if (!workspace) return null;
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,_#f8fafc_0%,_#f1f5f9_38%,_#eef2f7_100%)]">
-      <div className="mx-auto max-w-[1760px] px-3 py-4 sm:px-6 sm:py-6 lg:px-8 xl:px-10 2xl:px-12">
-        <div className="space-y-6">
+    <div className="min-h-screen overflow-x-hidden bg-[linear-gradient(180deg,_#f8fafc_0%,_#f1f5f9_38%,_#eef2f7_100%)]">
+      <div className="mx-auto w-full max-w-[1760px] px-3 py-4 sm:px-6 sm:py-6 lg:px-8 xl:px-10 2xl:px-12">
+        <div className="min-w-0 space-y-6">
           <AgencyWorkspaceShell
             workspace={workspace}
             workspaceStatusMeta={workspaceStatusMeta}
@@ -2420,6 +2605,7 @@ const AgencyWorkspacePage = () => {
       {isWorkspaceTab('setup') && (
         <AgencyWorkspaceSetupTab
           workspace={workspace}
+          canApproveOrPublish={canApproveOrPublish}
           profileEditing={profileEditing}
           profileForm={profileForm}
           setProfileForm={setProfileForm}
@@ -2439,6 +2625,17 @@ const AgencyWorkspacePage = () => {
           saveProfileContext={saveProfileContext}
           cancelProfileContextEditing={cancelProfileContextEditing}
           formatMetric={formatMetric}
+          approvalLink={approvalLink}
+          approvalLinks={approvalLinks}
+          approvalLinkLoading={approvalLinkLoading}
+          approvalLinkCreating={approvalLinkCreating}
+          approvalLinkRevokingId={approvalLinkRevokingId}
+          approvalLinkLabel={approvalLinkLabel}
+          setApprovalLinkLabel={setApprovalLinkLabel}
+          createApprovalLink={createApprovalLink}
+          refreshApprovalLink={() => loadApprovalLink()}
+          copyApprovalLink={copyApprovalLink}
+          revokeApprovalLink={revokeApprovalLink}
           updateStatus={updateStatus}
           confirmArchiveWorkspace={confirmArchiveWorkspace}
         />
@@ -2481,787 +2678,108 @@ const AgencyWorkspacePage = () => {
       )}
 
       {isWorkspaceTab('compose') && (
-      <>
-      <div id="agency-workspace-compose" className="bg-white border border-gray-200 rounded-xl p-6">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div>
-            <p className="inline-flex items-center rounded-full bg-blue-100 text-blue-700 text-[11px] font-semibold px-2 py-1 uppercase tracking-wide">Compose Studio</p>
-            <h2 className="text-lg font-semibold text-gray-900 mt-2">Create Content For This Client</h2>
-            <p className="text-sm text-gray-600 mt-1">One clean composer for writing, AI generation, refinement, media upload, and sending strong drafts into approval or publishing.</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <div className="text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
-              Selected accounts: <span className="font-semibold text-gray-900">{selectedTargetAccounts.length}</span>
-            </div>
-          </div>
-        </div>
-
-        {workspace.status !== 'active' && (
-          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            This workspace is currently <span className="font-semibold">{workspace.status}</span>. Activate it to generate, save, or publish content.
-          </div>
-        )}
-        {!canWrite && (
-          <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-            You have <span className="font-semibold">{currentWorkspaceRole || 'view-only'}</span> access in this workspace. You can review drafts and publish history, but only owners, admins, and editors can create or edit content.
-          </div>
-        )}
-
-        {attachedAccounts.length === 0 ? (
-          <div className="mt-4 rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-6 py-8 text-center">
-            <h3 className="text-base font-semibold text-gray-900">No accounts attached yet</h3>
-            <p className="text-sm text-gray-600 mt-2">Compose becomes available after you attach at least one workspace account.</p>
-            <button
-              type="button"
-              onClick={() => setActiveWorkspaceTab('connections')}
-              className="mt-4 rounded-lg bg-blue-600 text-white px-4 py-2"
-            >
-              Open Connections
-            </button>
-          </div>
-        ) : (
-          <div className="mt-4 space-y-4">
-            <div className="border rounded-2xl p-4 sm:p-5 bg-gradient-to-br from-slate-50 to-white">
-              <div className="flex items-start justify-between gap-3 flex-wrap">
-                <div>
-                  <h3 className="text-base font-semibold text-gray-900">Main Composer</h3>
-                  <p className="text-sm text-gray-600 mt-1">Pick a real platform first, then either paste copy to refine or leave content empty and let AI draft the first version.</p>
-                </div>
-                <div className="text-xs text-gray-600 border rounded-lg px-3 py-2 bg-white">
-                  Tone: <span className="font-semibold text-gray-900 capitalize">{generationStyle}</span>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-2 mt-4">
-                {generationModeOptions.map((mode) => (
-                  <button
-                    key={mode.key}
-                    type="button"
-                    onClick={() => toggleGenerationMode(mode.key)}
-                    disabled={composeWriteLocked || draftActionKey === 'generate' || refiningContent}
-                    className={`rounded-full border px-3 py-1.5 text-sm transition disabled:opacity-50 ${
-                      selectedGenerationModes.includes(mode.key)
-                        ? 'border-blue-600 bg-blue-600 text-white'
-                        : 'border-gray-200 bg-white text-gray-700'
-                    }`}
-                  >
-                    {mode.label}
-                  </button>
-                ))}
-              </div>
-              <p className="text-xs text-gray-500 mt-3">
-                Powered by <span className="font-semibold text-gray-700">{selectedGenerationServiceLabel}</span>.
-                {activeGenerationModes.length > 1 ? ' One variant will be generated for each selected platform.' : ''}
-              </p>
-
-              <label className="block text-sm font-medium text-gray-900 mt-4">Content</label>
-              <textarea
-                className="mt-2 min-h-[220px] w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-inner outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                placeholder={`Write or paste your ${activeGenerationModes.length > 1 ? 'multi-platform' : primaryGenerationMode.label} post here. Leave this empty if you want AI to create the first draft from your prompt.`}
-                value={publisherContent}
-                onChange={(event) => setPublisherContent(event.target.value)}
-                disabled={publishing || composeWriteLocked || refiningContent}
-              />
-
-              {selectedPlatformCounters.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {selectedPlatformCounters.map((counter) => (
-                    <div
-                      key={counter.key}
-                      className={`rounded-full border px-3 py-1.5 text-xs font-medium ${
-                        counter.overLimit
-                          ? 'border-amber-300 bg-amber-50 text-amber-800'
-                          : 'border-gray-200 bg-white text-gray-700'
-                      }`}
-                    >
-                      {counter.label}: {counter.count}{counter.limit ? ` / ${counter.limit}` : ''}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {showTwitterThreadPreview && (
-                <div className="mt-3 rounded-2xl border border-sky-200 bg-sky-50/70 p-4">
-                  <div className="flex items-start justify-between gap-3 flex-wrap">
-                    <div>
-                      <h4 className="text-sm font-semibold text-sky-900">Twitter / X thread preview</h4>
-                      <p className="mt-1 text-xs text-sky-800">
-                        This content is over 280 characters, so X will publish or schedule it as a {twitterThreadParts.length}-post thread.
-                      </p>
-                    </div>
-                    <span className="rounded-full border border-sky-200 bg-white px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-sky-700">
-                      Auto thread split
-                    </span>
-                  </div>
-
-                  <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
-                    {twitterThreadParts.map((part, index) => (
-                      <div key={`${index + 1}:${part.slice(0, 12)}`} className="rounded-xl border border-white bg-white p-3 shadow-sm">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="text-xs font-semibold uppercase tracking-wide text-sky-700">Post {index + 1}</p>
-                          <span className="text-[11px] text-gray-500">{countCharacters(part)} / {WORKSPACE_PLATFORM_LIMITS.twitter}</span>
-                        </div>
-                        <p className="mt-2 whitespace-pre-wrap text-sm text-gray-700">{part}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="border rounded-xl p-4 bg-gray-50 mt-4">
-                <div className="flex items-start justify-between gap-3 flex-wrap">
-                  <div>
-                    <h4 className="text-sm font-semibold text-gray-900">Save / Publish Details</h4>
-                    <p className="text-xs text-gray-600 mt-1">{composerActionHint}</p>
-                  </div>
-                  <div className="flex flex-wrap gap-2 justify-end">
-                    <button
-                      type="button"
-                      onClick={() => setPublisherTargets(attachedAccounts.map((account) => account.id))}
-                      disabled={publishing || composeWriteLocked || refiningContent}
-                      className="text-xs border rounded-lg px-3 py-2 bg-white disabled:opacity-50"
-                    >
-                      Select all
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPublisherTargets([])}
-                      disabled={publishing || composeWriteLocked || refiningContent}
-                      className="text-xs border rounded-lg px-3 py-2 bg-white disabled:opacity-50"
-                    >
-                      Clear
-                    </button>
-                    {canApproveOrPublish && (
-                      <input
-                        type="datetime-local"
-                        value={composerScheduleFor}
-                        onChange={(event) => setComposerScheduleFor(event.target.value)}
-                        disabled={publishing || composeWriteLocked || refiningContent || draftActionKey === 'schedule-composer'}
-                        className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm disabled:opacity-50"
-                      />
-                    )}
-                    <button
-                      type="button"
-                      onClick={sendComposerForApproval}
-                      disabled={composeWriteLocked || attachedAccounts.length === 0 || draftActionKey === 'create-manual-approval' || refiningContent}
-                      className="rounded-lg border border-gray-300 text-gray-900 px-4 py-2 disabled:opacity-50"
-                    >
-                      {draftActionKey === 'create-manual-approval' ? 'Sending...' : 'Send For Approval'}
-                    </button>
-                    {canApproveOrPublish && (
-                      <button
-                        type="button"
-                        onClick={scheduleComposerContent}
-                        disabled={composeWriteLocked || attachedAccounts.length === 0 || draftActionKey === 'schedule-composer' || refiningContent}
-                        className="rounded-lg border border-amber-300 bg-amber-50 text-amber-900 px-4 py-2 disabled:opacity-50"
-                      >
-                        {draftActionKey === 'schedule-composer' ? 'Scheduling...' : 'Schedule'}
-                      </button>
-                    )}
-                    {canApproveOrPublish && (
-                      <button
-                        type="button"
-                        onClick={publishFromWorkspace}
-                        disabled={publishing || composeWriteLocked || attachedAccounts.length === 0 || refiningContent}
-                        className="rounded-lg bg-blue-600 text-white px-4 py-2 disabled:opacity-50"
-                      >
-                        {publishing ? 'Publishing...' : 'Publish Now'}
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {uploadedMedia.length > 0 && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 mt-3">
-                    {uploadedMedia.map((item) => (
-                      <div key={item.url} className="rounded-xl border border-gray-200 bg-white p-3">
-                        {String(item.mimetype || '').startsWith('image/') ? (
-                          <img
-                            src={item.url}
-                            alt={item.name}
-                            className="h-32 w-full rounded-lg object-cover bg-gray-100"
-                          />
-                        ) : String(item.mimetype || '').startsWith('video/') ? (
-                          <video
-                            src={item.url}
-                            className="h-32 w-full rounded-lg object-cover bg-gray-100"
-                            controls
-                          />
-                        ) : (
-                          <div className="h-32 w-full rounded-lg bg-gray-100 flex items-center justify-center text-xs text-gray-500">
-                            Uploaded media
-                          </div>
-                        )}
-                        <div className="flex items-start justify-between gap-3 mt-3">
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
-                            <p className="text-xs text-gray-500 mt-1">{String(item.mimetype || 'file').split('/')[0]}</p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => removeUploadedMedia(item.url)}
-                            className="text-xs text-red-600 hover:text-red-700"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {attachedAccounts.map((account) => {
-                    const checked = publisherTargets.includes(account.id);
-                    return (
-                      <button
-                        key={account.id}
-                        type="button"
-                        onClick={() => {
-                          setPublisherTargets((previous) => (
-                            checked
-                              ? previous.filter((id) => id !== account.id)
-                              : [...new Set([...previous, account.id])]
-                          ));
-                        }}
-                        disabled={publishing || composeWriteLocked || refiningContent}
-                        className={`rounded-full border px-3 py-1.5 text-xs transition disabled:opacity-50 ${
-                          checked
-                            ? 'border-blue-600 bg-blue-600 text-white'
-                            : 'border-gray-200 bg-white text-gray-700'
-                        }`}
-                      >
-                        {getWorkspaceAccountLabel(account)} - {getWorkspacePlatformLabel(account.platform)}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="mt-4 flex items-center justify-between gap-3 flex-wrap">
-                <label className="block text-sm font-medium text-gray-900">AI Guidance</label>
-                {hasComposerContent ? (
-                  <button
-                    type="button"
-                    onClick={() => setShowPromptInput((previous) => !previous)}
-                    className="text-xs font-medium text-blue-700 hover:text-blue-800"
-                  >
-                    {showPromptInput ? 'Hide guidance' : 'Add guidance'}
-                  </button>
-                ) : (
-                  <p className="text-xs text-gray-500">Required when content is empty so AI knows what to generate.</p>
-                )}
-              </div>
-              {(!hasComposerContent || showPromptInput) ? (
-                <textarea
-                  className="mt-2 min-h-[96px] w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-inner outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                  placeholder={`Example: Launch our new collection for ${activeGenerationModes.length > 1 ? activeGenerationModes.map((mode) => mode.label).join(' + ') : primaryGenerationMode.label}. Or: make this tighter, clearer, and less salesy.`}
-                  value={generationPrompt}
-                  onChange={(event) => setGenerationPrompt(event.target.value)}
-                  disabled={composeWriteLocked || draftActionKey === 'generate' || refiningContent}
-                />
-              ) : (
-                <div className="mt-2 rounded-2xl border border-dashed border-gray-200 bg-white px-4 py-3 text-sm text-gray-500">
-                  Add guidance only if you want AI to steer the refinement in a specific direction.
-                </div>
-              )}
-
-              <div className="mt-4 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto_auto] gap-3 items-end">
-                <div>
-                  <label className="block text-sm font-medium text-gray-900">Tone</label>
-                  <select
-                  className="mt-2 w-full border rounded-lg px-3 py-2 bg-white"
-                  value={generationStyle}
-                  onChange={(event) => setGenerationStyle(event.target.value)}
-                  disabled={composeWriteLocked || draftActionKey === 'generate' || refiningContent}
-                >
-                  {generationToneOptions.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-                {selectedToneOption?.guidance ? (
-                  <p className="mt-2 text-xs text-gray-500">{selectedToneOption.guidance}</p>
-                ) : null}
-                </div>
-                <button
-                  type="button"
-                  onClick={refineWorkspaceContent}
-                  disabled={composeWriteLocked || refiningContent || publishing}
-                  className="rounded-lg bg-blue-600 text-white px-4 py-2 disabled:opacity-50 w-full lg:w-auto hover:bg-blue-700"
-                >
-                  {refiningContent
-                    ? hasComposerContent
-                      ? 'Refining...'
-                      : 'Generating...'
-                    : hasComposerContent
-                      ? activeGenerationModes.length > 1
-                        ? 'Refine Variants'
-                        : 'Refine Content'
-                      : activeGenerationModes.length > 1
-                        ? 'Generate Variants'
-                        : 'Generate Content'}
-                </button>
-                <input
-                  ref={mediaInputRef}
-                  type="file"
-                  multiple
-                  accept="image/*,video/*"
-                  className="hidden"
-                  onChange={handleMediaUpload}
-                />
-                <button
-                  type="button"
-                  onClick={() => mediaInputRef.current?.click()}
-                  disabled={composeWriteLocked || mediaUploading || refiningContent || publishing}
-                  className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-blue-700 disabled:opacity-50 w-full lg:w-auto hover:bg-blue-100"
-                >
-                  {mediaUploading ? 'Uploading...' : 'Upload Image / Video'}
-                </button>
-              </div>
-
-              {generatedVariants.length > 0 && (
-                <div className="mt-5 rounded-2xl border border-blue-100 bg-blue-50/40 p-4">
-                  <div>
-                    <h4 className="text-sm font-semibold text-gray-900">Generated Platform Variants</h4>
-                    <p className="mt-1 text-xs text-gray-600">Review each platform draft, pull it into the composer, or send that variant straight into the approval queue.</p>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-4 mt-4 xl:grid-cols-2">
-                    {generatedVariants.map((variant) => (
-                      <div key={variant.mode} className="rounded-2xl border border-white bg-white p-4 shadow-sm">
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <p className="text-sm font-semibold text-gray-900">{getWorkspacePlatformLabel(variant.mode)}</p>
-                            <p className="mt-1 text-xs text-gray-500">{variant.provider || 'AI draft'}</p>
-                          </div>
-                          <span className="rounded-full border border-blue-100 bg-blue-50 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-blue-700">
-                            Variant
-                          </span>
-                        </div>
-
-                        <textarea
-                          className="mt-3 min-h-[180px] w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-inner outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                          value={variant.content}
-                          onChange={(event) => {
-                            setGeneratedVariants((previous) => previous.map((item) => (
-                              item.mode === variant.mode
-                                ? { ...item, content: event.target.value }
-                                : item
-                            )));
-                          }}
-                          disabled={composeWriteLocked || refiningContent}
-                        />
-
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          <span className={`rounded-full border px-2 py-1 text-[11px] font-medium ${
-                            (WORKSPACE_PLATFORM_LIMITS[variant.mode] && countCharacters(variant.content) > WORKSPACE_PLATFORM_LIMITS[variant.mode])
-                              ? 'border-amber-300 bg-amber-50 text-amber-800'
-                              : 'border-gray-200 bg-gray-50 text-gray-600'
-                          }`}>
-                            {countCharacters(variant.content)}
-                            {WORKSPACE_PLATFORM_LIMITS[variant.mode] ? ` / ${WORKSPACE_PLATFORM_LIMITS[variant.mode]}` : ''} chars
-                          </span>
-                          {variant.mode === 'twitter' && splitTextByCharacterLimit(variant.content, WORKSPACE_PLATFORM_LIMITS.twitter, 25).length > 1 && (
-                            <span className="rounded-full border border-sky-200 bg-sky-50 px-2 py-1 text-[11px] font-medium text-sky-700">
-                              Auto-splits into {splitTextByCharacterLimit(variant.content, WORKSPACE_PLATFORM_LIMITS.twitter, 25).length} X posts
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setPublisherContent(variant.content);
-                              setSelectedGenerationModes([variant.mode]);
-                              setGeneratedVariants([]);
-                            }}
-                            disabled={composeWriteLocked}
-                            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700"
-                          >
-                            Use In Composer
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => saveGeneratedVariantDraft(variant)}
-                            disabled={composeWriteLocked || draftActionKey === `create-variant:${variant.mode}`}
-                            className="rounded-lg bg-gray-900 px-3 py-2 text-sm text-white disabled:opacity-50"
-                          >
-                            {draftActionKey === `create-variant:${variant.mode}` ? 'Sending...' : 'Send For Approval'}
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              <p className="text-xs text-gray-500 mt-3">Empty content plus prompt generates a new draft. Existing content plus prompt refines what you already wrote.</p>
-
-            </div>
-          </div>
-        )}
-      </div>
-      </>
+        <AgencyWorkspaceComposeTab
+          workspace={workspace}
+          canWrite={canWrite}
+          currentWorkspaceRole={currentWorkspaceRole}
+          attachedAccounts={attachedAccounts}
+          selectedTargetAccounts={selectedTargetAccounts}
+          setActiveWorkspaceTab={setActiveWorkspaceTab}
+          generationStyle={generationStyle}
+          generationModeOptions={generationModeOptions}
+          toggleGenerationMode={toggleGenerationMode}
+          composeWriteLocked={composeWriteLocked}
+          draftActionKey={draftActionKey}
+          refiningContent={refiningContent}
+          selectedGenerationModes={selectedGenerationModes}
+          selectedGenerationServiceLabel={selectedGenerationServiceLabel}
+          activeGenerationModes={activeGenerationModes}
+          primaryGenerationMode={primaryGenerationMode}
+          publisherContent={publisherContent}
+          setPublisherContent={setPublisherContent}
+          publishing={publishing}
+          selectedPlatformCounters={selectedPlatformCounters}
+          showTwitterThreadPreview={showTwitterThreadPreview}
+          twitterThreadParts={twitterThreadParts}
+          composerActionHint={composerActionHint}
+          setPublisherTargets={setPublisherTargets}
+          canApproveOrPublish={canApproveOrPublish}
+          composerScheduleFor={composerScheduleFor}
+          setComposerScheduleFor={setComposerScheduleFor}
+          sendComposerForApproval={sendComposerForApproval}
+          scheduleComposerContent={scheduleComposerContent}
+          publishFromWorkspace={publishFromWorkspace}
+          uploadedMedia={uploadedMedia}
+          removeUploadedMedia={removeUploadedMedia}
+          publisherTargets={publisherTargets}
+          showPromptInput={showPromptInput}
+          setShowPromptInput={setShowPromptInput}
+          hasComposerContent={hasComposerContent}
+          generationPrompt={generationPrompt}
+          setGenerationPrompt={setGenerationPrompt}
+          generationToneOptions={generationToneOptions}
+          selectedToneOption={selectedToneOption}
+          setGenerationStyle={setGenerationStyle}
+          refineWorkspaceContent={refineWorkspaceContent}
+          mediaInputRef={mediaInputRef}
+          handleMediaUpload={handleMediaUpload}
+          mediaUploading={mediaUploading}
+          generatedVariants={generatedVariants}
+          setGeneratedVariants={setGeneratedVariants}
+          saveGeneratedVariantDraft={saveGeneratedVariantDraft}
+          setSelectedGenerationModes={setSelectedGenerationModes}
+        />
       )}
 
       {isWorkspaceTab('calendar') && (
-      <div id="agency-workspace-calendar" className="bg-white border border-gray-200 rounded-xl p-6">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div>
-            <p className="inline-flex items-center rounded-full bg-blue-100 text-blue-700 text-[11px] font-semibold px-2 py-1 uppercase tracking-wide">Agency Pro</p>
-            <h2 className="text-lg font-semibold text-gray-900 mt-2">Unified Queue + Calendar</h2>
-            <p className="text-sm text-gray-600 mt-1">Track pending queue and scheduled posts across attached workspace channels.</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => Promise.all([
-              loadOperationsSnapshot(),
-              loadWorkspaceDrafts(),
-            ])}
-            disabled={operationsLoading || draftsLoading}
-            className="inline-flex items-center gap-2 text-sm border rounded-lg px-3 py-2 disabled:opacity-50"
-          >
-            <RefreshCw className={`h-4 w-4 ${(operationsLoading || draftsLoading) ? 'animate-spin' : ''}`} />
-            {(operationsLoading || draftsLoading) ? 'Refreshing...' : 'Refresh workflow'}
-          </button>
-        </div>
-
-        <div className="mt-5 grid grid-cols-1 gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-          <div className="border rounded-2xl p-5 bg-white">
-            <div className="flex items-start justify-between gap-3 flex-wrap">
-              <div>
-                <p className="inline-flex items-center rounded-full bg-blue-100 text-blue-700 text-[11px] font-semibold px-2 py-1 uppercase tracking-wide">Review Flow</p>
-                <h3 className="text-base font-semibold text-gray-900 mt-2">Approval Queue + Draft History</h3>
-                <p className="text-sm text-gray-600 mt-1">Everything saved from Compose lands here for approval, scheduling, editing, publishing, or deletion.</p>
-              </div>
-              <div className="text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
-                Shared drafts: <span className="font-semibold text-gray-900">{workspaceDrafts.length || 0}</span>
-              </div>
-            </div>
-
-            <div className="mt-4 space-y-3">
-              <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    {QUEUE_STATUS_FILTER_OPTIONS.map((option) => {
-                      const active = draftStatusFilter === option.value;
-                      return (
-                        <button
-                          key={option.value}
-                          type="button"
-                          onClick={() => setDraftStatusFilter(option.value)}
-                          className={`rounded-full px-3 py-2 text-sm border transition ${
-                            active
-                              ? 'border-blue-200 bg-blue-600 text-white'
-                              : 'border-gray-300 bg-white text-gray-700'
-                          }`}
-                        >
-                          {option.label}
-                        </button>
-                      );
-                    })}
-                    <select
-                      value={draftPlatformFilter}
-                      onChange={(event) => setDraftPlatformFilter(event.target.value)}
-                      className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
-                    >
-                      <option value="all">All platforms</option>
-                      {workspaceDraftPlatformOptions.map((platform) => (
-                        <option key={platform} value={platform}>{getWorkspacePlatformLabel(platform)}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {(canWrite || canApproveOrPublish) && (
-                    <div className="flex flex-wrap items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (selectedFilteredDraftIds.length === allFilteredDraftIds.length) {
-                            setSelectedDraftIds((previous) => previous.filter((id) => !allFilteredDraftIds.includes(id)));
-                            return;
-                          }
-                          setSelectedDraftIds((previous) => [...new Set([...previous, ...allFilteredDraftIds])]);
-                        }}
-                        disabled={allFilteredDraftIds.length === 0}
-                        className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm disabled:opacity-50"
-                      >
-                        {selectedFilteredDraftIds.length === allFilteredDraftIds.length && allFilteredDraftIds.length > 0 ? 'Clear selection' : 'Select filtered'}
-                      </button>
-                      {canApproveOrPublish && (
-                        <button
-                          type="button"
-                          onClick={bulkApproveDrafts}
-                          disabled={selectedFilteredDraftIds.length === 0 || draftActionKey === 'bulk-approve'}
-                          className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 disabled:opacity-50"
-                        >
-                          {draftActionKey === 'bulk-approve' ? 'Approving...' : 'Approve selected'}
-                        </button>
-                      )}
-                      {canWrite && (
-                        <button
-                          type="button"
-                          onClick={bulkDeleteDrafts}
-                          disabled={selectedFilteredDraftIds.length === 0 || draftActionKey === 'bulk-delete'}
-                          className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 disabled:opacity-50"
-                        >
-                          {draftActionKey === 'bulk-delete' ? 'Deleting...' : 'Delete selected'}
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-                <p className="mt-2 text-xs text-gray-500">
-                  Showing {filteredWorkspaceDrafts.length} of {queueDrafts.length} queue items in this view. Selected: {selectedFilteredDraftIds.length}.
-                </p>
-              </div>
-
-              {filteredWorkspaceDrafts.length === 0 ? (
-                <p className="text-sm text-gray-500 border rounded-lg px-3 py-6 text-center">No shared drafts yet. Compose something first, then review it here.</p>
-              ) : (
-                filteredWorkspaceDrafts.map((draft) => {
-                  const targetCount = Array.isArray(draft.platform_targets) ? draft.platform_targets.length : 0;
-                  const scheduleValue = draftScheduleById[draft.id] || formatDateTimeInputValue(draft.scheduled_for);
-                  const draftStatus = getDraftStatusMeta(draft.status);
-                  const draftPlatforms = getDraftPlatformKeys(draft);
-                  const selected = selectedDraftIds.includes(String(draft.id));
-                  const normalizedDraftStatus = String(draft.status || '').toLowerCase();
-                  const canEditDraft = canWrite && ['draft', 'rejected'].includes(normalizedDraftStatus);
-                  const canDeleteDraft = canWrite && ['draft', 'rejected', 'failed'].includes(normalizedDraftStatus);
-                  const canSendDraftForApproval = canWrite && ['draft', 'rejected'].includes(normalizedDraftStatus);
-                  const canReviewDraft = canApproveOrPublish && normalizedDraftStatus === 'pending_approval';
-                  const canScheduleApprovedDraft = canApproveOrPublish && ['approved', 'scheduled'].includes(normalizedDraftStatus);
-                  const canPublishApprovedDraft = canApproveOrPublish && ['approved', 'scheduled'].includes(normalizedDraftStatus);
-                  const canRetryFailedPublish = canApproveOrPublish && normalizedDraftStatus === 'failed';
-                  return (
-                    <div key={draft.id} className="border rounded-xl p-4">
-                      <div className="flex items-center justify-between gap-3 flex-wrap">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {(canWrite || canApproveOrPublish) && (
-                            <input
-                              type="checkbox"
-                              checked={selected}
-                              onChange={(event) => {
-                                setSelectedDraftIds((previous) => (
-                                  event.target.checked
-                                    ? [...new Set([...previous, String(draft.id)])]
-                                    : previous.filter((id) => id !== String(draft.id))
-                                ));
-                              }}
-                              className="h-4 w-4"
-                            />
-                          )}
-                          <span className="text-[11px] uppercase tracking-wide bg-blue-50 text-blue-700 border border-blue-100 px-2 py-1 rounded-full">{draft.generation_source || 'manual'}</span>
-                          <span className={`text-[11px] uppercase tracking-wide px-2 py-1 rounded-full ${draftStatus.className}`}>{draftStatus.label}</span>
-                          <span className="text-[11px] uppercase tracking-wide bg-gray-100 text-gray-700 border border-gray-200 px-2 py-1 rounded-full">{targetCount} targets</span>
-                          {draftPlatforms.map((platform) => (
-                            <span key={`${draft.id}:${platform}`} className="text-[11px] uppercase tracking-wide bg-white text-gray-700 border border-gray-200 px-2 py-1 rounded-full">
-                              {getWorkspacePlatformLabel(platform)}
-                            </span>
-                          ))}
-                        </div>
-                        <p className="text-xs text-gray-500">
-                          Updated: {formatDateTime(draft.updated_at || draft.created_at)}
-                        </p>
-                      </div>
-
-                      <input
-                        className="w-full border rounded-lg px-3 py-2 mt-3"
-                        value={draft.title || ''}
-                        placeholder="Draft title"
-                        onChange={(event) => {
-                          setWorkspaceDrafts((previous) => previous.map((item) => (
-                            item.id === draft.id ? { ...item, title: event.target.value } : item
-                          )));
-                        }}
-                        disabled={!canEditDraft || !canMutate || workspace.status === 'archived'}
-                      />
-                      <textarea
-                        className="w-full border rounded-lg px-3 py-2 min-h-[120px] mt-3"
-                        value={draft.content || ''}
-                        onChange={(event) => {
-                          setWorkspaceDrafts((previous) => previous.map((item) => (
-                            item.id === draft.id ? { ...item, content: event.target.value } : item
-                          )));
-                        }}
-                        disabled={!canEditDraft || !canMutate || workspace.status === 'archived'}
-                      />
-
-                      <div className="flex flex-wrap items-center gap-3 mt-3">
-                        {(canEditDraft || canDeleteDraft) && (
-                          <>
-                            {canEditDraft && (
-                              <button
-                                type="button"
-                                onClick={() => saveDraftEdits(draft)}
-                                disabled={!canMutate || workspace.status === 'archived' || draftActionKey === `save:${draft.id}`}
-                                className="rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:opacity-50"
-                              >
-                                {draftActionKey === `save:${draft.id}` ? 'Saving...' : 'Save changes'}
-                              </button>
-                            )}
-                            {canDeleteDraft && (
-                              <button
-                                type="button"
-                                onClick={() => deleteDraft(draft.id)}
-                                disabled={!canMutate || draftActionKey === `delete:${draft.id}`}
-                                className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 disabled:opacity-50"
-                              >
-                                {draftActionKey === `delete:${draft.id}` ? 'Deleting...' : 'Delete'}
-                              </button>
-                            )}
-                          </>
-                        )}
-                        {canSendDraftForApproval && (
-                          <button
-                            type="button"
-                            onClick={() => sendDraftForApproval(draft)}
-                            disabled={!canMutate || workspace.status === 'archived' || draftActionKey === `submit:${draft.id}`}
-                            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 disabled:opacity-50"
-                          >
-                            {draftActionKey === `submit:${draft.id}` ? 'Sending...' : normalizedDraftStatus === 'rejected' ? 'Edit + resubmit' : 'Send for approval'}
-                          </button>
-                        )}
-                        {canReviewDraft && (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => approveDraft(draft.id)}
-                              disabled={!canMutate || workspace.status === 'archived' || draftActionKey === `approve:${draft.id}`}
-                              className="rounded-lg border border-emerald-300 text-emerald-800 px-3 py-2 text-sm disabled:opacity-50"
-                            >
-                              {draftActionKey === `approve:${draft.id}` ? 'Approving...' : 'Approve'}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => rejectDraft(draft.id)}
-                              disabled={!canMutate || workspace.status === 'archived' || draftActionKey === `reject:${draft.id}`}
-                              className="rounded-lg border border-rose-200 bg-rose-50 text-rose-700 px-3 py-2 text-sm disabled:opacity-50"
-                            >
-                              {draftActionKey === `reject:${draft.id}` ? 'Rejecting...' : 'Reject'}
-                            </button>
-                          </>
-                        )}
-                        {canScheduleApprovedDraft && (
-                          <>
-                            <input
-                              type="datetime-local"
-                              className="border rounded-lg px-3 py-2 text-sm"
-                              value={scheduleValue}
-                              onChange={(event) => {
-                                setDraftScheduleById((previous) => ({
-                                  ...previous,
-                                  [draft.id]: event.target.value,
-                                }));
-                              }}
-                              disabled={!canMutate || workspace.status !== 'active'}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => scheduleDraft(draft.id)}
-                              disabled={!canMutate || workspace.status !== 'active' || draftActionKey === `schedule:${draft.id}`}
-                              className="rounded-lg border border-amber-300 text-amber-800 px-3 py-2 text-sm disabled:opacity-50"
-                            >
-                              {draftActionKey === `schedule:${draft.id}` ? 'Scheduling...' : 'Schedule'}
-                            </button>
-                          </>
-                        )}
-                        {canPublishApprovedDraft && (
-                          <button
-                            type="button"
-                            onClick={() => publishDraftNow(draft.id)}
-                            disabled={!canMutate || workspace.status !== 'active' || draftActionKey === `publish:${draft.id}`}
-                            className="rounded-lg bg-gray-900 text-white px-3 py-2 text-sm disabled:opacity-50"
-                          >
-                            {draftActionKey === `publish:${draft.id}` ? 'Publishing...' : 'Publish now'}
-                          </button>
-                        )}
-                        {canRetryFailedPublish && (
-                          <button
-                            type="button"
-                            onClick={() => retryFailedDraft(draft.id)}
-                            disabled={!canMutate || workspace.status !== 'active' || draftActionKey === `retry:${draft.id}` || draftActionKey === `publish:${draft.id}`}
-                            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 disabled:opacity-50"
-                          >
-                            {draftActionKey === `retry:${draft.id}` || draftActionKey === `publish:${draft.id}` ? 'Retrying...' : 'Retry publish'}
-                          </button>
-                        )}
-                      </div>
-
-                      {!canApproveOrPublish && normalizedDraftStatus === 'pending_approval' && (
-                        <p className="text-xs text-amber-700 mt-3">Waiting for an owner/admin to approve, schedule, or publish this draft.</p>
-                      )}
-                      {!canApproveOrPublish && normalizedDraftStatus === 'approved' && (
-                        <p className="text-xs text-emerald-700 mt-3">Approved and ready for an owner/admin to schedule or publish.</p>
-                      )}
-                      {draft.rejected_reason && (
-                        <div className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-3">
-                          <p className="text-xs font-semibold uppercase tracking-wide text-rose-700">Rejection reason</p>
-                          <p className="mt-1 text-sm text-rose-800">{draft.rejected_reason}</p>
-                        </div>
-                      )}
-                      {draft.scheduled_for && (
-                        <p className="text-xs text-gray-500 mt-3">Scheduled for: {formatDateTime(draft.scheduled_for)}</p>
-                      )}
-                      {draft.last_error && (
-                        <p className="text-xs text-red-600 mt-2">{draft.last_error}</p>
-                      )}
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-
-          <div className="border rounded-2xl p-5 bg-white">
-            <div>
-              <p className="inline-flex items-center rounded-full bg-slate-100 text-slate-700 text-[11px] font-semibold px-2 py-1 uppercase tracking-wide">Publish History</p>
-              <h3 className="text-base font-semibold text-gray-900 mt-2">Latest Publish Results</h3>
-              <p className="text-sm text-gray-600 mt-1">Recent publish attempts live here instead of cluttering the composer.</p>
-            </div>
-
-            <div className="mt-4 space-y-3">
-              {publishHistoryEntries.length === 0 ? (
-                <p className="text-sm text-gray-500 border rounded-lg px-3 py-6 text-center">No recent publish attempts yet.</p>
-              ) : (
-                publishHistoryEntries.map((result) => (
-                  <div key={result.id} className="border rounded-lg px-3 py-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-medium text-gray-900">{result.accountDisplayName} <span className="text-gray-500">({result.platform})</span></p>
-                      <span className={`text-xs px-2 py-1 rounded-full ${result.status === 'posted' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-                        {result.status}
-                      </span>
-                    </div>
-                    {result.status === 'posted' ? (
-                      <p className="text-xs text-gray-600 mt-1">
-                        {result.postId ? `Post ID: ${result.postId}` : 'Published successfully'}
-                      </p>
-                    ) : (
-                      <div className="mt-1">
-                        <p className="text-xs text-red-600">{result.error || 'Publish failed'}</p>
-                        {canApproveOrPublish && (
-                          <button
-                            type="button"
-                            onClick={() => retryPublishHistoryEntry(result)}
-                            disabled={publishing || draftActionKey === `publish:${result.draftId}` }
-                            className="mt-2 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs text-gray-700 disabled:opacity-50"
-                          >
-                            Retry
-                          </button>
-                        )}
-                      </div>
-                    )}
-                    {result.createdAt && (
-                      <p className="mt-2 text-[11px] text-gray-500">Attempted: {formatDateTime(result.createdAt)}</p>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-
-        <AgencyWorkspaceCalendarPanel
+        <AgencyWorkspaceOperationsTab
+          operationsLoading={operationsLoading}
+          draftsLoading={draftsLoading}
+          loadOperationsSnapshot={loadOperationsSnapshot}
+          loadWorkspaceDrafts={loadWorkspaceDrafts}
+          workspaceDrafts={workspaceDrafts}
+          canWrite={canWrite}
+          canApproveOrPublish={canApproveOrPublish}
+          queueDrafts={queueDrafts}
+          draftStatusFilter={draftStatusFilter}
+          setDraftStatusFilter={setDraftStatusFilter}
+          draftPlatformFilter={draftPlatformFilter}
+          setDraftPlatformFilter={setDraftPlatformFilter}
+          workspaceDraftPlatformOptions={workspaceDraftPlatformOptions}
+          selectedFilteredDraftIds={selectedFilteredDraftIds}
+          allFilteredDraftIds={allFilteredDraftIds}
+          setSelectedDraftIds={setSelectedDraftIds}
+          bulkApproveDrafts={bulkApproveDrafts}
+          bulkDeleteDrafts={bulkDeleteDrafts}
+          draftActionKey={draftActionKey}
+          filteredWorkspaceDrafts={filteredWorkspaceDrafts}
+          draftScheduleById={draftScheduleById}
+          formatDateTimeInputValue={formatDateTimeInputValue}
+          getDraftPlatformKeys={getDraftPlatformKeys}
+          selectedDraftIds={selectedDraftIds}
+          formatDateTime={formatDateTime}
+          canMutate={canMutate}
+          workspace={workspace}
+          setWorkspaceDrafts={setWorkspaceDrafts}
+          draftCommentById={draftCommentById}
+          setDraftCommentById={setDraftCommentById}
+          rejectReasonById={rejectReasonById}
+          setRejectReasonById={setRejectReasonById}
+          addDraftComment={addDraftComment}
+          approvalLink={approvalLink}
+          createApprovalLink={createApprovalLink}
+          copyApprovalLink={copyApprovalLink}
+          saveDraftEdits={saveDraftEdits}
+          deleteDraft={deleteDraft}
+          sendDraftForApproval={sendDraftForApproval}
+          approveDraft={approveDraft}
+          rejectDraft={rejectDraft}
+          scheduleDraft={scheduleDraft}
+          publishDraftNow={publishDraftNow}
+          retryFailedDraft={retryFailedDraft}
+          publishHistoryEntries={publishHistoryEntries}
+          retryPublishHistoryEntry={retryPublishHistoryEntry}
+          publishing={publishing}
           operationsSnapshot={operationsSnapshot}
           operationsView={operationsView}
           setOperationsView={setOperationsView}
@@ -3272,9 +2790,7 @@ const AgencyWorkspacePage = () => {
           setSelectedCalendarDateKey={setSelectedCalendarDateKey}
           visibleCalendarDateKey={visibleCalendarDateKey}
           visibleCalendarItems={visibleCalendarItems}
-          formatDateTime={formatDateTime}
         />
-      </div>
       )}
       {isWorkspaceTab('team') && (
         <AgencyWorkspaceTeamTab
@@ -3324,6 +2840,7 @@ const AgencyWorkspacePage = () => {
 };
 
 export default AgencyWorkspacePage;
+
 
 
 

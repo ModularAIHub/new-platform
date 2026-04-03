@@ -36,6 +36,7 @@ import TeamInvitePage from '../pages/TeamInvitePage';
 import AgencyHubPage from '../pages/AgencyHubPage';
 import AgencyWorkspacePage from '../pages/AgencyWorkspacePage';
 import AgencyInvitePage from '../pages/AgencyInvitePage';
+import AgencyApprovalPortalPage from '../pages/AgencyApprovalPortalPage';
 
 import { useAuth } from '../contexts/AuthContext';
 
@@ -147,6 +148,7 @@ const AppRoutes = () => {
       {/* Team invitation - public route (no Layout/auth required) */}
       <Route path="/team/invite/:token" element={<TeamInvitePage />} />
       <Route path="/agency/invite/:token" element={<AgencyInvitePage />} />
+      <Route path="/agency/approve/:token" element={<AgencyApprovalPortalPage />} />
 
       {/* Catch-all route - redirect to home */}
       <Route path="*" element={<HomePage />} />

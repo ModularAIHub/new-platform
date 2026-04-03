@@ -178,6 +178,26 @@ const AgencyWorkspaceOverviewTab = ({
       </div>
 
       <div className="space-y-5">
+        <div className="rounded-[24px] border border-emerald-200 bg-emerald-50/80 p-4 sm:rounded-[28px] sm:p-5">
+          <h3 className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700">Getting started</h3>
+          <p className="mt-2 text-base font-semibold text-slate-950">Use this flow if you are testing a new client workspace.</p>
+
+          <div className="mt-4 grid gap-3">
+            <div className="rounded-2xl border border-white bg-white px-4 py-4">
+              <p className="text-xs uppercase tracking-wide text-emerald-700">1. Setup</p>
+              <p className="mt-2 text-sm font-semibold text-slate-900">Finish identity, AI context, and the client approval link.</p>
+            </div>
+            <div className="rounded-2xl border border-white bg-white px-4 py-4">
+              <p className="text-xs uppercase tracking-wide text-emerald-700">2. Connect</p>
+              <p className="mt-2 text-sm font-semibold text-slate-900">Attach channels and assign teammates so the workspace is ready to operate.</p>
+            </div>
+            <div className="rounded-2xl border border-white bg-white px-4 py-4">
+              <p className="text-xs uppercase tracking-wide text-emerald-700">3. Run</p>
+              <p className="mt-2 text-sm font-semibold text-slate-900">Draft in Compose, send for approval, then move approved work into Calendar.</p>
+            </div>
+          </div>
+        </div>
+
         <div className="rounded-[24px] border border-white/80 bg-white/82 p-4 shadow-[0_18px_50px_rgba(15,23,42,0.06)] sm:rounded-[28px] sm:p-5">
           <h3 className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">How this workspace works</h3>
           <p className="mt-2 text-base font-semibold text-slate-950">A clearer flow for connections, approvals, and publishing.</p>
