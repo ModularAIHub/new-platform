@@ -7,7 +7,7 @@ import SearchBar from '../components/blog/SearchBar';
 import BlogGrid from '../components/blog/BlogGrid';
 import CategoryFilter from '../components/blog/CategoryFilter';
 import { BLOG_CATEGORY_META, getPublishedBlogPosts } from '../data/blogIndex.generated';
-import { paginatePosts, searchPosts } from '../utils/blogHelpers';
+import { getPostFreshnessTimestamp, paginatePosts, searchPosts } from '../utils/blogHelpers';
 
 const ALL_POSTS = getPublishedBlogPosts();
 
@@ -33,7 +33,9 @@ const BlogCategoryPage = () => {
   const posts = useMemo(() => {
     if (!category) return [];
     const categoryPosts = ALL_POSTS.filter((post) => post.category === category);
-    return searchPosts(debouncedQuery, categoryPosts);
+    return searchPosts(debouncedQuery, categoryPosts)
+      .slice()
+      .sort((a, b) => getPostFreshnessTimestamp(b) - getPostFreshnessTimestamp(a));
   }, [category, debouncedQuery]);
 
   const paginated = useMemo(() => paginatePosts(posts, page), [posts, page]);

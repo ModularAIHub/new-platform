@@ -1,13 +1,14 @@
 import { useEffect, useState, Suspense } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import api from '../utils/api'
+import api, { syncAgencyWorkspaceContext } from '../utils/api'
 import {
     Home,
     CreditCard,
     Key,
     Building2,
     Settings,
+    LayoutDashboard,
     Menu,
     X,
     LogOut,
@@ -22,6 +23,8 @@ const Layout = ({ children }) => {
     const [creditScope, setCreditScope] = useState('personal')
 
     useEffect(() => {
+        syncAgencyWorkspaceContext(location.pathname, location.search)
+
         if (!user) {
             setCreditBalance(null)
             setCreditScope('personal')
@@ -48,12 +51,23 @@ const Layout = ({ children }) => {
 
         fetchCredits()
         const onFocus = () => fetchCredits()
+        const onVisibilityChange = () => {
+            if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+                fetchCredits()
+            }
+        }
         window.addEventListener('focus', onFocus)
+        if (typeof document !== 'undefined') {
+            document.addEventListener('visibilitychange', onVisibilityChange)
+        }
         return () => {
             cancelled = true
             window.removeEventListener('focus', onFocus)
+            if (typeof document !== 'undefined') {
+                document.removeEventListener('visibilitychange', onVisibilityChange)
+            }
         }
-    }, [user?.id])
+    }, [user?.id, location.pathname, location.search])
 
     const creditScopeLabel =
         creditScope === 'agency'
@@ -74,6 +88,22 @@ const Layout = ({ children }) => {
     ]
 
     const isActive = (path) => location.pathname === path
+    const currentSection =
+        navigation.find((item) => isActive(item.href)) ||
+        (location.pathname.startsWith('/agency/workspaces/')
+            ? { name: 'Agency Workspace', href: '/agency', icon: Building2 }
+            : null)
+    const marketingLinks = [
+        { name: 'About', href: '/about' },
+        { name: 'Blog', href: '/blogs' },
+        { name: 'Contact', href: '/contact' },
+    ]
+    const currentAppTitle = currentSection?.name || 'Dashboard'
+
+    useEffect(() => {
+        if (typeof document === 'undefined') return
+        document.title = `${currentAppTitle} | SuiteGenie`
+    }, [currentAppTitle])
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -138,8 +168,9 @@ const Layout = ({ children }) => {
             </div>
 
             {/* Desktop sidebar */}
-            <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
+            <div className="hidden lg:fixed lg:inset-y-0 lg:z-40 lg:flex lg:w-64 lg:flex-col">
                 <div className="flex flex-col flex-grow bg-white border-r border-gray-200">
+                    <div className="h-[41px] border-b border-slate-100 bg-slate-950" />
                     <div className="flex h-16 items-center px-4">
                         <img src="/suitegenie-logo-icon.png" alt="SuiteGenie Logo" className="h-12 w-auto object-contain" />
                     </div>
@@ -192,23 +223,84 @@ const Layout = ({ children }) => {
             {/* Main content */}
             <div className="lg:pl-64">
                 {/* Top bar */}
-                <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
-                    <button
-                        type="button"
-                        className="-m-2.5 p-2.5 text-gray-700 lg:hidden"
-                        onClick={() => setSidebarOpen(true)}
-                    >
-                        <Menu className="h-6 w-6" />
-                    </button>
-                    <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
-                        <div className="flex flex-1"></div>
-                        <div className="flex items-center gap-x-4 lg:gap-x-6">
-                            <div className="text-sm text-gray-500 flex items-center gap-3">
+                <div className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 shadow-sm backdrop-blur">
+                    <div className="border-b border-slate-100 bg-slate-950 text-white">
+                        <div className="flex items-center justify-between px-4 py-2 text-xs sm:px-6 lg:px-8">
+                            <p className="font-medium text-slate-200">Built for Indian creators, operators, and agencies.</p>
+                            <p className="hidden text-slate-300 xl:block">BYOK multi-LLM, client approvals, and workspace-aware publishing.</p>
+                        </div>
+                    </div>
+                    <div className="px-4 sm:px-6 lg:px-8">
+                        <div className="flex min-h-[72px] items-center gap-4 py-3">
+                            <button
+                                type="button"
+                                className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50 lg:hidden"
+                                onClick={() => setSidebarOpen(true)}
+                            >
+                                <Menu className="h-5 w-5" />
+                            </button>
+                            <div className="min-w-0 flex flex-1 items-center justify-between gap-4">
+                                <Link to="/dashboard" className="group flex min-w-0 items-center gap-3 text-slate-950">
+                                    <img src="/suitegenie-logo-icon.png" alt="SuiteGenie Logo" className="h-11 w-auto object-contain transition-transform duration-200 group-hover:scale-[1.03]" />
+                                    <div className="min-w-0">
+                                        <p className="truncate text-lg font-semibold tracking-tight text-slate-950">SuiteGenie</p>
+                                        <p className="truncate text-xs text-slate-500">AI social media operating system</p>
+                                    </div>
+                                </Link>
+
+                                <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2">
+                                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-950 text-white">
+                                            <User className="h-4 w-4" />
+                                        </div>
+                                        <div className="hidden text-left sm:block">
+                                            <p className="text-sm font-medium text-slate-900">{user?.name}</p>
+                                            <div className="flex items-center gap-2">
+                                                <span className="max-w-[220px] truncate text-xs text-slate-500">{user?.email}</span>
+                                                {(user?.planType === 'pro' || user?.planType === 'agency') && (
+                                                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                                                        user?.planType === 'agency'
+                                                            ? 'bg-slate-950 text-white'
+                                                            : 'bg-blue-600 text-white'
+                                                    }`}>
+                                                        {user?.planType === 'agency' ? 'AGENCY' : 'PRO'}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex items-center justify-between border-t border-slate-100 py-3">
+                            <div className="min-w-0">
+                                <p className="text-sm font-semibold text-slate-900">{currentAppTitle}</p>
+                                <p className="text-xs text-slate-500">Authenticated workspace and billing controls</p>
+                            </div>
+                            <div className="flex items-center gap-3 text-sm text-slate-500">
+                                <div className="hidden items-center gap-1 lg:flex">
+                                    {marketingLinks.map((item) => (
+                                        <Link
+                                            key={item.href}
+                                            to={item.href}
+                                            className="rounded-lg px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-950"
+                                        >
+                                            {item.name}
+                                        </Link>
+                                    ))}
+                                </div>
+                                <Link
+                                    to={currentSection?.href || '/dashboard'}
+                                    className="hidden items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-950 lg:inline-flex"
+                                >
+                                    <LayoutDashboard className="h-4 w-4" />
+                                    {currentAppTitle}
+                                </Link>
                                 <span>
-                                    {creditScopeLabel}: <span className="font-medium text-gray-900">{creditBalance !== null ? creditBalance : (user?.creditsRemaining || 0)}</span>
+                                    {creditScopeLabel}: <span className="font-medium text-slate-900">{creditBalance !== null ? creditBalance : (user?.creditsRemaining || 0)}</span>
                                 </span>
                                 {(user?.planType === 'pro' || user?.planType === 'agency') && (
-                                    <span className="px-2 py-0.5 text-xs font-semibold bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-full">
+                                    <span className="rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-2 py-0.5 text-xs font-semibold text-white">
                                         {user?.planType === 'agency' ? 'AGENCY' : 'PRO'}
                                     </span>
                                 )}

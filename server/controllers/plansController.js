@@ -26,7 +26,7 @@ const PLAN_LIMITS = {
         byokCredits: CREDIT_TIERS.agency.byok,
         profilesPerPlatform: 8,
         totalSocialAccounts: 8,
-        features: ['basic_ai_generation', 'image_generation', 'built_in_keys', 'own_keys', 'team_collaboration', 'bulk_scheduling', 'advanced_analytics', 'priority_support', 'workspace_management', 'approval_workflows', 'white_label_reporting'],
+        features: ['basic_ai_generation', 'image_generation', 'built_in_keys', 'own_keys', 'team_collaboration', 'bulk_scheduling', 'advanced_analytics', 'priority_support', 'workspace_management', 'approval_workflows', 'agency_credit_pooling'],
         support: 'priority',
         teamMembers: 6
     },
@@ -42,7 +42,65 @@ const PLAN_LIMITS = {
 };
 
 const PUBLIC_PLAN_ORDER = ['free', 'pro', 'agency'];
-const AGENCY_PLAN_PRICE_RUPEES = 1599;
+const PRO_PLAN_PRICE_RUPEES = 499;
+const AGENCY_PLAN_PRICE_RUPEES = 2499;
+const AUTOMATION_ADDON_PLANS = {
+    solo_automation: {
+        id: 'solo_automation',
+        name: 'Standalone Automation',
+        price: 799,
+        scopeType: 'user',
+        durationDays: 30
+    },
+    agency_automation: {
+        id: 'agency_automation',
+        name: 'Agency Automation',
+        price: 2999,
+        scopeType: 'agency',
+        durationDays: 30
+    }
+};
+
+const AGENCY_EXPANSION_ADDON_PLANS = {
+    agency_extra_seat: {
+        id: 'agency_extra_seat',
+        name: 'Agency Extra Seat',
+        price: 249,
+        scopeType: 'agency',
+        persistent: true,
+        incrementBy: 1
+    },
+    agency_extra_workspace: {
+        id: 'agency_extra_workspace',
+        name: 'Agency Extra Workspace',
+        price: 349,
+        scopeType: 'agency',
+        persistent: true,
+        incrementBy: 1
+    },
+    agency_white_label: {
+        id: 'agency_white_label',
+        name: 'Agency White-label',
+        price: 999,
+        scopeType: 'agency',
+        persistent: true
+    },
+    agency_reporting_export: {
+        id: 'agency_reporting_export',
+        name: 'Agency Reporting Export',
+        price: 699,
+        scopeType: 'agency',
+        persistent: true
+    },
+    agency_media_library: {
+        id: 'agency_media_library',
+        name: 'Agency Media Library',
+        price: 499,
+        scopeType: 'agency',
+        persistent: true,
+        storageGb: 25
+    }
+};
 
 function isTransientDbError(error) {
     const code = error?.code;
@@ -74,7 +132,7 @@ function getRequiredPlanForFeature(featureName) {
 
 function getPlanPrice(planType) {
     if (planType === 'free') return 0;
-    if (planType === 'pro') return 399;
+    if (planType === 'pro') return PRO_PLAN_PRICE_RUPEES;
     if (planType === 'agency') return AGENCY_PLAN_PRICE_RUPEES;
     return 1100;
 }
@@ -101,6 +159,171 @@ function buildPlanPayload(planType) {
         teamMembers: planConfig.teamMembers || 0,
         price: getPlanPrice(planType)
     };
+}
+
+async function getActiveAutomationAddons(userId) {
+    const automationAddonsExists = await query(
+        `SELECT to_regclass('public.automation_addons') IS NOT NULL AS exists`,
+        []
+    );
+    if (!automationAddonsExists.rows[0]?.exists) {
+        return [];
+    }
+
+    try {
+        const result = await query(
+            `SELECT id, package_id, scope_type, agency_id, expires_at
+             FROM automation_addons
+             WHERE owner_user_id = $1
+               AND status = 'active'
+               AND expires_at > NOW()
+             ORDER BY expires_at DESC`,
+            [userId]
+        );
+        return result.rows || [];
+    } catch (error) {
+        if (error?.code === '42P01') {
+            return [];
+        }
+        throw error;
+    }
+}
+
+async function getAgencyAddonAccess(userId) {
+    try {
+        const addonColumnsResult = await query(
+            `SELECT COUNT(*)::int AS count
+             FROM information_schema.columns
+             WHERE table_schema = 'public'
+               AND table_name = 'agency_accounts'
+               AND column_name IN (
+                 'white_label_enabled',
+                 'reporting_export_enabled',
+                 'media_library_enabled',
+                 'media_library_storage_gb'
+               )`,
+            []
+        );
+        const hasAddonColumns = Number(addonColumnsResult.rows[0]?.count || 0) === 4;
+        let result;
+        if (hasAddonColumns) {
+            result = await query(
+                `SELECT
+                    id,
+                    seat_limit,
+                    workspace_limit,
+                    white_label_enabled,
+                    reporting_export_enabled,
+                    media_library_enabled,
+                    media_library_storage_gb
+                 FROM agency_accounts
+                 WHERE owner_id = $1
+                 LIMIT 1`,
+                [userId]
+            );
+        } else {
+            result = await query(
+                `SELECT
+                    id,
+                    seat_limit,
+                    workspace_limit,
+                    false AS white_label_enabled,
+                    false AS reporting_export_enabled,
+                    false AS media_library_enabled,
+                    0 AS media_library_storage_gb
+                 FROM agency_accounts
+                 WHERE owner_id = $1
+                 LIMIT 1`,
+                [userId]
+            );
+        }
+
+        if (!result.rows.length) {
+            return {
+                active: false,
+                agencyId: null,
+                packages: [],
+                features: {
+                    whiteLabelEnabled: false,
+                    reportingExportEnabled: false,
+                    mediaLibraryEnabled: false,
+                    mediaLibraryStorageGb: 0,
+                },
+                limits: null,
+            };
+        }
+
+        const row = result.rows[0];
+        const seatLimit = toNumber(row.seat_limit, 6);
+        const workspaceLimit = toNumber(row.workspace_limit, 6);
+        const packages = [];
+        const extraSeats = Math.max(0, seatLimit - 6);
+        const extraWorkspaces = Math.max(0, workspaceLimit - 6);
+
+        if (extraSeats > 0) {
+            packages.push({
+                packageId: 'agency_extra_seat',
+                quantity: extraSeats,
+                persistent: true,
+            });
+        }
+
+        if (extraWorkspaces > 0) {
+            packages.push({
+                packageId: 'agency_extra_workspace',
+                quantity: extraWorkspaces,
+                persistent: true,
+            });
+        }
+
+        if (row.white_label_enabled) {
+            packages.push({ packageId: 'agency_white_label', persistent: true });
+        }
+
+        if (row.reporting_export_enabled) {
+            packages.push({ packageId: 'agency_reporting_export', persistent: true });
+        }
+
+        if (row.media_library_enabled) {
+            packages.push({
+                packageId: 'agency_media_library',
+                persistent: true,
+                storageGb: toNumber(row.media_library_storage_gb, 25),
+            });
+        }
+
+        return {
+            active: packages.length > 0,
+            agencyId: row.id,
+            packages,
+            features: {
+                whiteLabelEnabled: Boolean(row.white_label_enabled),
+                reportingExportEnabled: Boolean(row.reporting_export_enabled),
+                mediaLibraryEnabled: Boolean(row.media_library_enabled),
+                mediaLibraryStorageGb: toNumber(row.media_library_storage_gb, 0),
+            },
+            limits: {
+                seatLimit,
+                workspaceLimit,
+            },
+        };
+    } catch (error) {
+        if (error?.code === '42P01' || error?.code === '42703') {
+            return {
+                active: false,
+                agencyId: null,
+                packages: [],
+                features: {
+                    whiteLabelEnabled: false,
+                    reportingExportEnabled: false,
+                    mediaLibraryEnabled: false,
+                    mediaLibraryStorageGb: 0,
+                },
+                limits: null,
+            };
+        }
+        throw error;
+    }
 }
 
 class PlansController {
@@ -134,9 +357,23 @@ class PlansController {
             
             const planConfig = PLAN_LIMITS[effectivePlanType] || PLAN_LIMITS.free;
 
-            const apiKeysResult = await query('SELECT COUNT(*) as key_count FROM user_api_keys WHERE user_id = $1 AND is_active = true', [req.user.id]);
+            const [apiKeysResult, activeAddons, agencyAddonAccess] = await Promise.all([
+                query('SELECT COUNT(*) as key_count FROM user_api_keys WHERE user_id = $1 AND is_active = true', [req.user.id]),
+                getActiveAutomationAddons(req.user.id),
+                getAgencyAddonAccess(req.user.id)
+            ]);
             const hasOwnKeys = parseInt(apiKeysResult.rows[0].key_count) > 0;
             const effectiveCredits = getCreditsForPlan(effectivePlanType, user.api_key_preference, { defaultToPlatform: false });
+            const automationAccess = {
+                active: activeAddons.length > 0,
+                packages: activeAddons.map((addon) => ({
+                    id: addon.id,
+                    packageId: addon.package_id,
+                    scopeType: addon.scope_type,
+                    agencyId: addon.agency_id,
+                    expiresAt: addon.expires_at
+                }))
+            };
 
             res.json({
                 currentPlan: {
@@ -150,7 +387,9 @@ class PlansController {
                     apiKeyPreference: user.api_key_preference || null,
                     individualPlan: userPlanType,
                     teamPlan: teamPlanType,
-                    hasTeamAccess: teamPlanType && (teamPlanType === 'pro' || teamPlanType === 'agency' || teamPlanType === 'enterprise')
+                    hasTeamAccess: teamPlanType && (teamPlanType === 'pro' || teamPlanType === 'agency' || teamPlanType === 'enterprise'),
+                    automationAccess,
+                    agencyAddonAccess
                 },
                 limits: {
                     profilesPerPlatform: planConfig.profilesPerPlatform,
@@ -159,7 +398,9 @@ class PlansController {
                 },
                 features: planConfig.features,
                 support: planConfig.support,
-                availablePlans: PUBLIC_PLAN_ORDER.map((planType) => buildPlanPayload(planType))
+                availablePlans: PUBLIC_PLAN_ORDER.map((planType) => buildPlanPayload(planType)),
+                availableAutomationAddons: Object.values(AUTOMATION_ADDON_PLANS),
+                availableAgencyAddons: Object.values(AGENCY_EXPANSION_ADDON_PLANS)
             });
         } catch (error) {
             if (isTransientDbError(error)) {
@@ -182,6 +423,22 @@ class PlansController {
                         individualPlan: fallbackPlanType,
                         teamPlan: null,
                         hasTeamAccess: false,
+                        automationAccess: {
+                            active: false,
+                            packages: []
+                        },
+                        agencyAddonAccess: {
+                            active: false,
+                            agencyId: null,
+                            packages: [],
+                            features: {
+                                whiteLabelEnabled: false,
+                                reportingExportEnabled: false,
+                                mediaLibraryEnabled: false,
+                                mediaLibraryStorageGb: 0
+                            },
+                            limits: null
+                        },
                         degraded: true
                     },
                     limits: {
@@ -191,7 +448,9 @@ class PlansController {
                     },
                     features: planConfig.features,
                     support: planConfig.support,
-                    availablePlans: PUBLIC_PLAN_ORDER.map((planType) => buildPlanPayload(planType))
+                    availablePlans: PUBLIC_PLAN_ORDER.map((planType) => buildPlanPayload(planType)),
+                    availableAutomationAddons: Object.values(AUTOMATION_ADDON_PLANS),
+                    availableAgencyAddons: Object.values(AGENCY_EXPANSION_ADDON_PLANS)
                 });
             }
 

@@ -3,6 +3,17 @@ import axios from 'axios'
 // CSRF token cache
 let csrfToken = null;
 const AGENCY_WORKSPACE_STORAGE_KEY = 'suitegenie:agency-workspace-context';
+const clearStoredAgencyWorkspaceContext = () => {
+    if (typeof window === 'undefined') return;
+    try {
+        window.sessionStorage?.removeItem(AGENCY_WORKSPACE_STORAGE_KEY);
+    } catch {
+        // Ignore storage cleanup issues.
+    }
+};
+
+const shouldPreserveStoredAgencyContext = (pathname = '') =>
+    String(pathname || '').startsWith('/agency') || String(pathname || '') === '/credits';
 
 // Fetch CSRF token from backend
 export async function fetchCsrfToken() {
@@ -73,6 +84,7 @@ const readAgencyWorkspaceContext = () => {
     if (typeof window === 'undefined') return null;
 
     try {
+        const pathname = window.location.pathname || '';
         const params = new URLSearchParams(window.location.search || '');
         const token = String(params.get('agency_token') || '').trim();
         const workspaceId = String(params.get('workspace_id') || '').trim();
@@ -84,6 +96,11 @@ const readAgencyWorkspaceContext = () => {
             window.sessionStorage?.setItem(AGENCY_WORKSPACE_STORAGE_KEY, JSON.stringify(context));
             return context;
         }
+
+        if (!shouldPreserveStoredAgencyContext(pathname)) {
+            clearStoredAgencyWorkspaceContext();
+            return null;
+        }
     } catch {
         // Ignore malformed URL params and fall back to stored context.
     }
@@ -92,6 +109,38 @@ const readAgencyWorkspaceContext = () => {
         const stored = window.sessionStorage?.getItem(AGENCY_WORKSPACE_STORAGE_KEY);
         return stored ? JSON.parse(stored) : null;
     } catch {
+        clearStoredAgencyWorkspaceContext();
+        return null;
+    }
+};
+
+export const syncAgencyWorkspaceContext = (pathname, search = '') => {
+    if (typeof window === 'undefined') return null;
+
+    try {
+        const params = new URLSearchParams(search || '');
+        const token = String(params.get('agency_token') || '').trim();
+        const workspaceId = String(params.get('workspace_id') || '').trim();
+        const tool = String(params.get('tool') || '').trim();
+        const target = String(params.get('target') || '').trim();
+
+        if (token && workspaceId) {
+            const context = { token, workspaceId, tool: tool || null, target: target || null };
+            window.sessionStorage?.setItem(AGENCY_WORKSPACE_STORAGE_KEY, JSON.stringify(context));
+            return context;
+        }
+
+        if (!shouldPreserveStoredAgencyContext(pathname)) {
+            clearStoredAgencyWorkspaceContext();
+            return null;
+        }
+
+        const stored = window.sessionStorage?.getItem(AGENCY_WORKSPACE_STORAGE_KEY);
+        return stored ? JSON.parse(stored) : null;
+    } catch {
+        if (!shouldPreserveStoredAgencyContext(pathname)) {
+            clearStoredAgencyWorkspaceContext();
+        }
         return null;
     }
 };

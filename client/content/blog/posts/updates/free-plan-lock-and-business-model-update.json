@@ -1,57 +1,57 @@
 {
-    "id": "free-plan-lock-and-business-model-update",
-    "title": "Why We Locked Free Plan Features and Reshaped Our Business Model",
-    "slug": "free-plan-lock-and-business-model-update",
-    "category": "updates",
-    "tags": [
-        "suitegenie pricing update",
-        "free plan",
-        "business model",
-        "credit tiers",
-        "feature access"
-    ],
-    "excerpt": "A transparent update on feature locking, credit tiers, and the business model changes we made to keep SuiteGenie sustainable and useful.",
-    "content": "## Quick Summary\n\n> **Quick Answer:** Learn why SuiteGenie locked selected free plan features and how new credit tiers across Free, Pro, and Enterprise improve clarity and reliability.\n\n\nWe have updated our business model, tightened free plan access, and clarified credit tiers so the [product](/blogs/story/from-content-chaos-to-system-why-we-built-suitegenie) stays fast, stable, and fair for serious users.\n\n## What Changed\n\n### 1. Free Plan Feature Locking\nWe kept free access for getting started, but we now lock advanced capabilities behind paid plans.\n\nFree plan users can still:\n- Generate core social copy\n- Use built in platform keys\n- Use their own API keys\n- Connect a small number of social accounts\n\nAdvanced features now require Pro or Enterprise:\n- Image generation\n- [Team collaboration](/blogs/updates/suitegenie-feature-roundup-feb-2026)\n- Bulk [automation](/blogs/guides/bulk-generation-14-day-playbook)\n- Advanced [analytics](/blogs/updates/cross-posting-scheduling-reliability-roundup-feb-2026)\n- Priority support\n\n### 2. New Credit Tiers\nWe now use clearer monthly credit tiers based on plan and API preference.\n\n- Free: Platform 15, [BYOK](/blogs/comparisons/byok-vs-built-in-ai-keys) 75\n- Pro: Platform 100, BYOK 200\n- Enterprise: Platform 500, BYOK 1000\n\nThis gives every plan a predictable operating envelope instead of vague limits.\n\n### 3. Plan Limits Are More Explicit\nWe aligned account and team limits to plan type so there is less guesswork when you scale usage.\n\n## Why We Did This\n\n### Product quality has a real cost\nRunning reliable AI generation and multi-platform publishing at scale is expensive. Feature locking lets us fund [reliability](/blogs/insights/what-reliable-social-automation-actually-needs) work instead of cutting corners.\n\n### Free should be useful, not unlimited\nFree remains a genuine starting point. It is now optimized for evaluation and early progress, while heavier execution belongs on paid plans.\n\n### Teams need predictable operations\nAgencies and [creators](/blogs/guides/what-if-your-twitter-ran-itself-while-you-built-your-product) asked for tighter limits, clearer expectations, and fewer surprises around credits. This update addresses exactly that.\n\n## What This Means for You\n\n- If you are on Free: you can still test and publish core workflows\n- If you need scale: Pro is now the practical default\n- If you run larger operations: Enterprise gives higher throughput and team capacity\n\n## Our Commitment\n\nWe are not locking features to create friction. We are doing it to keep the platform healthy and to keep shipping faster for people who depend on it every day.\n\nYou can expect continued improvements in generation quality, [routing](/blogs/guides/how-to-automate-twitter-posts) reliability, and cross-platform workflow speed over the coming releases.",
-    "featuredImage": {
-        "url": "/images/blog/suitegenie-launch-hero.svg",
-        "alt": "SuiteGenie plans board showing free, pro, and enterprise tiers"
-    },
-    "author": {
-        "name": "Kanishk Saraswat",
-        "avatar": "/kanishk.png",
-        "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
-        "social": {
-            "linkedin": "kanishk-saraswat",
-            "twitter": "kanishksaraswat"
-        }
-    },
-    "publishDate": "2026-02-21T10:00:00+05:30",
-    "lastModified": "2026-02-21T10:00:00+05:30",
-    "readTime": 6,
-    "featured": true,
-    "status": "published",
-    "seo": {
-        "metaTitle": "SuiteGenie Pricing Update: Free Plan Locking and New Credit Tiers",
-        "metaDescription": "Learn why SuiteGenie locked selected free plan features and how new credit tiers across Free, Pro, and Enterprise improve clarity and reliability.",
-        "keywords": [
-            "suitegenie pricing",
-            "free plan locking",
-            "social media automation plans",
-            "credit tiers"
-        ],
-        "canonicalUrl": "https://suitegenie.in/blogs/updates/free-plan-lock-and-business-model-update"
-    },
-    "schema": {
-        "type": "Article",
-        "faq": [
-            {
-                "question": "Is SuiteGenie free plan removed?",
-                "answer": "No. The free plan is still available for testing and early workflows, but advanced capabilities are now reserved for paid plans."
-            },
-            {
-                "question": "Why are BYOK credits higher than platform credits?",
-                "answer": "BYOK reduces platform AI cost, so we can offer higher monthly credit limits when users bring their own provider keys."
-            }
-        ]
+  "id": "free-plan-lock-and-business-model-update",
+  "title": "Why We Reshaped SuiteGenie Plans Around Real Usage",
+  "slug": "free-plan-lock-and-business-model-update",
+  "category": "updates",
+  "tags": [
+    "suitegenie pricing update",
+    "free plan",
+    "business model",
+    "credit tiers",
+    "agency pricing"
+  ],
+  "excerpt": "A transparent update on how SuiteGenie now thinks about Free, Pro, Agency, credits, and BYOK without pretending automation is a separate checkout when it is not.",
+  "content": "## Quick Summary\n\n> **Quick Answer:** SuiteGenie now has a clearer model: Free for testing, Pro for solo operators and internal teams, Agency for client delivery, and automation depth handled through paid add-ons plus BYOK.\n\n\nWe rebuilt the pricing story around what users are actually trying to do every week. The old framing created confusion because collaboration, client ops, and automation were getting mixed into one vague upgrade path.\n\n## What Changed\n\n### 1. The base plans are simpler\nWe now think about SuiteGenie in three base layers:\n\n- **Free** for testing the workflow\n- **Pro** for solo operators and internal teams\n- **Agency** for client workspaces, approvals, and pooled delivery\n\nThat is easier to understand than pretending everyone needs the same stack.\n\n### 2. Automation is a usage layer\nAutomation is real in the product, and it now sits on top of the right paid base.\n\nToday that means:\n- **Standalone Automation** builds on Pro\n- **Agency Automation** builds on Agency\n- [BYOK](/blogs/comparisons/byok-vs-built-in-ai-keys) increases your operating ceiling\n- heavier generation and analysis still consume credits instead of hiding behind fake \"unlimited\" promises\n\n### 3. Agency is no longer treated like enterprise wallpaper\nAgency is not just \"a bigger Pro plan.\"\n\nIt is a different operating model:\n- client workspaces\n- approval links\n- pooled agency credits\n- workspace-specific publishing context\n- team access scoped per client\n\nThat is why Agency now exists as its own delivery layer instead of being buried inside generic team language.\n\n## Current Credit Shape\n\nThe live plans now follow this logic:\n\n- Free: 15 platform credits, 50 BYOK credits\n- Pro: 120 platform credits, 220 BYOK credits\n- Agency: 900 pooled platform credits, 1800 pooled BYOK credits\n\nThat makes the tradeoff visible instead of leaving users to guess how much AI work a plan can realistically support.\n\n## Why We Did This\n\n### Reliability has a real cost\nReliable AI generation, publishing infrastructure, calendar views, approval portals, and analytics sync all cost money to operate. A messy pricing model eventually hurts product quality.\n\n### Different users buy different outcomes\nA solo creator buying automation is not buying the same thing as an agency delivering content across multiple clients. Treating those workflows as the same plan leads to bad pricing and worse product decisions.\n\n### BYOK should be a real advantage\nWhen users bring their own model keys, our hosted AI cost drops. That should translate into more usable headroom, not vague marketing language.\n\n## What This Means for You\n\n- If you are evaluating the product, Free is still useful\n- If you need stronger execution and internal collaboration, Pro is the default at Rs 499/month\n- If your world is approvals, clients, and delivery operations, Agency is the right layer at Rs 2499/month\n- If you want heavier automation, buy the matching automation add-on instead of jumping into the wrong base plan\n\n## How To Choose Faster\n\nUse this shortcut:\n- choose **Free** if you are still validating the workflow\n- choose **Pro** if you are running your own execution or an internal content team\n- choose **Agency** if the work is client-facing and approvals need to stay structured\n- add automation only when recurring execution is the real bottleneck\n\n## Our Commitment\n\nWe are trying to build a business model that matches the product honestly. That means:\n- no fake unlimited automation claims\n- no forcing solo users into agency pricing just to get deeper automation\n- no hiding agency value behind generic team wording\n\nThe result should be a product that is easier to trust, easier to buy, and easier to operate long term.\n\n## Related Reading\n\n- [Introducing SuiteGenie: AI-Powered Social Media Automation](/blogs/updates/introducing-suitegenie-ai-powered-social-media-automation)\n- [BYOK vs Built-In AI Keys: Which Setup Is Better for Your Team?](/blogs/comparisons/byok-vs-built-in-ai-keys)\n- [What We Learned While Rebuilding SuiteGenie Around Real Execution](/blogs/story/what-we-learned-while-rebuilding-suitegenie-business-model)\n",
+  "featuredImage": {
+    "url": "/images/blog/suitegenie-launch-hero.svg",
+    "alt": "SuiteGenie plans board showing Free, Pro, and Agency pricing layers"
+  },
+  "author": {
+    "name": "Kanishk Saraswat",
+    "avatar": "/kanishk.png",
+    "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+    "social": {
+      "linkedin": "kanishk-saraswat",
+      "twitter": "kanishksaraswat"
     }
+  },
+  "publishDate": "2026-02-21T10:00:00+05:30",
+  "lastModified": "2026-04-04T18:10:00+05:30",
+  "readTime": 6,
+  "featured": true,
+  "status": "published",
+  "seo": {
+    "metaTitle": "SuiteGenie Pricing Update: Free, Pro, Agency, Credits, and BYOK",
+    "metaDescription": "See how SuiteGenie now explains Free, Pro, Agency, credits, and BYOK without confusing automation and collaboration into one plan.",
+    "keywords": [
+      "suitegenie pricing",
+      "free plan locking",
+      "social media automation plans",
+      "agency pricing"
+    ],
+    "canonicalUrl": "https://suitegenie.in/blogs/updates/free-plan-lock-and-business-model-update"
+  },
+  "schema": {
+    "type": "Article",
+    "faq": [
+      {
+        "question": "Is SuiteGenie free plan removed?",
+        "answer": "No. Free still exists for testing and early workflows, but heavier execution and collaboration live on paid plans."
+      },
+      {
+        "question": "Why is automation not a separate plan in checkout yet?",
+        "answer": "Because the product already supports automation through credits and BYOK, and we prefer honest billing over pretending a new standalone tier is already live."
+      }
+    ]
+  }
 }

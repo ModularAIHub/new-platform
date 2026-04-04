@@ -41,7 +41,7 @@ const AgencyWorkspaceAnalysisTab = ({
       </div>
       <button
         type="button"
-        onClick={() => loadAnalysisSummary()}
+        onClick={() => loadAnalysisSummary({ forceRefresh: true })}
         disabled={analysisLoading}
         className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm disabled:opacity-60"
       >

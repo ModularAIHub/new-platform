@@ -10,7 +10,7 @@ const router = express.Router();
 // Create Razorpay order
 router.post('/create-order', [
     authenticateToken,
-    body('type').isIn(['credits', 'plan']).withMessage('Invalid order type'),
+    body('type').isIn(['credits', 'plan', 'addon']).withMessage('Invalid order type'),
     body('package').notEmpty().withMessage('Package is required'),
     validate
 ], PaymentsController.createOrder);

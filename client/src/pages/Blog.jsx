@@ -8,7 +8,7 @@ import SearchBar from '../components/blog/SearchBar';
 import CategoryFilter from '../components/blog/CategoryFilter';
 import BlogGrid from '../components/blog/BlogGrid';
 import { BLOG_CATEGORY_META, getPublishedBlogPosts } from '../data/blogIndex.generated';
-import { formatDate, getPostUrl, paginatePosts, searchPosts } from '../utils/blogHelpers';
+import { getPostDisplayDate, getPostFreshnessTimestamp, getPostUrl, paginatePosts, searchPosts } from '../utils/blogHelpers';
 
 const ALL_POSTS = getPublishedBlogPosts();
 
@@ -35,12 +35,14 @@ const BlogPage = () => {
 
   const filteredPosts = useMemo(() => {
     const categoryPosts = category === 'all' ? ALL_POSTS : ALL_POSTS.filter((post) => post.category === category);
-    return searchPosts(debouncedQuery, categoryPosts);
+    return searchPosts(debouncedQuery, categoryPosts)
+      .slice()
+      .sort((a, b) => getPostFreshnessTimestamp(b) - getPostFreshnessTimestamp(a));
   }, [category, debouncedQuery]);
 
   const featuredPost = useMemo(() => {
     if (!filteredPosts.length) return null;
-    return filteredPosts.find((post) => post.featured) || filteredPosts[0];
+    return filteredPosts[0]?.featured ? filteredPosts[0] : null;
   }, [filteredPosts]);
 
   const gridSource = useMemo(() => {
@@ -149,7 +151,7 @@ const BlogPage = () => {
                         <div>
                           <p className="text-sm font-bold text-slate-900">{featuredPost.author?.name || "Kanishk Saraswat"}</p>
                           <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-                            <span>{formatDate(featuredPost.publishDate)}</span>
+                            <span>{getPostDisplayDate(featuredPost)}</span>
                           </div>
                         </div>
                       </div>

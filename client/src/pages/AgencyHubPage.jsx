@@ -186,6 +186,43 @@ const AgencyHubPage = () => {
         )}
       </div>
 
+      {context && (
+        <div className="bg-white border border-gray-200 rounded-xl p-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-gray-500">Agency Add-ons</p>
+              <h2 className="text-lg font-semibold text-gray-900 mt-2">Expansion packs and delivery extras</h2>
+              <p className="text-sm text-gray-600 mt-1">
+                Buy more seats, more workspaces, or unlock white-label, reporting export, and media library from the Plans page.
+              </p>
+            </div>
+            <button
+              onClick={() => navigate('/plans?intent=agency')}
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            >
+              Manage Agency Add-ons
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-5">
+            <div className="rounded-lg border p-4 bg-gray-50">
+              <p className="text-xs uppercase tracking-wide text-gray-500">White-label</p>
+              <p className="text-sm font-semibold text-gray-900 mt-1">{context.addons?.whiteLabelEnabled ? 'Active' : 'Locked'}</p>
+            </div>
+            <div className="rounded-lg border p-4 bg-gray-50">
+              <p className="text-xs uppercase tracking-wide text-gray-500">Reporting Export</p>
+              <p className="text-sm font-semibold text-gray-900 mt-1">{context.addons?.reportingExportEnabled ? 'Active' : 'Locked'}</p>
+            </div>
+            <div className="rounded-lg border p-4 bg-gray-50">
+              <p className="text-xs uppercase tracking-wide text-gray-500">Media Library</p>
+              <p className="text-sm font-semibold text-gray-900 mt-1">
+                {context.addons?.mediaLibraryEnabled ? `${context.addons?.mediaLibraryStorageGb || 25} GB active` : 'Locked'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-white border border-blue-200 rounded-xl p-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>

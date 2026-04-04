@@ -107,6 +107,8 @@ const TeamPage = () => {
                     razorpayOrderId: orderId,
                     razorpayPaymentId: 'demo_payment_id',
                     razorpaySignature: 'demo_signature',
+                    demoOrderType: 'plan',
+                    demoPackage: 'pro',
                 });
 
                 await refreshUser();

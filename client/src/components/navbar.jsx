@@ -7,7 +7,7 @@ import { Button } from './ui';
 const NAV_LINKS = [
   { to: '/features', label: 'Features' },
   { to: '/plans', label: 'Pricing' },
-  { to: '/docs', label: 'Docs' },
+  { to: '/about', label: 'About' },
   { to: '/blogs', label: 'Blog' },
   { to: '/contact', label: 'Contact' },
 ];

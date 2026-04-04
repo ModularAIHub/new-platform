@@ -1,119 +1,171 @@
-import React from 'react';
+import React from 'react'
 
-const rows = [
-  {
-    capability: 'Public client approval links',
-    suitegenie: 'Built in',
-    scheduler: 'Usually missing',
-    enterprise: 'Often add-on or account-gated',
-  },
-  {
-    capability: 'Draft comments attached to approval flow',
-    suitegenie: 'Built in',
-    scheduler: 'Usually external',
-    enterprise: 'Partial',
-  },
-  {
-    capability: 'BYOK multi-LLM support',
-    suitegenie: 'OpenAI / Gemini / Perplexity',
-    scheduler: 'Rare',
-    enterprise: 'Usually platform-managed only',
-  },
-  {
-    capability: 'Workspace-aware client onboarding links',
-    suitegenie: 'Built in',
-    scheduler: 'Usually manual',
-    enterprise: 'Often admin-heavy',
-  },
-  {
-    capability: 'AI generation with brand context carried into drafts',
-    suitegenie: 'Native',
-    scheduler: 'Often generic',
-    enterprise: 'Partial',
-  },
-  {
-    capability: 'India-friendly pricing model',
-    suitegenie: 'INR-first',
-    scheduler: 'Usually dollar-first',
-    enterprise: 'Usually dollar-first',
-  },
-];
+const ComparisonSection = () => {
+  const features = [
+    {
+      name: 'Public client approval links',
+      ourPlatform: true,
+      hootsuite: 'partial',
+      buffer: false,
+      later: false,
+      sproutSocial: 'partial'
+    },
+    {
+      name: 'Draft comments attached to approval flow',
+      ourPlatform: true,
+      hootsuite: 'partial',
+      buffer: false,
+      later: false,
+      sproutSocial: 'partial'
+    },
+    {
+      name: 'BYOK multi-LLM support',
+      ourPlatform: true,
+      hootsuite: false,
+      buffer: false,
+      later: false,
+      sproutSocial: false
+    },
+    {
+      name: 'Workspace-aware client onboarding links',
+      ourPlatform: true,
+      hootsuite: false,
+      buffer: false,
+      later: false,
+      sproutSocial: false
+    },
+    {
+      name: 'AI generation with brand context carried into drafts',
+      ourPlatform: true,
+      hootsuite: 'partial',
+      buffer: false,
+      later: false,
+      sproutSocial: 'partial'
+    },
+    {
+      name: 'India-friendly pricing model',
+      ourPlatform: 'INR-first',
+      hootsuite: '$99+/mo',
+      buffer: '$5+/channel',
+      later: '$16.67+/mo',
+      sproutSocial: '$249+/mo'
+    }
+  ]
 
-const pillars = [
-  {
-    title: 'SuiteGenie',
-    tone: 'border-blue-200 bg-blue-50 text-blue-900',
-    subtitle: 'AI-native workflows for creators, teams, and agencies',
-  },
-  {
-    title: 'Typical scheduler',
-    tone: 'border-slate-200 bg-white text-slate-800',
-    subtitle: 'Great for queueing posts, thinner on approvals and context',
-  },
-  {
-    title: 'Legacy enterprise suite',
-    tone: 'border-slate-200 bg-white text-slate-800',
-    subtitle: 'Broader controls, but heavier setup and slower daily use',
-  },
-];
-
-const ComparisonSection = () => (
-  <section className="bg-[linear-gradient(180deg,_#f8fafc_0%,_#eef2ff_100%)] py-24">
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-      <div className="text-center">
-        <div className="inline-flex rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm">
-          Positioning that matches the product
+  const renderFeatureCell = (value) => {
+    if (value === true) {
+      return (
+        <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-green-500">
+          <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+          </svg>
         </div>
-        <h2 className="mt-6 text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
-          Not another basic scheduler pretending to be strategy software
-        </h2>
-        <p className="mx-auto mt-5 max-w-3xl text-lg leading-8 text-slate-600">
-          The win is not just posting faster. The win is removing the messy parts around content operations:
-          context capture, client review, handoff, comments, and publishing visibility.
-        </p>
-      </div>
+      )
+    }
 
-      <div className="mt-12 grid gap-4 lg:grid-cols-3">
-        {pillars.map((pillar) => (
-          <div key={pillar.title} className={`rounded-[26px] border p-5 shadow-sm ${pillar.tone}`}>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] opacity-70">{pillar.title}</p>
-            <p className="mt-3 text-lg font-semibold tracking-tight">{pillar.subtitle}</p>
+    if (value === false) {
+      return (
+        <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-red-500">
+          <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+          </svg>
+        </div>
+      )
+    }
+
+    if (value === 'partial') {
+      return (
+        <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-yellow-500">
+          <span className="text-sm font-bold text-white">~</span>
+        </div>
+      )
+    }
+
+    return <span className="block text-center">{value}</span>
+  }
+
+  return (
+    <section className="bg-gradient-to-br from-gray-950 via-slate-900 to-blue-950 py-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mb-16 text-center">
+          <div className="mb-6 inline-flex items-center rounded-full border border-blue-400/20 bg-blue-500/20 px-6 py-3 text-sm font-semibold text-blue-300">
+            Not Basic Automation
           </div>
-        ))}
-      </div>
+          <h2 className="mb-6 text-5xl font-light text-white">
+            <span className="bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
+              SuiteGenie vs Basic Social Suites
+            </span>
+          </h2>
+          <p className="mx-auto max-w-3xl text-xl text-slate-300">
+            The difference is not just posting. It is approvals, onboarding, brand context, BYOK flexibility,
+            and agency workflows that do not feel bolted on.
+          </p>
+        </div>
 
-      <div className="mt-8 overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200">
-            <thead className="bg-slate-950 text-white">
-              <tr>
-                <th className="px-5 py-4 text-left text-sm font-semibold">Capability</th>
-                <th className="px-5 py-4 text-left text-sm font-semibold">SuiteGenie</th>
-                <th className="px-5 py-4 text-left text-sm font-semibold">Typical scheduler</th>
-                <th className="px-5 py-4 text-left text-sm font-semibold">Legacy enterprise suite</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {rows.map((row) => (
-                <tr key={row.capability} className="align-top">
-                  <td className="px-5 py-4 text-sm font-semibold text-slate-900">{row.capability}</td>
-                  <td className="px-5 py-4 text-sm text-slate-700">{row.suitegenie}</td>
-                  <td className="px-5 py-4 text-sm text-slate-600">{row.scheduler}</td>
-                  <td className="px-5 py-4 text-sm text-slate-600">{row.enterprise}</td>
+        <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-2xl backdrop-blur-xl">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-white/10 bg-gradient-to-r from-blue-600/20 to-cyan-500/20">
+                  <th className="p-6 text-left text-lg font-semibold text-white">Capability</th>
+                  <th className="p-6 text-center text-lg font-semibold text-white">
+                    <div className="flex flex-col items-center">
+                      <span className="bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text font-bold text-transparent">SuiteGenie</span>
+                      <div className="mt-1 h-1 w-8 rounded-full bg-gradient-to-r from-blue-400 to-cyan-300"></div>
+                    </div>
+                  </th>
+                  <th className="p-6 text-center font-semibold text-slate-300">Hootsuite</th>
+                  <th className="p-6 text-center font-semibold text-slate-300">Buffer</th>
+                  <th className="p-6 text-center font-semibold text-slate-300">Later</th>
+                  <th className="p-6 text-center font-semibold text-slate-300">Sprout Social</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {features.map((feature) => (
+                  <tr key={feature.name} className="border-b border-white/5 transition-colors hover:bg-white/5">
+                    <td className="p-6 font-medium text-white">{feature.name}</td>
+                    <td className="p-6 text-center">
+                      {feature.name === 'India-friendly pricing model' ? (
+                        <span className="bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-2xl font-bold text-transparent">
+                          {feature.ourPlatform}
+                        </span>
+                      ) : (
+                        <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-green-400 to-emerald-500">
+                          <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                      )}
+                    </td>
+                    <td className="p-6 text-center text-slate-300">
+                      {feature.name === 'India-friendly pricing model' ? feature.hootsuite : renderFeatureCell(feature.hootsuite)}
+                    </td>
+                    <td className="p-6 text-center text-slate-300">
+                      {feature.name === 'India-friendly pricing model' ? feature.buffer : renderFeatureCell(feature.buffer)}
+                    </td>
+                    <td className="p-6 text-center text-slate-300">
+                      {feature.name === 'India-friendly pricing model' ? feature.later : renderFeatureCell(feature.later)}
+                    </td>
+                    <td className="p-6 text-center text-slate-300">
+                      {feature.name === 'India-friendly pricing model' ? feature.sproutSocial : renderFeatureCell(feature.sproutSocial)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="mt-12 text-center">
+          <div className="inline-flex items-center rounded-2xl border border-emerald-400/30 bg-gradient-to-r from-green-500/20 to-emerald-500/20 px-8 py-4">
+            <span className="text-lg font-semibold text-green-300">
+              Tighter workflows, lower software spend, and less client friction.
+            </span>
+          </div>
         </div>
       </div>
+    </section>
+  )
+}
 
-      <div className="mt-8 rounded-[28px] border border-emerald-200 bg-emerald-50 px-6 py-5 text-center shadow-sm">
-        <p className="text-lg font-semibold tracking-tight text-emerald-900">
-          The pitch is simple: tighter workflows, lower software spend, and less client friction.
-        </p>
-      </div>
-    </div>
-  </section>
-);
-
-export default ComparisonSection;
+export default ComparisonSection

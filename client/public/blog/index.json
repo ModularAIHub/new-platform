@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-03T16:19:12.384Z",
+  "generatedAt": "2026-04-04T21:35:19.796Z",
   "categories": {
     "meta": {
       "all": {
@@ -63,6 +63,330 @@
     ]
   },
   "posts": [
+    {
+      "id": "byok-vs-built-in-keys-comparison",
+      "title": "BYOK vs Built-In AI Keys: Which Setup Is Better for Your Team?",
+      "slug": "byok-vs-built-in-ai-keys",
+      "category": "comparisons",
+      "tags": [
+        "byok",
+        "ai pricing",
+        "cost control",
+        "team setup"
+      ],
+      "excerpt": "A practical comparison of BYOK and built-in AI keys, including cost control, setup speed, and how the choice affects Pro and Agency usage.",
+      "featuredImage": {
+        "url": "/images/blog/suitegenie-vs-hootsuite.svg",
+        "alt": "Comparison chart between BYOK and built-in AI key setup models"
+      },
+      "author": {
+        "name": "Kanishk Saraswat",
+        "avatar": "/kanishk.png",
+        "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+        "social": {
+          "linkedin": "kanishk-saraswat",
+          "twitter": "kanishksaraswat"
+        }
+      },
+      "publishDate": "2026-02-14T19:55:00+05:30",
+      "lastModified": "2026-04-04T18:18:00+05:30",
+      "readTime": 6,
+      "featured": false,
+      "status": "published",
+      "contentPath": "/blog/posts/comparisons/byok-vs-built-in-ai-keys.json"
+    },
+    {
+      "id": "team-content-ops-use-case",
+      "title": "How Agency Teams Use SuiteGenie for Workspace-Based Client Ops",
+      "slug": "agency-team-content-ops-use-case",
+      "category": "use-cases",
+      "tags": [
+        "agency workflow",
+        "team collaboration",
+        "approval workflow",
+        "multi-account"
+      ],
+      "excerpt": "See a practical agency workflow for client workspaces, approvals, queue planning, pooled credits, and cross-product publishing.",
+      "featuredImage": {
+        "url": "/images/blog/suitegenie-launch-hero.svg",
+        "alt": "Agency workspace dashboard with client approvals, queue planning, and publishing lanes"
+      },
+      "author": {
+        "name": "Kanishk Saraswat",
+        "avatar": "/kanishk.png",
+        "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+        "social": {
+          "linkedin": "kanishk-saraswat",
+          "twitter": "kanishksaraswat"
+        }
+      },
+      "publishDate": "2026-02-15T07:20:00+05:30",
+      "lastModified": "2026-04-04T18:15:00+05:30",
+      "readTime": 7,
+      "featured": false,
+      "status": "published",
+      "contentPath": "/blog/posts/use-cases/agency-team-content-ops-use-case.json"
+    },
+    {
+      "id": "what-we-learned-while-rebuilding-suitegenie-business-model",
+      "title": "What We Learned While Rebuilding SuiteGenie Around Real Execution",
+      "slug": "what-we-learned-while-rebuilding-suitegenie-business-model",
+      "category": "story",
+      "tags": [
+        "suitegenie story",
+        "product strategy",
+        "execution systems",
+        "founder lessons"
+      ],
+      "excerpt": "Four practical lessons from rebuilding SuiteGenie around real weekly execution instead of feature-count theater.",
+      "featuredImage": {
+        "url": "/images/blog/suitegenie-launch-hero.svg",
+        "alt": "SuiteGenie product decision notes focused on execution and reliability"
+      },
+      "author": {
+        "name": "Kanishk Saraswat",
+        "avatar": "/kanishk.png",
+        "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+        "social": {
+          "linkedin": "kanishk-saraswat",
+          "twitter": "kanishksaraswat"
+        }
+      },
+      "publishDate": "2026-02-21T11:00:00+05:30",
+      "lastModified": "2026-04-04T18:12:00+05:30",
+      "readTime": 5,
+      "featured": false,
+      "status": "published",
+      "contentPath": "/blog/posts/story/what-we-learned-while-rebuilding-suitegenie-business-model.json"
+    },
+    {
+      "id": "suitegenie-vs-hootsuite-agencies",
+      "title": "SuiteGenie vs Hootsuite: Which is Better for Agencies?",
+      "slug": "suitegenie-vs-hootsuite",
+      "category": "comparisons",
+      "tags": [
+        "hootsuite alternative",
+        "agency tools",
+        "comparison",
+        "pricing"
+      ],
+      "excerpt": "A side-by-side comparison of SuiteGenie and Hootsuite for agencies that care about approvals, workspace context, pooled credits, and simpler automation pricing.",
+      "featuredImage": {
+        "url": "/images/blog/suitegenie-vs-hootsuite.svg",
+        "alt": "Side-by-side comparison card showing SuiteGenie and Hootsuite feature differences"
+      },
+      "author": {
+        "name": "Kanishk Saraswat",
+        "avatar": "/kanishk.png",
+        "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+        "social": {
+          "linkedin": "kanishk-saraswat",
+          "twitter": "kanishksaraswat"
+        }
+      },
+      "publishDate": "2026-02-12T11:00:00+05:30",
+      "lastModified": "2026-04-04T18:10:00+05:30",
+      "readTime": 7,
+      "featured": false,
+      "status": "published",
+      "contentPath": "/blog/posts/comparisons/suitegenie-vs-hootsuite.json"
+    },
+    {
+      "id": "twitter-automation-guide-2026",
+      "title": "How to Automate Twitter Posts in 2026: Complete Guide",
+      "slug": "how-to-automate-twitter-posts",
+      "category": "guides",
+      "tags": [
+        "twitter",
+        "automation",
+        "tutorial",
+        "scheduling"
+      ],
+      "excerpt": "A practical guide to automating Twitter/X posts with Tweet Genie and the new Standalone Automation add-on, without losing quality or control.",
+      "featuredImage": {
+        "url": "/images/blog/twitter-automation-guide.svg",
+        "alt": "Twitter automation workflow with planned content and scheduling blocks"
+      },
+      "author": {
+        "name": "Kanishk Saraswat",
+        "avatar": "/kanishk.png",
+        "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+        "social": {
+          "linkedin": "kanishk-saraswat",
+          "twitter": "kanishksaraswat"
+        }
+      },
+      "publishDate": "2026-02-13T18:30:00+05:30",
+      "lastModified": "2026-04-04T18:10:00+05:30",
+      "readTime": 8,
+      "featured": false,
+      "status": "published",
+      "contentPath": "/blog/posts/guides/how-to-automate-twitter-posts.json"
+    },
+    {
+      "id": "what-reliable-social-automation-actually-needs",
+      "title": "What Reliable Social Media Automation Actually Needs",
+      "slug": "what-reliable-social-automation-actually-needs",
+      "category": "insights",
+      "tags": [
+        "social media automation",
+        "reliability",
+        "suitegenie",
+        "scheduling",
+        "analytics"
+      ],
+      "excerpt": "Reliable automation is not only about posting. It depends on account context, approvals, visible scheduling, clean errors, and a pricing model that matches real usage.",
+      "featuredImage": {
+        "url": "/images/blog/suitegenie-launch-hero.svg",
+        "alt": "Reliable social media automation requires account context, approvals, and pricing clarity"
+      },
+      "author": {
+        "name": "Kanishk Saraswat",
+        "avatar": "/kanishk.png",
+        "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+        "social": {
+          "linkedin": "kanishk-saraswat",
+          "twitter": "kanishksaraswat"
+        }
+      },
+      "publishDate": "2026-03-01T11:30:00+05:30",
+      "lastModified": "2026-04-04T18:10:00+05:30",
+      "readTime": 5,
+      "featured": false,
+      "status": "published",
+      "contentPath": "/blog/posts/insights/what-reliable-social-automation-actually-needs.json"
+    },
+    {
+      "id": "free-plan-lock-and-business-model-update",
+      "title": "Why We Reshaped SuiteGenie Plans Around Real Usage",
+      "slug": "free-plan-lock-and-business-model-update",
+      "category": "updates",
+      "tags": [
+        "suitegenie pricing update",
+        "free plan",
+        "business model",
+        "credit tiers",
+        "agency pricing"
+      ],
+      "excerpt": "A transparent update on how SuiteGenie now thinks about Free, Pro, Agency, credits, and BYOK without pretending automation is a separate checkout when it is not.",
+      "featuredImage": {
+        "url": "/images/blog/suitegenie-launch-hero.svg",
+        "alt": "SuiteGenie plans board showing Free, Pro, and Agency pricing layers"
+      },
+      "author": {
+        "name": "Kanishk Saraswat",
+        "avatar": "/kanishk.png",
+        "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+        "social": {
+          "linkedin": "kanishk-saraswat",
+          "twitter": "kanishksaraswat"
+        }
+      },
+      "publishDate": "2026-02-21T10:00:00+05:30",
+      "lastModified": "2026-04-04T18:10:00+05:30",
+      "readTime": 6,
+      "featured": true,
+      "status": "published",
+      "contentPath": "/blog/posts/updates/free-plan-lock-and-business-model-update.json"
+    },
+    {
+      "id": "suitegenie-launch-2026",
+      "title": "Introducing SuiteGenie: AI-Powered Social Media Automation",
+      "slug": "introducing-suitegenie-ai-powered-social-media-automation",
+      "category": "updates",
+      "tags": [
+        "suitegenie",
+        "product update",
+        "social media automation",
+        "launch"
+      ],
+      "excerpt": "SuiteGenie now runs as a connected operating system across Tweet Genie, LinkedIn Genie, Social Genie, and Agency mode, with clearer pricing and real automation add-ons.",
+      "featuredImage": {
+        "url": "/images/blog/suitegenie-launch-hero.svg",
+        "alt": "SuiteGenie launch banner with social media automation dashboard"
+      },
+      "author": {
+        "name": "Kanishk Saraswat",
+        "avatar": "/kanishk.png",
+        "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+        "social": {
+          "linkedin": "kanishk-saraswat",
+          "twitter": "kanishksaraswat"
+        }
+      },
+      "publishDate": "2026-02-14T20:00:00+05:30",
+      "lastModified": "2026-04-04T18:10:00+05:30",
+      "readTime": 6,
+      "featured": true,
+      "status": "published",
+      "contentPath": "/blog/posts/updates/introducing-suitegenie-ai-powered-social-media-automation.json"
+    },
+    {
+      "id": "meta-genie-coming-soon",
+      "title": "Social Genie Status Update: Threads Live, Instagram and YouTube Wired for Rollout",
+      "slug": "meta-genie-coming-soon",
+      "category": "updates",
+      "tags": [
+        "social genie",
+        "threads",
+        "instagram",
+        "youtube",
+        "suitegenie platform"
+      ],
+      "excerpt": "Social Genie is no longer a vague future product. Threads is live, Instagram and YouTube are wired for rollout, and Agency mode can launch into that context.",
+      "featuredImage": {
+        "url": "/images/blog/suitegenie-launch-hero.svg",
+        "alt": "Social Genie rollout stages across Threads, Instagram, and YouTube"
+      },
+      "author": {
+        "name": "Kanishk Saraswat",
+        "avatar": "/kanishk.png",
+        "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+        "social": {
+          "linkedin": "kanishk-saraswat",
+          "twitter": "kanishksaraswat"
+        }
+      },
+      "publishDate": "2026-02-21T10:40:00+05:30",
+      "lastModified": "2026-04-04T18:10:00+05:30",
+      "readTime": 4,
+      "featured": true,
+      "status": "published",
+      "contentPath": "/blog/posts/updates/meta-genie-coming-soon.json"
+    },
+    {
+      "id": "twitter-complete-automation-coming-soon",
+      "title": "TweetGenie Automation: What Is Live, What Is Staged, and What Changed",
+      "slug": "twitter-complete-automation-coming-soon",
+      "category": "updates",
+      "tags": [
+        "tweetgenie",
+        "twitter automation",
+        "social media automation",
+        "agency tools",
+        "suitegenie updates"
+      ],
+      "excerpt": "TweetGenie automation is no longer just a roadmap story. Here is what is live, what is staged, and how the new Standalone Automation add-on fits.",
+      "featuredImage": {
+        "url": "/images/blog/suitegenie-launch-hero.svg",
+        "alt": "TweetGenie automation status update"
+      },
+      "author": {
+        "name": "Kanishk Saraswat",
+        "avatar": "/kanishk.png",
+        "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+        "social": {
+          "linkedin": "kanishk-saraswat",
+          "twitter": "kanishksaraswat"
+        }
+      },
+      "publishDate": "2026-03-02T10:30:00+05:30",
+      "lastModified": "2026-04-04T18:10:00+05:30",
+      "readTime": 5,
+      "featured": false,
+      "status": "published",
+      "contentPath": "/blog/posts/updates/twitter-complete-automation-coming-soon.json"
+    },
     {
       "id": "why-most-ai-social-content-feels-generic-and-how-to-fix-it",
       "title": "Why Most AI Social Content Feels Generic and How to Fix It",
@@ -276,35 +600,6 @@
       "contentPath": "/blog/posts/insights/the-trojan-horse-why-im-not-scared-of-hootsuite.json"
     },
     {
-      "id": "twitter-complete-automation-coming-soon",
-      "title": "The Biggest Thing We've Ever Built for TweetGenie Is Coming - And It's Going to Change How You Use Twitter Forever",
-      "slug": "twitter-complete-automation-coming-soon",
-      "category": "updates",
-      "tags": [
-        "tweetgenie",
-        "twitter automation",
-        "social media automation",
-        "agency tools",
-        "suitegenie updates"
-      ],
-      "excerpt": "We've been quietly building something. Complete Twitter automation - with your supervision or without. Here's what's coming, why we built it, and how to get early access.",
-      "featuredImage": {
-        "url": "/images/blog/suitegenie-launch-hero.svg",
-        "alt": "TweetGenie complete automation roadmap"
-      },
-      "author": {
-        "name": "Kanishk Saraswat",
-        "avatar": "/kanishk.png",
-        "twitter": "kanishksaraswat"
-      },
-      "publishDate": "2026-03-02T10:30:00+05:30",
-      "lastModified": "2026-03-02T10:30:00+05:30",
-      "readTime": 5,
-      "featured": false,
-      "status": "published",
-      "contentPath": "/blog/posts/updates/twitter-complete-automation-coming-soon.json"
-    },
-    {
       "id": "bulk-content-planning-for-founders-and-small-teams",
       "title": "Bulk Content Planning for Founders and Small Teams",
       "slug": "bulk-content-planning-for-founders-and-small-teams",
@@ -437,39 +732,6 @@
       "contentPath": "/blog/posts/updates/smarter-account-health-and-reconnect-recovery-mar-2026.json"
     },
     {
-      "id": "what-reliable-social-automation-actually-needs",
-      "title": "What Reliable Social Media Automation Actually Needs",
-      "slug": "what-reliable-social-automation-actually-needs",
-      "category": "insights",
-      "tags": [
-        "social media automation",
-        "reliability",
-        "suitegenie",
-        "scheduling",
-        "analytics"
-      ],
-      "excerpt": "Automation is easy to demo and hard to trust. Here is what actually matters if you want social media automation to work reliably in the real world.",
-      "featuredImage": {
-        "url": "/images/blog/suitegenie-launch-hero.svg",
-        "alt": "Reliable social media automation requires account context, scheduling visibility, and analytics trust"
-      },
-      "author": {
-        "name": "Kanishk Saraswat",
-        "avatar": "/kanishk.png",
-        "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
-        "social": {
-          "linkedin": "kanishk-saraswat",
-          "twitter": "kanishksaraswat"
-        }
-      },
-      "publishDate": "2026-03-01T11:30:00+05:30",
-      "lastModified": "2026-03-01T11:30:00+05:30",
-      "readTime": 5,
-      "featured": false,
-      "status": "published",
-      "contentPath": "/blog/posts/insights/what-reliable-social-automation-actually-needs.json"
-    },
-    {
       "id": "how-to-set-up-personal-and-team-accounts-in-suitegenie",
       "title": "How to Set Up Personal and Team Social Accounts in SuiteGenie Without Confusion",
       "slug": "how-to-set-up-personal-and-team-accounts-in-suitegenie",
@@ -572,70 +834,6 @@
       "contentPath": "/blog/posts/updates/cross-posting-scheduling-reliability-roundup-feb-2026.json"
     },
     {
-      "id": "what-we-learned-while-rebuilding-suitegenie-business-model",
-      "title": "What We Learned While Rebuilding SuiteGenie Around Real Execution",
-      "slug": "what-we-learned-while-rebuilding-suitegenie-business-model",
-      "category": "story",
-      "tags": [
-        "suitegenie story",
-        "product strategy",
-        "execution systems",
-        "founder lessons"
-      ],
-      "excerpt": "Four practical lessons from rebuilding SuiteGenie plans, workflows, and feature priorities around what users actually execute every week.",
-      "featuredImage": {
-        "url": "/images/blog/suitegenie-launch-hero.svg",
-        "alt": "SuiteGenie product decision notes focused on execution and reliability"
-      },
-      "author": {
-        "name": "Kanishk Saraswat",
-        "avatar": "/kanishk.png",
-        "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
-        "social": {
-          "linkedin": "kanishk-saraswat",
-          "twitter": "kanishksaraswat"
-        }
-      },
-      "publishDate": "2026-02-21T11:00:00+05:30",
-      "lastModified": "2026-02-21T11:00:00+05:30",
-      "readTime": 5,
-      "featured": false,
-      "status": "published",
-      "contentPath": "/blog/posts/story/what-we-learned-while-rebuilding-suitegenie-business-model.json"
-    },
-    {
-      "id": "meta-genie-coming-soon",
-      "title": "Meta Genie Is Coming Soon: What We Are Building Next",
-      "slug": "meta-genie-coming-soon",
-      "category": "updates",
-      "tags": [
-        "meta genie",
-        "coming soon",
-        "roadmap",
-        "suitegenie platform"
-      ],
-      "excerpt": "We are actively building Meta Genie and preparing rollout. Here is what it will include first, who gets access early, and what to expect next.",
-      "featuredImage": {
-        "url": "/images/blog/suitegenie-launch-hero.svg",
-        "alt": "Meta Genie roadmap board with rollout stages"
-      },
-      "author": {
-        "name": "Kanishk Saraswat",
-        "avatar": "/kanishk.png",
-        "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
-        "social": {
-          "linkedin": "kanishk-saraswat",
-          "twitter": "kanishksaraswat"
-        }
-      },
-      "publishDate": "2026-02-21T10:40:00+05:30",
-      "lastModified": "2026-02-21T10:40:00+05:30",
-      "readTime": 4,
-      "featured": true,
-      "status": "published",
-      "contentPath": "/blog/posts/updates/meta-genie-coming-soon.json"
-    },
-    {
       "id": "linkedin-genie-strategy-builder-and-tweet-genie-rollout",
       "title": "LinkedIn Genie Strategy Builder and Tweet Genie Rollout: What Is New",
       "slug": "linkedin-genie-strategy-builder-and-tweet-genie-rollout",
@@ -667,39 +865,6 @@
       "featured": true,
       "status": "published",
       "contentPath": "/blog/posts/updates/linkedin-genie-strategy-builder-and-tweet-genie-rollout.json"
-    },
-    {
-      "id": "free-plan-lock-and-business-model-update",
-      "title": "Why We Locked Free Plan Features and Reshaped Our Business Model",
-      "slug": "free-plan-lock-and-business-model-update",
-      "category": "updates",
-      "tags": [
-        "suitegenie pricing update",
-        "free plan",
-        "business model",
-        "credit tiers",
-        "feature access"
-      ],
-      "excerpt": "A transparent update on feature locking, credit tiers, and the business model changes we made to keep SuiteGenie sustainable and useful.",
-      "featuredImage": {
-        "url": "/images/blog/suitegenie-launch-hero.svg",
-        "alt": "SuiteGenie plans board showing free, pro, and enterprise tiers"
-      },
-      "author": {
-        "name": "Kanishk Saraswat",
-        "avatar": "/kanishk.png",
-        "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
-        "social": {
-          "linkedin": "kanishk-saraswat",
-          "twitter": "kanishksaraswat"
-        }
-      },
-      "publishDate": "2026-02-21T10:00:00+05:30",
-      "lastModified": "2026-02-21T10:00:00+05:30",
-      "readTime": 6,
-      "featured": true,
-      "status": "published",
-      "contentPath": "/blog/posts/updates/free-plan-lock-and-business-model-update.json"
     },
     {
       "id": "linkedin-cross-posting-tweet-genie",
@@ -801,38 +966,6 @@
       "contentPath": "/blog/posts/guides/bulk-generation-14-day-playbook.json"
     },
     {
-      "id": "team-content-ops-use-case",
-      "title": "How Agency Teams Use SuiteGenie for Multi-Account Content Ops",
-      "slug": "agency-team-content-ops-use-case",
-      "category": "use-cases",
-      "tags": [
-        "agency workflow",
-        "team collaboration",
-        "approval workflow",
-        "multi-account"
-      ],
-      "excerpt": "See a practical agency workflow for planning, approvals, bulk generation, and automated cross-routing across multiple client accounts.",
-      "featuredImage": {
-        "url": "/images/blog/suitegenie-launch-hero.svg",
-        "alt": "Agency team content operations board with approvals and automation lanes"
-      },
-      "author": {
-        "name": "Kanishk Saraswat",
-        "avatar": "/kanishk.png",
-        "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
-        "social": {
-          "linkedin": "kanishk-saraswat",
-          "twitter": "kanishksaraswat"
-        }
-      },
-      "publishDate": "2026-02-15T07:20:00+05:30",
-      "lastModified": "2026-02-15T07:20:00+05:30",
-      "readTime": 7,
-      "featured": false,
-      "status": "published",
-      "contentPath": "/blog/posts/use-cases/agency-team-content-ops-use-case.json"
-    },
-    {
       "id": "from-chaos-to-system-story",
       "title": "From Content Chaos to System: Why We Built SuiteGenie This Way",
       "slug": "from-content-chaos-to-system",
@@ -897,70 +1030,6 @@
       "contentPath": "/blog/posts/resources/social-automation-qa-checklist.json"
     },
     {
-      "id": "suitegenie-launch-2026",
-      "title": "Introducing SuiteGenie: AI-Powered Social Media Automation",
-      "slug": "introducing-suitegenie-ai-powered-social-media-automation",
-      "category": "updates",
-      "tags": [
-        "suitegenie",
-        "product update",
-        "social media automation",
-        "launch"
-      ],
-      "excerpt": "SuiteGenie is now live. Learn how our AI-first platform helps teams ship better content, faster, with automation that actually scales.",
-      "featuredImage": {
-        "url": "/images/blog/suitegenie-launch-hero.svg",
-        "alt": "SuiteGenie launch banner with social media automation dashboard"
-      },
-      "author": {
-        "name": "Kanishk Saraswat",
-        "avatar": "/kanishk.png",
-        "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
-        "social": {
-          "linkedin": "kanishk-saraswat",
-          "twitter": "kanishksaraswat"
-        }
-      },
-      "publishDate": "2026-02-14T20:00:00+05:30",
-      "lastModified": "2026-02-14T20:00:00+05:30",
-      "readTime": 6,
-      "featured": true,
-      "status": "published",
-      "contentPath": "/blog/posts/updates/introducing-suitegenie-ai-powered-social-media-automation.json"
-    },
-    {
-      "id": "byok-vs-built-in-keys-comparison",
-      "title": "BYOK vs Built-In AI Keys: Which Setup Is Better for Your Team?",
-      "slug": "byok-vs-built-in-ai-keys",
-      "category": "comparisons",
-      "tags": [
-        "byok",
-        "ai pricing",
-        "cost control",
-        "team setup"
-      ],
-      "excerpt": "An in-depth comparison of BYOK and built-in AI key models, including cost, control, and operational tradeoffs for agencies and creators.",
-      "featuredImage": {
-        "url": "/images/blog/suitegenie-vs-hootsuite.svg",
-        "alt": "Comparison chart between BYOK and built-in AI key setup models"
-      },
-      "author": {
-        "name": "Kanishk Saraswat",
-        "avatar": "/kanishk.png",
-        "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
-        "social": {
-          "linkedin": "kanishk-saraswat",
-          "twitter": "kanishksaraswat"
-        }
-      },
-      "publishDate": "2026-02-14T19:55:00+05:30",
-      "lastModified": "2026-02-14T19:55:00+05:30",
-      "readTime": 6,
-      "featured": false,
-      "status": "published",
-      "contentPath": "/blog/posts/comparisons/byok-vs-built-in-ai-keys.json"
-    },
-    {
       "id": "from-content-chaos-to-system",
       "title": "From Content Chaos to System: Why We Built SuiteGenie This Way",
       "slug": "from-content-chaos-to-system-why-we-built-suitegenie",
@@ -992,70 +1061,6 @@
       "featured": false,
       "status": "published",
       "contentPath": "/blog/posts/story/from-content-chaos-to-system-why-we-built-suitegenie.json"
-    },
-    {
-      "id": "twitter-automation-guide-2026",
-      "title": "How to Automate Twitter Posts in 2026: Complete Guide",
-      "slug": "how-to-automate-twitter-posts",
-      "category": "guides",
-      "tags": [
-        "twitter",
-        "automation",
-        "tutorial",
-        "scheduling"
-      ],
-      "excerpt": "A practical 5-step framework to automate Twitter content using AI while keeping your quality, consistency, and brand voice intact.",
-      "featuredImage": {
-        "url": "/images/blog/twitter-automation-guide.svg",
-        "alt": "Twitter automation workflow with planned content and scheduling blocks"
-      },
-      "author": {
-        "name": "Kanishk Saraswat",
-        "avatar": "/kanishk.png",
-        "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
-        "social": {
-          "linkedin": "kanishk-saraswat",
-          "twitter": "kanishksaraswat"
-        }
-      },
-      "publishDate": "2026-02-13T18:30:00+05:30",
-      "lastModified": "2026-02-14T10:15:00+05:30",
-      "readTime": 8,
-      "featured": false,
-      "status": "published",
-      "contentPath": "/blog/posts/guides/how-to-automate-twitter-posts.json"
-    },
-    {
-      "id": "suitegenie-vs-hootsuite-agencies",
-      "title": "SuiteGenie vs Hootsuite: Which is Better for Agencies?",
-      "slug": "suitegenie-vs-hootsuite",
-      "category": "comparisons",
-      "tags": [
-        "hootsuite alternative",
-        "agency tools",
-        "comparison",
-        "pricing"
-      ],
-      "excerpt": "A side-by-side comparison of SuiteGenie and Hootsuite for agency teams: workflow fit, automation depth, and cost clarity.",
-      "featuredImage": {
-        "url": "/images/blog/suitegenie-vs-hootsuite.svg",
-        "alt": "Side-by-side comparison card showing SuiteGenie and Hootsuite feature differences"
-      },
-      "author": {
-        "name": "Kanishk Saraswat",
-        "avatar": "/kanishk.png",
-        "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
-        "social": {
-          "linkedin": "kanishk-saraswat",
-          "twitter": "kanishksaraswat"
-        }
-      },
-      "publishDate": "2026-02-12T11:00:00+05:30",
-      "lastModified": "2026-02-12T11:00:00+05:30",
-      "readTime": 7,
-      "featured": false,
-      "status": "published",
-      "contentPath": "/blog/posts/comparisons/suitegenie-vs-hootsuite.json"
     }
   ]
 }

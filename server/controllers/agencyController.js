@@ -47,6 +47,9 @@ const ANALYSIS_THEME_STOP_WORDS = new Set([
   'pending', 'scheduled', 'published', 'failed', 'social', 'instagram', 'youtube',
 ]);
 const ANALYSIS_THEME_ALLOWLIST = new Set(['ai', 'ux', 'ui', 'api', 'b2b', 'b2c', 'seo', 'saas']);
+const REMOTE_ANALYSIS_CACHE_TTL_MS = 60 * 60 * 1000;
+const remoteAnalysisContextCache = new Map();
+let hasAgencyAccountAddonColumnsCache = null;
 const AUTO_CONTEXT_AUDIENCE_HINTS = [
   'founders',
   'marketers',
@@ -1390,6 +1393,29 @@ function sanitizeErrorForClient(message) {
     .trim();
 }
 
+async function hasAgencyAccountAddonColumns() {
+  if (typeof hasAgencyAccountAddonColumnsCache === 'boolean') {
+    return hasAgencyAccountAddonColumnsCache;
+  }
+
+  const result = await query(
+    `SELECT COUNT(*)::int AS count
+     FROM information_schema.columns
+     WHERE table_schema = 'public'
+       AND table_name = 'agency_accounts'
+       AND column_name IN (
+         'white_label_enabled',
+         'reporting_export_enabled',
+         'media_library_enabled',
+         'media_library_storage_gb'
+       )`,
+    []
+  );
+
+  hasAgencyAccountAddonColumnsCache = Number(result.rows[0]?.count || 0) === 4;
+  return hasAgencyAccountAddonColumnsCache;
+}
+
 function extractAudienceFromSignals(signalTexts = [], industry = null) {
   const patternCandidates = [
     /\b(?:for|help(?:ing)?|serving|supporting|teaching)\s+([a-z0-9/&,+\-\s]{4,80})/i,
@@ -1593,8 +1619,8 @@ function resolveWorkspaceAnalysisTargetAccountId(account = {}) {
   return cleanText(account?.source_id, null) || metadataSourceId || cleanText(account?.account_id, null);
 }
 
-async function fetchWorkspaceRemoteAnalysisContexts({ userId, workspaceAccounts = [] } = {}) {
-  const contexts = [];
+function buildWorkspaceRemoteAnalysisCacheEntries(workspaceAccounts = []) {
+  const uniqueAccounts = [];
   const seen = new Set();
 
   for (const account of Array.isArray(workspaceAccounts) ? workspaceAccounts : []) {
@@ -1606,6 +1632,46 @@ async function fetchWorkspaceRemoteAnalysisContexts({ userId, workspaceAccounts 
     const dedupeKey = `${platform}:${targetAccountId || resolveAgencyAccountSourceKey(account) || resolveAgencyAccountIdentityKey(account) || account?.id || ''}`;
     if (!dedupeKey || seen.has(dedupeKey)) continue;
     seen.add(dedupeKey);
+    uniqueAccounts.push({
+      account,
+      platform,
+      targetAccountId,
+      teamId,
+      dedupeKey,
+    });
+  }
+
+  return uniqueAccounts;
+}
+
+function buildWorkspaceRemoteAnalysisCacheKey(userId, workspaceAccounts = []) {
+  const entries = buildWorkspaceRemoteAnalysisCacheEntries(workspaceAccounts);
+  return {
+    cacheKey: `${cleanText(userId, 'anonymous') || 'anonymous'}:${entries
+      .map((entry) => `${entry.dedupeKey}:${entry.teamId || 'personal'}`)
+      .sort()
+      .join('|')}`,
+    entries,
+  };
+}
+
+async function fetchWorkspaceRemoteAnalysisContexts({ userId, workspaceAccounts = [] } = {}) {
+  const { cacheKey, entries: uniqueAccounts } = buildWorkspaceRemoteAnalysisCacheKey(userId, workspaceAccounts);
+
+  const cached = remoteAnalysisContextCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.data;
+  }
+
+  const contexts = [];
+
+  for (const entry of uniqueAccounts) {
+    const {
+      account,
+      platform,
+      targetAccountId,
+      teamId,
+    } = entry;
 
     try {
       const payload = await invokeInternalToolEndpoint({
@@ -1629,10 +1695,16 @@ async function fetchWorkspaceRemoteAnalysisContexts({ userId, workspaceAccounts 
         platform,
         account,
         targetAccountId,
-        error: error?.message || String(error),
+        error: null,
+        unavailable: true,
       });
     }
   }
+
+  remoteAnalysisContextCache.set(cacheKey, {
+    data: contexts,
+    expiresAt: Date.now() + REMOTE_ANALYSIS_CACHE_TTL_MS,
+  });
 
   return contexts;
 }
@@ -1643,8 +1715,15 @@ async function buildWorkspaceDerivedContext({
   settings,
   workspaceAccounts = [],
   operationsSnapshot = null,
+  forceRefreshRemoteAnalysis = false,
 } = {}) {
   const accountSignals = await collectWorkspaceAccountSignals(workspaceAccounts);
+  if (forceRefreshRemoteAnalysis) {
+    const { cacheKey } = buildWorkspaceRemoteAnalysisCacheKey(userId, workspaceAccounts);
+    if (cacheKey) {
+      remoteAnalysisContextCache.delete(cacheKey);
+    }
+  }
   const remoteAnalysisContexts = userId
     ? await fetchWorkspaceRemoteAnalysisContexts({ userId, workspaceAccounts })
     : [];
@@ -1788,6 +1867,7 @@ async function buildWorkspaceEffectiveSettings({
   persistedSettings = null,
   workspaceAccounts = null,
   operationsSnapshot = null,
+  forceRefreshRemoteAnalysis = false,
 } = {}) {
   const baseSettings = persistedSettings || await getWorkspaceSettings(workspace.id);
   const resolvedWorkspaceAccounts = Array.isArray(workspaceAccounts)
@@ -1816,6 +1896,7 @@ async function buildWorkspaceEffectiveSettings({
     settings: baseSettings,
     workspaceAccounts: resolvedWorkspaceAccounts,
     operationsSnapshot: resolvedOperationsSnapshot,
+    forceRefreshRemoteAnalysis,
   });
 
   const shouldApplyDerivedDefaults = !hasMeaningfulContext && derivedContext.hasAny;
@@ -2431,7 +2512,7 @@ async function buildWorkspaceOperationsSnapshotData({
   };
 }
 
-async function buildWorkspaceAnalysisSummary({ workspace, userId }) {
+async function buildWorkspaceAnalysisSummary({ workspace, userId, forceRefreshRemoteAnalysis = false }) {
   const [persistedSettings, analyticsSummary, insightsSummary, operationsSnapshot, workspaceAccounts] = await Promise.all([
     getWorkspaceSettings(workspace.id),
     buildWorkspaceAnalyticsSummary({ workspaceId: workspace.id }),
@@ -2445,6 +2526,7 @@ async function buildWorkspaceAnalysisSummary({ workspace, userId }) {
     persistedSettings,
     workspaceAccounts,
     operationsSnapshot,
+    forceRefreshRemoteAnalysis,
   });
 
   const competitorTargets = normalizeStringArray(settings?.competitor_targets, 25);
@@ -2651,29 +2733,65 @@ async function sendAgencyInviteEmail({
 }
 
 async function getMembership(userId) {
-  const result = await query(
-    `SELECT
-       am.id AS member_id,
-       am.agency_id,
-       am.user_id,
-       am.email,
-       am.role,
-       am.status,
-       aa.owner_id,
-       aa.name AS agency_name,
-       aa.status AS agency_status,
-       aa.seat_limit,
-       aa.workspace_limit,
-       aa.workspace_account_limit
-     FROM agency_members am
-     JOIN agency_accounts aa ON aa.id = am.agency_id
-     WHERE am.user_id = $1
-       AND am.status = 'active'
-       AND aa.status != 'archived'
-     ORDER BY CASE am.role WHEN 'owner' THEN 0 WHEN 'admin' THEN 1 ELSE 2 END, am.created_at ASC
-     LIMIT 1`,
-    [userId]
-  );
+  let result;
+  const supportsAgencyAddonColumns = await hasAgencyAccountAddonColumns();
+  if (supportsAgencyAddonColumns) {
+    result = await query(
+      `SELECT
+         am.id AS member_id,
+         am.agency_id,
+         am.user_id,
+         am.email,
+         am.role,
+         am.status,
+         aa.owner_id,
+         aa.name AS agency_name,
+         aa.status AS agency_status,
+         aa.seat_limit,
+         aa.workspace_limit,
+         aa.workspace_account_limit,
+         aa.white_label_enabled,
+         aa.reporting_export_enabled,
+         aa.media_library_enabled,
+         aa.media_library_storage_gb
+       FROM agency_members am
+       JOIN agency_accounts aa ON aa.id = am.agency_id
+       WHERE am.user_id = $1
+         AND am.status = 'active'
+         AND aa.status != 'archived'
+       ORDER BY CASE am.role WHEN 'owner' THEN 0 WHEN 'admin' THEN 1 ELSE 2 END, am.created_at ASC
+       LIMIT 1`,
+      [userId]
+    );
+  } else {
+    result = await query(
+      `SELECT
+         am.id AS member_id,
+         am.agency_id,
+         am.user_id,
+         am.email,
+         am.role,
+         am.status,
+         aa.owner_id,
+         aa.name AS agency_name,
+         aa.status AS agency_status,
+         aa.seat_limit,
+         aa.workspace_limit,
+         aa.workspace_account_limit,
+         false AS white_label_enabled,
+         false AS reporting_export_enabled,
+         false AS media_library_enabled,
+         0 AS media_library_storage_gb
+       FROM agency_members am
+       JOIN agency_accounts aa ON aa.id = am.agency_id
+       WHERE am.user_id = $1
+         AND am.status = 'active'
+         AND aa.status != 'archived'
+       ORDER BY CASE am.role WHEN 'owner' THEN 0 WHEN 'admin' THEN 1 ELSE 2 END, am.created_at ASC
+       LIMIT 1`,
+      [userId]
+    );
+  }
   if (result.rows.length === 0) return null;
   const row = result.rows[0];
   return {
@@ -2686,6 +2804,10 @@ async function getMembership(userId) {
       seatLimit: Number(row.seat_limit || AGENCY_LIMITS.seatLimit),
       workspaceLimit: Number(row.workspace_limit || AGENCY_LIMITS.workspaceLimit),
       workspaceAccountLimit: Number(row.workspace_account_limit || AGENCY_LIMITS.workspaceAccountLimit),
+      whiteLabelEnabled: Boolean(row.white_label_enabled),
+      reportingExportEnabled: Boolean(row.reporting_export_enabled),
+      mediaLibraryEnabled: Boolean(row.media_library_enabled),
+      mediaLibraryStorageGb: Number(row.media_library_storage_gb || 0),
     },
   };
 }
@@ -3218,6 +3340,12 @@ export const AgencyController = {
           workspaceLimit: context.agency.workspaceLimit,
           seatLimit: context.agency.seatLimit,
           workspaceAccountLimit: context.agency.workspaceAccountLimit,
+        },
+        addons: {
+          whiteLabelEnabled: Boolean(context.agency.whiteLabelEnabled),
+          reportingExportEnabled: Boolean(context.agency.reportingExportEnabled),
+          mediaLibraryEnabled: Boolean(context.agency.mediaLibraryEnabled),
+          mediaLibraryStorageGb: Number(context.agency.mediaLibraryStorageGb || 0),
         },
         usage: {
           workspaceCount: Number(workspaceCount.rows[0]?.active_like || 0),

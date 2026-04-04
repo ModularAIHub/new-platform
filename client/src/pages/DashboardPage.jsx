@@ -176,10 +176,29 @@ const DashboardPage = () => {
 
     if (initialLoad || prefLoading) {
         return (
-            <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-                    <p className="text-lg text-neutral-600">Loading your dashboard...</p>
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+                <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+                    <div className="max-w-xl">
+                        <div className="h-5 w-32 animate-pulse rounded-full bg-slate-200" />
+                        <div className="mt-5 h-11 w-full animate-pulse rounded-2xl bg-slate-200" />
+                        <div className="mt-4 h-6 w-3/4 animate-pulse rounded-xl bg-slate-100" />
+                    </div>
+                    <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+                        {Array.from({ length: 4 }, (_, index) => (
+                            <div key={index} className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
+                                <div className="h-6 w-28 animate-pulse rounded-full bg-slate-200" />
+                                <div className="mt-6 h-8 w-40 animate-pulse rounded-xl bg-slate-200" />
+                                <div className="mt-4 h-4 w-full animate-pulse rounded bg-slate-100" />
+                                <div className="mt-3 h-4 w-5/6 animate-pulse rounded bg-slate-100" />
+                                <div className="mt-3 h-4 w-2/3 animate-pulse rounded bg-slate-100" />
+                                <div className="mt-8 h-11 w-full animate-pulse rounded-xl bg-blue-100" />
+                            </div>
+                        ))}
+                    </div>
+                    <div className="mt-8 flex items-center gap-3 text-sm text-slate-500">
+                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" />
+                        <span>Loading your dashboard…</span>
+                    </div>
                 </div>
             </div>
         )
@@ -388,7 +407,7 @@ const DashboardPage = () => {
                                 {userPlan?.type === 'free' && (
                                     <QuickAction
                                         label="Upgrade to Pro Plan"
-                                        description="Complete secure checkout for ₹399/month (~$4.80)"
+                                        description="Complete secure checkout for ₹499/month (~$6.01)"
                                         icon={<Crown className="w-5 h-5" />}
                                         color="warning"
                                         onClick={() => navigate('/plans?intent=pro')}

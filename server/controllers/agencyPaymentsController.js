@@ -6,8 +6,8 @@ import { getCreditsForPlan } from '../utils/creditTiers.js';
 import { ensureAgencySchemaReady } from '../utils/agencySchema.js';
 import { bootstrapAgencyOwner } from './agencyController.js';
 
-const AGENCY_PLAN_AMOUNT_PAISE = 159900;
-const AGENCY_PLAN_AMOUNT_RUPEES = 1599;
+const AGENCY_PLAN_AMOUNT_PAISE = 249900;
+const AGENCY_PLAN_AMOUNT_RUPEES = 2499;
 const AGENCY_PLAN_NAME = 'SuiteGenie Agency';
 const AGENCY_PLAN_DESCRIPTION = 'SuiteGenie Agency monthly subscription';
 const BILLING_GRACE_DAYS = Math.max(0, Number.parseInt(process.env.AGENCY_BILLING_GRACE_DAYS || '3', 10));
@@ -95,6 +95,11 @@ function canResumeSubscription(subscription) {
   const status = normalizeBillingStatus(subscription.status);
   if (!isSubscriptionActiveLike(status)) return false;
   return Boolean(subscription.cancel_at_cycle_end);
+}
+
+function isLikelyRazorpaySubscriptionId(value) {
+  const normalized = cleanText(value, '');
+  return /^sub_[A-Za-z0-9]+$/.test(normalized) && normalized.length <= 18;
 }
 
 function mapInvoiceItem(invoice = {}) {
@@ -542,12 +547,16 @@ const AgencyPaymentsController = {
       if (!subscriptionId) throw apiError('Missing subscription id', 'AGENCY_SUBSCRIPTION_ID_MISSING', 400);
 
       let remoteSubscription = null;
-      if (!isDemoMode) {
+      if (!isDemoMode && isLikelyRazorpaySubscriptionId(subscriptionId)) {
         const rp = getRazorpayInstance();
         try {
           remoteSubscription = await rp.subscriptions.cancel(subscriptionId, { cancel_at_cycle_end: 1 });
         } catch (error) {
-          remoteSubscription = await rp.subscriptions.cancel(subscriptionId, true);
+          if (error?.statusCode === 404) {
+            remoteSubscription = null;
+          } else {
+            remoteSubscription = await rp.subscriptions.cancel(subscriptionId, true);
+          }
         }
       }
 
@@ -610,7 +619,7 @@ const AgencyPaymentsController = {
       if (!subscriptionId) throw apiError('Missing subscription id', 'AGENCY_SUBSCRIPTION_ID_MISSING', 400);
 
       let remoteStatus = cleanText(current.status, 'active');
-      if (!isDemoMode) {
+      if (!isDemoMode && isLikelyRazorpaySubscriptionId(subscriptionId)) {
         const rp = getRazorpayInstance();
         try {
           const resumed = await rp.subscriptions.resume(subscriptionId, { resume_at: 'now' });
@@ -672,7 +681,7 @@ const AgencyPaymentsController = {
         return res.json({ invoices: fallback, source: 'fallback' });
       }
 
-      if (!isDemoMode) {
+      if (!isDemoMode && isLikelyRazorpaySubscriptionId(subscriptionId)) {
         try {
           const rp = getRazorpayInstance();
           const response = await rp.invoices.all({

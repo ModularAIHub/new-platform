@@ -1,46 +1,53 @@
+import { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
 import GuestRoute from './GuestRoute';
 import Layout from '../components/Layout';
 
-// Public Pages
-import HomePage from '../pages/HomePage';
-import PlansPage from '../pages/PlansPage';
-import AboutPage from '../pages/AboutPage';
-import ContactPage from '../pages/ContactPage';
-import TermsPage from '../pages/TermsPage';
-import PrivacyPage from '../pages/PrivacyPage';
-import Features from '../pages/Features';
-
-import DocsPage from '../pages/Docs';
-import PricingPage from '../pages/Pricing';
-import IntegrationsPage from '../pages/Integrations';
-import HelpPage from '../pages/Help';
-import BlogPage from '../pages/Blog';
-import BlogPostPage from '../pages/BlogPost';
-import BlogCategoryPage from '../pages/BlogCategory';
-import BlogSearchPage from '../pages/BlogSearch';
-
-// Auth Pages
-import LoginPage from '../pages/LoginPage';
-import RegisterPage from '../pages/RegisterPage';
-import SignupPage from '../pages/SignupPage';
-
-// Protected Pages
-import DashboardPage from '../pages/DashboardPage';
-import CreditsPage from '../pages/CreditsPage';
-import ApiKeysPage from '../pages/ApiKeysPage';
-import SettingsPage from '../pages/SettingsPage';
-import TeamPage from '../pages/TeamPage';
-import TeamInvitePage from '../pages/TeamInvitePage';
-import AgencyHubPage from '../pages/AgencyHubPage';
-import AgencyWorkspacePage from '../pages/AgencyWorkspacePage';
-import AgencyInvitePage from '../pages/AgencyInvitePage';
-import AgencyApprovalPortalPage from '../pages/AgencyApprovalPortalPage';
+const HomePage = lazy(() => import('../pages/HomePage'));
+const PlansPage = lazy(() => import('../pages/PlansPage'));
+const AboutPage = lazy(() => import('../pages/AboutPage'));
+const ContactPage = lazy(() => import('../pages/ContactPage'));
+const TermsPage = lazy(() => import('../pages/TermsPage'));
+const PrivacyPage = lazy(() => import('../pages/PrivacyPage'));
+const Features = lazy(() => import('../pages/Features'));
+const DocsPage = lazy(() => import('../pages/Docs'));
+const PricingPage = lazy(() => import('../pages/Pricing'));
+const IntegrationsPage = lazy(() => import('../pages/Integrations'));
+const HelpPage = lazy(() => import('../pages/Help'));
+const BlogPage = lazy(() => import('../pages/Blog'));
+const BlogPostPage = lazy(() => import('../pages/BlogPost'));
+const BlogCategoryPage = lazy(() => import('../pages/BlogCategory'));
+const BlogSearchPage = lazy(() => import('../pages/BlogSearch'));
+const LoginPage = lazy(() => import('../pages/LoginPage'));
+const RegisterPage = lazy(() => import('../pages/RegisterPage'));
+const SignupPage = lazy(() => import('../pages/SignupPage'));
+const DashboardPage = lazy(() => import('../pages/DashboardPage'));
+const CreditsPage = lazy(() => import('../pages/CreditsPage'));
+const ApiKeysPage = lazy(() => import('../pages/ApiKeysPage'));
+const SettingsPage = lazy(() => import('../pages/SettingsPage'));
+const TeamPage = lazy(() => import('../pages/TeamPage'));
+const TeamInvitePage = lazy(() => import('../pages/TeamInvitePage'));
+const AgencyHubPage = lazy(() => import('../pages/AgencyHubPage'));
+const AgencyWorkspacePage = lazy(() => import('../pages/AgencyWorkspacePage'));
+const AgencyInvitePage = lazy(() => import('../pages/AgencyInvitePage'));
+const AgencyApprovalPortalPage = lazy(() => import('../pages/AgencyApprovalPortalPage'));
 
 import { useAuth } from '../contexts/AuthContext';
 
 // OnboardingGuard removed
+
+const RouteLoader = ({ children }) => (
+  <Suspense
+    fallback={
+      <div className="flex min-h-[40vh] items-center justify-center text-sm text-slate-500">
+        Loading...
+      </div>
+    }
+  >
+    {children}
+  </Suspense>
+);
 
 const AppRoutes = () => {
   const { user } = useAuth();
@@ -50,39 +57,45 @@ const AppRoutes = () => {
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/" element={<HomePage />} />
-      <Route path="/plans" element={<PlansPage />} />
-      <Route path="/about" element={<AboutPage />} />
-      <Route path="/contact" element={<ContactPage />} />
-      <Route path="/terms" element={<TermsPage />} />
-      <Route path="/privacy" element={<PrivacyPage />} />
-      <Route path="/pricing" element={<PricingPage />} />
-      <Route path="/docs" element={<DocsPage />} />
-      <Route path="/integrations" element={<IntegrationsPage />} />
-      <Route path="/help" element={<HelpPage />} />
-      <Route path="/blogs" element={<BlogPage />} />
-      <Route path="/blogs/search" element={<BlogSearchPage />} />
-      <Route path="/blogs/category/:name" element={<BlogCategoryPage />} />
-      <Route path="/blogs/:category/:slug" element={<BlogPostPage />} />
+      <Route path="/" element={<RouteLoader><HomePage /></RouteLoader>} />
+      <Route path="/plans" element={<RouteLoader><PlansPage /></RouteLoader>} />
+      <Route path="/about" element={<RouteLoader><AboutPage /></RouteLoader>} />
+      <Route path="/contact" element={<RouteLoader><ContactPage /></RouteLoader>} />
+      <Route path="/terms" element={<RouteLoader><TermsPage /></RouteLoader>} />
+      <Route path="/privacy" element={<RouteLoader><PrivacyPage /></RouteLoader>} />
+      <Route path="/pricing" element={<RouteLoader><PricingPage /></RouteLoader>} />
+      <Route path="/docs" element={<RouteLoader><DocsPage /></RouteLoader>} />
+      <Route path="/integrations" element={<RouteLoader><IntegrationsPage /></RouteLoader>} />
+      <Route path="/help" element={<RouteLoader><HelpPage /></RouteLoader>} />
+      <Route path="/blogs" element={<RouteLoader><BlogPage /></RouteLoader>} />
+      <Route path="/blogs/search" element={<RouteLoader><BlogSearchPage /></RouteLoader>} />
+      <Route path="/blogs/category/:name" element={<RouteLoader><BlogCategoryPage /></RouteLoader>} />
+      <Route path="/blogs/:category/:slug" element={<RouteLoader><BlogPostPage /></RouteLoader>} />
 
       {/* Guest routes - redirect to dashboard if already logged in */}
       <Route path="/login" element={
         <GuestRoute>
-          <LoginPage />
+          <RouteLoader>
+            <LoginPage />
+          </RouteLoader>
         </GuestRoute>
       } />
       <Route path="/register" element={
         <GuestRoute>
-          <RegisterPage />
+          <RouteLoader>
+            <RegisterPage />
+          </RouteLoader>
         </GuestRoute>
       } />
-      <Route path="/signup" element={<SignupPage />} />
+      <Route path="/signup" element={<RouteLoader><SignupPage /></RouteLoader>} />
 
       {/* Protected routes - require authentication */}
       <Route path="/dashboard" element={
         <ProtectedRoute>
           <Layout>
-            <DashboardPage />
+            <RouteLoader>
+              <DashboardPage />
+            </RouteLoader>
           </Layout>
         </ProtectedRoute>
       } />
@@ -90,7 +103,9 @@ const AppRoutes = () => {
       <Route path="/credits" element={
         <ProtectedRoute>
           <Layout>
-            <CreditsPage />
+            <RouteLoader>
+              <CreditsPage />
+            </RouteLoader>
           </Layout>
         </ProtectedRoute>
       } />
@@ -98,7 +113,9 @@ const AppRoutes = () => {
       <Route path="/api-keys" element={
         <ProtectedRoute>
           <Layout>
-            <ApiKeysPage />
+            <RouteLoader>
+              <ApiKeysPage />
+            </RouteLoader>
           </Layout>
         </ProtectedRoute>
       } />
@@ -106,7 +123,9 @@ const AppRoutes = () => {
       <Route path="/settings" element={
         <ProtectedRoute>
           <Layout>
-            <SettingsPage />
+            <RouteLoader>
+              <SettingsPage />
+            </RouteLoader>
           </Layout>
         </ProtectedRoute>
       } />
@@ -117,7 +136,9 @@ const AppRoutes = () => {
             <Navigate to="/agency" replace />
           ) : (
             <Layout>
-              <TeamPage />
+              <RouteLoader>
+                <TeamPage />
+              </RouteLoader>
             </Layout>
           )}
         </ProtectedRoute>
@@ -126,14 +147,18 @@ const AppRoutes = () => {
       <Route path="/agency" element={
         <ProtectedRoute>
           <Layout>
-            <AgencyHubPage />
+            <RouteLoader>
+              <AgencyHubPage />
+            </RouteLoader>
           </Layout>
         </ProtectedRoute>
       } />
 
       <Route path="/agency/workspaces/:workspaceId" element={
         <ProtectedRoute>
-          <AgencyWorkspacePage />
+          <RouteLoader>
+            <AgencyWorkspacePage />
+          </RouteLoader>
         </ProtectedRoute>
       } />
 
@@ -143,15 +168,15 @@ const AppRoutes = () => {
         </ProtectedRoute>
       } />
 
-      <Route path="/features" element={<Features />} />
+      <Route path="/features" element={<RouteLoader><Features /></RouteLoader>} />
 
       {/* Team invitation - public route (no Layout/auth required) */}
-      <Route path="/team/invite/:token" element={<TeamInvitePage />} />
-      <Route path="/agency/invite/:token" element={<AgencyInvitePage />} />
-      <Route path="/agency/approve/:token" element={<AgencyApprovalPortalPage />} />
+      <Route path="/team/invite/:token" element={<RouteLoader><TeamInvitePage /></RouteLoader>} />
+      <Route path="/agency/invite/:token" element={<RouteLoader><AgencyInvitePage /></RouteLoader>} />
+      <Route path="/agency/approve/:token" element={<RouteLoader><AgencyApprovalPortalPage /></RouteLoader>} />
 
       {/* Catch-all route - redirect to home */}
-      <Route path="*" element={<HomePage />} />
+      <Route path="*" element={<RouteLoader><HomePage /></RouteLoader>} />
     </Routes>
   );
 };

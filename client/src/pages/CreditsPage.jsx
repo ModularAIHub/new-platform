@@ -237,7 +237,7 @@ const CreditsPage = () => {
             <div className="bg-white shadow rounded-lg p-8">
                 <h2 className="text-xl font-bold text-gray-900 text-center mb-2">Buy Credits</h2>
                 <p className="text-gray-600 text-center mb-8">No commitment. Buy when you need them.</p>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {/* 1 INR Test Pack */}
                     {/* <div className="relative bg-white border rounded-xl p-6 flex flex-col items-center shadow hover:shadow-lg transition">
                         <div className="absolute top-4 right-4 text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded">Test</div>
@@ -266,22 +266,22 @@ const CreditsPage = () => {
                     </div> */}
                     {/* Starter Pack */}
                     <div className="relative bg-white border rounded-xl p-6 flex flex-col items-center shadow hover:shadow-lg transition">
-                        <div className="absolute top-4 right-4 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Save &#8377;0</div>
+                        <div className="absolute top-4 right-4 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Starter</div>
                         <h3 className="text-lg font-semibold mb-2">Starter Pack</h3>
-                        <div className="text-4xl font-bold text-primary-600 mb-1">{packages['25']?.credits || 25}</div>
+                        <div className="text-4xl font-bold text-primary-600 mb-1">{packages['100']?.credits || 100}</div>
                         <div className="text-gray-500 mb-2">credits</div>
-                        <div className="text-2xl font-bold mb-4">&#8377;{packages['25']?.price || 45}</div>
+                        <div className="text-2xl font-bold mb-4">&#8377;{packages['100']?.price || 199}</div>
                         <ul className="mb-6 space-y-1 text-sm text-gray-600 text-left">
                             <li>&#10003; Perfect for testing</li>
                             <li>&#10003; No commitment</li>
                             <li>&#10003; Instant delivery</li>
                         </ul>
                         <button 
-                            onClick={() => handlePurchase('25')}
-                            disabled={purchasing === '25'}
+                            onClick={() => handlePurchase('100')}
+                            disabled={purchasing === '100'}
                             className="w-full py-2 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold flex items-center justify-center"
                         >
-                            {purchasing === '25' ? (
+                            {purchasing === '100' ? (
                                 <Loader2 className="h-5 w-5 animate-spin" />
                             ) : (
                                 <>
@@ -292,22 +292,22 @@ const CreditsPage = () => {
                     </div>
                     {/* Creator Pack */}
                     <div className="relative bg-white border rounded-xl p-6 flex flex-col items-center shadow hover:shadow-lg transition">
-                        <div className="absolute top-4 right-4 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Save &#8377;15</div>
+                        <div className="absolute top-4 right-4 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Better Value</div>
                         <h3 className="text-lg font-semibold mb-2">Creator Pack</h3>
-                        <div className="text-4xl font-bold text-primary-600 mb-1">{packages['50']?.credits || 50}</div>
+                        <div className="text-4xl font-bold text-primary-600 mb-1">{packages['250']?.credits || 250}</div>
                         <div className="text-gray-500 mb-2">credits</div>
-                        <div className="text-2xl font-bold mb-4">&#8377;{packages['50']?.price || 75}</div>
+                        <div className="text-2xl font-bold mb-4">&#8377;{packages['250']?.price || 399}</div>
                         <ul className="mb-6 space-y-1 text-sm text-gray-600 text-left">
                             <li>&#10003; Most popular choice</li>
                             <li>&#10003; Better value</li>
                             <li>&#10003; Great for weekly posting</li>
                         </ul>
                         <button 
-                            onClick={() => handlePurchase('50')}
-                            disabled={purchasing === '50'}
+                            onClick={() => handlePurchase('250')}
+                            disabled={purchasing === '250'}
                             className="w-full py-2 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold flex items-center justify-center"
                         >
-                            {purchasing === '50' ? (
+                            {purchasing === '250' ? (
                                 <Loader2 className="h-5 w-5 animate-spin" />
                             ) : (
                                 <>
@@ -318,23 +318,23 @@ const CreditsPage = () => {
                     </div>
                     {/* Pro Pack */}
                     <div className="relative bg-blue-50 border-2 border-blue-600 rounded-xl p-6 flex flex-col items-center shadow-lg">
-                        <div className="absolute top-4 right-4 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Save &#8377;40</div>
+                        <div className="absolute top-4 right-4 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Best Value</div>
                         <div className="absolute top-4 left-4 text-xs bg-blue-600 text-white px-2 py-1 rounded">Most Popular</div>
                         <h3 className="text-lg font-semibold mb-2">Pro Pack</h3>
-                        <div className="text-4xl font-bold text-blue-700 mb-1">{packages['80']?.credits || 80}</div>
+                        <div className="text-4xl font-bold text-blue-700 mb-1">{packages['500']?.credits || 500}</div>
                         <div className="text-gray-500 mb-2">credits</div>
-                        <div className="text-2xl font-bold mb-4">&#8377;{packages['80']?.price || 100}</div>
+                        <div className="text-2xl font-bold mb-4">&#8377;{packages['500']?.price || 699}</div>
                         <ul className="mb-6 space-y-1 text-sm text-gray-600 text-left">
                             <li>&#10003; Best value</li>
                             <li>&#10003; Bulk discount</li>
                             <li>&#10003; Great for high-volume generation</li>
                         </ul>
                         <button 
-                            onClick={() => handlePurchase('80')}
-                            disabled={purchasing === '80'}
+                            onClick={() => handlePurchase('500')}
+                            disabled={purchasing === '500'}
                             className="w-full py-2 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold flex items-center justify-center"
                         >
-                            {purchasing === '80' ? (
+                            {purchasing === '500' ? (
                                 <Loader2 className="h-5 w-5 animate-spin" />
                             ) : (
                                 <>

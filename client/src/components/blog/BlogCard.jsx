@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Clock3 } from 'lucide-react';
 import {
   calculateReadTime,
-  formatDate,
+  getPostDisplayDate,
   getCategoryMeta,
   getPostUrl,
   truncateText,
@@ -61,7 +61,7 @@ const BlogCard = ({ post, compact = false }) => {
               />
               <div className="flex flex-col">
                 <p className="text-sm font-bold text-slate-900">{post.author?.name}</p>
-                <p className="text-xs font-medium text-slate-500">{formatDate(post.publishDate)}</p>
+                <p className="text-xs font-medium text-slate-500">{getPostDisplayDate(post)}</p>
               </div>
             </div>
             <p className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500">

@@ -1169,9 +1169,11 @@ export function createAgencyWorkspaceContentController(deps) {
   async getWorkspaceAnalysisSummary(req, res) {
     try {
       const { workspace } = await getRequestWorkspaceAccess(req);
+      const forceRefreshRemoteAnalysis = toBoolean(req.query.refresh || req.query.forceRefresh, false);
       const analysis = await buildWorkspaceAnalysisSummary({
         workspace,
         userId: req.user.id,
+        forceRefreshRemoteAnalysis,
       });
 
       return res.json({

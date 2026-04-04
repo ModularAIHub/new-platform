@@ -337,7 +337,7 @@ const categoryOrder = categoriesPayload.order || [];
 const posts = collectJsonFiles(postsRoot)
   .map((filePath) => readJson(filePath))
   .filter((post) => post.status === 'published')
-  .sort((a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime());
+  .sort((a, b) => new Date(b.lastModified || b.publishDate).getTime() - new Date(a.lastModified || a.publishDate).getTime());
 
 const buildBlogIndexBody = () => {
   const featured = posts.slice(0, 8);

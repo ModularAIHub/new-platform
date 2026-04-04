@@ -686,16 +686,86 @@ const migrations = [
       UPDATE agency_accounts aa
       SET
         credits_remaining = CASE
-          WHEN COALESCE(u.plan_type, 'free') = 'enterprise' AND u.api_key_preference = 'byok' THEN 4000
+          WHEN COALESCE(u.plan_type, 'free') = 'enterprise' AND u.api_key_preference = 'byok' THEN 5000
           WHEN COALESCE(u.plan_type, 'free') = 'enterprise' AND u.api_key_preference = 'platform' THEN 2500
-          WHEN COALESCE(u.plan_type, 'free') = 'agency' AND u.api_key_preference = 'byok' THEN 1400
-          WHEN COALESCE(u.plan_type, 'free') = 'agency' AND u.api_key_preference = 'platform' THEN 800
+          WHEN COALESCE(u.plan_type, 'free') = 'agency' AND u.api_key_preference = 'byok' THEN 1800
+          WHEN COALESCE(u.plan_type, 'free') = 'agency' AND u.api_key_preference = 'platform' THEN 900
           ELSE aa.credits_remaining
         END,
         last_credit_reset = COALESCE(aa.last_credit_reset, NOW())
       FROM users u
       WHERE aa.owner_id = u.id
         AND (aa.last_credit_reset IS NULL OR aa.credits_remaining = 0);
+    `
+  },
+  {
+    version: 29,
+    name: 'automation_addons',
+    sql: `
+      CREATE TABLE IF NOT EXISTS automation_addons (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        owner_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        agency_id UUID REFERENCES agency_accounts(id) ON DELETE SET NULL,
+        package_id VARCHAR(50) NOT NULL,
+        scope_type VARCHAR(20) NOT NULL CHECK (scope_type IN ('user', 'agency')),
+        status VARCHAR(20) NOT NULL DEFAULT 'active'
+          CHECK (status IN ('active', 'expired', 'cancelled')),
+        starts_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        expires_at TIMESTAMP NOT NULL,
+        razorpay_order_id VARCHAR(255),
+        razorpay_payment_id VARCHAR(255),
+        metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_automation_addons_owner_user_id
+        ON automation_addons(owner_user_id);
+      CREATE INDEX IF NOT EXISTS idx_automation_addons_agency_id
+        ON automation_addons(agency_id);
+      CREATE INDEX IF NOT EXISTS idx_automation_addons_status
+        ON automation_addons(status);
+      CREATE INDEX IF NOT EXISTS idx_automation_addons_expires_at
+        ON automation_addons(expires_at);
+
+      UPDATE automation_addons
+      SET status = 'expired', updated_at = NOW()
+      WHERE status = 'active' AND expires_at <= NOW();
+    `
+  },
+  {
+    version: 30,
+    name: 'agency_expansion_addons',
+    sql: `
+      ALTER TABLE agency_accounts
+        ADD COLUMN IF NOT EXISTS white_label_enabled BOOLEAN NOT NULL DEFAULT false,
+        ADD COLUMN IF NOT EXISTS reporting_export_enabled BOOLEAN NOT NULL DEFAULT false,
+        ADD COLUMN IF NOT EXISTS media_library_enabled BOOLEAN NOT NULL DEFAULT false,
+        ADD COLUMN IF NOT EXISTS media_library_storage_gb INTEGER NOT NULL DEFAULT 0;
+
+      CREATE TABLE IF NOT EXISTS agency_expansion_addons (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        owner_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        agency_id UUID NOT NULL REFERENCES agency_accounts(id) ON DELETE CASCADE,
+        package_id VARCHAR(60) NOT NULL,
+        status VARCHAR(20) NOT NULL DEFAULT 'active'
+          CHECK (status IN ('active', 'cancelled')),
+        quantity INTEGER NOT NULL DEFAULT 1,
+        razorpay_order_id VARCHAR(255),
+        razorpay_payment_id VARCHAR(255),
+        metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_agency_expansion_addons_owner_user_id
+        ON agency_expansion_addons(owner_user_id);
+      CREATE INDEX IF NOT EXISTS idx_agency_expansion_addons_agency_id
+        ON agency_expansion_addons(agency_id);
+      CREATE INDEX IF NOT EXISTS idx_agency_expansion_addons_package_id
+        ON agency_expansion_addons(package_id);
+      CREATE INDEX IF NOT EXISTS idx_agency_expansion_addons_status
+        ON agency_expansion_addons(status);
     `
   }
 ];

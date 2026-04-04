@@ -1,51 +1,51 @@
 {
-    "id": "team-content-ops-use-case",
-    "title": "How Agency Teams Use SuiteGenie for Multi-Account Content Ops",
-    "slug": "agency-team-content-ops-use-case",
-    "category": "use-cases",
-    "tags": [
-        "agency workflow",
-        "team collaboration",
-        "approval workflow",
-        "multi-account"
-    ],
-    "excerpt": "See a practical agency workflow for planning, approvals, bulk generation, and automated cross-routing across multiple client accounts.",
-    "content": "## The Real Agency Problem\n\n> **Quick Answer:** A complete use-case guide for agencies using SuiteGenie to run strategy, approvals, bulk generation, and automation flows across client accounts.\n\n\nTeams rarely fail because they cannot write. They fail because approvals, context switching, and [automated execution](/blogs/guides/bulk-generation-14-day-playbook) handoffs create daily bottlenecks.\n\n## A Practical Team Workflow\n\n### Stage 1: Strategy and Prompt Setup\n- Set audience and positioning in [Strategy](/blogs/story/from-content-chaos-to-system-why-we-built-suitegenie) Builder\n- Create reusable prompt sets by client niche\n\n### Stage 2: Batch Generation\n- Generate a controlled content batch\n- Split drafts by campaign and funnel stage\n\n### Stage 3: Internal Review\n- Reviewer checks message clarity and brand fit\n- Team lead approves final flow\n\n### Stage 4: Automation Execution\n- Assign platform-specific routing for Twitter and LinkedIn\n- Keep a 14-day operating window for flexibility\n\n### Stage 5: Weekly Performance Review\n- Keep what performs\n- Rewrite what underperforms\n- Update prompt templates with observed winners\n\n## Why This Model Scales\n- Lower coordination overhead\n- Fewer accidental posts\n- Faster turnaround for client campaigns\n\n## Best Fit\n- Agencies managing multiple clients\n- Small teams that need predictable publishing velocity\n",
-    "featuredImage": {
-        "url": "/images/blog/suitegenie-launch-hero.svg",
-        "alt": "Agency team content operations board with approvals and automation lanes"
-    },
-    "author": {
-        "name": "Kanishk Saraswat",
-        "avatar": "/kanishk.png",
-        "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
-        "social": {
-            "linkedin": "kanishk-saraswat",
-            "twitter": "kanishksaraswat"
-        }
-    },
-    "publishDate": "2026-02-15T07:20:00+05:30",
-    "lastModified": "2026-02-15T07:20:00+05:30",
-    "readTime": 7,
-    "featured": false,
-    "status": "published",
-    "seo": {
-        "metaTitle": "Agency Team Workflow: Multi-Account Content Ops with SuiteGenie",
-        "metaDescription": "A complete use-case guide for agencies using SuiteGenie to run strategy, approvals, bulk generation, and flow automation across client accounts.",
-        "keywords": [
-            "agency social media workflow",
-            "multi account content operations",
-            "team approval social media"
-        ],
-        "canonicalUrl": "https://suitegenie.in/blogs/use-cases/agency-team-content-ops-use-case"
-    },
-    "schema": {
-        "type": "Article",
-        "faq": [
-            {
-                "question": "How often should agencies review generated content?",
-                "answer": "Run at least one weekly review cycle and one mid-cycle quality check to keep messaging sharp."
-            }
-        ]
+  "id": "team-content-ops-use-case",
+  "title": "How Agency Teams Use SuiteGenie for Workspace-Based Client Ops",
+  "slug": "agency-team-content-ops-use-case",
+  "category": "use-cases",
+  "tags": [
+    "agency workflow",
+    "team collaboration",
+    "approval workflow",
+    "multi-account"
+  ],
+  "excerpt": "See a practical agency workflow for client workspaces, approvals, queue planning, pooled credits, and cross-product publishing.",
+  "content": "## The Real Agency Problem\n\n> **Quick Answer:** Agencies do not usually fail because they cannot write. They fail because client approvals, context switching, and publishing handoffs create drag every single day.\n\n\nA modern agency stack needs more than a composer. It needs a repeatable operating model.\n\nThat is what Agency mode in SuiteGenie is designed to provide.\n\n## A Practical Agency Workflow\n\n### Stage 1: Create one workspace per client\nEach client gets a dedicated workspace with its own:\n- brand name\n- logo and timezone\n- attached social accounts\n- audience and tone context\n- assigned team members\n\nThis removes the \"which client are we in right now?\" problem before it starts.\n\n### Stage 2: Build context before generating\nInside the workspace, the team reviews:\n- brand notes\n- audience signals\n- competitor references\n- connected account context\n\nThat gives Tweet Genie, LinkedIn Genie, and Social Genie a stronger starting point than generic prompting.\n\n### Stage 3: Generate and refine inside the workspace\nThe team can then:\n- generate drafts\n- refine weak variants\n- move ideas into compose\n- send content to the approval queue\n\nBecause the work stays inside the workspace, the AI and delivery flow remain tied to the correct client context.\n\n### Stage 4: Share the approval link with the client\nInstead of copying drafts into email threads, the agency sends a client approval link.\n\nThat lets the client:\n- review pending drafts\n- approve or reject without logging in\n- leave comments directly on the draft\n\nThis shortens the feedback loop dramatically.\n\n### Stage 5: Lock the calendar and publish\nOnce content is approved, the agency schedules it in the workspace calendar and publishes through the connected Genie modules.\n\nThat creates one visible operating system for:\n- drafts\n- scheduled items\n- pending reviews\n- posted work\n\n### Stage 6: Review performance and regenerate smarter\nEach week the team looks at:\n- queue pressure\n- published output\n- platform insights\n- client feedback\n\nThen they regenerate from a better context instead of starting over from scratch.\n\n## Why This Model Scales\n- lower coordination overhead across clients\n- less brand confusion between accounts\n- cleaner approval loops\n- stronger visibility into what is scheduled and what is blocked\n- pooled credit usage across the agency instead of fragmented per-user guessing\n\n## Best Fit\n- agencies managing multiple active client accounts\n- lean teams that need approvals without account-sharing chaos\n- operators who want one workspace to connect planning, AI generation, review, and publishing\n\n## Final Takeaway\n\nThe value is not only better AI output. It is operational calm. When context, approvals, queueing, and publishing all stay inside the same client workspace, agencies waste less time on handoffs and more time on actual delivery.\n\n## Related Reading\n\n- [SuiteGenie vs Hootsuite: Which is Better for Agencies?](/blogs/comparisons/suitegenie-vs-hootsuite)\n- [What Reliable Social Media Automation Actually Needs](/blogs/insights/what-reliable-social-automation-actually-needs)\n- [Introducing SuiteGenie: AI-Powered Social Media Automation](/blogs/updates/introducing-suitegenie-ai-powered-social-media-automation)\n",
+  "featuredImage": {
+    "url": "/images/blog/suitegenie-launch-hero.svg",
+    "alt": "Agency workspace dashboard with client approvals, queue planning, and publishing lanes"
+  },
+  "author": {
+    "name": "Kanishk Saraswat",
+    "avatar": "/kanishk.png",
+    "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+    "social": {
+      "linkedin": "kanishk-saraswat",
+      "twitter": "kanishksaraswat"
     }
+  },
+  "publishDate": "2026-02-15T07:20:00+05:30",
+  "lastModified": "2026-04-04T18:15:00+05:30",
+  "readTime": 7,
+  "featured": false,
+  "status": "published",
+  "seo": {
+    "metaTitle": "Agency Workflow: Client Workspaces, Approvals, and Publishing with SuiteGenie",
+    "metaDescription": "See how agencies use SuiteGenie workspaces for client approvals, queue planning, pooled credits, and cross-product publishing.",
+    "keywords": [
+      "agency social media workflow",
+      "multi account content operations",
+      "team approval social media"
+    ],
+    "canonicalUrl": "https://suitegenie.in/blogs/use-cases/agency-team-content-ops-use-case"
+  },
+  "schema": {
+    "type": "Article",
+    "faq": [
+      {
+        "question": "What makes Agency mode different from a normal team workspace?",
+        "answer": "Agency mode is organized around client workspaces, pooled credits, public approval links, and workspace-scoped publishing instead of one shared internal content area."
+      }
+    ]
+  }
 }

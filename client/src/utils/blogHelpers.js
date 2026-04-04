@@ -49,6 +49,9 @@ const stripMarkdown = (value = '') =>
     .replace(/\s+/g, ' ')
     .trim();
 
+export const getPostFreshnessTimestamp = (post = {}) =>
+  new Date(post.lastModified || post.publishDate).getTime();
+
 export const calculateReadTime = (content = '') => {
   const words = stripMarkdown(content)
     .split(/\s+/)
@@ -62,6 +65,26 @@ export const formatDate = (isoDate) =>
     day: 'numeric',
     year: 'numeric',
   }).format(new Date(isoDate));
+
+export const getPostDisplayDate = (post = {}) => {
+  const publishDate = post.publishDate ? new Date(post.publishDate) : null;
+  const lastModified = post.lastModified ? new Date(post.lastModified) : null;
+
+  if (
+    publishDate &&
+    lastModified &&
+    Number.isFinite(lastModified.getTime()) &&
+    lastModified.getTime() > publishDate.getTime()
+  ) {
+    return `Updated ${formatDate(post.lastModified)}`;
+  }
+
+  if (publishDate && Number.isFinite(publishDate.getTime())) {
+    return formatDate(post.publishDate);
+  }
+
+  return '';
+};
 
 export const truncateText = (value = '', limit = 100) => {
   const normalized = String(value).trim();
@@ -366,7 +389,7 @@ export const searchPosts = (query = '', posts = [], searchIndex = []) => {
     .filter((entry) => entry.score > 0)
     .sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
-      return new Date(b.post.publishDate).getTime() - new Date(a.post.publishDate).getTime();
+      return getPostFreshnessTimestamp(b.post) - getPostFreshnessTimestamp(a.post);
     })
     .map((entry) => entry.post);
 };

@@ -16,14 +16,14 @@ const UpgradePrompt = ({
   const { user } = useAuth();
 
   const proFeatures = [
-    "Unlimited automated posts",
+    "Internal team mode for up to 5 members",
     "Advanced AI content generation",
     "Smart automation flows",
     "Detailed analytics & insights",
     "Multi-account management (up to 8)",
     "Bulk content generation",
     "Priority email support",
-    "100 platform credits (180 with BYOK)"
+    "120 platform credits (220 with BYOK)"
   ];
   const displayFeatures = Array.isArray(benefits) && benefits.length > 0 ? benefits : proFeatures;
 
@@ -67,19 +67,6 @@ const UpgradePrompt = ({
             </div>
           ))}
         </div>
-
-        {/* Pricing */}
-        {/* <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 mb-6">
-          <div className="text-center">
-            <div className="flex items-baseline justify-center mb-2">
-              <span className="text-3xl font-bold text-gray-900">Rs 399</span>
-              <span className="text-gray-500 ml-1">/month</span>
-            </div>
-            <p className="text-sm text-gray-600">
-              After 14-day trial
-            </p>
-          </div>
-        {/* </div> */}
 
         {/* Action buttons */}
         <div className="space-y-3">

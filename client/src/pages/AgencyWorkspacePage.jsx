@@ -1007,10 +1007,12 @@ const AgencyWorkspacePage = () => {
     }
   };
 
-  const loadAnalysisSummary = async ({ silent = false } = {}) => {
+  const loadAnalysisSummary = async ({ silent = false, forceRefresh = false } = {}) => {
     if (!silent) setAnalysisLoading(true);
     try {
-      const response = await api.get(`/agency/workspaces/${workspaceId}/analysis/summary`);
+      const response = await api.get(`/agency/workspaces/${workspaceId}/analysis/summary`, {
+        params: forceRefresh ? { refresh: true } : undefined,
+      });
       setAnalysisSummary((response?.data?.analysis) || EMPTY_ANALYSIS_SUMMARY);
     } catch (error) {
       if (!silent) {
@@ -2487,6 +2489,12 @@ const AgencyWorkspacePage = () => {
     setShowPromptInput(true);
     if (recommendedModes.length > 0) {
       setSelectedGenerationModes(recommendedModes);
+      const recommendedTargets = attachedAccounts
+        .filter((account) => recommendedModes.includes(String(account?.platform || '').toLowerCase()))
+        .map((account) => account.id);
+      if (recommendedTargets.length > 0) {
+        setPublisherTargets(recommendedTargets);
+      }
     }
     setActiveWorkspaceTab('compose');
     focusSection('compose');

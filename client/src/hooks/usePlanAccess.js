@@ -38,6 +38,7 @@ export const usePlanAccess = () => {
       'multi_accounts': userPlan.type !== 'free',
       'priority_support': userPlan.type !== 'free',
       'team_collaboration': userPlan.type === 'pro' || userPlan.type === 'agency' || userPlan.type === 'enterprise',
+      'automation': Boolean(userPlan.automationAccess?.active),
       'own_keys': true, // Available to all users
       'basic_ai_generation': true, // Available to all users
       'built_in_keys': true // Available to all users

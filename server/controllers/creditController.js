@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import CreditService from '../services/creditService.js';
 import agencyCreditService from '../services/agencyCreditService.js';
+import { TeamCreditService } from '../services/teamCreditService.js';
 
 const roundCredits = (value) => {
   const parsed = Number.parseFloat(value);
@@ -48,24 +49,40 @@ const normalizeAgencyContext = (req) => {
   };
 };
 
-const resolveCreditScope = (req) => {
+const resolveRequestedTeamId = (req) =>
+  String(
+    req.headers['x-team-id'] ||
+    req.user?.current_team_id ||
+    req.user?.team_id ||
+    req.user?.teamId ||
+    req.user?.team_memberships?.[0]?.team_id ||
+    req.user?.team_memberships?.[0]?.teamId ||
+    ''
+  ).trim() || null;
+
+const resolveCreditScope = async (req) => {
   try {
     const agency = normalizeAgencyContext(req);
     if (agency) {
-      return { scope: 'agency', agency };
+      return { scope: 'agency', agency, teamId: null };
     }
   } catch (error) {
     throw error;
   }
 
-  return { scope: 'personal', agency: null };
+  const teamId = await TeamCreditService.resolveTeamContext(req.user?.id, resolveRequestedTeamId(req));
+  if (teamId) {
+    return { scope: 'team', agency: null, teamId };
+  }
+
+  return { scope: 'personal', agency: null, teamId: null };
 };
 
 class CreditController {
   static async getBalance(req, res) {
     try {
       const userId = req.user.id;
-      const { scope, agency } = resolveCreditScope(req);
+      const { scope, agency, teamId } = await resolveCreditScope(req);
 
       if (scope === 'agency') {
         const balance = await agencyCreditService.getBalance(agency.agencyId);
@@ -76,6 +93,17 @@ class CreditController {
           scope: 'agency',
           agencyId: agency.agencyId,
           workspaceId: agency.workspaceId,
+        });
+      }
+
+      if (scope === 'team') {
+        const { credits } = await TeamCreditService.getCredits(userId, teamId);
+        return res.json({
+          balance: credits,
+          creditsRemaining: credits,
+          source: 'team',
+          scope: 'team',
+          teamId,
         });
       }
 
@@ -108,7 +136,7 @@ class CreditController {
       }
 
       const amount = roundCredits(cost);
-      const { scope, agency } = resolveCreditScope(req);
+      const { scope, agency, teamId } = await resolveCreditScope(req);
 
       if (scope === 'agency') {
         const result = await agencyCreditService.deductCredits({
@@ -145,6 +173,19 @@ class CreditController {
         });
       }
 
+      if (scope === 'team') {
+        const result = await TeamCreditService.deductCredits(userId, teamId, amount, operation, description);
+        return res.json({
+          message: 'Credits deducted successfully',
+          creditsDeducted: result.creditsDeducted,
+          creditsRemaining: result.creditsRemaining,
+          transactionId: result.transactionId,
+          source: 'team',
+          scope: 'team',
+          teamId,
+        });
+      }
+
       const result = await CreditService.deductCredits(userId, operation, description, amount);
       return res.json({
         message: 'Credits deducted successfully',
@@ -169,7 +210,7 @@ class CreditController {
       const page = parseInt(req.query.page, 10) || 1;
       const limit = parseInt(req.query.limit, 10) || 20;
       const type = req.query.type || null;
-      const { scope, agency } = resolveCreditScope(req);
+      const { scope, agency, teamId } = await resolveCreditScope(req);
 
       if (scope === 'agency') {
         const result = await agencyCreditService.getUsageHistory(agency.agencyId, { page, limit, type });
@@ -179,6 +220,16 @@ class CreditController {
           scope: 'agency',
           agencyId: agency.agencyId,
           workspaceId: agency.workspaceId,
+        });
+      }
+
+      if (scope === 'team') {
+        const result = await TeamCreditService.getTransactionHistory(userId, teamId, page, limit, type);
+        return res.json({
+          ...result,
+          source: 'team',
+          scope: 'team',
+          teamId,
         });
       }
 
@@ -216,7 +267,7 @@ class CreditController {
         });
       }
 
-      const { scope, agency } = resolveCreditScope(req);
+      const { scope, agency, teamId } = await resolveCreditScope(req);
 
       if (scope === 'agency') {
         const result = await agencyCreditService.addCredits({
@@ -238,6 +289,37 @@ class CreditController {
           scope: 'agency',
           agencyId: agency.agencyId,
           workspaceId: agency.workspaceId,
+        });
+      }
+
+      if (scope === 'team') {
+        const transactionData = {
+          costInRupees,
+          razorpayOrderId,
+          razorpayPaymentId,
+          razorpaySignature,
+        };
+        const transactionType =
+          costInRupees || razorpayOrderId || razorpayPaymentId || razorpaySignature
+            ? 'purchase'
+            : 'refund';
+        const result = await TeamCreditService.addCredits(
+          userId,
+          teamId,
+          amount,
+          description,
+          transactionData,
+          { type: transactionType }
+        );
+
+        return res.json({
+          message: 'Credits added successfully',
+          creditsAdded: result.creditsAdded,
+          creditsRemaining: result.creditsRemaining,
+          transactionId: result.transactionId,
+          source: 'team',
+          scope: 'team',
+          teamId,
         });
       }
 
@@ -278,7 +360,7 @@ class CreditController {
         });
       }
 
-      const { scope, agency } = resolveCreditScope(req);
+      const { scope, agency, teamId } = await resolveCreditScope(req);
 
       if (scope === 'agency') {
         const costs = CreditService.getCreditCosts();
@@ -293,6 +375,21 @@ class CreditController {
           scope: 'agency',
           agencyId: agency.agencyId,
           workspaceId: agency.workspaceId,
+        });
+      }
+
+      if (scope === 'team') {
+        const costs = CreditService.getCreditCosts();
+        const cost = roundCredits(costs[operation] || 1);
+        const result = await TeamCreditService.checkCredits(userId, teamId, cost);
+        return res.json({
+          hasSufficient: result.success,
+          currentBalance: result.available,
+          requiredCredits: cost,
+          operation,
+          source: 'team',
+          scope: 'team',
+          teamId,
         });
       }
 

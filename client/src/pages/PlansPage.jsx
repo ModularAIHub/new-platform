@@ -19,6 +19,7 @@ const PlansPage = () => {
   const { userPlan, refreshPlanInfo } = usePlanAccess();
   const [openFaq, setOpenFaq] = useState(null);
   const [upgrading, setUpgrading] = useState(false);
+  const [addonCheckoutLoading, setAddonCheckoutLoading] = useState('');
   const [agencyBillingLoading, setAgencyBillingLoading] = useState(false);
   const [agencyBillingBusyAction, setAgencyBillingBusyAction] = useState('');
   const [agencyBilling, setAgencyBilling] = useState({ subscription: null, invoices: [] });
@@ -29,6 +30,25 @@ const PlansPage = () => {
     user?.plan_type ||
     'free'
   ).toLowerCase();
+  const automationAccess = userPlan?.automationAccess || { active: false, packages: [] };
+  const agencyAddonAccess = userPlan?.agencyAddonAccess || {
+    active: false,
+    packages: [],
+    features: {
+      whiteLabelEnabled: false,
+      reportingExportEnabled: false,
+      mediaLibraryEnabled: false,
+      mediaLibraryStorageGb: 0,
+    },
+    limits: null,
+  };
+  const hasSoloAutomation = automationAccess.packages?.some((pkg) => pkg.packageId === 'solo_automation');
+  const hasAgencyAutomation = automationAccess.packages?.some((pkg) => pkg.packageId === 'agency_automation');
+  const extraSeatQuantity = Number(agencyAddonAccess.packages?.find((pkg) => pkg.packageId === 'agency_extra_seat')?.quantity || 0);
+  const extraWorkspaceQuantity = Number(agencyAddonAccess.packages?.find((pkg) => pkg.packageId === 'agency_extra_workspace')?.quantity || 0);
+  const hasWhiteLabelAddon = agencyAddonAccess.packages?.some((pkg) => pkg.packageId === 'agency_white_label');
+  const hasReportingExportAddon = agencyAddonAccess.packages?.some((pkg) => pkg.packageId === 'agency_reporting_export');
+  const hasMediaLibraryAddon = agencyAddonAccess.packages?.some((pkg) => pkg.packageId === 'agency_media_library');
 
   const toggleFaq = (index) => {
     setOpenFaq(openFaq === index ? null : index);
@@ -61,16 +81,17 @@ const PlansPage = () => {
   const plans = [
     {
       name: 'Free',
+      displayName: 'Free',
       price: 'Free',
       monthlyPrice: '$0',
-      description: 'For solo testing and light publishing.',
+      description: 'For testing the workflow, connecting a couple of accounts, and learning how SuiteGenie operates before you scale.',
       features: [
-        'Manual publishing across supported Genie modules',
-        'Basic AI drafting with platform credits or BYOK',
-        'Text generation only',
-        'Basic analytics and scheduling',
-        'Connection of Tweet Genie and LinkedIn Genie',
-        'Encrypted BYOK (OpenAI, Perplexity, Gemini)',
+        'Manual publishing across the Genie modules you connect',
+        'Basic AI drafting with SuiteGenie credits or BYOK',
+        'Starter scheduling and publishing history',
+        'Basic analytics',
+        'Starter access to Tweet Genie and LinkedIn Genie',
+        'Encrypted BYOK (OpenAI, Gemini, Perplexity)',
         '15 platform credits per month',
         '50 BYOK credits per month',
       ],
@@ -80,21 +101,22 @@ const PlansPage = () => {
     },
     {
       name: 'Pro',
-      price: 'Rs 399',
-      monthlyPrice: 'Rs 399',
-      monthlyPriceUsdApprox: `~$${toUsdApprox(399)}`,
-      description: 'Best for solo operators and internal teams that need stronger AI, more accounts, and collaboration.',
+      displayName: 'Pro',
+      price: 'Rs 499',
+      monthlyPrice: 'Rs 499',
+      monthlyPriceUsdApprox: `~$${toUsdApprox(499)}`,
+      description: 'Best for solo operators and lean internal teams who need stronger AI, more channels, and shared collaboration.',
       features: [
         'Everything in Free',
         'Higher-quality AI generation and image generation',
         'Bulk content generation and strategy builder',
-        'Teams mode: collaborate with up to 5 members',
-        'Connect up to 8 social accounts (any mix: Twitter, LinkedIn, etc.)',
+        'Internal team mode with up to 5 members',
+        'Connect up to 8 social accounts across supported modules',
         'Role-based access control (Owner, Admin, Editor, Viewer)',
-        'Automation scales with your included credits or BYOK usage',
+        'Automation-ready workflows through credits and BYOK',
         'Advanced analytics and insights',
-        '100 platform credits per month',
-        '180 BYOK credits per month',
+        '120 platform credits per month',
+        '220 BYOK credits per month',
         'Priority support',
       ],
       notIncluded: [],
@@ -103,22 +125,23 @@ const PlansPage = () => {
     },
     {
       name: 'Agency',
-      price: 'Rs 1599',
-      monthlyPrice: 'Rs 1599',
-      monthlyPriceUsdApprox: `~$${toUsdApprox(1599)}`,
-      description: 'Client workspaces, approvals, pooled credits, and delivery ops for agencies.',
+      displayName: 'Agency',
+      price: 'Rs 2499',
+      monthlyPrice: 'Rs 2499',
+      monthlyPriceUsdApprox: `~$${toUsdApprox(2499)}`,
+      description: 'Built for client delivery: workspaces, approvals, pooled credits, and calmer publishing operations at agency scale.',
       features: [
         '6 client workspaces (included)',
         '6 seats total including owner (included)',
         'Client workspace management: brand, logo, timezone, pause/archive',
         'Assign team members to specific client workspaces',
         'Roles: Admin, Editor, Viewer with workspace-level access control',
-        'Attach workspace accounts across Twitter, LinkedIn, Threads, Instagram',
+        'Attach workspace accounts across X, LinkedIn, Threads, and staged Social Genie rollouts',
         'Launch Tweet Genie, LinkedIn Genie, and Social Genie from workspace context',
-        'Client approval links, workspace publishing, and a shared client calendar',
+        'Client approval links, workspace publishing, and shared client calendar views',
         'Pooled agency credits across all workspaces',
-        '800 platform credits per month for the agency pool',
-        '1400 BYOK credits per month for the agency pool',
+        '900 platform credits per month for the agency pool',
+        '1800 BYOK credits per month for the agency pool',
         'Shared analytics summary per workspace',
         'Priority support',
       ],
@@ -129,11 +152,13 @@ const PlansPage = () => {
   ];
 
   const comparisonFeatures = [
-    { name: 'Primary use case', free: 'Solo testing', pro: 'Solo + internal teams', agency: 'Client workspaces' },
+    { name: 'Best for', free: 'Testing and setup', pro: 'Solo + internal teams', agency: 'Client workspaces' },
+    { name: 'Ownership scope', free: 'Personal', pro: 'Personal or team', agency: 'Agency pool' },
     { name: 'AI quality mode', free: 'Basic AI', pro: 'Upgraded AI', agency: 'Upgraded AI + workspace context' },
-    { name: 'Monthly credits (Platform)', free: '15', pro: '100', agency: '800 pooled' },
-    { name: 'Monthly credits (BYOK)', free: '50', pro: '180', agency: '1400 pooled' },
-    { name: 'Social accounts', free: '2 starter connections', pro: '8 (any mix)', agency: 'Per workspace allocation' },
+    { name: 'Monthly credits (Platform)', free: '15', pro: '120', agency: '900 pooled' },
+    { name: 'Monthly credits (BYOK)', free: '50', pro: '220', agency: '1800 pooled' },
+    { name: 'Connected accounts', free: '2 starter connections', pro: 'Up to 8', agency: 'Per workspace allocation' },
+    { name: 'Automation path', free: 'Starter only', pro: 'Credits + BYOK', agency: 'Pooled credits + BYOK' },
     { name: 'Analytics', free: 'Basic', pro: 'Advanced', agency: 'Workspace-level reporting' },
     { name: 'Image generation', free: false, pro: true, agency: true },
     { name: 'Bulk generation', free: false, pro: true, agency: true },
@@ -146,7 +171,7 @@ const PlansPage = () => {
   const faqs = [
     {
       question: 'How do I upgrade to Pro?',
-      answer: `Click 'Upgrade to Pro', complete the secure Razorpay checkout, and your account will be upgraded for Rs 399/month (about $${toUsdApprox(399)}/month).`
+      answer: `Click 'Upgrade to Pro', complete the secure Razorpay checkout, and your account will be upgraded for Rs 499/month (about $${toUsdApprox(499)}/month).`
     },
     {
       question: 'Can I change plans at any time?',
@@ -154,7 +179,7 @@ const PlansPage = () => {
     },
     {
       question: 'What social platforms do you support?',
-      answer: 'We currently support Twitter, LinkedIn, and WordPress with more platforms coming soon. Both Free and Pro plans include access to all supported platforms.'
+      answer: 'SuiteGenie currently supports X/Twitter and LinkedIn deeply, with Social Genie handling Threads and staged Instagram or YouTube rollouts based on workspace availability and deployment settings.'
     },
     {
       question: 'Is there a setup fee or contract?',
@@ -162,7 +187,7 @@ const PlansPage = () => {
     },
     {
       question: 'How does the AI content generation work?',
-      answer: 'Our AI analyzes your brand voice, industry trends, and engagement patterns to create personalized content that resonates with your audience across all platforms.'
+      answer: 'Our AI uses the credits attached to your plan or your own BYOK setup to generate drafts, refinements, strategy outputs, and analysis. In Agency mode, that context is pooled at the workspace and agency level instead of acting like a blank personal account.'
     },
     /* {
       question: 'Can I get a refund if I\'m not satisfied?',
@@ -171,7 +196,7 @@ const PlansPage = () => {
 
     {
       question: 'What kind of support do you provide?',
-      answer: 'Free users get community support. Pro users get priority email support to help you move faster.'
+      answer: 'Free users get starter support. Pro and Agency customers get faster priority support so active publishing workflows are not blocked for long.'
     },
     {
       question: 'Where do I manage my team after upgrading to Pro?',
@@ -179,17 +204,207 @@ const PlansPage = () => {
     },
     {
       question: 'How do I start with Agency plan?',
-      answer: `Click 'Upgrade to Agency', complete the secure Razorpay subscription checkout, and your account will be upgraded to Agency for Rs 1599/month (about $${toUsdApprox(1599)}/month).`
+      answer: `Click 'Upgrade to Agency', complete the secure Razorpay subscription checkout, and your account will be upgraded to Agency for Rs 2499/month (about $${toUsdApprox(2499)}/month).`
     },
     {
       question: 'Is automation a separate plan?',
-      answer: 'No. Automation depth rides on top of your base plan through credits and BYOK. Pro is the best fit for solo operators or internal teams, while Agency is for client workspaces and pooled delivery.'
+      answer: 'Automation is an add-on layer on top of a paid base plan. Standalone Automation sits on Pro, while Agency Automation sits on top of the Agency base plan for pooled client delivery.'
     },
     {
       question: 'How do agency credits work?',
       answer: 'Agency credits are pooled at the agency level and can be used across client workspaces. Publishing, approvals, comments, and scheduling stay workflow-native, while AI-heavy actions consume credits.'
+    },
+    {
+      question: 'Will there be automation add-ons later?',
+      answer: 'They are live now. Standalone Automation builds on Pro for solo workflows, and Agency Automation builds on Agency for client-workspace delivery.'
     }
   ];
+
+  const agencyExpansionAddons = [
+    {
+      id: 'agency_extra_seat',
+      title: 'Extra Seat',
+      priceLabel: '₹249 one-time',
+      description: 'Add 1 more permanent team seat to your Agency account for client delivery.',
+      active: false,
+      buttonText: '+1 Seat',
+      helper: extraSeatQuantity > 0 ? `${extraSeatQuantity} extra seat${extraSeatQuantity === 1 ? '' : 's'} active` : 'Stacks on top of the 6 seats already included.',
+    },
+    {
+      id: 'agency_extra_workspace',
+      title: 'Extra Workspace',
+      priceLabel: '₹349 one-time',
+      description: 'Add 1 more permanent client workspace when your base Agency allocation is full.',
+      active: false,
+      buttonText: '+1 Workspace',
+      helper: extraWorkspaceQuantity > 0 ? `${extraWorkspaceQuantity} extra workspace${extraWorkspaceQuantity === 1 ? '' : 's'} active` : 'Stacks on top of the 6 workspaces already included.',
+    },
+    {
+      id: 'agency_white_label',
+      title: 'White-label',
+      priceLabel: '₹999 one-time',
+      description: 'Unlock white-label controls for client approval links and future agency-facing surfaces.',
+      active: hasWhiteLabelAddon,
+      buttonText: hasWhiteLabelAddon ? 'Active' : 'Unlock White-label',
+      helper: hasWhiteLabelAddon ? 'White-label is active on this Agency account.' : 'Best for agencies presenting a branded client experience.',
+    },
+    {
+      id: 'agency_reporting_export',
+      title: 'Reporting Export',
+      priceLabel: '₹699 one-time',
+      description: 'Unlock premium reporting export controls for client-ready delivery and reporting workflows.',
+      active: hasReportingExportAddon,
+      buttonText: hasReportingExportAddon ? 'Active' : 'Unlock Reporting Export',
+      helper: hasReportingExportAddon ? 'Reporting export is active on this Agency account.' : 'Use this when your team needs client-facing report delivery.',
+    },
+    {
+      id: 'agency_media_library',
+      title: 'Media Library',
+      priceLabel: '₹499 one-time',
+      description: 'Unlock the shared Agency media library with 25 GB included workspace-ready storage.',
+      active: hasMediaLibraryAddon,
+      buttonText: hasMediaLibraryAddon ? 'Active' : 'Unlock Media Library',
+      helper: hasMediaLibraryAddon
+        ? `${agencyAddonAccess.features?.mediaLibraryStorageGb || 25} GB storage enabled for this Agency account.`
+        : 'Makes asset reuse cleaner across client workspaces.',
+    },
+  ];
+
+  const handleAddonCheckout = async (packageId) => {
+    if (addonCheckoutLoading) return;
+
+    if (!user) {
+      if (packageId === 'solo_automation') {
+        navigate('/register?plan=pro&intent=solo_automation');
+      } else if (packageId.startsWith('agency_')) {
+        navigate(`/register?plan=agency&intent=${packageId}`);
+      } else {
+        navigate(`/register?intent=${packageId}`);
+      }
+      return;
+    }
+
+    if (packageId === 'solo_automation' && currentIndividualPlanType === 'free') {
+      toast.error('Standalone Automation sits on top of Pro. Upgrade to Pro first.');
+      return;
+    }
+
+    if (packageId.startsWith('agency_') && currentIndividualPlanType !== 'agency') {
+      toast.error(packageId === 'agency_automation'
+        ? 'Agency Automation requires an active Agency plan first.'
+        : 'Agency expansion packs require an active Agency plan first.'
+      );
+      return;
+    }
+
+    setAddonCheckoutLoading(packageId);
+
+    try {
+      const isScriptLoaded = await loadRazorpayScript();
+      if (!isScriptLoaded) {
+        toast.error('Failed to load payment gateway. Please try again.');
+        return;
+      }
+
+      const orderResponse = await api.post('/payments/create-order', {
+        type: 'addon',
+        package: packageId,
+      });
+
+      const { orderId, amount, currency, description, demo } = orderResponse.data || {};
+
+      if (!orderId) {
+        toast.error('Failed to initialize automation checkout. Please try again.');
+        return;
+      }
+
+      if (demo) {
+        const confirmDemo = window.confirm(
+          `DEMO MODE: This is a simulated ${String(packageId || '').replace(/_/g, ' ')} activation. Continue?`
+        );
+
+        if (!confirmDemo) {
+          return;
+        }
+
+        const verifyResponse = await api.post('/payments/verify', {
+          razorpayOrderId: orderId,
+          razorpayPaymentId: 'demo_payment_id',
+          razorpaySignature: 'demo_signature',
+          demoOrderType: 'addon',
+          demoPackage: packageId,
+        });
+
+        await refreshUser();
+        await refreshPlanInfo();
+        toast.success(verifyResponse.data?.message || 'Add-on activated successfully.');
+        return;
+      }
+
+      const razorpayKey = orderResponse.data.razorpayKey || import.meta.env.VITE_RAZORPAY_KEY_ID || '';
+      if (!razorpayKey) {
+        toast.error('Payment configuration is incomplete. Please contact support.');
+        return;
+      }
+
+      if (!window.Razorpay) {
+        toast.error('Payment gateway failed to initialize. Please refresh and try again.');
+        return;
+      }
+
+      await new Promise((resolve, reject) => {
+        const razorpay = new window.Razorpay({
+          key: razorpayKey,
+          amount,
+          currency,
+          name: 'SuiteGenie',
+          description,
+          order_id: orderId,
+          handler: async (response) => {
+            try {
+              const verifyResponse = await api.post('/payments/verify', {
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature,
+              });
+
+              await refreshUser();
+              await refreshPlanInfo();
+              toast.success(verifyResponse.data?.message || 'Add-on activated successfully.');
+              resolve(verifyResponse.data);
+            } catch (verificationError) {
+              reject(verificationError);
+            }
+          },
+          prefill: {
+            name: user?.name || 'SuiteGenie User',
+            email: user?.email || undefined,
+          },
+          theme: {
+            color: '#2563eb',
+          },
+          modal: {
+            ondismiss: () => reject(new Error('CHECKOUT_DISMISSED')),
+          },
+        });
+
+        razorpay.on('payment.failed', (failure) => {
+          const reason = failure?.error?.description || 'Payment failed. Please try again.';
+          reject(new Error(reason));
+        });
+
+        razorpay.open();
+      });
+    } catch (error) {
+      if (error?.message === 'CHECKOUT_DISMISSED') {
+        toast.error('Payment was cancelled.');
+      } else {
+        toast.error(error?.response?.data?.error || error?.message || 'Failed to activate add-on.');
+      }
+    } finally {
+      setAddonCheckoutLoading('');
+    }
+  };
 
   const handleProUpgrade = async () => {
     const latestPlan = await refreshPlanInfo();
@@ -246,6 +461,8 @@ const PlansPage = () => {
           razorpayOrderId: orderId,
           razorpayPaymentId: 'demo_payment_id',
           razorpaySignature: 'demo_signature',
+          demoOrderType: 'plan',
+          demoPackage: 'pro',
         });
 
         await refreshUser();
@@ -539,7 +756,7 @@ const PlansPage = () => {
               {
                 '@type': 'Offer',
                 name: 'SuiteGenie Pro',
-                price: '399',
+                price: '499',
                 priceCurrency: 'INR',
                 availability: 'https://schema.org/InStock',
                 url: 'https://suitegenie.in/plans',
@@ -547,7 +764,63 @@ const PlansPage = () => {
               {
                 '@type': 'Offer',
                 name: 'SuiteGenie Agency',
-                price: '1599',
+                price: '2499',
+                priceCurrency: 'INR',
+                availability: 'https://schema.org/InStock',
+                url: 'https://suitegenie.in/plans',
+              },
+              {
+                '@type': 'Offer',
+                name: 'SuiteGenie Standalone Automation Add-on',
+                price: '799',
+                priceCurrency: 'INR',
+                availability: 'https://schema.org/InStock',
+                url: 'https://suitegenie.in/plans',
+              },
+              {
+                '@type': 'Offer',
+                name: 'SuiteGenie Agency Automation Add-on',
+                price: '2999',
+                priceCurrency: 'INR',
+                availability: 'https://schema.org/InStock',
+                url: 'https://suitegenie.in/plans',
+              },
+              {
+                '@type': 'Offer',
+                name: 'SuiteGenie Agency Extra Seat',
+                price: '249',
+                priceCurrency: 'INR',
+                availability: 'https://schema.org/InStock',
+                url: 'https://suitegenie.in/plans',
+              },
+              {
+                '@type': 'Offer',
+                name: 'SuiteGenie Agency Extra Workspace',
+                price: '349',
+                priceCurrency: 'INR',
+                availability: 'https://schema.org/InStock',
+                url: 'https://suitegenie.in/plans',
+              },
+              {
+                '@type': 'Offer',
+                name: 'SuiteGenie Agency White-label',
+                price: '999',
+                priceCurrency: 'INR',
+                availability: 'https://schema.org/InStock',
+                url: 'https://suitegenie.in/plans',
+              },
+              {
+                '@type': 'Offer',
+                name: 'SuiteGenie Agency Reporting Export',
+                price: '699',
+                priceCurrency: 'INR',
+                availability: 'https://schema.org/InStock',
+                url: 'https://suitegenie.in/plans',
+              },
+              {
+                '@type': 'Offer',
+                name: 'SuiteGenie Agency Media Library',
+                price: '499',
                 priceCurrency: 'INR',
                 availability: 'https://schema.org/InStock',
                 url: 'https://suitegenie.in/plans',
@@ -699,7 +972,7 @@ const PlansPage = () => {
               )}
 
               <div className="text-center mb-8">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.displayName || plan.name}</h3>
                 <p className="text-gray-600 mb-4">{plan.description}</p>
                 <div className="flex items-baseline justify-center">
                   <span className="text-4xl font-bold text-gray-900">{plan.monthlyPrice}</span>
@@ -766,6 +1039,94 @@ const PlansPage = () => {
               </button>
             </div>
           ))}
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 pb-8 sm:px-6 lg:px-8">
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 md:p-8">
+          <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+            <div className="max-w-3xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-700">Automation + Add-ons</p>
+              <h3 className="mt-2 text-2xl font-bold text-slate-900">Automation add-ons now sit on the right paid base</h3>
+              <p className="mt-3 text-slate-700">
+                Buy only the automation layer you need, but keep the ownership model clean. Standalone Automation builds on Pro, while Agency Automation builds on Agency.
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 md:w-[520px]">
+              <div className="rounded-xl border border-white bg-white p-4">
+                <p className="text-sm font-semibold text-slate-900">Standalone Automation</p>
+                <p className="mt-1 text-sm text-slate-600">₹799 / 30 days. Best for solo operators on Pro who want recurring generation and deeper automation without moving into Agency.</p>
+                <button
+                  type="button"
+                  onClick={() => handleAddonCheckout('solo_automation')}
+                  disabled={addonCheckoutLoading !== '' || hasSoloAutomation || (Boolean(user) && currentIndividualPlanType === 'free')}
+                  className="mt-4 w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {hasSoloAutomation ? 'Automation Active' : Boolean(user) && currentIndividualPlanType === 'free' ? 'Requires Pro Plan' : addonCheckoutLoading === 'solo_automation' ? 'Processing...' : 'Activate Standalone Automation'}
+                </button>
+              </div>
+              <div className="rounded-xl border border-white bg-white p-4">
+                <p className="text-sm font-semibold text-slate-900">Agency Automation</p>
+                <p className="mt-1 text-sm text-slate-600">₹2999 / 30 days. Adds a deeper automation layer to Agency workspaces, approvals, and pooled client operations.</p>
+                <button
+                  type="button"
+                  onClick={() => handleAddonCheckout('agency_automation')}
+                  disabled={addonCheckoutLoading !== '' || hasAgencyAutomation || currentIndividualPlanType !== 'agency'}
+                  className="mt-4 w-full rounded-lg border border-amber-300 bg-amber-100 px-4 py-2.5 text-sm font-medium text-amber-900 hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {hasAgencyAutomation ? 'Agency Automation Active' : currentIndividualPlanType !== 'agency' ? 'Requires Agency Plan' : addonCheckoutLoading === 'agency_automation' ? 'Processing...' : 'Activate Agency Automation'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 pb-8 sm:px-6 lg:px-8">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 md:p-8">
+          <div className="max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Agency Expansion Packs</p>
+            <h3 className="mt-2 text-2xl font-bold text-slate-900">Add the extra Agency capacity and delivery features when you need them</h3>
+            <p className="mt-3 text-slate-600">
+              These are one-time Agency upgrades. Seats and workspaces stack on top of your included limits, while white-label, reporting export, and media library unlock once for the whole Agency account.
+            </p>
+          </div>
+          <div className="mt-6 grid gap-4 lg:grid-cols-3">
+            {agencyExpansionAddons.map((addon) => {
+              const requiresAgencyPlan = currentIndividualPlanType !== 'agency';
+              const isProcessing = addonCheckoutLoading === addon.id;
+              const isDisabled = addonCheckoutLoading !== '' || addon.active || requiresAgencyPlan;
+
+              return (
+                <div key={addon.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">{addon.title}</p>
+                      <p className="mt-1 text-sm text-slate-600">{addon.description}</p>
+                    </div>
+                    <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-700">
+                      {addon.priceLabel}
+                    </span>
+                  </div>
+                  <p className="mt-4 text-xs text-slate-500">{addon.helper}</p>
+                  <button
+                    type="button"
+                    onClick={() => handleAddonCheckout(addon.id)}
+                    disabled={isDisabled}
+                    className="mt-4 w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-900 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {addon.active
+                      ? addon.buttonText
+                      : requiresAgencyPlan
+                        ? 'Requires Agency Plan'
+                        : isProcessing
+                          ? 'Processing...'
+                          : addon.buttonText}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
