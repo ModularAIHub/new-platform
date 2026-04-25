@@ -1278,8 +1278,11 @@ export function createAgencyWorkspaceContentController(deps) {
         };
       });
 
-      const successCount = results.filter((result) => result.status === 'posted').length;
-      const failedCount = results.length - successCount;
+      const published = results.filter((result) => result.status === 'posted');
+      const failed = results.filter((result) => result.status === 'failed');
+
+      const successCount = published.length;
+      const failedCount = failed.length;
 
       await logAudit(agency.id, req.user.id, 'workspace_publish_fanout', 'agency_workspace', workspace.id, {
         workspaceId: workspace.id,
@@ -1297,6 +1300,8 @@ export function createAgencyWorkspaceContentController(deps) {
           failedCount,
           postMode: normalizedMode,
         },
+        published,
+        failed,
         results,
       });
     } catch (error) {

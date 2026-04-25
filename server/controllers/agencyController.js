@@ -716,56 +716,100 @@ async function invokeInternalToolEndpoint({ tool, path, userId, teamId = null, m
     throw apiError(`Downstream API URL is missing for "${tool}"`, 'DOWNSTREAM_API_URL_MISSING', 500);
   }
 
-  let response;
-  try {
-    response = await fetch(`${baseUrl}${path}`, {
-      method,
-      headers: buildWorkspacePublishHeaders({ userId, teamId }),
-      ...(body === null ? {} : { body: JSON.stringify(body || {}) }),
+  const workspaceId = body && typeof body === 'object'
+    ? (cleanText(body.workspaceId, null) || cleanText(body.workspace_id, null))
+    : null;
+  const draftId = body && typeof body === 'object'
+    ? (cleanText(body.draftId, null) || cleanText(body.draft_id, null))
+    : null;
+
+  const waitMs = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const shouldRetryStatus = (status) => status === 502 || status === 503;
+
+  const logInternalFailure = (response, errorMessage) => {
+    console.error('[INTERNAL_CALL_FAILED]', {
+      tool,
+      path,
+      status: response?.status,
+      error: errorMessage,
+      workspaceId,
+      draftId,
     });
-  } catch (error) {
+  };
+
+  const executeCall = async () => {
+    let response;
+    try {
+      response = await fetch(`${baseUrl}${path}`, {
+        method,
+        headers: buildWorkspacePublishHeaders({ userId, teamId }),
+        ...(body === null ? {} : { body: JSON.stringify(body || {}) }),
+      });
+    } catch (error) {
+      throw { response: null, errorMessage: error?.message || 'fetch failed', originalError: error };
+    }
+
+    let payload = {};
+    try {
+      payload = await response.json();
+    } catch {
+      payload = {};
+    }
+
+    if (!response.ok) {
+      throw {
+        response,
+        payload,
+        errorMessage:
+          cleanText(payload?.error, `Downstream ${tool} publish failed`) || `Downstream ${tool} publish failed`,
+      };
+    }
+
+    return payload;
+  };
+  try {
+    return await executeCall();
+  } catch (firstError) {
+    if (shouldRetryStatus(firstError?.response?.status)) {
+      await waitMs(2000);
+      try {
+        return await executeCall();
+      } catch (retryError) {
+        logInternalFailure(retryError?.response, retryError?.errorMessage || 'Internal call failed after retry');
+        const err = apiError(
+          retryError?.errorMessage || `Downstream ${tool} publish failed`,
+          cleanText(retryError?.payload?.code, 'DOWNSTREAM_PUBLISH_FAILED') || 'DOWNSTREAM_PUBLISH_FAILED',
+          retryError?.response?.status >= 400 && retryError?.response?.status < 500 ? retryError.response.status : 502
+        );
+        err.downstream = {
+          tool,
+          path,
+          status: retryError?.response?.status,
+          payload: retryError?.payload || {},
+        };
+        throw err;
+      }
+    }
+
+    logInternalFailure(firstError?.response, firstError?.errorMessage || 'Internal call failed');
     const friendlyMessages = {
       twitter: 'Twitter / X channel is temporarily unavailable. Our team has been notified.',
       linkedin: 'LinkedIn channel is temporarily unavailable. Our team has been notified.',
       social: 'Social channels are temporarily unavailable. Our team has been notified.',
     };
     const err = apiError(
-      friendlyMessages[tool] || `${tool} channel is temporarily unavailable. Our team has been notified.`,
-      'DOWNSTREAM_SERVICE_UNAVAILABLE',
-      502
+      firstError?.errorMessage || friendlyMessages[tool] || `${tool} channel is temporarily unavailable. Our team has been notified.`,
+      cleanText(firstError?.payload?.code, 'DOWNSTREAM_PUBLISH_FAILED') || 'DOWNSTREAM_PUBLISH_FAILED',
+      firstError?.response?.status >= 400 && firstError?.response?.status < 500 ? firstError.response.status : 502
     );
     err.downstream = {
       tool,
       path,
-      baseUrl,
-      message: error?.message || 'fetch failed',
+      status: firstError?.response?.status,
+      payload: firstError?.payload || {},
     };
     throw err;
   }
-
-  let payload = {};
-  try {
-    payload = await response.json();
-  } catch {
-    payload = {};
-  }
-
-  if (!response.ok) {
-    const err = apiError(
-      cleanText(payload?.error, `Downstream ${tool} publish failed`) || `Downstream ${tool} publish failed`,
-      cleanText(payload?.code, 'DOWNSTREAM_PUBLISH_FAILED') || 'DOWNSTREAM_PUBLISH_FAILED',
-      response.status >= 400 && response.status < 500 ? response.status : 502
-    );
-    err.downstream = {
-      tool,
-      path,
-      status: response.status,
-      payload,
-    };
-    throw err;
-  }
-
-  return payload;
 }
 
 async function invokeInternalPublishEndpoint(args) {
@@ -791,46 +835,81 @@ async function uploadWorkspaceMediaToSocialStorage(file) {
   const blob = new Blob([file.buffer], { type: file.mimetype || 'application/octet-stream' });
   form.append('file', blob, file.originalname);
 
-  let response;
-  try {
-    response = await fetch(`${baseUrl}/api/internal/media/upload`, {
-      method: 'POST',
-      headers: {
-        'x-internal-api-key': internalApiKey,
-      },
-      body: form,
+  const waitMs = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const shouldRetryStatus = (status) => status === 502 || status === 503;
+  const logInternalFailure = (response, errorMessage) => {
+    console.error('[INTERNAL_CALL_FAILED]', {
+      tool: 'social',
+      path: '/api/internal/media/upload',
+      status: response?.status,
+      error: errorMessage,
+      workspaceId: null,
+      draftId: null,
     });
-  } catch (error) {
+  };
+
+  const executeUpload = async () => {
+    let response;
+    try {
+      response = await fetch(`${baseUrl}/api/internal/media/upload`, {
+        method: 'POST',
+        headers: {
+          'x-internal-api-key': internalApiKey,
+        },
+        body: form,
+      });
+    } catch (error) {
+      throw { response: null, errorMessage: error?.message || 'fetch failed', originalError: error };
+    }
+
+    let payload = {};
+    try {
+      payload = await response.json();
+    } catch {
+      payload = {};
+    }
+
+    if (!response.ok) {
+      throw {
+        response,
+        payload,
+        errorMessage: cleanText(payload?.error, 'Failed to upload media') || 'Failed to upload media',
+      };
+    }
+
+    return payload;
+  };
+  try {
+    return await executeUpload();
+  } catch (firstError) {
+    if (shouldRetryStatus(firstError?.response?.status)) {
+      await waitMs(2000);
+      try {
+        return await executeUpload();
+      } catch (retryError) {
+        logInternalFailure(retryError?.response, retryError?.errorMessage || 'Failed to upload media');
+        throw apiError(
+          retryError?.errorMessage || 'Failed to upload media',
+          cleanText(retryError?.payload?.code, 'MEDIA_UPLOAD_FAILED') || 'MEDIA_UPLOAD_FAILED',
+          retryError?.response?.status >= 400 && retryError?.response?.status < 500 ? retryError.response.status : 502
+        );
+      }
+    }
+
+    logInternalFailure(firstError?.response, firstError?.errorMessage || 'Failed to upload media');
     const err = apiError(
-      'Social channels are temporarily unavailable. Our team has been notified.',
-      'DOWNSTREAM_SERVICE_UNAVAILABLE',
-      502
+      firstError?.errorMessage || 'Social channels are temporarily unavailable. Our team has been notified.',
+      cleanText(firstError?.payload?.code, 'MEDIA_UPLOAD_FAILED') || 'MEDIA_UPLOAD_FAILED',
+      firstError?.response?.status >= 400 && firstError?.response?.status < 500 ? firstError.response.status : 502
     );
     err.downstream = {
       tool: 'social',
       path: '/api/internal/media/upload',
-      baseUrl,
-      message: error?.message || 'fetch failed',
+      status: firstError?.response?.status,
+      payload: firstError?.payload || {},
     };
     throw err;
   }
-
-  let payload = {};
-  try {
-    payload = await response.json();
-  } catch {
-    payload = {};
-  }
-
-  if (!response.ok) {
-    throw apiError(
-      cleanText(payload?.error, 'Failed to upload media') || 'Failed to upload media',
-      cleanText(payload?.code, 'MEDIA_UPLOAD_FAILED') || 'MEDIA_UPLOAD_FAILED',
-      response.status >= 400 && response.status < 500 ? response.status : 502
-    );
-  }
-
-  return payload;
 }
 
 async function invokeWorkspaceGenerationMode({
@@ -901,6 +980,34 @@ async function invokeWorkspaceGenerationMode({
 }
 
 async function publishToWorkspaceAccount({ userId, account, content, postMode = 'single', threadParts = [], media = [] }) {
+  if (Array.isArray(account)) {
+    const published = [];
+    const failed = [];
+
+    for (const singleAccount of account) {
+      try {
+        const result = await publishToWorkspaceAccount({
+          userId,
+          account: singleAccount,
+          content,
+          postMode,
+          threadParts,
+          media,
+        });
+        published.push(result);
+      } catch (error) {
+        failed.push({
+          accountId: cleanText(singleAccount?.id, null),
+          platform: normalizeWorkspacePlatform(singleAccount?.platform),
+          error: error?.message || 'Failed to publish',
+          code: error?.code || 'PUBLISH_FAILED',
+        });
+      }
+    }
+
+    return { published, failed };
+  }
+
   const platform = normalizeWorkspacePlatform(account?.platform);
   const teamId = resolveAccountTeamId(account);
 

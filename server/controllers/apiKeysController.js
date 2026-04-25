@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from 'uuid';
 import { query } from '../config/database.js';
 import { encrypt, decrypt } from '../utils/encryption.js';
 
@@ -10,7 +9,7 @@ class ApiKeysController {
                 return res.status(400).json({ error: 'Provider parameter is required', code: 'PROVIDER_REQUIRED' });
             }
             const result = await query(
-                'SELECT id, provider, key_name, is_active, created_at FROM api_keys WHERE user_id = $1 AND provider = $2',
+                'SELECT id, provider, key_name, is_active, created_at FROM user_api_keys WHERE user_id = $1 AND provider = $2',
                 [req.user.id, provider]
             );
             res.json({
@@ -34,7 +33,7 @@ class ApiKeysController {
             if (!provider) {
                 return res.status(400).json({ error: 'Provider parameter is required', code: 'PROVIDER_REQUIRED' });
             }
-            let text = 'SELECT id, encrypted_key, key_name FROM api_keys WHERE user_id = $1 AND provider = $2 AND is_active = true';
+            let text = 'SELECT id, encrypted_key, key_name FROM user_api_keys WHERE user_id = $1 AND provider = $2 AND is_active = true';
             const params = [req.user.id, provider];
             if (keyId) { text += ' AND id = $3'; params.push(keyId); }
             text += ' ORDER BY created_at DESC LIMIT 1';
@@ -62,18 +61,17 @@ class ApiKeysController {
                 return res.status(500).json({ error: 'Failed to encrypt API key', code: 'ENCRYPT_ERROR' });
             }
             const existingKey = await query(
-                'SELECT id FROM api_keys WHERE user_id = $1 AND provider = $2 AND key_name = $3',
+                'SELECT id FROM user_api_keys WHERE user_id = $1 AND provider = $2 AND key_name = $3',
                 [req.user.id, provider, keyName]
             );
             if (existingKey.rows.length > 0) {
                 return res.status(409).json({ error: 'API key with this name already exists', code: 'KEY_NAME_EXISTS' });
             }
-            const keyId = uuidv4();
             const result = await query(
-                `INSERT INTO api_keys (id, user_id, provider, encrypted_key, key_name, is_active, created_at)
-                 VALUES ($1, $2, $3, $4, $5, $6, NOW())
+                `INSERT INTO user_api_keys (user_id, provider, encrypted_key, key_name, is_active, created_at)
+                 VALUES ($1, $2, $3, $4, $5, NOW())
                  RETURNING id, provider, key_name, is_active, created_at`,
-                [keyId, req.user.id, provider, encryptedKey, keyName, true]
+                [req.user.id, provider, encryptedKey, keyName, true]
             );
             res.status(201).json({
                 message: 'API key added successfully',
@@ -95,7 +93,7 @@ class ApiKeysController {
         try {
             const { id } = req.params;
             const { apiKey, keyName, isActive } = req.body;
-            const existingKey = await query('SELECT id, provider FROM api_keys WHERE id = $1 AND user_id = $2', [id, req.user.id]);
+            const existingKey = await query('SELECT id, provider FROM user_api_keys WHERE id = $1 AND user_id = $2', [id, req.user.id]);
             if (existingKey.rows.length === 0) {
                 return res.status(404).json({ error: 'API key not found', code: 'KEY_NOT_FOUND' });
             }
@@ -107,7 +105,7 @@ class ApiKeysController {
             }
             if (keyName !== undefined) {
                 const nameCheck = await query(
-                    'SELECT id FROM api_keys WHERE user_id = $1 AND provider = $2 AND key_name = $3 AND id != $4',
+                    'SELECT id FROM user_api_keys WHERE user_id = $1 AND provider = $2 AND key_name = $3 AND id != $4',
                     [req.user.id, existingKey.rows[0].provider, keyName, id]
                 );
                 if (nameCheck.rows.length > 0) {
@@ -119,7 +117,7 @@ class ApiKeysController {
             if (updateFields.length === 0) { return res.status(400).json({ error: 'No fields to update', code: 'NO_FIELDS_TO_UPDATE' }); }
             params.push(id);
             const result = await query(
-                `UPDATE api_keys SET ${updateFields.join(', ')}, updated_at = NOW() WHERE id = $${idx} AND user_id = $${idx + 1}
+                `UPDATE user_api_keys SET ${updateFields.join(', ')}, updated_at = NOW() WHERE id = $${idx} AND user_id = $${idx + 1}
                  RETURNING id, provider, key_name, is_active, created_at`,
                 [...params, req.user.id]
             );
@@ -142,11 +140,11 @@ class ApiKeysController {
     static async remove(req, res) {
         try {
             const { id } = req.params;
-            const existingKey = await query('SELECT id FROM api_keys WHERE id = $1 AND user_id = $2', [id, req.user.id]);
+            const existingKey = await query('SELECT id FROM user_api_keys WHERE id = $1 AND user_id = $2', [id, req.user.id]);
             if (existingKey.rows.length === 0) {
                 return res.status(404).json({ error: 'API key not found', code: 'KEY_NOT_FOUND' });
             }
-            await query('DELETE FROM api_keys WHERE id = $1 AND user_id = $2', [id, req.user.id]);
+            await query('DELETE FROM user_api_keys WHERE id = $1 AND user_id = $2', [id, req.user.id]);
             res.json({ message: 'API key deleted successfully' });
         } catch (error) {
             console.error('Delete API key error:', error);
@@ -157,7 +155,7 @@ class ApiKeysController {
     static async listAll(req, res) {
         try {
             const result = await query(
-                'SELECT id, provider, key_name, is_active, created_at FROM api_keys WHERE user_id = $1 ORDER BY provider, created_at DESC',
+                'SELECT id, provider, key_name, is_active, created_at FROM user_api_keys WHERE user_id = $1 ORDER BY provider, created_at DESC',
                 [req.user.id]
             );
             const groupedKeys = result.rows.reduce((acc, row) => {
