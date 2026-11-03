@@ -110,9 +110,16 @@ export default function About() {
     {
       name: "Kanishk",
       role: "One for all",
-      bio: "SuiteGenie is a one-man show. I handles all development, marketing, product vision, and every aspect required for a startup. From building the platform, designing features, managing deployments, to outreach and growth, every task is done solo. If you use SuiteGenie, you’re supporting a true indie founder.",
+      bio: "SuiteGenie is a one-man show. I handles all development, marketing, product vision, and every aspect required for a startup. From building the platform, designing features, managing deployments, to outreach and growth. If you use SuiteGenie, you’re supporting a true indie founder.",
       imageUrl: "/kanishk.png",
       linkedinUrl: "https://www.linkedin.com/in/kanishk-saraswat"
+    },
+    {
+      name: "Abhay Bharti",
+      role: "Full Stack Developer",
+      bio: "As a full-stack developer, I build complete digital products from intuitive frontends to reliable backend systems. I enjoy turning ideas into scalable, user-focused solutions with clean architecture, thoughtful design, and seamless performance.",
+      imageUrl: "/abhay.jpg",
+      linkedinUrl: "https://www.linkedin.com/in/abhay-bharti"
     }
   ];
 
@@ -283,7 +290,7 @@ export default function About() {
                 <div className="h-1 w-32 bg-gradient-to-r from-blue-600 to-purple-600 mx-auto rounded-full"></div>
               </div>
 
-              <div className="grid grid-cols-1 place-items-center max-w-md mx-auto gap-10">
+              <div className="grid grid-cols-1 md:grid-cols-2 max-w-5xl mx-auto gap-10">
                 {teamMembers.map((member, index) => (
                   <div
                     key={member.name}
