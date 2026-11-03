@@ -1,44 +1,29 @@
+import { createGmailSmtpProvider } from './email/gmailSmtpProvider.js';
+import { createResendProvider } from './email/resendProvider.js';
 
-import { Resend } from 'resend';
+/**
+ * Provider-neutral email contract used by application code.
+ *
+ * Keeping provider selection here means routes and controllers do not need to
+ * know whether messages are sent through SMTP, an API, or another provider.
+ */
+let emailProvider;
 
-// Debug: Show which API key is loaded (first 10 chars only)
-if (!process.env.RESEND_API_KEY) {
-    console.error('❌ RESEND_API_KEY not found in environment variables');
-    process.exit(1);
-}
-console.log('🔑 Current API Key:', process.env.RESEND_API_KEY.substring(0, 10) + '...');
-console.log('🔑 Expected Autoverse Key starts with: re_EN7Lckbi...');
-
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-export async function sendMail({ to, subject, html, text }) {
-    console.log('📧 Sending email...');
-    console.log('From: Suitegenie <noreply@suitegenie.in>');
-    console.log('To:', to);
-    try {
-        const { data, error } = await resend.emails.send({
-            from: 'suitegenie <noreply@suitegenie.in>',
-            to,
-            subject,
-            html,
-            text,
-        });
-        if (error) {
-            console.error('📧 Resend API Error:', error);
-            throw error;
+function getEmailProvider() {
+    if (!emailProvider) {
+        const provider = (process.env.EMAIL_PROVIDER || 'smtp').trim().toLowerCase();
+        if (provider === 'smtp') {
+            emailProvider = createGmailSmtpProvider();
+        } else if (provider === 'resend') {
+            emailProvider = createResendProvider();
+        } else {
+            throw new Error(`Unsupported EMAIL_PROVIDER: ${provider}. Use "smtp" or "resend".`);
         }
-        console.log('✅ Email sent successfully!');
-        console.log('📧 Email ID:', data.id);
-        return data;
-    } catch (error) {
-        console.error('❌ Email Error Details:');
-        console.error('- Name:', error.name);
-        console.error('- Message:', error.message);
-        console.error('- Status:', error.status);
-        // Fallback logging
-        console.log('📧 MOCK EMAIL (due to error):');
-        console.log(`To: ${to}`);
-        console.log(`Subject: ${subject}`);
-        return { messageId: 'mock-' + Date.now() };
     }
+
+    return emailProvider;
+}
+
+export function sendMail(message) {
+    return getEmailProvider().sendMail(message);
 }
