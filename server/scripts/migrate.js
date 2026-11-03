@@ -14,6 +14,27 @@ const migrations = [
     `
   },
   {
+    version: 12,
+    name: 'add_role_to_team_invitations',
+    sql: `
+      ALTER TABLE team_invitations
+      ADD COLUMN IF NOT EXISTS role VARCHAR(50) NOT NULL DEFAULT 'editor';
+
+      UPDATE team_invitations
+      SET role = 'editor'
+      WHERE role IS NULL;
+    `
+  },
+  {
+    version: 13,
+    name: 'drop_two_factor_columns',
+    sql: `
+      ALTER TABLE users
+        DROP COLUMN IF EXISTS two_factor_enabled,
+        DROP COLUMN IF EXISTS two_factor_secret;
+    `
+  },
+  {
     version: 2,
     name: 'create_users_table',
     sql: `
@@ -23,10 +44,9 @@ const migrations = [
         password_hash VARCHAR(255) NOT NULL,
         name VARCHAR(255) NOT NULL,
         plan_type VARCHAR(50) DEFAULT 'free' CHECK (plan_type IN ('free', 'pro', 'enterprise')),
-  credits_remaining NUMERIC(10,2) DEFAULT 0,
+        credits_remaining NUMERIC(10,2) DEFAULT 0,
+        trial_ends_at TIMESTAMP,
         notification_email_enabled BOOLEAN DEFAULT true,
-        two_factor_enabled BOOLEAN DEFAULT false,
-        two_factor_secret TEXT,
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
       );
@@ -44,6 +64,7 @@ const migrations = [
         user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         type VARCHAR(50) NOT NULL CHECK (type IN ('purchase', 'usage', 'refund', 'bonus')),
         credits_amount NUMERIC(10,2) NOT NULL,
+        team_id UUID,
         cost_in_rupees DECIMAL(10,2),
         razorpay_order_id VARCHAR(255),
         razorpay_payment_id VARCHAR(255),
@@ -54,6 +75,7 @@ const migrations = [
       );
       
       CREATE INDEX IF NOT EXISTS idx_credit_transactions_user_type ON credit_transactions(user_id, type);
+      CREATE INDEX IF NOT EXISTS idx_credit_transactions_team_id ON credit_transactions(team_id);
       CREATE INDEX IF NOT EXISTS idx_credit_transactions_created_at ON credit_transactions(created_at);
       CREATE INDEX IF NOT EXISTS idx_credit_transactions_service ON credit_transactions(service_name);
     `
@@ -174,6 +196,576 @@ const migrations = [
       CREATE INDEX IF NOT EXISTS idx_social_accounts_workspace ON social_accounts(workspace_id);
       CREATE INDEX IF NOT EXISTS idx_social_accounts_platform ON social_accounts(platform);
       CREATE UNIQUE INDEX IF NOT EXISTS idx_social_accounts_unique ON social_accounts(workspace_id, platform, account_id) WHERE is_active = true;
+    `
+  },
+  {
+    version: 18,
+    name: 'restructure_credit_tiers_and_cleanup_two_factor_columns',
+    sql: `
+      -- Safety: some environments may not have all prior credit migrations.
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS last_credit_reset TIMESTAMP;
+      ALTER TABLE teams ADD COLUMN IF NOT EXISTS credits_remaining INTEGER DEFAULT 0;
+      ALTER TABLE teams ADD COLUMN IF NOT EXISTS last_credit_reset TIMESTAMP;
+      ALTER TABLE teams ADD COLUMN IF NOT EXISTS plan_type VARCHAR(50) DEFAULT 'pro';
+
+      -- Normalize legacy null plan types so free-tier users are explicitly marked.
+      UPDATE users
+      SET
+        plan_type = 'free',
+        updated_at = NOW()
+      WHERE plan_type IS NULL;
+
+      UPDATE users
+      SET
+        credits_remaining = CASE
+          WHEN plan_type = 'free' AND api_key_preference = 'platform' THEN 15
+          WHEN plan_type = 'free' AND api_key_preference = 'byok' THEN 50
+          WHEN plan_type = 'pro' AND api_key_preference = 'platform' THEN 100
+          WHEN plan_type = 'pro' AND api_key_preference = 'byok' THEN 180
+          WHEN plan_type = 'agency' AND api_key_preference = 'platform' THEN 100
+          WHEN plan_type = 'agency' AND api_key_preference = 'byok' THEN 180
+          WHEN plan_type = 'enterprise' AND api_key_preference = 'platform' THEN 500
+          WHEN plan_type = 'enterprise' AND api_key_preference = 'byok' THEN 1000
+          ELSE credits_remaining
+        END,
+        last_credit_reset = NOW(),
+        updated_at = NOW()
+      WHERE api_key_preference IS NOT NULL;
+
+      UPDATE teams t
+      SET
+        credits_remaining = CASE
+          WHEN u.plan_type = 'pro' AND u.api_key_preference = 'platform' THEN 100
+          WHEN u.plan_type = 'pro' AND u.api_key_preference = 'byok' THEN 180
+          WHEN u.plan_type = 'agency' AND u.api_key_preference = 'platform' THEN 100
+          WHEN u.plan_type = 'agency' AND u.api_key_preference = 'byok' THEN 180
+          WHEN u.plan_type = 'enterprise' AND u.api_key_preference = 'platform' THEN 500
+          WHEN u.plan_type = 'enterprise' AND u.api_key_preference = 'byok' THEN 1000
+          ELSE COALESCE(t.credits_remaining, 0)
+        END,
+        plan_type = COALESCE(u.plan_type, t.plan_type, 'pro'),
+        last_credit_reset = NOW(),
+        updated_at = NOW()
+      FROM users u
+      WHERE t.owner_id = u.id;
+
+      ALTER TABLE users
+        DROP COLUMN IF EXISTS two_factor_enabled,
+        DROP COLUMN IF EXISTS two_factor_secret;
+    `
+  },
+  {
+    version: 19,
+    name: 'increase_free_platform_credits_to_15',
+    sql: `
+      UPDATE users
+      SET
+        plan_type = COALESCE(plan_type, 'free'),
+        credits_remaining = CASE
+          WHEN COALESCE(plan_type, 'free') = 'free' AND api_key_preference = 'platform' THEN 15
+          WHEN COALESCE(plan_type, 'free') = 'free' AND api_key_preference = 'byok' THEN 50
+          ELSE credits_remaining
+        END,
+        last_credit_reset = NOW(),
+        updated_at = NOW()
+      WHERE api_key_preference IN ('platform', 'byok');
+
+      UPDATE teams t
+      SET
+        credits_remaining = CASE
+          WHEN COALESCE(u.plan_type, 'free') = 'free' AND u.api_key_preference = 'platform' THEN 15
+          WHEN COALESCE(u.plan_type, 'free') = 'free' AND u.api_key_preference = 'byok' THEN 50
+          WHEN u.plan_type = 'pro' AND u.api_key_preference = 'platform' THEN 100
+          WHEN u.plan_type = 'pro' AND u.api_key_preference = 'byok' THEN 180
+          WHEN u.plan_type = 'agency' AND u.api_key_preference = 'platform' THEN 100
+          WHEN u.plan_type = 'agency' AND u.api_key_preference = 'byok' THEN 180
+          WHEN u.plan_type = 'enterprise' AND u.api_key_preference = 'platform' THEN 500
+          WHEN u.plan_type = 'enterprise' AND u.api_key_preference = 'byok' THEN 1000
+          ELSE COALESCE(t.credits_remaining, 0)
+        END,
+        plan_type = COALESCE(u.plan_type, t.plan_type, 'pro'),
+        last_credit_reset = NOW(),
+        updated_at = NOW()
+      FROM users u
+      WHERE t.owner_id = u.id AND u.api_key_preference IN ('platform', 'byok');
+    `
+  },
+  {
+    version: 20,
+    name: 'agency_hub_foundation_phase_1',
+    sql: `
+      -- Expand users.plan_type constraint to include agency.
+      ALTER TABLE users DROP CONSTRAINT IF EXISTS users_plan_type_check;
+      ALTER TABLE users
+        ADD CONSTRAINT users_plan_type_check CHECK (plan_type IN ('free', 'pro', 'agency', 'enterprise'));
+
+      -- Agency root account.
+      CREATE TABLE IF NOT EXISTS agency_accounts (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        owner_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        name VARCHAR(255) NOT NULL,
+        status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'paused', 'archived')),
+        seat_limit INTEGER NOT NULL DEFAULT 6,
+        workspace_limit INTEGER NOT NULL DEFAULT 6,
+        workspace_account_limit INTEGER NOT NULL DEFAULT 8,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_agency_accounts_owner_id ON agency_accounts(owner_id);
+
+      -- Agency members (agency-wide seat pool).
+      CREATE TABLE IF NOT EXISTS agency_members (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        agency_id UUID NOT NULL REFERENCES agency_accounts(id) ON DELETE CASCADE,
+        user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+        email VARCHAR(255) NOT NULL,
+        role VARCHAR(20) NOT NULL CHECK (role IN ('owner', 'admin', 'editor', 'viewer')),
+        status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'active', 'removed', 'declined')),
+        invited_by UUID REFERENCES users(id) ON DELETE SET NULL,
+        invited_at TIMESTAMP DEFAULT NOW(),
+        joined_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_agency_members_agency_email_unique
+        ON agency_members(agency_id, email)
+        WHERE status IN ('pending', 'active');
+      CREATE INDEX IF NOT EXISTS idx_agency_members_user_id ON agency_members(user_id);
+      CREATE INDEX IF NOT EXISTS idx_agency_members_agency_id ON agency_members(agency_id);
+
+      -- Invitation token table for email onboarding.
+      CREATE TABLE IF NOT EXISTS agency_invitations (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        agency_id UUID NOT NULL REFERENCES agency_accounts(id) ON DELETE CASCADE,
+        email VARCHAR(255) NOT NULL,
+        role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'editor', 'viewer')),
+        invited_by UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        token VARCHAR(255) NOT NULL UNIQUE,
+        expires_at TIMESTAMP NOT NULL,
+        status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'declined', 'expired', 'cancelled')),
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_agency_invitations_agency_id ON agency_invitations(agency_id);
+      CREATE INDEX IF NOT EXISTS idx_agency_invitations_email ON agency_invitations(email);
+      CREATE INDEX IF NOT EXISTS idx_agency_invitations_token ON agency_invitations(token);
+
+      -- Workspace per client.
+      CREATE TABLE IF NOT EXISTS agency_workspaces (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        agency_id UUID NOT NULL REFERENCES agency_accounts(id) ON DELETE CASCADE,
+        name VARCHAR(255) NOT NULL,
+        brand_name VARCHAR(255) NOT NULL,
+        logo_url TEXT,
+        timezone VARCHAR(100) NOT NULL DEFAULT 'UTC',
+        status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'paused', 'archived')),
+        created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_agency_workspaces_agency_id ON agency_workspaces(agency_id);
+      CREATE INDEX IF NOT EXISTS idx_agency_workspaces_status ON agency_workspaces(status);
+
+      -- Member assignments to workspaces (many-to-many).
+      CREATE TABLE IF NOT EXISTS agency_workspace_members (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        workspace_id UUID NOT NULL REFERENCES agency_workspaces(id) ON DELETE CASCADE,
+        agency_member_id UUID NOT NULL REFERENCES agency_members(id) ON DELETE CASCADE,
+        assigned_by UUID REFERENCES users(id) ON DELETE SET NULL,
+        created_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(workspace_id, agency_member_id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_agency_workspace_members_workspace_id ON agency_workspace_members(workspace_id);
+      CREATE INDEX IF NOT EXISTS idx_agency_workspace_members_member_id ON agency_workspace_members(agency_member_id);
+
+      -- Attached existing connected accounts to workspace.
+      CREATE TABLE IF NOT EXISTS agency_workspace_accounts (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        workspace_id UUID NOT NULL REFERENCES agency_workspaces(id) ON DELETE CASCADE,
+        platform VARCHAR(50) NOT NULL,
+        source_type VARCHAR(100) NOT NULL,
+        source_id VARCHAR(255) NOT NULL,
+        account_id VARCHAR(255),
+        account_username VARCHAR(255),
+        account_display_name VARCHAR(255),
+        profile_image_url TEXT,
+        metadata JSONB DEFAULT '{}'::jsonb,
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        attached_by UUID REFERENCES users(id) ON DELETE SET NULL,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_agency_workspace_accounts_unique_active
+        ON agency_workspace_accounts(workspace_id, source_type, source_id)
+        WHERE is_active = true;
+      CREATE INDEX IF NOT EXISTS idx_agency_workspace_accounts_workspace_id ON agency_workspace_accounts(workspace_id);
+      CREATE INDEX IF NOT EXISTS idx_agency_workspace_accounts_platform ON agency_workspace_accounts(platform);
+
+      -- Immutable audit logs for critical actions.
+      CREATE TABLE IF NOT EXISTS agency_audit_logs (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        agency_id UUID NOT NULL REFERENCES agency_accounts(id) ON DELETE CASCADE,
+        actor_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+        action VARCHAR(100) NOT NULL,
+        entity_type VARCHAR(100) NOT NULL,
+        entity_id VARCHAR(255),
+        metadata JSONB DEFAULT '{}'::jsonb,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_agency_audit_logs_agency_id ON agency_audit_logs(agency_id);
+      CREATE INDEX IF NOT EXISTS idx_agency_audit_logs_created_at ON agency_audit_logs(created_at);
+    `
+  },
+  {
+    version: 21,
+    name: 'agency_billing_and_workspace_drafts',
+    sql: `
+      CREATE TABLE IF NOT EXISTS agency_subscriptions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        agency_id UUID REFERENCES agency_accounts(id) ON DELETE SET NULL,
+        owner_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        razorpay_subscription_id VARCHAR(255) UNIQUE NOT NULL,
+        razorpay_customer_id VARCHAR(255),
+        razorpay_plan_id VARCHAR(255),
+        status VARCHAR(32) NOT NULL DEFAULT 'created',
+        cancel_at_cycle_end BOOLEAN NOT NULL DEFAULT false,
+        current_period_start TIMESTAMP,
+        current_period_end TIMESTAMP,
+        grace_until TIMESTAMP,
+        last_payment_id VARCHAR(255),
+        last_payment_at TIMESTAMP,
+        last_payment_status VARCHAR(64),
+        metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_agency_subscriptions_owner_unique
+        ON agency_subscriptions(owner_user_id);
+      CREATE INDEX IF NOT EXISTS idx_agency_subscriptions_agency_id
+        ON agency_subscriptions(agency_id);
+      CREATE INDEX IF NOT EXISTS idx_agency_subscriptions_status
+        ON agency_subscriptions(status);
+
+      CREATE TABLE IF NOT EXISTS agency_billing_events (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        event_id VARCHAR(255) UNIQUE NOT NULL,
+        event_type VARCHAR(255) NOT NULL,
+        signature TEXT,
+        payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+        processed_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_agency_billing_events_type
+        ON agency_billing_events(event_type);
+
+      CREATE TABLE IF NOT EXISTS agency_workspace_drafts (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        workspace_id UUID NOT NULL REFERENCES agency_workspaces(id) ON DELETE CASCADE,
+        created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+        updated_by UUID REFERENCES users(id) ON DELETE SET NULL,
+        title VARCHAR(255),
+        prompt TEXT,
+        content TEXT NOT NULL,
+        platform_targets JSONB NOT NULL DEFAULT '[]'::jsonb,
+        media_urls JSONB NOT NULL DEFAULT '[]'::jsonb,
+        status VARCHAR(32) NOT NULL DEFAULT 'draft',
+        generation_source VARCHAR(64),
+        generation_metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+        scheduled_for TIMESTAMP,
+        published_at TIMESTAMP,
+        last_error TEXT,
+        downstream_results JSONB NOT NULL DEFAULT '{}'::jsonb,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_agency_workspace_drafts_workspace_id
+        ON agency_workspace_drafts(workspace_id);
+      CREATE INDEX IF NOT EXISTS idx_agency_workspace_drafts_status
+        ON agency_workspace_drafts(status);
+      CREATE INDEX IF NOT EXISTS idx_agency_workspace_drafts_scheduled_for
+        ON agency_workspace_drafts(scheduled_for);
+    `
+  },
+  {
+    version: 22,
+    name: 'agency_workspace_settings',
+    sql: `
+      CREATE TABLE IF NOT EXISTS agency_workspace_settings (
+        workspace_id UUID PRIMARY KEY REFERENCES agency_workspaces(id) ON DELETE CASCADE,
+        profile_notes TEXT,
+        competitor_targets JSONB NOT NULL DEFAULT '[]'::jsonb,
+        automation_enabled BOOLEAN NOT NULL DEFAULT false,
+        require_admin_approval BOOLEAN NOT NULL DEFAULT true,
+        auto_generate_twitter BOOLEAN NOT NULL DEFAULT true,
+        auto_generate_linkedin BOOLEAN NOT NULL DEFAULT true,
+        auto_generate_social BOOLEAN NOT NULL DEFAULT false,
+        engagement_auto_reply BOOLEAN NOT NULL DEFAULT false,
+        posting_preferences JSONB NOT NULL DEFAULT '{}'::jsonb,
+        updated_by UUID REFERENCES users(id) ON DELETE SET NULL,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_agency_workspace_settings_updated_at
+        ON agency_workspace_settings(updated_at);
+    `
+  },
+  {
+    version: 23,
+    name: 'agency_workspace_rbac_state_machine',
+    sql: `
+      ALTER TABLE agency_workspace_members
+        ADD COLUMN IF NOT EXISTS role VARCHAR(20);
+
+      UPDATE agency_workspace_members awm
+      SET role = am.role
+      FROM agency_members am
+      WHERE am.id = awm.agency_member_id
+        AND (awm.role IS NULL OR awm.role <> am.role);
+
+      ALTER TABLE agency_workspace_members
+        DROP CONSTRAINT IF EXISTS agency_workspace_members_role_check;
+
+      ALTER TABLE agency_workspace_members
+        ADD CONSTRAINT agency_workspace_members_role_check
+        CHECK (role IN ('owner', 'admin', 'editor', 'viewer'));
+
+      ALTER TABLE agency_workspace_members
+        ALTER COLUMN role SET DEFAULT 'editor';
+
+      UPDATE agency_workspace_members
+      SET role = 'editor'
+      WHERE role IS NULL;
+
+      ALTER TABLE agency_workspace_members
+        ALTER COLUMN role SET NOT NULL;
+
+      ALTER TABLE agency_workspace_drafts
+        ADD COLUMN IF NOT EXISTS rejected_reason TEXT,
+        ADD COLUMN IF NOT EXISTS reviewed_by UUID REFERENCES users(id) ON DELETE SET NULL,
+        ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMP;
+
+      UPDATE agency_workspace_drafts
+      SET status = 'draft'
+      WHERE status IS NULL
+         OR status NOT IN ('draft', 'pending_approval', 'approved', 'rejected', 'scheduled', 'published', 'failed', 'archived');
+
+      ALTER TABLE agency_workspace_drafts
+        DROP CONSTRAINT IF EXISTS agency_workspace_drafts_status_check;
+
+      ALTER TABLE agency_workspace_drafts
+        ADD CONSTRAINT agency_workspace_drafts_status_check
+        CHECK (status IN ('draft', 'pending_approval', 'approved', 'rejected', 'scheduled', 'published', 'failed', 'archived'));
+
+      CREATE INDEX IF NOT EXISTS idx_agency_workspace_drafts_reviewed_at
+        ON agency_workspace_drafts(reviewed_at);
+    `
+  },
+  {
+    version: 24,
+    name: 'add_team_id_to_credit_transactions',
+    sql: `
+      ALTER TABLE credit_transactions
+        ADD COLUMN IF NOT EXISTS team_id UUID REFERENCES teams(id) ON DELETE SET NULL;
+
+      CREATE INDEX IF NOT EXISTS idx_credit_transactions_team_id
+        ON credit_transactions(team_id);
+    `
+  },
+  {
+    version: 25,
+    name: 'add_trial_ends_at_to_users',
+    sql: `
+      ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMP;
+
+      CREATE INDEX IF NOT EXISTS idx_users_trial_ends_at
+        ON users(trial_ends_at);
+    `
+  },
+  {
+    version: 26,
+    name: 'agency_client_onboarding_links',
+    sql: `
+      CREATE TABLE IF NOT EXISTS agency_client_onboarding (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        workspace_id UUID NOT NULL REFERENCES agency_workspaces(id) ON DELETE CASCADE,
+        agency_id UUID NOT NULL REFERENCES agency_accounts(id) ON DELETE CASCADE,
+        client_email VARCHAR(255),
+        client_name VARCHAR(255),
+        token VARCHAR(255) NOT NULL UNIQUE,
+        expires_at TIMESTAMP NOT NULL,
+        status VARCHAR(20) NOT NULL DEFAULT 'pending'
+          CHECK (status IN ('pending', 'completed', 'expired', 'revoked')),
+        allowed_platforms TEXT[] NOT NULL DEFAULT ARRAY['twitter','linkedin'],
+        max_accounts INTEGER NOT NULL DEFAULT 8,
+        accounts_connected INTEGER NOT NULL DEFAULT 0,
+        created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+        completed_at TIMESTAMP,
+        metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_agency_client_onboarding_token
+        ON agency_client_onboarding(token);
+      CREATE INDEX IF NOT EXISTS idx_agency_client_onboarding_workspace
+        ON agency_client_onboarding(workspace_id);
+      CREATE INDEX IF NOT EXISTS idx_agency_client_onboarding_agency
+        ON agency_client_onboarding(agency_id);
+    `
+  },
+  {
+    version: 27,
+    name: 'agency_draft_comments_and_approval_tokens',
+    sql: `
+      CREATE TABLE IF NOT EXISTS agency_draft_comments (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        draft_id UUID NOT NULL REFERENCES agency_workspace_drafts(id) ON DELETE CASCADE,
+        workspace_id UUID NOT NULL REFERENCES agency_workspaces(id) ON DELETE CASCADE,
+        author_type VARCHAR(20) NOT NULL CHECK (author_type IN ('agency', 'client')),
+        author_name VARCHAR(255),
+        author_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+        content TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_agency_draft_comments_draft_id
+        ON agency_draft_comments(draft_id);
+      CREATE INDEX IF NOT EXISTS idx_agency_draft_comments_workspace_id
+        ON agency_draft_comments(workspace_id);
+
+      CREATE TABLE IF NOT EXISTS agency_approval_tokens (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        workspace_id UUID NOT NULL REFERENCES agency_workspaces(id) ON DELETE CASCADE,
+        agency_id UUID NOT NULL REFERENCES agency_accounts(id) ON DELETE CASCADE,
+        token VARCHAR(512) NOT NULL UNIQUE,
+        label VARCHAR(255),
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+        last_used_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_agency_approval_tokens_workspace_id
+        ON agency_approval_tokens(workspace_id);
+      CREATE INDEX IF NOT EXISTS idx_agency_approval_tokens_token
+        ON agency_approval_tokens(token);
+    `
+  },
+  {
+    version: 28,
+    name: 'agency_credit_pooling',
+    sql: `
+      ALTER TABLE agency_accounts
+        ADD COLUMN IF NOT EXISTS credits_remaining NUMERIC(10,2) NOT NULL DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS last_credit_reset TIMESTAMP;
+
+      ALTER TABLE credit_transactions
+        ADD COLUMN IF NOT EXISTS agency_id UUID REFERENCES agency_accounts(id) ON DELETE SET NULL,
+        ADD COLUMN IF NOT EXISTS agency_workspace_id UUID REFERENCES agency_workspaces(id) ON DELETE SET NULL;
+
+      CREATE INDEX IF NOT EXISTS idx_credit_transactions_agency_id
+        ON credit_transactions(agency_id);
+      CREATE INDEX IF NOT EXISTS idx_credit_transactions_agency_workspace_id
+        ON credit_transactions(agency_workspace_id);
+      CREATE INDEX IF NOT EXISTS idx_agency_accounts_credits
+        ON agency_accounts(credits_remaining);
+
+      UPDATE agency_accounts aa
+      SET
+        credits_remaining = CASE
+          WHEN COALESCE(u.plan_type, 'free') = 'enterprise' AND u.api_key_preference = 'byok' THEN 5000
+          WHEN COALESCE(u.plan_type, 'free') = 'enterprise' AND u.api_key_preference = 'platform' THEN 2500
+          WHEN COALESCE(u.plan_type, 'free') = 'agency' AND u.api_key_preference = 'byok' THEN 1800
+          WHEN COALESCE(u.plan_type, 'free') = 'agency' AND u.api_key_preference = 'platform' THEN 900
+          ELSE aa.credits_remaining
+        END,
+        last_credit_reset = COALESCE(aa.last_credit_reset, NOW())
+      FROM users u
+      WHERE aa.owner_id = u.id
+        AND (aa.last_credit_reset IS NULL OR aa.credits_remaining = 0);
+    `
+  },
+  {
+    version: 29,
+    name: 'automation_addons',
+    sql: `
+      CREATE TABLE IF NOT EXISTS automation_addons (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        owner_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        agency_id UUID REFERENCES agency_accounts(id) ON DELETE SET NULL,
+        package_id VARCHAR(50) NOT NULL,
+        scope_type VARCHAR(20) NOT NULL CHECK (scope_type IN ('user', 'agency')),
+        status VARCHAR(20) NOT NULL DEFAULT 'active'
+          CHECK (status IN ('active', 'expired', 'cancelled')),
+        starts_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        expires_at TIMESTAMP NOT NULL,
+        razorpay_order_id VARCHAR(255),
+        razorpay_payment_id VARCHAR(255),
+        metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_automation_addons_owner_user_id
+        ON automation_addons(owner_user_id);
+      CREATE INDEX IF NOT EXISTS idx_automation_addons_agency_id
+        ON automation_addons(agency_id);
+      CREATE INDEX IF NOT EXISTS idx_automation_addons_status
+        ON automation_addons(status);
+      CREATE INDEX IF NOT EXISTS idx_automation_addons_expires_at
+        ON automation_addons(expires_at);
+
+      UPDATE automation_addons
+      SET status = 'expired', updated_at = NOW()
+      WHERE status = 'active' AND expires_at <= NOW();
+    `
+  },
+  {
+    version: 30,
+    name: 'agency_expansion_addons',
+    sql: `
+      ALTER TABLE agency_accounts
+        ADD COLUMN IF NOT EXISTS white_label_enabled BOOLEAN NOT NULL DEFAULT false,
+        ADD COLUMN IF NOT EXISTS reporting_export_enabled BOOLEAN NOT NULL DEFAULT false,
+        ADD COLUMN IF NOT EXISTS media_library_enabled BOOLEAN NOT NULL DEFAULT false,
+        ADD COLUMN IF NOT EXISTS media_library_storage_gb INTEGER NOT NULL DEFAULT 0;
+
+      CREATE TABLE IF NOT EXISTS agency_expansion_addons (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        owner_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        agency_id UUID NOT NULL REFERENCES agency_accounts(id) ON DELETE CASCADE,
+        package_id VARCHAR(60) NOT NULL,
+        status VARCHAR(20) NOT NULL DEFAULT 'active'
+          CHECK (status IN ('active', 'cancelled')),
+        quantity INTEGER NOT NULL DEFAULT 1,
+        razorpay_order_id VARCHAR(255),
+        razorpay_payment_id VARCHAR(255),
+        metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_agency_expansion_addons_owner_user_id
+        ON agency_expansion_addons(owner_user_id);
+      CREATE INDEX IF NOT EXISTS idx_agency_expansion_addons_agency_id
+        ON agency_expansion_addons(agency_id);
+      CREATE INDEX IF NOT EXISTS idx_agency_expansion_addons_package_id
+        ON agency_expansion_addons(package_id);
+      CREATE INDEX IF NOT EXISTS idx_agency_expansion_addons_status
+        ON agency_expansion_addons(status);
     `
   }
 ];

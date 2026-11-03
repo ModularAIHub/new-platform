@@ -69,7 +69,9 @@ export const AuthProvider = ({ children }) => {
     const login = async (email, password, redirectUrl = null) => {
         try {
             // Always use regular login
-            const response = await api.post('/auth/login', { email, password });
+            const parsedTimeout = Number.parseInt(import.meta.env.VITE_LOGIN_TIMEOUT_MS, 10);
+            const loginTimeout = Number.isNaN(parsedTimeout) || parsedTimeout <= 0 ? 30000 : parsedTimeout;
+            const response = await api.post('/auth/login', { email, password }, { timeout: loginTimeout });
             
             setUser(response.data.user)
             toast.success('Login successful!')
@@ -122,7 +124,9 @@ export const AuthProvider = ({ children }) => {
             return response.data
         } catch (error) {
             let message
-            if (error.response?.status === 429) {
+            if (error.code === 'ECONNABORTED') {
+                message = 'Login is taking too long. Please retry in a few seconds.'
+            } else if (error.response?.status === 429) {
                 message = 'Too many requests. Please wait a few minutes before trying again.'
             } else {
                 message = error.response?.data?.error || 'Unable to login right now. Please try again later.'
@@ -135,15 +139,13 @@ export const AuthProvider = ({ children }) => {
     const register = async (name, email, password, verificationToken) => {
         try {
             const response = await api.post('/auth/register', { name, email, password, verificationToken })
+            // Auto-login after successful registration
+            if (response.data.user) {
+                setUser(response.data.user)
+                console.log('[AuthContext] User registered and logged in:', response.data.user)
+            }
             return response.data
         } catch (error) {
-            let message
-            if (error.response?.status === 429) {
-                message = 'Too many requests. Please wait a few minutes before trying again.'
-            } else {
-                message = error.response?.data?.error || 'Unable to register right now. Please try again later.'
-            }
-            toast.error(message)
             throw error
         }
     }
@@ -151,14 +153,14 @@ export const AuthProvider = ({ children }) => {
     const sendOTP = async (email, purpose = 'verification') => {
         try {
             const response = await api.post('/auth/send-otp', { email, purpose })
-            toast.success('OTP sent to your email!')
+            toast.success(response.data?.message || 'OTP sent to your email!')
             return response.data
         } catch (error) {
             let message
             if (error.response?.status === 429) {
                 message = 'Too many OTP requests. Please wait 15 minutes before trying again.'
             } else {
-                message = error.response?.data?.error || 'Failed to send OTP. Please try again.'
+                message = error.response?.data?.error || error.response?.data?.message || 'Failed to send OTP. Please try again.'
             }
             toast.error(message)
             throw error
@@ -195,30 +197,6 @@ export const AuthProvider = ({ children }) => {
             return response.data
         } catch (error) {
             let message = error.response?.data?.error || 'Failed to reset password.'
-            toast.error(message)
-            throw error
-        }
-    }
-
-    const updateNotifications = async (emailEnabled) => {
-        try {
-            const response = await api.post('/auth/notifications', { emailEnabled })
-            toast.success('Notification preferences updated!')
-            return response.data
-        } catch (error) {
-            let message = error.response?.data?.error || 'Failed to update notification preferences.'
-            toast.error(message)
-            throw error
-        }
-    }
-
-    const toggleTwoFactor = async (enabled) => {
-        try {
-            const response = await api.post('/auth/two-factor', { enabled })
-            toast.success(`Two-factor authentication ${enabled ? 'enabled' : 'disabled'}!`)
-            return response.data
-        } catch (error) {
-            let message = error.response?.data?.error || 'Failed to update two-factor authentication.'
             toast.error(message)
             throw error
         }
@@ -266,8 +244,6 @@ export const AuthProvider = ({ children }) => {
         verifyOTP,
         changePassword,
         resetPassword,
-        updateNotifications,
-        toggleTwoFactor,
         logout,
         refreshUser,
         clearUser,

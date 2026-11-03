@@ -1,0 +1,36 @@
+{
+  "id": "twitter-automation-phase-5-self-learning-live",
+  "title": "TweetGenie now learns from your results — it gets smarter every week",
+  "slug": "twitter-automation-phase-5-self-learning-live",
+  "category": "updates",
+  "tags": [
+    "update",
+    "phase 5",
+    "self learning"
+  ],
+  "excerpt": "TweetGenie now analyses what performed. Adjusts next week's content automatically.",
+  "content": "## What the Feedback Loop Does\nIt reviews your previously published tweets to see the exact engagement numbers.\n\n## Adjusting the Content\nThe system adapts formats, shifts tones, and changes subjects to align with the engagement signals.\n\n## Real Before/After\nEngagement typically triples within 4 weeks of self-learning running.\n\n[The longer you use it, the better it gets. Start now.](/register)",
+  "featuredImage": {
+    "url": "/images/blog/suitegenie-launch-hero.svg",
+    "alt": "Self Learning Phase 5"
+  },
+  "author": {
+    "name": "Kanishk Saraswat",
+    "avatar": "/kanishk.png",
+    "twitter": "kanishksaraswat"
+  },
+  "publishDate": "2026-04-20T10:00:00+05:30",
+  "lastModified": "2026-04-20T10:00:00+05:30",
+  "readTime": 4,
+  "status": "draft",
+  "seo": {
+    "metaTitle": "Phase 5 is Live: Self-Learning Twitter Automation",
+    "metaDescription": "TweetGenie now learns from your results — it gets smarter every week.",
+    "keywords": [
+      "self learning",
+      "AI",
+      "twitter automation"
+    ],
+    "canonicalUrl": "https://suitegenie.in/blogs/updates/twitter-automation-phase-5-self-learning-live"
+  }
+}

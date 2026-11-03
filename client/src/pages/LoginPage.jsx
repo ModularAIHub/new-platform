@@ -6,6 +6,7 @@ import { validateLoginData, formatValidationErrors } from '../utils/validation'
 import toast from 'react-hot-toast'
 import { Button, Input, Card, CardContent } from '../components/ui'
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
+import PublicSeo from '../components/PublicSeo'
 
 const LoginPage = () => {
     const [email, setEmail] = useState('')
@@ -21,10 +22,10 @@ const LoginPage = () => {
 
     const handleSubmit = useCallback(async (e) => {
         e.preventDefault()
-        
+
         // Clear previous validation errors
         setValidationErrors({})
-        
+
         // Validate form data
         const validation = validateLoginData({ email, password })
         if (!validation.isValid) {
@@ -46,15 +47,19 @@ const LoginPage = () => {
 
     return (
         <div className="min-h-screen bg-neutral-50 flex flex-col lg:flex-row">
+            <PublicSeo
+                title="Login | SuiteGenie"
+                description="Sign in to SuiteGenie to manage your social media automation workflows, account settings, AI tools, and publishing dashboards."
+                canonicalPath="/login"
+                noIndex
+            />
             {/* Left: Login Form */}
             <div className="flex-1 flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 py-12">
                 <div className="w-full max-w-md">
                     {/* Logo and Header */}
                     <div className="text-center mb-8">
                         <Link to="/" className="inline-flex items-center mb-6 group">
-                            <div className="w-12 h-12 bg-gradient-to-br from-primary-600 to-primary-700 rounded-xl flex items-center justify-center mr-3 group-hover:shadow-lg transition-shadow duration-200">
-                                <span className="text-white font-bold text-lg">S</span>
-                            </div>
+                            <img src="/suitegenie-logo-icon.png" alt="SuiteGenie logo" className="h-12 w-auto mr-3 object-contain" />
                             <span className="text-2xl font-bold text-neutral-900">SuiteGenie</span>
                         </Link>
                         <h1 className="text-3xl font-bold text-neutral-900 mb-2">Welcome back</h1>
@@ -100,15 +105,15 @@ const LoginPage = () => {
                                 {/* Remember Me & Forgot Password */}
                                 <div className="flex items-center justify-between">
                                     <label className="flex items-center">
-                                        <input 
-                                            type="checkbox" 
-                                            className="w-4 h-4 text-primary-600 bg-white border-neutral-300 rounded focus:ring-primary-500 focus:ring-2" 
+                                        <input
+                                            type="checkbox"
+                                            className="w-4 h-4 text-primary-600 bg-white border-neutral-300 rounded focus:ring-primary-500 focus:ring-2"
                                         />
                                         <span className="ml-2 text-sm text-neutral-600">Remember me</span>
                                     </label>
-                                    <button 
-                                        type="button" 
-                                        onClick={() => setShowForgotPassword(true)} 
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowForgotPassword(true)}
                                         className="text-sm text-primary-600 hover:text-primary-700 hover:underline transition-colors"
                                     >
                                         Forgot password?
@@ -130,36 +135,14 @@ const LoginPage = () => {
                                 <div className="text-center">
                                     <span className="text-sm text-neutral-600">
                                         Don't have an account?{' '}
-                                        <Link 
-                                            to="/register" 
+                                        <Link
+                                            to="/register"
                                             className="font-medium text-primary-600 hover:text-primary-700 transition-colors"
                                         >
                                             Sign up for free
                                         </Link>
                                     </span>
                                 </div>
-
-                                {/* Divider */}
-                                <div className="relative">
-                                    <div className="absolute inset-0 flex items-center">
-                                        <div className="w-full border-t border-neutral-200" />
-                                    </div>
-                                    <div className="relative flex justify-center text-sm">
-                                        <span className="px-2 bg-white text-neutral-500">Or continue with</span>
-                                    </div>
-                                </div>
-
-                                {/* Google Sign In */}
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="lg"
-                                    fullWidth
-                                    icon={<span className="w-5 h-5 text-lg">G</span>}
-                                    iconPosition="left"
-                                >
-                                    Continue with Google
-                                </Button>
                             </form>
                         </CardContent>
                     </Card>
@@ -170,13 +153,13 @@ const LoginPage = () => {
             <div className="hidden lg:flex lg:flex-1 bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800 relative overflow-hidden">
                 {/* Background Pattern */}
                 <div className="absolute inset-0 opacity-5 bg-white/5"></div>
-                
+
                 <div className="relative flex flex-col justify-center px-12 py-16 text-white">
                     <div className="max-w-lg">
                         <h2 className="text-4xl font-bold mb-6">
                             Welcome back to SuiteGenie! 🚀
                         </h2>
-                        
+
                         <div className="space-y-6 text-lg">
                             <div className="flex items-start space-x-4">
                                 <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
@@ -189,7 +172,7 @@ const LoginPage = () => {
                                     </p>
                                 </div>
                             </div>
-                            
+
                             <div className="flex items-start space-x-4">
                                 <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
                                     <span className="text-xl">📝</span>
@@ -197,11 +180,11 @@ const LoginPage = () => {
                                 <div>
                                     <h3 className="font-semibold mb-1">Start Creating</h3>
                                     <p className="text-primary-100 text-base">
-                                        Use our intuitive tools to generate, schedule, and analyze your content.
+                                        Use our intuitive tools to generate, automate, and analyze your content.
                                     </p>
                                 </div>
                             </div>
-                            
+
                             <div className="flex items-start space-x-4">
                                 <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
                                     <span className="text-xl">📊</span>
@@ -214,7 +197,7 @@ const LoginPage = () => {
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div className="mt-8 p-6 bg-white/10 rounded-xl border border-white/20">
                             <h4 className="font-semibold mb-2">🎯 Next Steps</h4>
                             <ul className="space-y-1 text-primary-100 text-sm">
@@ -223,9 +206,9 @@ const LoginPage = () => {
                                 <li>• Start creating amazing content</li>
                             </ul>
                         </div>
-                        
+
                         <p className="mt-6 text-primary-200 italic">
-                            Your creative journey continues. Manage, create, and grow—all in one place.
+                            Your creative journey continues. Manage, create, and grow, all in one place.
                         </p>
                     </div>
                 </div>

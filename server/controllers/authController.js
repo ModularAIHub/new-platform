@@ -1,9 +1,13 @@
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
-import { query } from '../config/database.js';
+import { isDatabaseUnavailableError, pool, query } from '../config/database.js';
 import redisClient from '../config/redis.js';
+import { invalidateAuthUserCache } from '../middleware/auth.js';
 import { encrypt, decrypt } from '../utils/encryption.js';
 import { sendMail } from '../utils/email.js';
+import { buildWelcomeEmailTemplate } from '../utils/welcomeEmailTemplate.js';
+import { buildOtpEmailTemplate } from '../utils/otpEmailTemplate.js';
 import { comparePassword, hashPassword } from '../utils/bcrypt.js';
 import {
     validateRegistrationData,
@@ -12,24 +16,103 @@ import {
     validateOTPVerification,
     validatePasswordChange,
     validatePasswordReset,
-    validateNotificationPreferences,
-    validateTwoFactorSettings,
     validatePassword
 } from '../utils/validation.js';
 
+const AUTH_DEBUG = process.env.AUTH_DEBUG === 'true';
+const authDebug = (...args) => {
+    if (AUTH_DEBUG) {
+        console.log(...args);
+    }
+};
+
+const DEFAULT_ACCESS_TOKEN_EXPIRES_IN = '15m';
+const DEFAULT_REFRESH_TOKEN_EXPIRES_IN = '15d';
+const DEFAULT_SESSION_COOKIE_MAX_AGE_MS = 15 * 24 * 60 * 60 * 1000;
+
+const parseDurationToMs = (value, fallbackMs) => {
+    const raw = String(value || '').trim();
+    if (!raw) return fallbackMs;
+
+    const numeric = Number(raw);
+    if (Number.isFinite(numeric) && numeric > 0) {
+        return Math.floor(numeric);
+    }
+
+    const match = raw.match(/^(\d+)\s*(ms|s|m|h|d|w)$/i);
+    if (!match) return fallbackMs;
+
+    const amount = Number(match[1]);
+    const unit = match[2].toLowerCase();
+    const unitMs = {
+        ms: 1,
+        s: 1000,
+        m: 60 * 1000,
+        h: 60 * 60 * 1000,
+        d: 24 * 60 * 60 * 1000,
+        w: 7 * 24 * 60 * 60 * 1000,
+    }[unit];
+
+    return Number.isFinite(amount) && unitMs ? amount * unitMs : fallbackMs;
+};
+
+const getAccessTokenExpiresIn = () => process.env.JWT_EXPIRES_IN || DEFAULT_ACCESS_TOKEN_EXPIRES_IN;
+const getRefreshTokenExpiresIn = () => process.env.JWT_REFRESH_EXPIRES_IN || DEFAULT_REFRESH_TOKEN_EXPIRES_IN;
+const getSessionCookieMaxAgeMs = () =>
+    parseDurationToMs(process.env.AUTH_SESSION_MAX_AGE || process.env.JWT_REFRESH_EXPIRES_IN, DEFAULT_SESSION_COOKIE_MAX_AGE_MS);
+
 class AuthController {
+    static sendDatabaseUnavailable(res) {
+        return res.status(503).json({
+            error: 'Database temporarily unavailable. Please try again.',
+            code: 'DATABASE_UNAVAILABLE'
+        });
+    }
+
+    static async sendWelcomeEmailBestEffort(user) {
+        try {
+            if (!user?.email) return;
+
+            const { subject, html, text } = buildWelcomeEmailTemplate({
+                name: user.name
+            });
+
+            await sendMail({
+                from: 'Kanishk at SuiteGenie <kanishksaraswat@suitegenie.in>',
+                to: user.email,
+                subject,
+                html,
+                text
+            });
+        } catch (error) {
+            console.error('Welcome email send failed (non-blocking):', error?.message || error);
+        }
+    }
+
+    static buildAccessTokenPayload(user) {
+        return {
+            userId: user.id,
+            email: user.email,
+            name: user.name || '',
+            planType: user.plan_type || 'free',
+            creditsRemaining: Number(user.credits_remaining || 0)
+        };
+    }
+
     // Helper function to set secure cookies
     static setAuthCookies(res, accessToken, refreshToken) {
         // Environment-based cookie configuration
         const isProduction = process.env.NODE_ENV === 'production';
         const isLocalhost = process.env.DOMAIN === 'localhost' || process.env.CLIENT_URL?.includes('localhost');
+        const useCrossSiteCookie = isProduction && !isLocalhost;
+        const sessionCookieMaxAgeMs = getSessionCookieMaxAgeMs();
         
         const cookieOptions = {
             httpOnly: true,
-            secure: isProduction,
-            sameSite: isProduction ? 'none' : 'lax',
+            secure: useCrossSiteCookie,
+            sameSite: useCrossSiteCookie ? 'none' : 'lax',
             path: '/',
-            maxAge: 15 * 60 * 1000 // 15 minutes
+            maxAge: sessionCookieMaxAgeMs
         };
 
         // Only set domain in production
@@ -41,7 +124,7 @@ class AuthController {
 
         const refreshCookieOptions = {
             ...cookieOptions,
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+            maxAge: sessionCookieMaxAgeMs
         };
 
         res.cookie('refreshToken', refreshToken, refreshCookieOptions);
@@ -51,11 +134,12 @@ class AuthController {
     static clearAuthCookies(res) {
         const isProduction = process.env.NODE_ENV === 'production';
         const isLocalhost = process.env.DOMAIN === 'localhost' || process.env.CLIENT_URL?.includes('localhost');
+        const useCrossSiteCookie = isProduction && !isLocalhost;
         
         const clearOptions = {
             httpOnly: true,
-            secure: isProduction,
-            sameSite: isProduction ? 'none' : 'lax',
+            secure: useCrossSiteCookie,
+            sameSite: useCrossSiteCookie ? 'none' : 'lax',
             path: '/'
         };
 
@@ -73,6 +157,38 @@ class AuthController {
         // For testing purposes, use a fixed OTP
         // return '123456';
         return Math.floor(100000 + Math.random() * 900000).toString();
+    }
+
+    static async getFreshUserSnapshot(reqUser) {
+        if (!reqUser?.id) {
+            return null;
+        }
+
+        try {
+            const result = await query(
+                'SELECT id, email, name, plan_type, credits_remaining FROM users WHERE id = $1 LIMIT 1',
+                [reqUser.id]
+            );
+
+            if (!result.rows.length) {
+                return null;
+            }
+
+            const freshUser = result.rows[0];
+            const stalePlan = String(reqUser.plan_type || '') !== String(freshUser.plan_type || '');
+            const staleCredits =
+                Number(reqUser.credits_remaining || 0) !== Number(freshUser.credits_remaining || 0);
+            const staleEmail = String(reqUser.email || '') !== String(freshUser.email || '');
+            const staleName = String(reqUser.name || '') !== String(freshUser.name || '');
+
+            if (stalePlan || staleCredits || staleEmail || staleName) {
+                invalidateAuthUserCache(reqUser.id);
+            }
+
+            return freshUser;
+        } catch (error) {
+            return reqUser;
+        }
     }
 
     // Register user - single method with email verification
@@ -124,30 +240,54 @@ class AuthController {
             // Create user
 
             const userId = uuidv4();
-            // Set credits_remaining to 0 and do not assign plan_type or credits until user chooses
+            // Set free plan immediately, but keep credits at 0 until user chooses a mode.
             const result = await query(
                 `INSERT INTO users (id, email, password_hash, name, plan_type, credits_remaining, created_at, updated_at)
                  VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
                  RETURNING id, email, name, plan_type, credits_remaining, created_at`,
-                [userId, email, passwordHash, name, null, 0]
+                [userId, email, passwordHash, name, 'free', 0]
             );
             const user = result.rows[0];
 
-            // Do NOT initialize Redis credits or plan here. This will be done when user selects a mode.
+            // Do NOT initialize Redis credits here. This will be done when the user selects a mode.
 
-            // Return user data without tokens (tokens only issued by login)
+            // Generate tokens to auto-login the user
+            const accessToken = jwt.sign(
+                AuthController.buildAccessTokenPayload(user),
+                process.env.JWT_SECRET,
+                { expiresIn: getAccessTokenExpiresIn() }
+            );
+
+            const refreshToken = jwt.sign(
+                { userId: user.id, email: user.email },
+                process.env.JWT_REFRESH_SECRET,
+                { expiresIn: getRefreshTokenExpiresIn() }
+            );
+
+            // Set auth cookies
+            AuthController.setAuthCookies(res, accessToken, refreshToken);
+
+            // Return user data with tokens for auto-login
             res.status(201).json({
-                message: 'Account created successfully. Please login to continue.',
+                message: 'Account created successfully',
+                accessToken,
                 user: {
                     id: user.id,
                     email: user.email,
                     name: user.name,
-                    planType: user.plan_type,
+                    planType: user.plan_type || 'free',
                     creditsRemaining: user.credits_remaining
                 }
             });
 
+            // Send welcome email without blocking signup success.
+            void AuthController.sendWelcomeEmailBestEffort(user);
+
         } catch (error) {
+            if (isDatabaseUnavailableError(error)) {
+                return AuthController.sendDatabaseUnavailable(res);
+            }
+
             console.error('Registration error:', error);
             res.status(500).json({ 
                 error: 'Failed to create account',
@@ -159,9 +299,12 @@ class AuthController {
     // Login user
     static async login(req, res) {
         try {
+            authDebug('[LOGIN] Login attempt for email:', req.body.email);
+            
             // Validate login data
             const validation = validateLoginData(req.body);
             if (!validation.isValid) {
+                authDebug('[LOGIN] Validation failed:', validation.errors);
                 return res.status(400).json({
                     error: 'Validation failed',
                     details: validation.errors,
@@ -178,6 +321,7 @@ class AuthController {
             );
 
             if (result.rows.length === 0) {
+                authDebug('[LOGIN] User not found:', email);
                 return res.status(401).json({
                     error: 'Invalid email or password',
                     code: 'INVALID_CREDENTIALS'
@@ -185,44 +329,56 @@ class AuthController {
             }
 
             const user = result.rows[0];
+            authDebug('[LOGIN] User found:', user.email, 'ID:', user.id);
 
             // Verify password
             const isValidPassword = await comparePassword(password, user.password_hash);
+            authDebug('[LOGIN] Password valid:', isValidPassword);
+            
             if (!isValidPassword) {
+                authDebug('[LOGIN] Invalid password for user:', email);
                 return res.status(401).json({
                     error: 'Invalid email or password',
                     code: 'INVALID_CREDENTIALS'
                 });
             }
 
+            authDebug('[LOGIN] Generating tokens for user:', user.id);
+            
             // Generate tokens
             const accessToken = jwt.sign(
-                { userId: user.id, email: user.email },
+                AuthController.buildAccessTokenPayload(user),
                 process.env.JWT_SECRET,
-                { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
+                { expiresIn: getAccessTokenExpiresIn() }
             );
 
             const refreshToken = jwt.sign(
                 { userId: user.id },
                 process.env.JWT_REFRESH_SECRET,
-                { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+                { expiresIn: getRefreshTokenExpiresIn() }
             );
 
             // Set cookies
             AuthController.setAuthCookies(res, accessToken, refreshToken);
 
+            authDebug('[LOGIN] Login successful for:', user.email);
+            
             res.json({
                 message: 'Login successful',
                 user: {
                     id: user.id,
                     email: user.email,
                     name: user.name,
-                    planType: user.plan_type,
+                    planType: user.plan_type || 'free',
                     creditsRemaining: user.credits_remaining
                 }
             });
         } catch (error) {
-            console.error('Login error:', error);
+            if (isDatabaseUnavailableError(error)) {
+                return AuthController.sendDatabaseUnavailable(res);
+            }
+
+            console.error('[LOGIN] Login error:', error?.message || error);
             res.status(500).json({
                 error: 'Login failed',
                 code: 'LOGIN_ERROR',
@@ -272,20 +428,20 @@ class AuthController {
 
             // Generate tokens
             const accessToken = jwt.sign(
-                { userId: user.id, email: user.email },
+                AuthController.buildAccessTokenPayload(user),
                 process.env.JWT_SECRET,
-                { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
+                { expiresIn: getAccessTokenExpiresIn() }
             );
 
             const refreshToken = jwt.sign(
                 { userId: user.id },
                 process.env.JWT_REFRESH_SECRET,
-                { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+                { expiresIn: getRefreshTokenExpiresIn() }
             );
 
             // Debug: Log tokens after generation
-            console.log('[LOGIN REDIRECT] accessToken:', accessToken);
-            console.log('[LOGIN REDIRECT] refreshToken:', refreshToken);
+            authDebug('[LOGIN REDIRECT] accessToken generated');
+            authDebug('[LOGIN REDIRECT] refreshToken generated');
 
             // Set cookies for platform
             AuthController.setAuthCookies(res, accessToken, refreshToken);
@@ -296,11 +452,15 @@ class AuthController {
                     id: user.id,
                     email: user.email,
                     name: user.name,
-                    planType: user.plan_type,
+                    planType: user.plan_type || 'free',
                     creditsRemaining: user.credits_remaining
                 }
             });
         } catch (error) {
+            if (isDatabaseUnavailableError(error)) {
+                return AuthController.sendDatabaseUnavailable(res);
+            }
+
             console.error('Login with redirect error:', error);
             res.status(500).json({
                 error: 'Login failed',
@@ -331,7 +491,7 @@ class AuthController {
             }
             
             // Generate a secure session ID (no sensitive data)
-            const sessionId = require('crypto').randomBytes(32).toString('hex');
+            const sessionId = crypto.randomBytes(32).toString('hex');
             
             // Store session data securely in memory/Redis (expires in 5 minutes)
             const sessionData = {
@@ -383,31 +543,68 @@ class AuthController {
                 });
             }
 
-            const { newPassword, email, otp } = validation.sanitized;
+            const { newPassword, email, otp, verificationToken } = validation.sanitized;
 
-            // Verify OTP from Redis
-            const otpKey = `otp:password-reset:${email}`;
-            const storedOtp = await redisClient.get(otpKey);
-            console.log(`[RESET PASSWORD] OTP Key: ${otpKey}`);
-            console.log(`[RESET PASSWORD] Stored OTP: ${storedOtp}`);
-            console.log(`[RESET PASSWORD] Provided OTP: ${otp}`);
-            if (!storedOtp || storedOtp !== otp) {
-                return res.status(400).json({
-                    error: 'Invalid or expired OTP',
-                    code: 'INVALID_OTP'
-                });
+            // Two flows: JWT-based (verificationToken) or OTP-based (email + otp)
+            let userId;
+            let userEmail;
+
+            if (verificationToken) {
+                // JWT-based flow: verify token
+                try {
+                    const tokenPayload = jwt.verify(verificationToken, process.env.JWT_SECRET);
+                    
+                    if (tokenPayload.purpose !== 'password-reset' || !tokenPayload.verified) {
+                        return res.status(400).json({ 
+                            error: 'Invalid verification token',
+                            code: 'INVALID_TOKEN'
+                        });
+                    }
+                    
+                    userEmail = tokenPayload.email;
+                } catch (error) {
+                    return res.status(400).json({ 
+                        error: 'Invalid or expired verification token',
+                        code: 'TOKEN_EXPIRED'
+                    });
+                }
+                
+                // Find user by email from token
+                const userResult = await query('SELECT id FROM users WHERE email = $1', [userEmail]);
+                if (userResult.rows.length === 0) {
+                    return res.status(404).json({
+                        error: 'User not found',
+                        code: 'USER_NOT_FOUND'
+                    });
+                }
+                userId = userResult.rows[0].id;
+            } else {
+                // OTP-based flow: verify OTP from Redis
+                const otpKey = `otp:password-reset:${email}`;
+                const storedOtp = await redisClient.get(otpKey);
+                console.log(`[RESET PASSWORD] OTP Key: ${otpKey}`);
+                console.log(`[RESET PASSWORD] Stored OTP: ${storedOtp}`);
+                console.log(`[RESET PASSWORD] Provided OTP: ${otp}`);
+                if (!storedOtp || storedOtp !== otp) {
+                    return res.status(400).json({
+                        error: 'Invalid or expired OTP',
+                        code: 'INVALID_OTP'
+                    });
+                }
+
+                // Find user by email
+                const userResult = await query('SELECT id FROM users WHERE email = $1', [email]);
+                if (userResult.rows.length === 0) {
+                    return res.status(404).json({
+                        error: 'User not found',
+                        code: 'USER_NOT_FOUND'
+                    });
+                }
+                userId = userResult.rows[0].id;
+                
+                // Delete the OTP after verification
+                await redisClient.del(otpKey);
             }
-
-            // Find user by email
-            const userResult = await query('SELECT id FROM users WHERE email = $1', [email]);
-            if (userResult.rows.length === 0) {
-                return res.status(404).json({
-                    error: 'User not found',
-                    code: 'USER_NOT_FOUND'
-                });
-            }
-
-            const userId = userResult.rows[0].id;
 
             // Hash new password
             const passwordHash = await hashPassword(newPassword);
@@ -417,9 +614,6 @@ class AuthController {
                 'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
                 [passwordHash, userId]
             );
-
-            // Delete the OTP after successful password reset to prevent replay attacks
-            await redisClient.del(otpKey);
 
             res.json({
                 message: 'Password reset successfully!'
@@ -522,83 +716,15 @@ class AuthController {
         }
     }
 
-    // Update notification preferences
-    static async updateNotifications(req, res) {
-        try {
-            // Validate notification preferences data
-            const validation = validateNotificationPreferences(req.body);
-            if (!validation.isValid) {
-                return res.status(400).json({
-                    error: 'Validation failed',
-                    details: validation.errors,
-                    code: 'VALIDATION_ERROR'
-                });
-            }
-
-            const { emailEnabled } = validation.sanitized;
-            const userId = req.user.id;
-
-            await query(
-                'UPDATE users SET notification_email_enabled = $1, updated_at = NOW() WHERE id = $2',
-                [emailEnabled, userId]
-            );
-
-            res.json({ 
-                message: 'Notification preferences updated successfully',
-                preferences: {
-                    emailEnabled
-                }
-            });
-        } catch (error) {
-            console.error('Update notifications error:', error);
-            res.status(500).json({ 
-                error: 'Failed to update notification preferences',
-                code: 'NOTIFICATION_UPDATE_ERROR'
-            });
-        }
-    }
-
-    // Toggle two-factor authentication
-    static async toggleTwoFactor(req, res) {
-        try {
-            // Validate two-factor settings data
-            const validation = validateTwoFactorSettings(req.body);
-            if (!validation.isValid) {
-                return res.status(400).json({
-                    error: 'Validation failed',
-                    details: validation.errors,
-                    code: 'VALIDATION_ERROR'
-                });
-            }
-
-            const { enabled } = validation.sanitized;
-            const userId = req.user.id;
-
-            await query(
-                'UPDATE users SET two_factor_enabled = $1, updated_at = NOW() WHERE id = $2',
-                [enabled, userId]
-            );
-
-            res.json({ 
-                message: `Two-factor authentication ${enabled ? 'enabled' : 'disabled'} successfully`,
-                twoFactorEnabled: enabled
-            });
-        } catch (error) {
-            console.error('Toggle 2FA error:', error);
-            res.status(500).json({ 
-                error: 'Failed to update two-factor authentication settings',
-                code: 'TWO_FACTOR_UPDATE_ERROR'
-            });
-        }
-    }
-
     // Delete account
     static async deleteAccount(req, res) {
         try {
             const userId = req.user.id;
 
+            console.log(`🗑️ Starting account deletion for user: ${userId}`);
+
             // Check if user exists
-            const userResult = await query('SELECT id FROM users WHERE id = $1', [userId]);
+            const userResult = await query('SELECT id, email FROM users WHERE id = $1', [userId]);
             if (userResult.rows.length === 0) {
                 return res.status(404).json({
                     error: 'User not found',
@@ -606,8 +732,219 @@ class AuthController {
                 });
             }
 
-            // Delete user account
-            await query('DELETE FROM users WHERE id = $1', [userId]);
+            const userEmail = userResult.rows[0].email;
+            const linkedinApiBase =
+                process.env.LINKEDIN_API_URL ||
+                process.env.LINKEDIN_GENIE_URL ||
+                'http://localhost:3004';
+            const tweetApiBase =
+                process.env.TWEET_API_URL ||
+                process.env.TWEET_GENIE_URL ||
+                'http://localhost:3002';
+            const socialApiBase =
+                process.env.SOCIAL_API_URL ||
+                process.env.SOCIAL_GENIE_URL ||
+                'http://localhost:3006';
+            const cleanupTimeoutMs = Number.parseInt(
+                process.env.ACCOUNT_DELETE_CLEANUP_TIMEOUT_MS || '5000',
+                10
+            );
+
+            const postCleanup = async (url, payload, successLabel, failureLabel) => {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), cleanupTimeoutMs);
+                try {
+                    const cleanupResponse = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                        signal: controller.signal,
+                    });
+
+                    const cleanupResult = await cleanupResponse.json().catch(() => ({}));
+                    if (!cleanupResponse.ok) {
+                        const detail = cleanupResult?.error
+                            || cleanupResult?.message
+                            || `${cleanupResponse.status} ${cleanupResponse.statusText}`.trim();
+                        throw new Error(`${failureLabel}: ${detail}`);
+                    }
+
+                    console.log(`   ✓ ${successLabel}:`, cleanupResult.deletedCounts || cleanupResult);
+                } catch (error) {
+                    const reason = error?.name === 'AbortError'
+                        ? `timeout after ${cleanupTimeoutMs}ms`
+                        : (error?.message || 'unknown cleanup error');
+                    throw new Error(`${failureLabel}: ${reason}`);
+                } finally {
+                    clearTimeout(timeoutId);
+                }
+            };
+            console.log(`📧 Deleting account for: ${userEmail}`);
+
+            // Begin transaction for complete cleanup using a dedicated client.
+            const client = await pool.connect();
+
+            try {
+                await client.query('BEGIN');
+
+                // 1. Check if user owns any teams - if yes, delete the entire team
+                const ownedTeamsResult = await client.query(
+                    'SELECT id, name FROM teams WHERE owner_id = $1',
+                    [userId]
+                );
+
+                if (ownedTeamsResult.rows.length > 0) {
+                    for (const team of ownedTeamsResult.rows) {
+                        console.log(`🏢 User owns team: ${team.name} (${team.id}), deleting team...`);
+                        await Promise.all([
+                            postCleanup(
+                                `${linkedinApiBase}/api/cleanup/team`,
+                                { teamId: team.id },
+                                'LinkedIn cleanup',
+                                'LinkedIn cleanup failed'
+                            ),
+                            postCleanup(
+                                `${tweetApiBase}/api/cleanup/team`,
+                                { teamId: team.id },
+                                'Twitter cleanup',
+                                'Twitter cleanup failed'
+                            ),
+                            postCleanup(
+                                `${socialApiBase}/api/cleanup/team`,
+                                { teamId: team.id },
+                                'Social cleanup',
+                                'Social cleanup failed'
+                            ),
+                        ]);
+
+                        // Delete team invitations
+                        const invitationsResult = await client.query(
+                            'DELETE FROM team_invitations WHERE team_id = $1',
+                            [team.id]
+                        );
+                        console.log(`   ✓ Deleted ${invitationsResult.rowCount} team invitations`);
+
+                        // Delete team social accounts from user_social_accounts
+                        const teamSocialAccountsResult = await client.query(
+                            'DELETE FROM user_social_accounts WHERE team_id = $1',
+                            [team.id]
+                        );
+                        console.log(`   ✓ Deleted ${teamSocialAccountsResult.rowCount} team social accounts`);
+
+                        // Delete team_accounts entries (if table exists)
+                        try {
+                            const teamAccountsResult = await client.query(
+                                'DELETE FROM team_accounts WHERE team_id = $1',
+                                [team.id]
+                            );
+                            console.log(`   ✓ Deleted ${teamAccountsResult.rowCount} team account entries`);
+                        } catch (error) {
+                            console.log(`   ℹ️  team_accounts table not found (skipped)`);
+                        }
+
+                        // Clear current_team_id for all users pointing to this team
+                        const usersResult = await client.query(
+                            'UPDATE users SET current_team_id = NULL WHERE current_team_id = $1',
+                            [team.id]
+                        );
+                        console.log(`   ✓ Cleared current_team_id for ${usersResult.rowCount} users`);
+
+                        // Delete all team members
+                        const membersResult = await client.query(
+                            'DELETE FROM team_members WHERE team_id = $1',
+                            [team.id]
+                        );
+                        console.log(`   ✓ Removed ${membersResult.rowCount} team members`);
+
+                        // Finally, delete the team itself
+                        await client.query('DELETE FROM teams WHERE id = $1', [team.id]);
+                        console.log(`   ✓ Deleted team: ${team.name}`);
+                    }
+                }
+
+                // 2. Delete user's personal social accounts (LinkedIn, Twitter, etc.)
+                const personalAccountsResult = await client.query(
+                    'DELETE FROM user_social_accounts WHERE user_id = $1 AND team_id IS NULL',
+                    [userId]
+                );
+                console.log(`📱 Deleted ${personalAccountsResult.rowCount} personal social accounts`);
+                await Promise.all([
+                    postCleanup(
+                        `${linkedinApiBase}/api/cleanup/user`,
+                        { userId },
+                        'LinkedIn user cleanup',
+                        'LinkedIn user cleanup failed'
+                    ),
+                    postCleanup(
+                        `${tweetApiBase}/api/cleanup/user`,
+                        { userId },
+                        'Twitter user cleanup',
+                        'Twitter user cleanup failed'
+                    ),
+                    postCleanup(
+                        `${socialApiBase}/api/cleanup/user`,
+                        { userId },
+                        'Social user cleanup',
+                        'Social user cleanup failed'
+                    ),
+                ]);
+
+                // 3. Remove user from any team memberships (where they're not owner)
+                const membershipResult = await client.query(
+                    'DELETE FROM team_members WHERE user_id = $1',
+                    [userId]
+                );
+                console.log(`👥 Removed user from ${membershipResult.rowCount} team memberships`);
+
+                // 4. Delete user API keys (BYOK)
+                try {
+                    const apiKeysResult = await client.query(
+                        'DELETE FROM user_api_keys WHERE user_id = $1',
+                        [userId]
+                    );
+                    console.log(`🔑 Deleted ${apiKeysResult.rowCount} API keys`);
+                } catch (error) {
+                    console.log(`   ℹ️  user_api_keys cleanup skipped`);
+                }
+
+                // 5. Delete credit transactions history
+                try {
+                    const transactionsResult = await client.query(
+                        'DELETE FROM credit_transactions WHERE user_id = $1',
+                        [userId]
+                    );
+                    console.log(`💳 Deleted ${transactionsResult.rowCount} credit transactions`);
+                } catch (error) {
+                    console.log(`   ℹ️  credit_transactions cleanup skipped`);
+                }
+
+                // 6. Delete pending team invitations sent to this user
+                try {
+                    const userInvitesResult = await client.query(
+                        'DELETE FROM team_invitations WHERE email = $1',
+                        [userEmail]
+                    );
+                    console.log(`📨 Deleted ${userInvitesResult.rowCount} pending invitations`);
+                } catch (error) {
+                    console.log(`   ℹ️  team_invitations cleanup skipped`);
+                }
+
+                // 7. Finally, delete the user account
+                await client.query('DELETE FROM users WHERE id = $1', [userId]);
+                console.log(`✅ Deleted user account: ${userEmail}`);
+
+                // Commit transaction
+                await client.query('COMMIT');
+                console.log(`🎉 Account deletion completed successfully`);
+
+            } catch (error) {
+                // Rollback on any error
+                await client.query('ROLLBACK');
+                console.error('❌ Error during account deletion, rolled back:', error);
+                throw error;
+            } finally {
+                client.release();
+            }
 
             // Clear authentication cookies
             AuthController.clearAuthCookies(res);
@@ -616,12 +953,13 @@ class AuthController {
             try {
                 await redisClient.del(`credits:${userId}`);
                 await redisClient.del(`plan:${userId}`);
+                console.log(`🗑️  Cleared Redis cache for user`);
             } catch (e) {
                 console.warn('Failed to clean up Redis data for deleted user:', e?.message || e);
             }
 
             res.json({ 
-                message: 'Account deleted successfully',
+                message: 'Account and all related data deleted successfully',
                 deleted: true
             });
         } catch (error) {
@@ -648,9 +986,21 @@ class AuthController {
 
             const { email, purpose } = validation.sanitized;
 
+            if (purpose === 'account-verification') {
+                const existingUserResult = await query(
+                    'SELECT id FROM users WHERE email = $1 LIMIT 1',
+                    [email]
+                );
+
+                if (existingUserResult.rows.length > 0) {
+                    return res.status(409).json({
+                        error: 'User with this email already exists',
+                        code: 'USER_EXISTS'
+                    });
+                }
+            }
+
             // Check rate limiting - prevent spam
-                // Debug: About to generate accessToken
-                console.log('[LOGIN REDIRECT] About to generate accessToken');
             const rateLimitKey = `otp_rate_limit:${email}`;
             const attempts = await redisClient.get(rateLimitKey);
             if (attempts && parseInt(attempts) >= 3) {
@@ -679,43 +1029,21 @@ class AuthController {
             await redisClient.setEx(rateLimitKey, 900, String((parseInt(attempts) || 0) + 1)); // 15 minutes
 
             // Prepare OTP email based on purpose
-            let subject, html;
-            switch (purpose) {
-                case 'password-reset':
-                    subject = 'Password Reset OTP';
-                    html = `
-                        <h2>Password Reset Request</h2>
-                        <p>Your OTP for resetting your password is: <strong>${otp}</strong></p>
-                        <p>This OTP will expire in 10 minutes.</p>
-                        <p>If you didn't request this, please ignore this email.</p>
-                    `;
-                    break;
-                case 'account-verification':
-                    subject = 'Account Verification OTP';
-                    html = `
-                        <h2>Account Verification</h2>
-                        <p>Your OTP for account verification is: <strong>${otp}</strong></p>
-                        <p>This OTP will expire in 10 minutes.</p>
-                        <p>Please use this code to verify your account.</p>
-                    `;
-                    break;
-                default: // verification
-                    subject = 'Email Verification OTP';
-                    html = `
-                        <h2>Email Verification</h2>
-                        <p>Your verification OTP is: <strong>${otp}</strong></p>
-                        <p>This OTP will expire in 10 minutes.</p>
-                        <p>Please use this code to complete the verification process.</p>
-                    `;
-            }
+            const { subject, html, text } = buildOtpEmailTemplate({
+                otp,
+                purpose,
+                expiresInMinutes: 10
+            });
 
 
             // Send email and only respond after success
             try {
                 await sendMail({
+                    from: 'SuiteGenie Security <noreply@suitegenie.in>',
                     to: email,
                     subject,
-                    html
+                    html,
+                    text
                 });
                 res.json({ 
                     message: 'OTP sent successfully',
@@ -728,6 +1056,10 @@ class AuthController {
             }
 
         } catch (error) {
+            if (isDatabaseUnavailableError(error)) {
+                return AuthController.sendDatabaseUnavailable(res);
+            }
+
             console.error('Send OTP error:', error);
             res.status(500).json({ error: 'Failed to send OTP' });
         }
@@ -748,6 +1080,20 @@ class AuthController {
 
 
             const { email, otp, purpose } = validation.sanitized;
+
+            if (purpose === 'account-verification') {
+                const existingUserResult = await query(
+                    'SELECT id FROM users WHERE email = $1 LIMIT 1',
+                    [email]
+                );
+
+                if (existingUserResult.rows.length > 0) {
+                    return res.status(409).json({
+                        error: 'User with this email already exists',
+                        code: 'USER_EXISTS'
+                    });
+                }
+            }
 
             // Get OTP from Redis
             const otpKey = `otp:${purpose}:${email}`;
@@ -808,13 +1154,25 @@ class AuthController {
     // Verify token (for modules)
     static async verifyToken(req, res) {
         try {
+            const user = await AuthController.getFreshUserSnapshot(req.user);
+
+            if (!user) {
+                return res.status(404).json({
+                    error: 'User not found',
+                    code: 'USER_NOT_FOUND'
+                });
+            }
+
             res.json({
                 valid: true,
                 user: {
-                    id: req.user.id,
-                    email: req.user.email,
-                    planType: req.user.plan_type,
-                    creditsRemaining: req.user.credits_remaining
+                    id: user.id,
+                    email: user.email,
+                    name: user.name,
+                    planType: user.plan_type || 'free',
+                    plan_type: user.plan_type || 'free',
+                    creditsRemaining: Number(user.credits_remaining || 0),
+                    credits_remaining: Number(user.credits_remaining || 0)
                 }
             });
         } catch (error) {
@@ -829,14 +1187,25 @@ class AuthController {
     // Get current user info (for external apps like Tweet Genie)
     static async getCurrentUser(req, res) {
         try {
+            const user = await AuthController.getFreshUserSnapshot(req.user);
+
+            if (!user) {
+                return res.status(404).json({
+                    error: 'User not found',
+                    code: 'USER_NOT_FOUND'
+                });
+            }
+
             res.json({
                 success: true,
                 user: {
-                    id: req.user.id,
-                    email: req.user.email,
-                    name: req.user.name,
-                    planType: req.user.plan_type,
-                    creditsRemaining: req.user.credits_remaining
+                    id: user.id,
+                    email: user.email,
+                    name: user.name,
+                    planType: user.plan_type || 'free',
+                    plan_type: user.plan_type || 'free',
+                    creditsRemaining: Number(user.credits_remaining || 0),
+                    credits_remaining: Number(user.credits_remaining || 0)
                 }
             });
         } catch (error) {
@@ -865,7 +1234,7 @@ class AuthController {
 
             // Check if user exists
             const result = await query(
-                'SELECT id, email FROM users WHERE id = $1',
+                'SELECT id, email, name, plan_type, credits_remaining FROM users WHERE id = $1',
                 [decoded.userId]
             );
 
@@ -880,15 +1249,15 @@ class AuthController {
 
             // Generate new tokens
             const newAccessToken = jwt.sign(
-                { userId: user.id, email: user.email },
+                AuthController.buildAccessTokenPayload(user),
                 process.env.JWT_SECRET,
-                { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
+                { expiresIn: getAccessTokenExpiresIn() }
             );
 
             const newRefreshToken = jwt.sign(
                 { userId: user.id },
                 process.env.JWT_REFRESH_SECRET,
-                { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+                { expiresIn: getRefreshTokenExpiresIn() }
             );
 
             // Set new cookies
@@ -898,10 +1267,17 @@ class AuthController {
                 message: 'Token refreshed successfully',
                 user: {
                     id: user.id,
-                    email: user.email
+                    email: user.email,
+                    name: user.name,
+                    planType: user.plan_type || 'free',
+                    creditsRemaining: user.credits_remaining
                 }
             });
         } catch (error) {
+            if (isDatabaseUnavailableError(error)) {
+                return AuthController.sendDatabaseUnavailable(res);
+            }
+
             console.error('Token refresh error:', error);
             AuthController.clearAuthCookies(res);
             res.status(401).json({

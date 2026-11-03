@@ -351,3 +351,228 @@
 .hover-scale:hover {
   transform: scale(1.02);
 }
+
+.hide-scrollbar {
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.blog-content {
+  color: #334155;
+  font-size: 1.125rem;
+  line-height: 1.85;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+.blog-content > * + * {
+  margin-top: 1.5rem;
+}
+
+.blog-h1 {
+  font-size: 2.75rem;
+  line-height: 1.15;
+  font-weight: 800;
+  margin-top: 2.5rem;
+  color: #0f172a;
+  letter-spacing: -0.03em;
+}
+
+.blog-h2 {
+  font-size: 2.25rem;
+  line-height: 1.25;
+  font-weight: 700;
+  margin-top: 3.5rem;
+  margin-bottom: 1.5rem;
+  color: #0f172a;
+  letter-spacing: -0.025em;
+  scroll-margin-top: 6.5rem;
+}
+
+.blog-h3 {
+  font-size: 1.5rem;
+  line-height: 1.4;
+  font-weight: 600;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  color: #1e293b;
+  letter-spacing: -0.015em;
+  scroll-margin-top: 6.5rem;
+}
+
+.blog-paragraph {
+  max-width: 68ch;
+  color: #334155;
+}
+
+.blog-list,
+.blog-ordered-list {
+  max-width: 68ch;
+  padding-left: 1.75rem;
+}
+
+.blog-list {
+  list-style-type: disc;
+}
+
+.blog-ordered-list {
+  list-style-type: decimal;
+}
+
+.blog-list li,
+.blog-ordered-list li {
+  margin-top: 0.75rem;
+  color: #334155;
+  padding-left: 0.25rem;
+}
+
+.blog-list li::marker {
+  color: #cbd5e1;
+}
+
+.blog-ordered-list li::marker {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.blog-blockquote {
+  max-width: 68ch;
+  position: relative;
+  background: linear-gradient(to right, #f8fafc, rgba(255, 255, 255, 0));
+  padding: 1.5rem 1.5rem 1.5rem 2.5rem;
+  border-radius: 0 1rem 1rem 0;
+  color: #1e293b;
+  font-size: 1.25rem;
+  line-height: 1.6;
+  font-weight: 500;
+  font-style: italic;
+  margin: 2.5rem 0;
+}
+
+.blog-blockquote::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(to bottom, #3b82f6, #8b5cf6);
+  border-radius: 4px;
+}
+
+.blog-link {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+  transition: all 0.2s ease;
+}
+
+.blog-link:hover {
+  text-decoration-thickness: 2px;
+  color: #2563eb;
+}
+
+.blog-link-internal {
+  color: #2563eb;
+  text-decoration-color: #bfdbfe;
+}
+
+.blog-link-external {
+  color: #0d9488;
+  text-decoration-color: #99f6e4;
+}
+
+.blog-inline-code {
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #0f172a;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  border-radius: 0.375rem;
+  font-size: 0.875em;
+  padding: 0.2rem 0.4rem;
+  font-weight: 500;
+}
+
+.blog-code-block {
+  max-width: 100%;
+  overflow-x: auto;
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  margin: 2rem 0;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+.blog-code {
+  color: #f8fafc;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  white-space: pre;
+}
+
+.blog-token-keyword {
+  color: #93c5fd;
+  font-weight: 600;
+}
+
+.blog-token-string {
+  color: #a7f3d0;
+}
+
+.blog-token-number {
+  color: #fca5a5;
+}
+
+.blog-token-comment {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.blog-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  margin: 2rem 0;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+}
+
+.blog-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  font-size: 0.95rem;
+}
+
+.blog-table th,
+.blog-table td {
+  border-bottom: 1px solid #e2e8f0;
+  padding: 1rem 1.25rem;
+  text-align: left;
+}
+
+.blog-table th {
+  background: #f8fafc;
+  color: #0f172a;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+.blog-table tr:last-child td {
+  border-bottom: none;
+}
+
+.blog-inline-image {
+  max-width: 100%;
+  border-radius: 1rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  margin: 2.5rem 0;
+}

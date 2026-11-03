@@ -3,7 +3,11 @@ import { toast } from 'react-hot-toast'
 import { validateOTPRequest, validateOTPVerification, formatValidationErrors } from '../utils/validation'
 import api from '../utils/api'
 
-
+const getErrorMessage = (error, fallback) =>
+    error?.response?.data?.error
+    || error?.response?.data?.message
+    || error?.message
+    || fallback
 
 const OTPModal = ({ 
     isOpen, 
@@ -82,11 +86,11 @@ const OTPModal = ({
                 purpose: validation.sanitized.purpose 
             })
             
-            toast.success('OTP sent to your email')
+            toast.success(response.data?.message || 'OTP sent to your email')
             setStep(2)
             setResendTimer(30) // 30 second cooldown
         } catch (error) {
-            const message = error.response?.data?.message || 'Failed to send OTP'
+            const message = error.response?.data?.error || error.response?.data?.message || 'Failed to send OTP'
             toast.error(message)
             console.error('Send OTP error:', error)
         }
@@ -132,21 +136,22 @@ const OTPModal = ({
             
             // Call success callback with verification data
             if (onSuccess) {
-                onSuccess({
+                await Promise.resolve(onSuccess({
                     email: validation.sanitized.email,
                     otp: validation.sanitized.otp,
                     verificationToken: data.token || data.verificationToken,
                     ...data
-                })
+                }))
             }
             
             // Don't call handleClose here, let parent component handle it
         } catch (error) {
-            const message = error.response?.data?.message || 'Invalid OTP'
+            const message = getErrorMessage(error, 'OTP verification failed. Please try again.')
             toast.error(message)
             console.error('Verify OTP error:', error)
+        } finally {
+            setLoading(false)
         }
-        setLoading(false)
     }
 
     // Resend OTP
@@ -162,10 +167,10 @@ const OTPModal = ({
                 purpose 
             })
             
-            toast.success('OTP sent again!')
+            toast.success(response.data?.message || 'OTP sent again!')
             setResendTimer(30)
         } catch (error) {
-            const message = error.response?.data?.message || 'Failed to resend OTP'
+            const message = error.response?.data?.error || error.response?.data?.message || 'Failed to resend OTP'
             toast.error(message)
             console.error('Resend OTP error:', error)
         }

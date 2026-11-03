@@ -2,6 +2,18 @@ import axios from 'axios'
 
 // CSRF token cache
 let csrfToken = null;
+const AGENCY_WORKSPACE_STORAGE_KEY = 'suitegenie:agency-workspace-context';
+const clearStoredAgencyWorkspaceContext = () => {
+    if (typeof window === 'undefined') return;
+    try {
+        window.sessionStorage?.removeItem(AGENCY_WORKSPACE_STORAGE_KEY);
+    } catch {
+        // Ignore storage cleanup issues.
+    }
+};
+
+const shouldPreserveStoredAgencyContext = (pathname = '') =>
+    String(pathname || '').startsWith('/agency') || String(pathname || '') === '/credits';
 
 // Fetch CSRF token from backend
 export async function fetchCsrfToken() {
@@ -15,17 +27,42 @@ export async function fetchCsrfToken() {
     }
 }
 
-const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+// Use relative URL in development to leverage Vite proxy, production uses absolute backend URL
+// Dynamic baseURL selection for different platforms
+const getBaseURL = (platform) => {
+    if (platform === 'twitter') {
+        // Tweet Genie backend
+        return 'http://localhost:3002/api';
+    } else if (platform === 'linkedin') {
+        // Linkedin Genie backend
+        return 'http://localhost:3004/api';
+    } else {
+        // New Platform backend
+        return import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '/api' : 'https://api.suitegenie.in/api');
+    }
+};
 
-// Set timeout: 45s for production, 10s for local/dev
+const baseURL = getBaseURL();
+
+// Set timeout: 45s for production, 20s for local/dev
 const isProd = window.location.hostname.includes('suitegenie.in') || import.meta.env.MODE === 'production';
-const timeout = isProd ? 45000 : 10000;
+const timeoutFromEnv = Number.parseInt(import.meta.env.VITE_API_TIMEOUT_MS || '', 10);
+const timeout = Number.isFinite(timeoutFromEnv) && timeoutFromEnv > 0
+    ? timeoutFromEnv
+    : (isProd ? 45000 : 20000);
 
 const api = axios.create({
     baseURL,
     withCredentials: true,
     timeout,
 })
+
+// Helper for Twitter-specific requests
+export const twitterApi = axios.create({
+    baseURL: getBaseURL('twitter'),
+    withCredentials: true,
+    timeout,
+});
 
 // Flag to prevent multiple refresh attempts
 let isRefreshing = false;
@@ -43,6 +80,94 @@ const processQueue = (error, token = null) => {
     failedQueue = [];
 };
 
+const readAgencyWorkspaceContext = () => {
+    if (typeof window === 'undefined') return null;
+
+    try {
+        const pathname = window.location.pathname || '';
+        const params = new URLSearchParams(window.location.search || '');
+        const token = String(params.get('agency_token') || '').trim();
+        const workspaceId = String(params.get('workspace_id') || '').trim();
+        const tool = String(params.get('tool') || '').trim();
+        const target = String(params.get('target') || '').trim();
+
+        if (token && workspaceId) {
+            const context = { token, workspaceId, tool: tool || null, target: target || null };
+            window.sessionStorage?.setItem(AGENCY_WORKSPACE_STORAGE_KEY, JSON.stringify(context));
+            return context;
+        }
+
+        if (!shouldPreserveStoredAgencyContext(pathname)) {
+            clearStoredAgencyWorkspaceContext();
+            return null;
+        }
+    } catch {
+        // Ignore malformed URL params and fall back to stored context.
+    }
+
+    try {
+        const stored = window.sessionStorage?.getItem(AGENCY_WORKSPACE_STORAGE_KEY);
+        return stored ? JSON.parse(stored) : null;
+    } catch {
+        clearStoredAgencyWorkspaceContext();
+        return null;
+    }
+};
+
+export const syncAgencyWorkspaceContext = (pathname, search = '') => {
+    if (typeof window === 'undefined') return null;
+
+    try {
+        const params = new URLSearchParams(search || '');
+        const token = String(params.get('agency_token') || '').trim();
+        const workspaceId = String(params.get('workspace_id') || '').trim();
+        const tool = String(params.get('tool') || '').trim();
+        const target = String(params.get('target') || '').trim();
+
+        if (token && workspaceId) {
+            const context = { token, workspaceId, tool: tool || null, target: target || null };
+            window.sessionStorage?.setItem(AGENCY_WORKSPACE_STORAGE_KEY, JSON.stringify(context));
+            return context;
+        }
+
+        if (!shouldPreserveStoredAgencyContext(pathname)) {
+            clearStoredAgencyWorkspaceContext();
+            return null;
+        }
+
+        const stored = window.sessionStorage?.getItem(AGENCY_WORKSPACE_STORAGE_KEY);
+        return stored ? JSON.parse(stored) : null;
+    } catch {
+        if (!shouldPreserveStoredAgencyContext(pathname)) {
+            clearStoredAgencyWorkspaceContext();
+        }
+        return null;
+    }
+};
+
+// All public routes that should never redirect to home on 401
+const isGuestPage = () => {
+    const path = window.location.pathname;
+    return path === '/' ||
+           path === '/login' ||
+           path === '/register' ||
+           path === '/signup' ||
+           path === '/about' ||
+           path === '/contact' ||
+           path === '/plans' ||
+           path === '/privacy' ||
+           path === '/terms' ||
+           path === '/pricing' ||
+           path === '/docs' ||
+           path === '/integrations' ||
+           path === '/help' ||
+           path === '/features' ||
+           path.startsWith('/blogs') ||
+           path.startsWith('/team/invite') ||
+           path.startsWith('/agency/invite') ||
+           path.startsWith('/agency/approve');
+};
+
 // Request interceptor
 api.interceptors.request.use(
     async (config) => {
@@ -55,6 +180,24 @@ api.interceptors.request.use(
                 config.headers['X-CSRF-Token'] = csrfToken;
             }
         }
+
+        delete config.headers['x-agency-token'];
+        delete config.headers['x-agency-workspace-id'];
+        delete config.headers['x-agency-tool'];
+        delete config.headers['x-agency-target'];
+
+        const agencyWorkspace = readAgencyWorkspaceContext();
+        if (agencyWorkspace?.token && agencyWorkspace?.workspaceId) {
+            config.headers['x-agency-token'] = agencyWorkspace.token;
+            config.headers['x-agency-workspace-id'] = agencyWorkspace.workspaceId;
+            if (agencyWorkspace.tool) {
+                config.headers['x-agency-tool'] = agencyWorkspace.tool;
+            }
+            if (agencyWorkspace.target) {
+                config.headers['x-agency-target'] = agencyWorkspace.target;
+            }
+        }
+
         return config;
     },
     (error) => {
@@ -86,15 +229,8 @@ api.interceptors.response.use(
                              sessionStorage.getItem('accessToken');
             
             if (!hasTokens) {
-                // No tokens available, but don't redirect if on guest pages
-                const isGuestPage = window.location.pathname === '/' || 
-                                   window.location.pathname === '/login' || 
-                                   window.location.pathname === '/register' ||
-                                   window.location.pathname === '/about' ||
-                                   window.location.pathname === '/contact' ||
-                                   window.location.pathname === '/plans';
-                                   
-                if (typeof window !== 'undefined' && !isGuestPage) {
+                // No tokens available, don't redirect if on guest/public pages
+                if (typeof window !== 'undefined' && !isGuestPage()) {
                     window.location.href = '/';
                 }
                 return Promise.reject(error);
@@ -135,15 +271,8 @@ api.interceptors.response.use(
                 processQueue(refreshError);
                 isRefreshing = false;
                 
-                // If refresh fails, but don't redirect if on guest pages
-                const isGuestPage = window.location.pathname === '/' || 
-                                   window.location.pathname === '/login' || 
-                                   window.location.pathname === '/register' ||
-                                   window.location.pathname === '/about' ||
-                                   window.location.pathname === '/contact' ||
-                                   window.location.pathname === '/plans';
-                                   
-                if (typeof window !== 'undefined' && !isGuestPage) {
+                // If refresh fails, don't redirect if on guest/public pages
+                if (typeof window !== 'undefined' && !isGuestPage()) {
                     window.location.href = '/';
                 }
                 

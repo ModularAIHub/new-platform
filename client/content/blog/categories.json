@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "all": {
+      "label": "All",
+      "description": "Social media automation insights, guides, comparisons, and product updates.",
+      "badgeClass": "bg-slate-100 text-slate-700 border-slate-200",
+      "pillClass": "bg-slate-100 text-slate-700 hover:bg-slate-200"
+    },
+    "guides": {
+      "label": "Guides",
+      "description": "Step-by-step playbooks to launch and scale your social automation workflows.",
+      "badgeClass": "bg-blue-100 text-blue-700 border-blue-200",
+      "pillClass": "bg-blue-100 text-blue-700 hover:bg-blue-200"
+    },
+    "updates": {
+      "label": "Updates",
+      "description": "Product launches, release notes, and roadmap updates from the SuiteGenie team.",
+      "badgeClass": "bg-emerald-100 text-emerald-700 border-emerald-200",
+      "pillClass": "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+    },
+    "comparisons": {
+      "label": "Comparisons",
+      "description": "Head-to-head analysis of SuiteGenie versus major social media tools.",
+      "badgeClass": "bg-violet-100 text-violet-700 border-violet-200",
+      "pillClass": "bg-violet-100 text-violet-700 hover:bg-violet-200"
+    },
+    "insights": {
+      "label": "Insights",
+      "description": "Data-backed trends and practical strategy insights for growth teams.",
+      "badgeClass": "bg-cyan-100 text-cyan-700 border-cyan-200",
+      "pillClass": "bg-cyan-100 text-cyan-700 hover:bg-cyan-200"
+    },
+    "story": {
+      "label": "Story",
+      "description": "Behind-the-scenes stories from building SuiteGenie and scaling the platform.",
+      "badgeClass": "bg-amber-100 text-amber-700 border-amber-200",
+      "pillClass": "bg-amber-100 text-amber-700 hover:bg-amber-200"
+    },
+    "use-cases": {
+      "label": "Use Cases",
+      "description": "Real-world workflows from agencies, creators, and startup teams.",
+      "badgeClass": "bg-rose-100 text-rose-700 border-rose-200",
+      "pillClass": "bg-rose-100 text-rose-700 hover:bg-rose-200"
+    },
+    "resources": {
+      "label": "Resources",
+      "description": "Templates, checklists, and resources to improve social media operations.",
+      "badgeClass": "bg-indigo-100 text-indigo-700 border-indigo-200",
+      "pillClass": "bg-indigo-100 text-indigo-700 hover:bg-indigo-200"
+    }
+  },
+  "order": [
+    "all",
+    "guides",
+    "updates",
+    "comparisons",
+    "insights",
+    "story",
+    "use-cases",
+    "resources"
+  ]
+}

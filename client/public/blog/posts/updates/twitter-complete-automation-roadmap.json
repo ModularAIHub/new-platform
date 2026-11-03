@@ -1,0 +1,36 @@
+{
+  "id": "twitter-complete-automation-roadmap",
+  "title": "Complete Twitter Automation — What We're Building and Where We Are",
+  "slug": "twitter-complete-automation-roadmap",
+  "category": "updates",
+  "tags": [
+    "twitter automation",
+    "tweetgenie",
+    "roadmap",
+    "suitegenie updates"
+  ],
+  "excerpt": "A full breakdown of the vision for TweetGenie's complete Twitter automation. What each phase does in plain English and why we're building it this way.",
+  "content": "## The Vision\n\nFull breakdown of the vision. What each phase does in plain English. Why we're building it this way. Why the big tools haven't done it.\n\n## The Phase Tracker\n\n🔵 **Phase 1 — Strategy Intelligence**\nAnalyses your Twitter account, builds your personalised strategy automatically\nStatus: 🔨 In Progress\n\n🟡 **Phase 2 — Weekly Content Generation**\nGenerates your week of tweets every Monday. You review in 2 minutes.\nStatus: ⏳ Coming Soon\n\n🟠 **Phase 3 — Content Calendar**\nSee everything scheduled. Drag to reschedule. Spot gaps before they happen.\nStatus: ⏳ Coming Soon\n\n🔴 **Phase 4 — Autopilot Mode**\nFull hands-off automation. Posts go live automatically. 1 hour undo window.\nStatus: ⏳ Coming Soon\n\n⚫ **Phase 5 — Self Learning**\nAnalyses what performed. Adjusts next week's content automatically. Gets smarter every week.\nStatus: ⏳ Coming Soon\n\nCheck out the full interactive roadmap at [suitegenie.in/automation](/automation) and join the waitlist.",
+  "featuredImage": {
+    "url": "/images/blog/suitegenie-launch-hero.svg",
+    "alt": "Roadmap phase tracker"
+  },
+  "author": {
+    "name": "Kanishk Saraswat",
+    "avatar": "/kanishk.png",
+    "twitter": "kanishksaraswat"
+  },
+  "publishDate": "2026-03-03T10:00:00+05:30",
+  "lastModified": "2026-03-03T10:00:00+05:30",
+  "readTime": 4,
+  "status": "draft",
+  "seo": {
+    "metaTitle": "Complete Twitter Automation Roadmap by TweetGenie",
+    "metaDescription": "A full breakdown of the vision for TweetGenie's complete Twitter automation",
+    "keywords": [
+      "twitter automation",
+      "roadmap"
+    ],
+    "canonicalUrl": "https://suitegenie.in/blogs/updates/twitter-complete-automation-roadmap"
+  }
+}

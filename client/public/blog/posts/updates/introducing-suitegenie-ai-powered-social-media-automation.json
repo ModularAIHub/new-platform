@@ -1,0 +1,55 @@
+{
+  "id": "suitegenie-launch-2026",
+  "title": "Introducing SuiteGenie: AI-Powered Social Media Automation",
+  "slug": "introducing-suitegenie-ai-powered-social-media-automation",
+  "category": "updates",
+  "tags": [
+    "suitegenie",
+    "product update",
+    "social media automation",
+    "launch"
+  ],
+  "excerpt": "SuiteGenie now runs as a connected operating system across Tweet Genie, LinkedIn Genie, Social Genie, and Agency mode, with clearer pricing and real automation add-ons.",
+  "content": "## Why SuiteGenie Looks Different Now\n\n> **Quick Answer:** SuiteGenie is no longer a single vague automation promise. It is a connected operating system across Tweet Genie, LinkedIn Genie, Social Genie, and Agency mode, with clearer pricing and real automation add-ons.\n\n\nThe first version of SuiteGenie was easy to describe as \"AI social media automation,\" but that language was too broad. Teams do not buy generic automation. They buy a way to plan, write, review, approve, publish, and learn without gluing five tools together.\n\nThat is what SuiteGenie is now built around.\n\n## What Is Live Today\n\n- **Tweet Genie** for X/Twitter drafting, threads, approvals, scheduling, and publishing\n- **LinkedIn Genie** for strategy builder flows, plan generation, writing support, and publishing\n- **Social Genie** for Threads and staged Instagram or YouTube rollout paths in the same system\n- **Agency mode** for client workspaces, approval links, pooled credits, and cross-product launch context\n- **BYOK + hosted credits** so users can choose between convenience and cost control\n- **Standalone Automation** and **Agency Automation** add-ons for deeper recurring workflows\n\n## The Product Model Is Simpler Now\n\nSuiteGenie pricing is now structured in a way that matches how people actually work.\n\n### 1. Base plan = ownership scope\n- **Free** for testing and lighter solo usage\n- **Pro** for solo operators and internal teams\n- **Agency** for client workspaces and pooled delivery\n\n### 2. Credits = AI execution\nCredits pay for AI-heavy tasks like generation, analysis refreshes, and deeper drafting loops. Publishing, approvals, comments, and calendar use stay workflow-native.\n\n### 3. Automation = add-on layer\nIf you only need deeper automation, you can now buy that separately instead of pretending you need a full agency setup.\n\n## Why That Matters\n\nThis gives us a better answer for the real buyer questions:\n\n- A founder who only wants stronger automation can stay lean.\n- An internal team can use Pro without buying agency overhead.\n- An agency can run pooled client workspaces and then add deeper automation only when it actually needs it.\n\n## Who Should Care Most\n\nThis matters most if you are:\n- a solo operator trying to keep the setup lean\n- an internal team that wants stronger execution without agency complexity\n- an agency that needs workspace-scoped client delivery, approvals, and pooled usage\n\n## What We Are Focused On Next\n\n- Better reporting and export for agency workflows\n- Deeper calendar control and scheduling visibility\n- Stronger analytics summaries across workspaces\n- Cleaner automation controls across the Genie modules\n\nSuiteGenie is moving away from vague marketing and toward a clearer system: one platform, multiple work modes, and automation that fits the scope you actually need.\n\n## Related Reading\n\n- [Why We Reshaped SuiteGenie Plans Around Real Usage](/blogs/updates/free-plan-lock-and-business-model-update)\n- [What Reliable Social Media Automation Actually Needs](/blogs/insights/what-reliable-social-automation-actually-needs)\n- [How Agency Teams Use SuiteGenie for Workspace-Based Client Ops](/blogs/use-cases/agency-team-content-ops-use-case)\n",
+  "featuredImage": {
+    "url": "/images/blog/suitegenie-launch-hero.svg",
+    "alt": "SuiteGenie launch banner with social media automation dashboard"
+  },
+  "author": {
+    "name": "Kanishk Saraswat",
+    "avatar": "/kanishk.png",
+    "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+    "social": {
+      "linkedin": "kanishk-saraswat",
+      "twitter": "kanishksaraswat"
+    }
+  },
+  "publishDate": "2026-02-14T20:00:00+05:30",
+  "lastModified": "2026-04-04T18:10:00+05:30",
+  "readTime": 6,
+  "featured": true,
+  "status": "published",
+  "seo": {
+    "metaTitle": "Introducing SuiteGenie: AI-Powered Social Media Automation",
+    "metaDescription": "SuiteGenie now connects Tweet Genie, LinkedIn Genie, Social Genie, and Agency mode with clearer plans, automation add-ons, and workspace-aware publishing.",
+    "keywords": [
+      "suitegenie launch",
+      "social media automation platform",
+      "ai social media management"
+    ],
+    "canonicalUrl": "https://suitegenie.in/blogs/updates/introducing-suitegenie-ai-powered-social-media-automation"
+  },
+  "schema": {
+    "type": "Article",
+    "faq": [
+      {
+        "question": "What is the main topic of Introducing SuiteGenie: AI-Powered Social Media Automation?",
+        "answer": "SuiteGenie now runs as a connected operating system across Tweet Genie, LinkedIn Genie, Social Genie, and Agency mode, with clearer pricing and real automation add-ons."
+      },
+      {
+        "question": "How does SuiteGenie help with social media automation?",
+        "answer": "It combines drafting, approvals, publishing, analytics, and automation layers in one connected product instead of forcing teams to stack unrelated tools."
+      }
+    ]
+  }
+}

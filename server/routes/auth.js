@@ -25,6 +25,12 @@ router.get('/verify-token', authenticateToken, AuthController.verifyToken);
 // Get current user info (for external apps)
 router.get('/me', authenticateToken, AuthController.getCurrentUser);
 
+// Add /validate endpoint for compatibility with clients expecting it
+router.get('/validate', authenticateToken, (req, res) => {
+	// If authentication passed, return user info or a simple valid response
+	res.status(200).json({ valid: true, user: req.user || null });
+});
+
 // Refresh token
 router.post('/refresh', AuthController.refreshToken);
 
@@ -42,9 +48,11 @@ router.post('/change-password', authenticateToken, AuthController.changePassword
 // Reset password (for forgot password flow - no authentication required)
 router.post('/reset-password', AuthController.resetPassword);
 
-router.post('/notifications', authenticateToken, AuthController.updateNotifications);
 
-router.post('/two-factor', authenticateToken, AuthController.toggleTwoFactor);
+// CSRF token endpoint for frontend
+router.get('/csrf-token', (req, res) => {
+	res.json({ csrfToken: req.csrfToken() });
+});
 
 router.delete('/delete-account', authenticateToken, AuthController.deleteAccount);
 

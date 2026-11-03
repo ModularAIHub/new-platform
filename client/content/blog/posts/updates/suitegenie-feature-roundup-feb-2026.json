@@ -1,0 +1,66 @@
+{
+    "id": "suitegenie-feature-roundup-feb-2026",
+    "title": "SuiteGenie Feature Roundup: What We Shipped and Why It Matters",
+    "slug": "suitegenie-feature-roundup-feb-2026",
+    "category": "updates",
+    "tags": [
+        "suitegenie updates",
+        "tweet genie",
+        "linkedin genie",
+        "strategy builder",
+        "bulk automation",
+        "team collaboration"
+    ],
+    "excerpt": "A roundup of new features added to SuiteGenie in February, including Team Mode, enhanced analytics, and better bulk automation workflows.",
+    "content": "## Quick Summary\n\n> **Quick Answer:** February brought major updates to SuiteGenie: Team Mode for collaborative publishing, deeper cross-platform analytics, and improved bulk automation workflows.\n\n\nFebruary was a massive month for the [SuiteGenie platform](/blogs/story/from-content-chaos-to-system-why-we-built-suitegenie). We focused heavily on collaboration, data visibility, and workflow speed. Here is what we shipped.\n\n## 1. Team Mode is Live\n\nManaging social media is rarely a solo job. We built Team Mode to bring your entire content operation into one workspace.\n\n- **Invite Members:** Add editors, managers, and clients to your workspace\n- **Role-Based Access:** Control who can create drafts, who can approve, and who can publish\n- **Shared Accounts:** Connect a team Twitter or LinkedIn account once, and let the whole team use it safely\n- **Approval Workflows:** Require sign-off before content goes live to protect your brand\n\n*Read the full deep dive into [Team Mode Workflows](/blogs/use-cases/agency-team-content-ops-use-case).*\n\n---\n\n## 2. Enhanced Global Analytics\n\nPosting is only half the battle. You need to know what is actually working. We revamped our global analytics dashboard to give you clearer performance data.\n\n- **Unified History:** See your Twitter and LinkedIn post history side-by-side\n- **Engagement Sync:** Real-time sync for likes, retweets, replies, and impressions\n- **Cross-Platform Comparison:** See which topics perform better on X vs LinkedIn\n- **Reliability:** We made major backend improvements to ensure [analytics data](/blogs/updates/cross-posting-scheduling-reliability-roundup-feb-2026) never drops during syncs\n\n---\n\n## 3. Better Bulk Automation\n\nCreating a month of content shouldn't take a month of prep. We smoothed out the bulk generation and routing flows.\n\n- **Faster Generators:** AI generation is now 30% faster across the board\n- **Context Preservation:** Strategy and tone-of-voice settings stick better during bulk runs\n- **Queue Management:** It's now easier to drag, drop, and reorganize your bulk drafts before committing them to the flow\n\n*Check out our [14-Day Bulk Publishing Playbook](/blogs/guides/bulk-generation-14-day-playbook) to see this in action.*\n\n---\n\n## What's Coming in March\n\nWe aren't slowing down. Next month, expect tightening around team account visibility, better handling of complex cross-posting scenarios, and laying the groundwork for even deeper [Strategy Builder](/blogs/updates/linkedin-genie-strategy-builder-and-tweet-genie-rollout) integration.\n\nStay tuned, and keep shipping.\n\n---\n\n### Related Reads\n- [How to Set Up Personal and Team Accounts](/blogs/guides/how-to-set-up-personal-and-team-accounts-in-suitegenie)\n- [What Reliable Social Automation Actually Needs](/blogs/insights/what-reliable-social-automation-actually-needs)",
+    "featuredImage": {
+        "url": "/images/blog/suitegenie-launch-hero.svg",
+        "alt": "SuiteGenie product update board with shipped features list"
+    },
+    "author": {
+        "name": "Kanishk Saraswat",
+        "avatar": "/kanishk.png",
+        "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+        "social": {
+            "linkedin": "kanishk-saraswat",
+            "twitter": "kanishksaraswat"
+        }
+    },
+    "publishDate": "2026-02-15T09:45:00+05:30",
+    "lastModified": "2026-02-15T09:45:00+05:30",
+    "readTime": 7,
+    "featured": true,
+    "status": "published",
+    "seo": {
+        "metaTitle": "SuiteGenie Feature Roundup: February 2026",
+        "metaDescription": "A roundup of new features added to SuiteGenie in February, including Team Mode, enhanced analytics, and better bulk automation workflows.",
+        "keywords": [
+            "suitegenie updates",
+            "team publishing",
+            "social media analytics",
+            "bulk automation",
+            "twitter automation",
+            "social media automation release notes"
+        ],
+        "canonicalUrl": "https://suitegenie.in/blogs/updates/suitegenie-feature-roundup-feb-2026",
+        "geo": {
+            "region": "IN",
+            "placename": "India",
+            "latitude": "20.5937",
+            "longitude": "78.9629"
+        }
+    },
+    "schema": {
+        "type": "Article",
+        "faq": [
+            {
+                "question": "What is the best planning window for bulk content?",
+                "answer": "Use 7 to 14 days for bulk plans, then revisit strategy and refresh prompts based on new performance signals."
+            },
+            {
+                "question": "Can teams review and approve before publishing?",
+                "answer": "Yes. Team workflows support role-based collaboration and approval checkpoints to reduce publishing mistakes."
+            }
+        ]
+    }
+}

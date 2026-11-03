@@ -13,13 +13,20 @@ router.get('/invitations/pending', TeamController.pendingInvites);
 // Accept team invitation
 router.post('/invitations/:inviteId/accept', TeamController.acceptInvite);
 
-// Invite team member to workspace
-router.post('/workspaces/:workspaceId/invite', TeamController.invite);
+// Public routes for token-based invitations
+router.get('/invitations/token/:token', TeamController.getInvitationByToken);
+router.post('/invitations/token/:token/accept', TeamController.acceptInvitationByToken);
+router.post('/invitations/token/:token/decline', TeamController.declineInvitationByToken);
+
+// Invite team member to team
+router.post('/teams/:teamId/invite', TeamController.invite);
 
 // Update team member role
-router.put('/workspaces/:workspaceId/members/:memberId/role', TeamController.updateRole);
+router.put('/teams/:teamId/members/:memberId/role', TeamController.updateRole);
 
-// Remove team member
-router.delete('/workspaces/:workspaceId/members/:memberId', TeamController.remove);
+// Remove team member by team_members.id (pending or active)
+router.delete('/members/:memberId', TeamController.removeByMemberId);
+// Remove team member by user_id (legacy/active)
+router.delete('/teams/:teamId/members/:memberId', TeamController.remove);
 
 export default router;

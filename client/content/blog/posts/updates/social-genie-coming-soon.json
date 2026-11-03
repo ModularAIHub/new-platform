@@ -1,0 +1,57 @@
+{
+    "id": "meta-genie-coming-soon",
+    "title": "Social Genie Status Update: Threads Live, Instagram and YouTube Wired for Rollout",
+    "slug": "meta-genie-coming-soon",
+    "category": "updates",
+    "tags": [
+        "social genie",
+        "threads",
+        "instagram",
+        "youtube",
+        "suitegenie platform"
+    ],
+    "excerpt": "Social Genie is no longer a vague future product. Threads is live, Instagram and YouTube are wired for rollout, and Agency mode can launch into that context.",
+    "content": "## Social Genie Status Update\n\n> **Quick Answer:** Social Genie is no longer just a roadmap placeholder. Threads is live, Instagram and YouTube are wired for rollout, and Agency mode can launch into the same operating context.\n\n\nThis product used to be described as \"coming soon\" because the rollout was fragmented. That is no longer the right message.\n\n## What Social Genie Covers\n\nSocial Genie is the part of SuiteGenie that handles:\n\n- Threads\n- Instagram rollout paths\n- YouTube rollout paths\n- shared social publishing context for Agency workspaces\n\n## What Is Live vs Staged\n\n### Live now\n- Threads support in the shared system\n- invite and environment-based rollout control\n- agency-aware launch context from client workspaces\n\n### Staged but wired\n- Instagram rollout support\n- YouTube rollout support\n- tester and invite-based activation paths for safer release control\n\n## Why This Matters\n\nThe important thing is not only that more platforms exist. It is that they now sit in the same operating layer as Tweet Genie, LinkedIn Genie, and Agency mode.\n\nThat means a client workspace can manage brand context, approvals, credits, and planning once, then launch into the right execution module with that context already attached.\n\n## Who Should Use It Today\n\nSocial Genie is already useful for teams that:\n- want Threads inside the same wider SuiteGenie operating flow\n- need staged rollout control instead of forcing every platform live at once\n- care about carrying workspace context across execution tools\n\n## What To Expect Next\n\n- broader Instagram and YouTube availability\n- stronger calendar visibility for mixed-platform workspaces\n- better analytics and reporting continuity across the modules\n\nSocial Genie is now part of the real SuiteGenie product surface, not just a future promise.\n\n## Related Reading\n\n- [Introducing SuiteGenie: AI-Powered Social Media Automation](/blogs/updates/introducing-suitegenie-ai-powered-social-media-automation)\n- [How Agency Teams Use SuiteGenie for Workspace-Based Client Ops](/blogs/use-cases/agency-team-content-ops-use-case)\n- [What Reliable Social Media Automation Actually Needs](/blogs/insights/what-reliable-social-automation-actually-needs)\n",
+    "featuredImage": {
+        "url": "/images/blog/suitegenie-launch-hero.svg",
+        "alt": "Social Genie rollout stages across Threads, Instagram, and YouTube"
+    },
+    "author": {
+        "name": "Kanishk Saraswat",
+        "avatar": "/kanishk.png",
+        "bio": "Founder @ SuiteGenie, building AI-powered social media automation for agencies and creators.",
+        "social": {
+            "linkedin": "kanishk-saraswat",
+            "twitter": "kanishksaraswat"
+        }
+    },
+    "publishDate": "2026-02-21T10:40:00+05:30",
+    "lastModified": "2026-04-04T18:10:00+05:30",
+    "readTime": 4,
+    "featured": true,
+    "status": "published",
+    "seo": {
+        "metaTitle": "Social Genie Status Update: Threads Live, Instagram and YouTube Wired for Rollout",
+        "metaDescription": "Social Genie now covers live Threads support plus staged Instagram and YouTube rollout paths inside the broader SuiteGenie system.",
+        "keywords": [
+            "social genie",
+            "threads scheduling",
+            "instagram rollout",
+            "youtube publishing"
+        ],
+        "canonicalUrl": "https://suitegenie.in/blogs/updates/meta-genie-coming-soon"
+    },
+    "schema": {
+        "type": "Article",
+        "faq": [
+            {
+                "question": "Is Social Genie already usable?",
+                "answer": "Yes. Threads is live, and Instagram or YouTube rollout paths are wired with staged availability controls."
+            },
+            {
+                "question": "How does Social Genie connect to Agency mode?",
+                "answer": "Agency workspaces can launch into Social Genie with brand and workspace context already attached."
+            }
+        ]
+    }
+}

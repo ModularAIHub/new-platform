@@ -8,6 +8,7 @@ export const URLS = {
   // Tool URLs
   TWEET_GENIE: 'https://tweet.suitegenie.in',
   LINKEDIN_GENIE: 'https://linkedin.suitegenie.in',
+  SOCIAL_GENIE: import.meta.env.VITE_SOCIAL_GENIE_URL || 'https://meta.suitegenie.in',
   WORDPRESS_WRITER: import.meta.env.VITE_WORDPRESS_WRITER_URL || 'http://localhost:5176',
   CUSTOM_LLM: import.meta.env.VITE_CUSTOM_LLM_URL || 'http://localhost:5177',
   
@@ -15,6 +16,7 @@ export const URLS = {
   PRODUCTION: {
     TWEET_GENIE: 'https://tweet.suitegenie.in',
     LINKEDIN_GENIE: 'https://linkedin.suitegenie.in',
+    SOCIAL_GENIE: 'https://meta.suitegenie.in',
     WORDPRESS_WRITER: 'https://wordpress.suitegenie.in',
     CUSTOM_LLM: 'https://llm.suitegenie.in',
     API_BASE: 'https://api.suitegenie.in'
@@ -34,6 +36,13 @@ export const TOOLS = {
     name: 'LinkedIn Genie',
     description: 'Professional LinkedIn content creation',
     url: 'https://linkedin.suitegenie.in',
+    status: 'active',
+    icon: 'ExternalLink'
+  },
+  SOCIAL_GENIE: {
+    name: 'Social Genie',
+    description: 'Instagram + Threads + YouTube social publishing and automation',
+    url: URLS.SOCIAL_GENIE,
     status: 'active',
     icon: 'ExternalLink'
   },

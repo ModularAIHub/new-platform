@@ -1,0 +1,615 @@
+// teamService.js
+// Service for team collaboration features - Pro plan
+import { query } from '../config/database.js';
+import crypto from 'crypto';
+import EmailService from './emailService.js';
+
+export const TeamService = {
+    // Create a team for a Pro user
+    async createTeam(ownerId, teamName) {
+        const ownerPlanResult = await query('SELECT plan_type FROM users WHERE id = $1', [ownerId]);
+        const ownerPlanType = ownerPlanResult.rows[0]?.plan_type || 'pro';
+        const maxMembers = ownerPlanType === 'enterprise' ? 15 : ownerPlanType === 'agency' ? 6 : 5;
+        
+        console.log('[TeamService] Creating team for user:', ownerId, 'name:', teamName);
+        
+        try {
+            // Check if user already owns a team (no lock needed for SELECT)
+            const existingOwner = await query(
+                `SELECT id FROM teams WHERE owner_id = $1`,
+                [ownerId]
+            );
+            
+            if (existingOwner.rows.length > 0) {
+                console.log('[TeamService] User already owns team:', existingOwner.rows[0].id);
+                throw new Error('You already own a team');
+            }
+            
+            console.log('[TeamService] Inserting new team...');
+            const result = await query(
+                `INSERT INTO teams (name, owner_id, plan_type, max_members) 
+                 VALUES ($1, $2, $3, $4) 
+                 RETURNING *`,
+                [teamName, ownerId, ownerPlanType, maxMembers]
+            );
+            
+            const teamId = result.rows[0].id;
+            console.log('[TeamService] Team created with ID:', teamId);
+            
+            // Add owner as team member
+            console.log('[TeamService] Adding owner as team member...');
+            await query(
+                `INSERT INTO team_members (team_id, user_id, email, role, status, joined_at)
+                 SELECT $1, $2, u.email, 'owner', 'active', CURRENT_TIMESTAMP
+                 FROM users u WHERE u.id = $2`,
+                [teamId, ownerId]
+            );
+            
+            // Set as user's current team
+            console.log('[TeamService] Setting as current team...');
+            await query(
+                `UPDATE users SET current_team_id = $1 WHERE id = $2`,
+                [teamId, ownerId]
+            );
+            
+            // Get team members to return full team object
+            console.log('[TeamService] Fetching team members...');
+            const membersResult = await query(`
+                SELECT 
+                    tm.id,
+                    tm.email,
+                    tm.role,
+                    tm.status,
+                    tm.joined_at,
+                    COALESCE(u.name, tm.email) as user_name
+                FROM team_members tm 
+                LEFT JOIN users u ON tm.user_id = u.id
+                WHERE tm.team_id = $1 AND tm.status = $2
+                ORDER BY tm.joined_at ASC
+            `, [teamId, 'active']);
+            
+            console.log('[TeamService] Team creation successful');
+            return {
+                ...result.rows[0],
+                user_role: 'owner',
+                member_count: membersResult.rows.length,
+                members: membersResult.rows
+            };
+        } catch (error) {
+            console.error('[TeamService] Team creation error:', error.message);
+            throw error;
+        }
+    },
+
+    // Get user's team info
+    async getUserTeam(userId) {
+        // First check if user is in any team
+        const memberResult = await query(
+            'SELECT team_id, role, status FROM team_members WHERE user_id = $1 AND status = $2',
+            [userId, 'active']
+        );
+
+        if (memberResult.rows.length === 0) {
+            return null;
+        }
+
+        const teamId = memberResult.rows[0].team_id;
+        const userRole = memberResult.rows[0].role;
+
+        // Get team details
+        const teamResult = await query(
+            'SELECT * FROM teams WHERE id = $1',
+            [teamId]
+        );
+
+        if (teamResult.rows.length === 0) {
+            return null;
+        }
+
+        // Get team members
+        const membersResult = await query(`
+            SELECT 
+                tm.id,
+                tm.email,
+                tm.role,
+                tm.status,
+                tm.joined_at,
+                COALESCE(u.name, tm.email) as user_name
+            FROM team_members tm 
+            LEFT JOIN users u ON tm.user_id = u.id
+            WHERE tm.team_id = $1 AND tm.status = $2
+            ORDER BY tm.joined_at ASC
+        `, [teamId, 'active']);
+
+        return {
+            ...teamResult.rows[0],
+            user_role: userRole,
+            member_count: membersResult.rows.length,
+            members: membersResult.rows
+        };
+    },
+
+    // Invite a user to team
+    async inviteToTeam(teamId, inviterUserId, inviteEmail, role = 'editor') {
+        // Check if inviter has permission
+        const inviter = await query(
+            `SELECT tm.role, t.max_members, t.owner_id
+             FROM team_members tm 
+             JOIN teams t ON tm.team_id = t.id
+             WHERE tm.team_id = $1 AND tm.user_id = $2 AND tm.status = 'active'`,
+            [teamId, inviterUserId]
+        );
+
+        if (!inviter.rows[0] || !['owner', 'admin'].includes(inviter.rows[0].role)) {
+            throw new Error('You do not have permission to invite users');
+        }
+
+        // Check team capacity
+        const memberCount = await query(
+            `SELECT COUNT(*) as count FROM team_members WHERE team_id = $1 AND status = 'active'`,
+            [teamId]
+        );
+
+        if (parseInt(memberCount.rows[0].count) >= inviter.rows[0].max_members) {
+            throw new Error(`Team is at maximum capacity (${inviter.rows[0].max_members} members)`);
+        }
+
+        // Check if user is already a team member
+        // Check if inviteEmail corresponds to a registered user
+        const inviteUserRes = await query('SELECT id FROM users WHERE email = $1', [inviteEmail]);
+        const inviteUserId = inviteUserRes.rows[0]?.id || null;
+
+        // Check membership across ANY team by email OR user_id
+        const existingAny = await query(
+            `SELECT team_id, status FROM team_members
+             WHERE (email = $1 OR (user_id IS NOT NULL AND user_id = $2))
+             LIMIT 1`,
+            [inviteEmail, inviteUserId]
+        );
+
+        if (existingAny.rows.length > 0) {
+            const existing = existingAny.rows[0];
+            if (String(existing.team_id) === String(teamId)) {
+                if (existing.status === 'pending') {
+                    throw new Error('User already invited');
+                }
+                throw new Error('User is already a member of this team');
+            }
+
+            // User belongs to another team — block invite
+            throw new Error('The user is already a member of another team and cannot be invited.');
+        }
+
+        // Check for existing pending invitations
+        const existingInvite = await query(
+            `SELECT * FROM team_invitations 
+             WHERE team_id = $1 AND email = $2 AND status = 'pending'
+             ORDER BY created_at DESC LIMIT 1`,
+            [teamId, inviteEmail]
+        );
+
+        // Generate new invitation token and expiry
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiry
+
+        let invitation;
+        let isResend = false;
+
+        if (existingInvite.rows.length > 0) {
+            // Update existing invitation with new token and expiry (allows resending)
+            invitation = await query(
+                `UPDATE team_invitations 
+                 SET token = $1, expires_at = $2, created_at = CURRENT_TIMESTAMP, invited_by = $3, role = $4
+                 WHERE id = $5
+                 RETURNING *`,
+                [token, expiresAt, inviterUserId, role, existingInvite.rows[0].id]
+            );
+            isResend = true;
+
+            // Update pending team_members entry with new role
+            await query(
+                `UPDATE team_members 
+                 SET role = $1
+                 WHERE team_id = $2 AND email = $3 AND status = 'pending'`,
+                [role, teamId, inviteEmail]
+            );
+        } else {
+            // Create new invitation
+            invitation = await query(
+                `INSERT INTO team_invitations (team_id, email, invited_by, token, expires_at, role)
+                 VALUES ($1, $2, $3, $4, $5, $6)
+                 RETURNING *`,
+                [teamId, inviteEmail, inviterUserId, token, expiresAt, role]
+            );
+
+            // Create a pending team_members entry with the specified role
+            await query(
+                `INSERT INTO team_members (team_id, email, role, status)
+                 VALUES ($1, $2, $3, 'pending')`,
+                [teamId, inviteEmail, role]
+            );
+        }
+
+        // Send invitation email
+        await this.sendInvitationEmail(inviteEmail, token, teamId, role);
+
+        return { ...invitation.rows[0], isResend };
+    },
+
+    // Send invitation email using Resend
+    async sendInvitationEmail(email, token, teamId, role = 'editor') {
+        try {
+            const teamInfo = await query(
+                `SELECT t.name, u.email as owner_email, u.name as owner_name
+                 FROM teams t 
+                 JOIN users u ON t.owner_id = u.id 
+                 WHERE t.id = $1`,
+                [teamId]
+            );
+
+            const team = teamInfo.rows[0];
+            const clientUrl = process.env.CLIENT_URL || process.env.BASE_URL || 'https://suitegenie.in';
+            const inviteUrl = `${clientUrl}/team/invite/${token}`;
+            
+            // Use the Resend EmailService
+            const emailService = new EmailService();
+            
+            const expiresAt = new Date();
+            expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiry
+            
+            await emailService.sendTeamInvitation({
+                recipientEmail: email,
+                recipientName: email, // Use email as name since we don't have the recipient's name
+                inviterName: team.owner_name,
+                inviterEmail: team.owner_email,
+                teamName: team.name,
+                role: role,
+                invitationToken: token,
+                expiresAt: expiresAt
+            });
+            
+            console.log(`✅ Team invitation email sent to ${email}`);
+        } catch (error) {
+            console.error('❌ Failed to send invitation email:', error);
+            const clientUrl = process.env.CLIENT_URL || process.env.BASE_URL || 'https://suitegenie.in';
+            const inviteUrl = `${clientUrl}/team/invite/${token}`;
+            console.log('📧 Invitation link (email failed):', inviteUrl);
+        }
+    },
+
+    // Accept team invitation
+    async acceptInvitation(token, userId) {
+        // Find invitation
+        const invitation = await query(
+            `SELECT ti.*, t.name as team_name, t.max_members
+             FROM team_invitations ti
+             JOIN teams t ON ti.team_id = t.id
+             WHERE ti.token = $1 AND ti.status = 'pending' AND ti.expires_at > CURRENT_TIMESTAMP`,
+            [token]
+        );
+
+        if (!invitation.rows[0]) {
+            throw new Error('Invalid or expired invitation');
+        }
+
+        const invite = invitation.rows[0];
+
+        // Check team capacity
+        const memberCount = await query(
+            `SELECT COUNT(*) as count FROM team_members WHERE team_id = $1 AND status = 'active'`,
+            [invite.team_id]
+        );
+
+        if (parseInt(memberCount.rows[0].count) >= invite.max_members) {
+            throw new Error(`Team is at maximum capacity`);
+        }
+
+        // Get the role from the pending team_members entry
+        const pendingMember = await query(
+            `SELECT role FROM team_members WHERE team_id = $1 AND email = $2 AND status = 'pending'`,
+            [invite.team_id, invite.email]
+        );
+        
+        const assignedRole = pendingMember.rows[0]?.role || 'editor'; // Fallback to editor if not found
+
+        // Update the existing pending team_members entry to active
+        const updateResult = await query(
+            `UPDATE team_members 
+             SET user_id = $1, status = 'active', joined_at = CURRENT_TIMESTAMP
+             WHERE team_id = $2 AND email = $3 AND status = 'pending'
+             RETURNING id`,
+            [userId, invite.team_id, invite.email]
+        );
+        
+        // If no pending entry was found (legacy invitations), create a new one
+        if (updateResult.rows.length === 0) {
+            await query(
+                `INSERT INTO team_members (team_id, user_id, email, role, status, joined_at)
+                 SELECT $1, $2, u.email, $3, 'active', CURRENT_TIMESTAMP
+                 FROM users u WHERE u.id = $2`,
+                [invite.team_id, userId, assignedRole]
+            );
+        }
+
+        // Update user's current team
+        await query(
+            `UPDATE users SET current_team_id = $1 WHERE id = $2`,
+            [invite.team_id, userId]
+        );
+
+        // Mark invitation as accepted
+        await query(
+            `UPDATE team_invitations SET status = 'accepted' WHERE id = $1`,
+            [invite.id]
+        );
+
+        return { teamId: invite.team_id, teamName: invite.team_name };
+    },
+
+    // Remove team member
+    async removeMember(teamId, memberUserId, removedByUserId) {
+        // Check if user is removing themselves (leaving) or being removed by admin/owner
+        const isSelfRemoval = memberUserId === removedByUserId;
+        
+        // For self-removal, just check they're a member
+        // For admin removal, check permissions
+        if (!isSelfRemoval) {
+            const remover = await query(
+                `SELECT role FROM team_members 
+                 WHERE team_id = $1 AND user_id = $2 AND status = 'active'`,
+                [teamId, removedByUserId]
+            );
+
+            if (!remover.rows[0] || !['owner', 'admin'].includes(remover.rows[0].role)) {
+                throw new Error('You do not have permission to remove members');
+            }
+        }
+
+        // Can't remove owner
+        const member = await query(
+            `SELECT role, email FROM team_members 
+             WHERE team_id = $1 AND user_id = $2 AND status = 'active'`,
+            [teamId, memberUserId]
+        );
+
+        if (member.rows[0]?.role === 'owner') {
+            throw new Error('Cannot remove team owner');
+        }
+
+        if (!member.rows[0]) {
+            throw new Error('Member not found in team');
+        }
+
+        const memberEmail = member.rows[0].email;
+
+        // COMPLETELY DELETE the member entry (not just set inactive)
+        const deleteResult = await query(
+            `DELETE FROM team_members 
+             WHERE team_id = $1 AND user_id = $2
+             RETURNING id`,
+            [teamId, memberUserId]
+        );
+
+        console.log(`✅ Completely removed member ${memberEmail} from team ${teamId}`);
+
+        // Clean up LinkedIn team accounts connected by this user for this team
+        try {
+            const linkedinCleanupResponse = await fetch(`${process.env.LINKEDIN_API_URL || 'http://localhost:3004'}/api/cleanup/member`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ teamId, userId: memberUserId })
+            });
+            const linkedinResult = await linkedinCleanupResponse.json();
+            console.log(`   ✓ LinkedIn cleanup for member - deleted ${linkedinResult.deletedCounts?.teamAccounts || 0} accounts`);
+        } catch (error) {
+            console.warn(`   ⚠️  LinkedIn member cleanup failed:`, error.message);
+        }
+
+        // Clean up Twitter team accounts connected by this user for this team
+        try {
+            const twitterCleanupResponse = await fetch(`${process.env.TWEET_API_URL || 'http://localhost:3002'}/api/cleanup/member`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ teamId, userId: memberUserId })
+            });
+            const twitterResult = await twitterCleanupResponse.json();
+            console.log(`   ✓ Twitter cleanup for member - deleted ${twitterResult.deletedCounts?.teamAccounts || 0} accounts`);
+        } catch (error) {
+            console.warn(`   ⚠️  Twitter member cleanup failed:`, error.message);
+        }
+
+        // Clear user's current team if this was their active team
+        await query(
+            `UPDATE users SET current_team_id = NULL 
+             WHERE id = $1 AND current_team_id = $2`,
+            [memberUserId, teamId]
+        );
+
+        return { success: true };
+    },
+
+    // Update team member role
+    async updateMemberRole(teamId, memberId, newRole, updatedByUserId) {
+        console.log('🔧 [TEAM SERVICE] updateMemberRole called:', {
+            teamId,
+            memberId,
+            newRole,
+            updatedByUserId
+        });
+
+        // Check permissions - only owners can update roles 
+        console.log('🔍 [TEAM SERVICE] Checking updater permissions...');
+        const updater = await query(
+            `SELECT role FROM team_members 
+             WHERE team_id = $1 AND user_id = $2 AND status = 'active'`,
+            [teamId, updatedByUserId]
+        );
+        console.log('👤 [TEAM SERVICE] Updater result:', updater.rows);
+
+        if (!updater.rows[0] || updater.rows[0].role !== 'owner') {
+            console.log('❌ [TEAM SERVICE] Permission denied. Updater role:', updater.rows[0]?.role);
+            throw new Error('Only team owners can modify member roles');
+        }
+
+        // Check if target member exists and is not owner (using member id instead of user_id)
+        console.log('🔍 [TEAM SERVICE] Checking target member...');
+        const member = await query(
+            `SELECT role FROM team_members 
+             WHERE team_id = $1 AND id = $2 AND status = 'active'`,
+            [teamId, memberId]
+        );
+        console.log('🎯 [TEAM SERVICE] Target member result:', member.rows);
+
+        if (!member.rows[0]) {
+            console.log('❌ [TEAM SERVICE] Member not found');
+            throw new Error('Member not found');
+        }
+
+        if (member.rows[0].role === 'owner') {
+            console.log('❌ [TEAM SERVICE] Cannot change owner role');
+            throw new Error('Cannot change owner role');
+        }
+
+        // Validate new role
+        if (!['admin', 'editor', 'viewer'].includes(newRole)) {
+            console.log('❌ [TEAM SERVICE] Invalid role:', newRole);
+            throw new Error('Invalid role. Must be admin, editor, or viewer');
+        }
+
+        // Update member role (using member id instead of user_id)
+        console.log('✏️ [TEAM SERVICE] Executing UPDATE query...');
+        const updateResult = await query(
+            `UPDATE team_members SET role = $1 
+             WHERE team_id = $2 AND id = $3 RETURNING *`,
+            [newRole, teamId, memberId]
+        );
+        console.log('✅ [TEAM SERVICE] Update result:', updateResult.rows);
+
+        return { success: true };
+    },
+
+    // Get team's connected social accounts
+    async getTeamSocialAccounts(teamId, userId) {
+        // Verify user is team member
+        const member = await query(
+            `SELECT 1 FROM team_members 
+             WHERE team_id = $1 AND user_id = $2 AND status = 'active'`,
+            [teamId, userId]
+        );
+
+        if (!member.rows[0]) {
+            throw new Error('You are not a member of this team');
+        }
+
+        const accounts = await query(`
+            SELECT 
+                sa.*,
+                u.email as connected_by_email,
+                u.name as connected_by_name
+            FROM user_social_accounts sa
+            JOIN users u ON sa.user_id = u.id
+            WHERE sa.team_id = $1 AND sa.is_active = true
+            ORDER BY sa.platform, sa.created_at DESC
+        `, [teamId]);
+
+        return accounts.rows;
+    },
+
+    // Delete team (owner only)
+    async deleteTeam(ownerUserId) {
+        await query('BEGIN');
+        
+        try {
+            // Verify requester is owner and get team id
+            const teamResult = await query(
+                `SELECT tm.team_id, t.name FROM team_members tm 
+                 JOIN teams t ON tm.team_id = t.id
+                 WHERE tm.user_id = $1 AND tm.role = 'owner' AND tm.status = 'active'
+                 LIMIT 1`,
+                [ownerUserId]
+            );
+
+            if (!teamResult.rows[0]) {
+                await query('ROLLBACK');
+                throw new Error('Only team owners can delete the team');
+            }
+
+            const teamId = teamResult.rows[0].team_id;
+            const teamName = teamResult.rows[0].name;
+
+            console.log(`🗑️ Deleting team: ${teamName} (${teamId})`);
+
+            // Call LinkedIn microservice to COMPLETELY DELETE all team LinkedIn accounts (connected by anyone)
+            try {
+                const linkedinCleanupResponse = await fetch(`${process.env.LINKEDIN_API_URL || 'http://localhost:3004'}/api/cleanup/team`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ teamId })
+                });
+                const linkedinResult = await linkedinCleanupResponse.json();
+                console.log(`   ✓ LinkedIn cleanup - deleted ${linkedinResult.deletedCounts?.teamAccounts || 0} accounts, ${linkedinResult.deletedCounts?.scheduledPosts || 0} scheduled posts`);
+            } catch (error) {
+                console.warn(`   ⚠️  LinkedIn cleanup failed:`, error.message);
+            }
+
+            // Call Twitter microservice to COMPLETELY DELETE all team Twitter accounts (connected by anyone)
+            try {
+                const twitterCleanupResponse = await fetch(`${process.env.TWEET_API_URL || 'http://localhost:3002'}/api/cleanup/team`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ teamId })
+                });
+                const twitterResult = await twitterCleanupResponse.json();
+                console.log(`   ✓ Twitter cleanup - deleted ${twitterResult.deletedCounts?.teamAccounts || 0} accounts, ${twitterResult.deletedCounts?.scheduledTweets || 0} scheduled tweets`);
+            } catch (error) {
+                console.warn(`   ⚠️  Twitter cleanup failed:`, error.message);
+            }
+
+            // Delete all team-related data
+            // 1. Delete pending invitations
+            const invitationsResult = await query('DELETE FROM team_invitations WHERE team_id = $1', [teamId]);
+            console.log(`   ✓ Deleted ${invitationsResult.rowCount} invitations`);
+
+            // 2. COMPLETELY DELETE team social accounts from user_social_accounts (not just disconnect)
+            const socialAccountsResult = await query(
+                'DELETE FROM user_social_accounts WHERE team_id = $1',
+                [teamId]
+            );
+            console.log(`   ✓ Deleted ${socialAccountsResult.rowCount} team social accounts`);
+
+            // 3. Delete team_accounts entries (if table exists)
+            try {
+                const teamAccountsResult = await query('DELETE FROM team_accounts WHERE team_id = $1', [teamId]);
+                console.log(`   ✓ Deleted ${teamAccountsResult.rowCount} team account entries`);
+            } catch (error) {
+                // Table might not exist, ignore error
+                console.log('   ⓘ team_accounts table not found (skipped)');
+            }
+
+            // 4. Clear current_team_id for all users pointing to this team
+            const usersResult = await query(
+                'UPDATE users SET current_team_id = NULL WHERE current_team_id = $1',
+                [teamId]
+            );
+            console.log(`   ✓ Cleared current_team_id for ${usersResult.rowCount} users`);
+
+            // 5. Delete all team members
+            const membersResult = await query('DELETE FROM team_members WHERE team_id = $1', [teamId]);
+            console.log(`   ✓ Removed ${membersResult.rowCount} team members`);
+
+            // 6. Finally, delete the team itself
+            await query('DELETE FROM teams WHERE id = $1', [teamId]);
+            console.log(`   ✓ Deleted team "${teamName}"`);
+
+            await query('COMMIT');
+            console.log(`✅ Team "${teamName}" completely deleted`);
+
+            return { success: true, teamName };
+        } catch (error) {
+            await query('ROLLBACK');
+            console.error('❌ Team deletion failed:', error);
+            throw error;
+        }
+    }
+};

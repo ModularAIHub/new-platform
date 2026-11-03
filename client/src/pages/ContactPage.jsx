@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { MapPin, Mail, Clock, Send, MessageCircle, Zap, Users, HeadphonesIcon } from 'lucide-react';
 import Footer from '../components/Footer';
 import { Button, Input, Card, CardContent } from '../components/ui';
+import PublicSeo from '../components/PublicSeo';
 
 const ContactPage = () => {
   const [formData, setFormData] = useState({
@@ -69,6 +70,35 @@ const ContactPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <PublicSeo
+        title="Contact SuiteGenie | Support, Sales, and Setup Help"
+        description="Contact SuiteGenie for support, setup help, BYOK guidance, pricing questions, or agency onboarding. Reach our team and get help with your social media automation workflow."
+        canonicalPath="/contact"
+        keywords="contact SuiteGenie, SuiteGenie support, social media automation support, BYOK help, SuiteGenie sales"
+        schema={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'ContactPage',
+            name: 'Contact SuiteGenie',
+            url: 'https://suitegenie.in/contact',
+            description:
+              'Contact SuiteGenie for support, setup help, pricing questions, and agency onboarding.',
+          },
+          {
+            '@context': 'https://schema.org',
+            '@type': 'Organization',
+            name: 'SuiteGenie',
+            url: 'https://suitegenie.in',
+            contactPoint: {
+              '@type': 'ContactPoint',
+              email: 'suitegenie1@gmail.com',
+              contactType: 'Customer Support',
+              areaServed: 'Worldwide',
+              availableLanguage: 'English',
+            },
+          },
+        ]}
+      />
       {/* Hero Section */}
       <div className="bg-gradient-to-br from-primary-600 via-purple-600 to-primary-800 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-primary-600/10 to-purple-600/10"></div>
@@ -237,8 +267,8 @@ const ContactPage = () => {
                 </div>
                 <div className="bg-purple-50 rounded-lg p-4 text-center">
                   <Users className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-                  <h4 className="font-semibold text-neutral-900 mb-1">Enterprise</h4>
-                  <p className="text-sm text-neutral-600">Custom solutions for larger teams</p>
+                  <h4 className="font-semibold text-neutral-900 mb-1">Agency Onboarding</h4>
+                  <p className="text-sm text-neutral-600">Workspace setup help for client operations</p>
                 </div>
               </div>
             </Card>
@@ -264,8 +294,8 @@ const ContactPage = () => {
                 </div>
                 
                 <div>
-                  <h4 className="font-semibold text-neutral-900 mb-2">Is there a free trial?</h4>
-                  <p className="text-neutral-600 text-sm">Yes! You can start creating content for free and explore all our features before upgrading to a paid plan.</p>
+                  <h4 className="font-semibold text-neutral-900 mb-2">Is team collaboration included in Free?</h4>
+                  <p className="text-neutral-600 text-sm">No. Team collaboration is part of the Pro plan. Free users can still use core features and BYOK mode.</p>
                 </div>
               </div>
             </Card>

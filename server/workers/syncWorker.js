@@ -1,111 +1,242 @@
-import { query } from '../config/database.js';
+import { isDatabaseUnavailableError, query } from '../config/database.js';
 import redisClient from '../config/redis.js';
 import CreditService from '../services/creditService.js';
+import { AGENCY_POOL_CREDIT_TIERS, CREDIT_TIERS } from '../utils/creditTiers.js';
 
 class SyncWorker {
     constructor() {
         this.isRunning = false;
         this.interval = null;
         this.syncInterval = 10 * 60 * 1000; // 10 minutes
+        this.startTime = null;
+        this.lastSyncTime = null;
 
-        // Monthly reset state
-        this.lastResetMonth = null;
-        this.monthlyResetInterval = 24 * 60 * 60 * 1000; // 24 hours
-        this.startMonthlyReset();
+        this.monthlyResetTimer = null;
+        this.monthlyResetInProgress = false;
+        this.monthlyResetInterval = 60 * 60 * 1000; // 1 hour
+        this.runInitialMonthlyReset =
+            process.env.SYNC_WORKER_RUN_INITIAL_MONTHLY_RESET === 'true' ||
+            (
+                process.env.SYNC_WORKER_RUN_INITIAL_MONTHLY_RESET !== 'false' &&
+                process.env.NODE_ENV === 'production'
+            );
+
+        this.databaseFailureCooldownMs = Number.parseInt(
+            process.env.SYNC_WORKER_DB_FAILURE_COOLDOWN_MS || '120000',
+            10
+        );
+        this.databaseCooldownUntil = 0;
+        this.lastDatabaseCooldownReason = null;
     }
 
-    // Start the sync worker
     start() {
         if (this.isRunning) {
-            console.log('⚠️  Sync worker is already running');
+            console.log('Sync worker is already running');
             return;
         }
 
-        console.log('🚀 Starting credit sync worker...');
+        console.log('Starting credit sync worker...');
         this.isRunning = true;
+        this.startTime = Date.now();
 
-        // Run initial sync
-        this.performSync();
+        this.startMonthlyReset();
 
-        // Set up interval for periodic sync
+        void this.performSync();
+
         this.interval = setInterval(() => {
-            this.performSync();
+            void this.performSync();
         }, this.syncInterval);
 
-        console.log(`✅ Credit sync worker started (interval: ${this.syncInterval / 1000}s)`);
+        console.log(`Credit sync worker started (interval: ${this.syncInterval / 1000}s)`);
     }
 
-    // Monthly credit reset logic - runs on 1st of every month
     startMonthlyReset() {
-        console.log('🗓️  Monthly credit reset scheduler initialized');
-        
-        setInterval(async () => {
-            const now = new Date();
-            const utcMonth = now.getUTCMonth();
-            const utcDate = now.getUTCDate();
-            const utcYear = now.getUTCFullYear();
-            const resetKey = `${utcYear}-${utcMonth}`;
-            
-            // Check if it's the 1st of the month and we haven't reset this month yet
-            if (utcDate === 1 && this.lastResetMonth !== resetKey) {
-                try {
-                    console.log(`🔄 Performing monthly credit reset for ${utcMonth + 1}/${utcYear}...`);
-                    
-                    // Update credits in DB: 55 for BYOK, 25 for Platform, 0 for unset preference
-                    const updateResult = await query(`
-                        UPDATE users 
-                        SET credits_remaining = CASE 
-                            WHEN api_key_preference = 'byok' THEN 55 
-                            WHEN api_key_preference = 'platform' THEN 25 
-                            ELSE 0 
-                        END,
-                        last_credit_reset = NOW()
-                        WHERE api_key_preference IS NOT NULL
-                    `);
-                    
-                    console.log(`📊 Updated credits for ${updateResult.rowCount} users in database`);
+        console.log('[CREDIT RESET] Monthly credit reset scheduler initialized (checks hourly, resets on UTC month start)');
 
-                    // Fetch all users with preferences and sync Redis cache
-                    const { rows: users } = await query(`
-                        SELECT id, api_key_preference, credits_remaining 
-                        FROM users 
-                        WHERE api_key_preference IS NOT NULL
-                    `);
-                    
-                    let redisUpdates = 0;
-                    for (const user of users) {
-                        try {
-                            // Update Redis cache with new credit balance
-                            await redisClient.setCredits(user.id, user.credits_remaining);
-                            redisUpdates++;
-                        } catch (redisError) {
-                            console.error(`❌ Failed to update Redis for user ${user.id}:`, redisError.message);
-                        }
-                    }
-                    
-                    // Mark this month as completed
-                    this.lastResetMonth = resetKey;
-                    
-                    console.log(`✅ Monthly credit reset completed successfully!`);
-                    console.log(`📈 Database updates: ${updateResult.rowCount}, Redis updates: ${redisUpdates}`);
-                    console.log(`💰 BYOK users: 55 credits, Platform users: 25 credits`);
-                    
-                } catch (err) {
-                    console.error('❌ Monthly credit reset failed:', err);
-                    // Don't update lastResetMonth so it will retry
-                }
-            }
+        if (this.monthlyResetTimer) {
+            clearInterval(this.monthlyResetTimer);
+        }
+
+        if (this.runInitialMonthlyReset) {
+            void this.runMonthlyCreditResetIfDue();
+        }
+
+        this.monthlyResetTimer = setInterval(() => {
+            void this.runMonthlyCreditResetIfDue();
         }, this.monthlyResetInterval);
     }
 
-    // Stop the sync worker
-    stop() {
-        if (!this.isRunning) {
-            console.log('⚠️  Sync worker is not running');
+    isDatabaseCooldownActive(taskLabel = 'worker task') {
+        const remainingMs = this.databaseCooldownUntil - Date.now();
+        if (remainingMs <= 0) {
+            return false;
+        }
+
+        console.warn(
+            `[SYNC WORKER] Skipping ${taskLabel}; database cooldown active for ${remainingMs}ms` +
+            (this.lastDatabaseCooldownReason ? ` (${this.lastDatabaseCooldownReason})` : '')
+        );
+        return true;
+    }
+
+    markDatabaseUnavailable(taskLabel, error) {
+        if (!isDatabaseUnavailableError(error)) {
+            return false;
+        }
+
+        this.databaseCooldownUntil = Date.now() + this.databaseFailureCooldownMs;
+        this.lastDatabaseCooldownReason = error?.message || 'database unavailable';
+        console.warn(
+            `[SYNC WORKER] ${taskLabel} paused for ${this.databaseFailureCooldownMs}ms:`,
+            this.lastDatabaseCooldownReason
+        );
+        return true;
+    }
+
+    async runMonthlyCreditResetIfDue() {
+        if (this.monthlyResetInProgress) {
             return;
         }
 
-        console.log('🛑 Stopping credit sync worker...');
+        if (this.isDatabaseCooldownActive('monthly credit reset')) {
+            return;
+        }
+
+        this.monthlyResetInProgress = true;
+
+        try {
+            const now = new Date();
+            const utcMonth = now.getUTCMonth();
+            const utcYear = now.getUTCFullYear();
+
+            const updateResult = await query(`
+                UPDATE users
+                SET credits_remaining = CASE
+                    WHEN COALESCE(plan_type, 'free') = 'free' AND api_key_preference = 'platform' THEN ${CREDIT_TIERS.free.platform}
+                    WHEN COALESCE(plan_type, 'free') = 'free' AND api_key_preference = 'byok' THEN ${CREDIT_TIERS.free.byok}
+                    WHEN plan_type = 'pro' AND api_key_preference = 'platform' THEN ${CREDIT_TIERS.pro.platform}
+                    WHEN plan_type = 'pro' AND api_key_preference = 'byok' THEN ${CREDIT_TIERS.pro.byok}
+                    WHEN plan_type = 'agency' AND api_key_preference = 'platform' THEN ${CREDIT_TIERS.agency.platform}
+                    WHEN plan_type = 'agency' AND api_key_preference = 'byok' THEN ${CREDIT_TIERS.agency.byok}
+                    WHEN plan_type = 'enterprise' AND api_key_preference = 'platform' THEN ${CREDIT_TIERS.enterprise.platform}
+                    WHEN plan_type = 'enterprise' AND api_key_preference = 'byok' THEN ${CREDIT_TIERS.enterprise.byok}
+                    ELSE 0
+                END,
+                last_credit_reset = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+                WHERE api_key_preference IS NOT NULL
+                  AND (
+                    last_credit_reset IS NULL
+                    OR last_credit_reset < DATE_TRUNC('month', CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
+                  )
+                RETURNING id, api_key_preference, plan_type, credits_remaining
+            `);
+
+            const users = updateResult.rows || [];
+            let redisUpdates = 0;
+            const statsByTier = {
+                'free-platform': 0,
+                'free-byok': 0,
+                'pro-platform': 0,
+                'pro-byok': 0,
+                'agency-platform': 0,
+                'agency-byok': 0,
+                'enterprise-platform': 0,
+                'enterprise-byok': 0
+            };
+
+            for (const user of users) {
+                try {
+                    await redisClient.setCredits(user.id, user.credits_remaining);
+                    redisUpdates++;
+
+                    const tier = `${user.plan_type || 'free'}-${user.api_key_preference}`;
+                    if (statsByTier[tier] !== undefined) {
+                        statsByTier[tier]++;
+                    }
+                } catch (redisError) {
+                    console.error(`[CREDIT RESET] Failed to update Redis for user ${user.id}:`, redisError.message);
+                }
+            }
+
+            const teamResetResult = await query(`
+                UPDATE teams t
+                SET
+                  credits_remaining = CASE
+                    WHEN u.plan_type = 'pro' AND u.api_key_preference = 'platform' THEN ${CREDIT_TIERS.pro.platform}
+                    WHEN u.plan_type = 'pro' AND u.api_key_preference = 'byok' THEN ${CREDIT_TIERS.pro.byok}
+                    WHEN u.plan_type = 'agency' AND u.api_key_preference = 'platform' THEN ${CREDIT_TIERS.agency.platform}
+                    WHEN u.plan_type = 'agency' AND u.api_key_preference = 'byok' THEN ${CREDIT_TIERS.agency.byok}
+                    WHEN u.plan_type = 'enterprise' AND u.api_key_preference = 'platform' THEN ${CREDIT_TIERS.enterprise.platform}
+                    WHEN u.plan_type = 'enterprise' AND u.api_key_preference = 'byok' THEN ${CREDIT_TIERS.enterprise.byok}
+                    ELSE ${CREDIT_TIERS.pro.platform}
+                  END,
+                  plan_type = COALESCE(u.plan_type, 'pro'),
+                  last_credit_reset = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+                FROM users u
+                WHERE t.owner_id = u.id
+                  AND (
+                    t.last_credit_reset IS NULL
+                    OR t.last_credit_reset < DATE_TRUNC('month', CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
+                  )
+            `);
+
+            const agencyResetResult = await query(`
+                UPDATE agency_accounts aa
+                SET
+                  credits_remaining = CASE
+                    WHEN u.plan_type = 'enterprise' AND u.api_key_preference = 'platform' THEN ${AGENCY_POOL_CREDIT_TIERS.enterprise.platform}
+                    WHEN u.plan_type = 'enterprise' AND u.api_key_preference = 'byok' THEN ${AGENCY_POOL_CREDIT_TIERS.enterprise.byok}
+                    WHEN u.plan_type = 'agency' AND u.api_key_preference = 'platform' THEN ${AGENCY_POOL_CREDIT_TIERS.agency.platform}
+                    WHEN u.plan_type = 'agency' AND u.api_key_preference = 'byok' THEN ${AGENCY_POOL_CREDIT_TIERS.agency.byok}
+                    ELSE ${AGENCY_POOL_CREDIT_TIERS.agency.platform}
+                  END,
+                  last_credit_reset = CURRENT_TIMESTAMP AT TIME ZONE 'UTC',
+                  updated_at = CURRENT_TIMESTAMP
+                FROM users u
+                WHERE aa.owner_id = u.id
+                  AND (
+                    aa.last_credit_reset IS NULL
+                    OR aa.last_credit_reset < DATE_TRUNC('month', CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
+                  )
+            `);
+
+            if (updateResult.rowCount === 0 && teamResetResult.rowCount === 0 && agencyResetResult.rowCount === 0) {
+                this.databaseCooldownUntil = 0;
+                this.lastDatabaseCooldownReason = null;
+                return;
+            }
+
+            this.databaseCooldownUntil = 0;
+            this.lastDatabaseCooldownReason = null;
+            console.log(`[CREDIT RESET] Monthly credit reset completed for ${utcMonth + 1}/${utcYear} (UTC month boundary)`);
+            console.log(`[CREDIT RESET] User DB updates: ${updateResult.rowCount}, Redis updates: ${redisUpdates}`);
+            console.log(`[CREDIT RESET] Team updates: ${teamResetResult.rowCount}`);
+            console.log(`[CREDIT RESET] Agency pool updates: ${agencyResetResult.rowCount}`);
+            console.log('[CREDIT RESET] Credit allocation by tier:');
+            console.log(`   Free+Platform (${CREDIT_TIERS.free.platform}): ${statsByTier['free-platform']} users`);
+            console.log(`   Free+BYOK (${CREDIT_TIERS.free.byok}): ${statsByTier['free-byok']} users`);
+            console.log(`   Pro+Platform (${CREDIT_TIERS.pro.platform}): ${statsByTier['pro-platform']} users`);
+            console.log(`   Pro+BYOK (${CREDIT_TIERS.pro.byok}): ${statsByTier['pro-byok']} users`);
+            console.log(`   Agency+Platform (${CREDIT_TIERS.agency.platform}): ${statsByTier['agency-platform']} users`);
+            console.log(`   Agency+BYOK (${CREDIT_TIERS.agency.byok}): ${statsByTier['agency-byok']} users`);
+            console.log(`   Enterprise+Platform (${CREDIT_TIERS.enterprise.platform}): ${statsByTier['enterprise-platform']} users`);
+            console.log(`   Enterprise+BYOK (${CREDIT_TIERS.enterprise.byok}): ${statsByTier['enterprise-byok']} users`);
+        } catch (err) {
+            if (!this.markDatabaseUnavailable('monthly credit reset', err)) {
+                console.error('[CREDIT RESET] Monthly credit reset failed:', err);
+            }
+        } finally {
+            this.monthlyResetInProgress = false;
+        }
+    }
+
+    stop() {
+        if (!this.isRunning) {
+            console.log('Sync worker is not running');
+            return;
+        }
+
+        console.log('Stopping credit sync worker...');
         this.isRunning = false;
 
         if (this.interval) {
@@ -113,103 +244,113 @@ class SyncWorker {
             this.interval = null;
         }
 
-        console.log('✅ Credit sync worker stopped');
+        if (this.monthlyResetTimer) {
+            clearInterval(this.monthlyResetTimer);
+            this.monthlyResetTimer = null;
+        }
+
+        console.log('Credit sync worker stopped');
     }
 
-    // Perform the actual sync operation
     async performSync() {
-        try {
-            console.log('🔄 Starting credit sync...');
-            const startTime = Date.now();
+        if (this.isDatabaseCooldownActive('credit sync')) {
+            return;
+        }
 
-            // Check if Redis is available
+        try {
+            console.log('Starting credit sync...');
+            const startedAt = Date.now();
+
             const redisHealth = await redisClient.ping();
             if (!redisHealth) {
-                console.log('⚠️  Redis not available, skipping sync');
+                console.log('Redis not available, skipping sync');
                 return;
             }
 
-            // Get dirty users from Redis
             const dirtyUsers = await redisClient.getDirtyUsers();
 
             if (dirtyUsers.length === 0) {
-                console.log('✅ No dirty users to sync');
+                this.lastSyncTime = new Date().toISOString();
+                console.log('No dirty users to sync');
                 return;
             }
 
-            console.log(`📊 Syncing ${dirtyUsers.length} dirty users...`);
+            console.log(`Syncing ${dirtyUsers.length} dirty users...`);
 
             let successCount = 0;
             let errorCount = 0;
 
-            // Sync each dirty user
             for (const userId of dirtyUsers) {
                 try {
                     await CreditService.syncUserToDatabase(userId);
                     successCount++;
                 } catch (error) {
-                    console.error(`❌ Failed to sync user ${userId}:`, error.message);
+                    if (this.markDatabaseUnavailable(`credit sync for user ${userId}`, error)) {
+                        errorCount++;
+                        break;
+                    }
+
+                    console.error(`Failed to sync user ${userId}:`, error.message);
                     errorCount++;
                 }
             }
 
-            const endTime = Date.now();
-            const duration = endTime - startTime;
+            const duration = Date.now() - startedAt;
+            this.lastSyncTime = new Date().toISOString();
+            this.databaseCooldownUntil = 0;
+            this.lastDatabaseCooldownReason = null;
 
-            console.log(`✅ Credit sync completed in ${duration}ms`);
-            console.log(`📈 Success: ${successCount}, Errors: ${errorCount}`);
+            console.log(`Credit sync completed in ${duration}ms`);
+            console.log(`Success: ${successCount}, Errors: ${errorCount}`);
 
-            // Log sync metrics
             this.logSyncMetrics({
-                timestamp: new Date().toISOString(),
+                timestamp: this.lastSyncTime,
                 duration,
                 totalUsers: dirtyUsers.length,
                 successCount,
                 errorCount
             });
-
         } catch (error) {
-            console.error('❌ Credit sync failed:', error);
+            if (!this.markDatabaseUnavailable('credit sync', error)) {
+                console.error('Credit sync failed:', error);
+            }
         }
     }
 
-    // Log sync metrics for monitoring
     logSyncMetrics(metrics) {
-        // In production, you might want to send these metrics to a monitoring service
-        console.log('📊 Sync Metrics:', JSON.stringify(metrics, null, 2));
+        console.log('Sync Metrics:', JSON.stringify(metrics, null, 2));
     }
 
-    // Manual sync trigger (for testing/debugging)
     async manualSync(userId = null) {
         try {
-            console.log('🔧 Manual sync triggered...');
+            console.log('Manual sync triggered...');
 
             if (userId) {
-                console.log(`📊 Manual sync for user: ${userId}`);
+                console.log(`Manual sync for user: ${userId}`);
                 await CreditService.syncToDatabase(userId);
             } else {
-                console.log('📊 Manual sync for all dirty users');
+                console.log('Manual sync for all dirty users');
                 await CreditService.syncToDatabase();
             }
 
-            console.log('✅ Manual sync completed');
+            console.log('Manual sync completed');
         } catch (error) {
-            console.error('❌ Manual sync failed:', error);
+            console.error('Manual sync failed:', error);
             throw error;
         }
     }
 
-    // Get worker status
     getStatus() {
         return {
             isRunning: this.isRunning,
             syncInterval: this.syncInterval,
             lastSync: this.lastSyncTime,
-            uptime: this.isRunning ? Date.now() - this.startTime : null
+            uptime: this.isRunning && this.startTime ? Date.now() - this.startTime : null,
+            databaseCooldownUntil: this.databaseCooldownUntil || null,
+            lastDatabaseCooldownReason: this.lastDatabaseCooldownReason
         };
     }
 
-    // Health check
     async healthCheck() {
         try {
             const redisHealth = await redisClient.ping();
@@ -219,6 +360,7 @@ class SyncWorker {
                 worker: this.isRunning,
                 redis: redisHealth,
                 dirtyUsersCount: dirtyUsers.length,
+                databaseCooldownActive: this.databaseCooldownUntil > Date.now(),
                 timestamp: new Date().toISOString()
             };
         } catch (error) {
@@ -226,26 +368,29 @@ class SyncWorker {
                 worker: this.isRunning,
                 redis: false,
                 error: error.message,
+                databaseCooldownActive: this.databaseCooldownUntil > Date.now(),
                 timestamp: new Date().toISOString()
             };
         }
     }
 }
 
-// Create singleton instance
 const syncWorker = new SyncWorker();
 
-// Graceful shutdown handling
 process.on('SIGINT', () => {
-    console.log('\n🛑 Received SIGINT, shutting down sync worker...');
+    console.log('\nReceived SIGINT, shutting down sync worker...');
     syncWorker.stop();
     process.exit(0);
 });
 
 process.on('SIGTERM', () => {
-    console.log('\n🛑 Received SIGTERM, shutting down sync worker...');
+    console.log('\nReceived SIGTERM, shutting down sync worker...');
     syncWorker.stop();
     process.exit(0);
 });
+
+export async function runSyncTick() {
+    return syncWorker.performSync();
+}
 
 export default syncWorker;

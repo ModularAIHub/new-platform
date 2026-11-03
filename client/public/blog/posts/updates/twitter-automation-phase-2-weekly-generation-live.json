@@ -1,0 +1,36 @@
+{
+  "id": "twitter-automation-phase-2-weekly-generation-live",
+  "title": "Phase 2 is live — TweetGenie now generates your entire week of content automatically",
+  "slug": "twitter-automation-phase-2-weekly-generation-live",
+  "category": "updates",
+  "tags": [
+    "update",
+    "phase 2",
+    "content generation"
+  ],
+  "excerpt": "The Monday morning flow in detail. How Gemini uses your strategy and trending topics to generate.",
+  "content": "## The Monday Morning Flow\nEvery Monday, you'll see a batch of tweets completely constructed based on your strategy and recent trending topics.\n\n## The Review Queue\nYou can approve, edit or reject them right from your dashboard.\n\n## Auto Scheduling\nOnce approved, it schedules at the recommended times for your specific audience activity.\n\n[Start your first automated week free](/register)",
+  "featuredImage": {
+    "url": "/images/blog/suitegenie-launch-hero.svg",
+    "alt": "Phase 2 Weekly Generation"
+  },
+  "author": {
+    "name": "Kanishk Saraswat",
+    "avatar": "/kanishk.png",
+    "twitter": "kanishksaraswat"
+  },
+  "publishDate": "2026-03-25T10:00:00+05:30",
+  "lastModified": "2026-03-25T10:00:00+05:30",
+  "readTime": 4,
+  "status": "draft",
+  "seo": {
+    "metaTitle": "Phase 2 is Live: Weekly Content Generation",
+    "metaDescription": "TweetGenie now generates your entire week of content automatically.",
+    "keywords": [
+      "content generation",
+      "weekly automation",
+      "twitter automation"
+    ],
+    "canonicalUrl": "https://suitegenie.in/blogs/updates/twitter-automation-phase-2-weekly-generation-live"
+  }
+}

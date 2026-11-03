@@ -1,10 +1,10 @@
 
 import { useAuth } from '../contexts/AuthContext'
-import { CreditCard, Key, Settings, ExternalLink, Lock, TrendingUp, Calendar, BarChart3, Zap } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { CreditCard, Key, Settings, ExternalLink, Lock, TrendingUp, Calendar, BarChart3, Zap, Crown, Users } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import api from '../utils/api'
 import { useNavigate } from 'react-router-dom'
-import { URLS, TOOLS, getToolUrl } from '../config/urls'
+import { URLS } from '../config/urls'
 import {
     Button,
     Card,
@@ -14,9 +14,11 @@ import {
     CardContent,
     CardFooter
 } from '../components/ui'
+import UpgradePrompt from '../components/UpgradePrompt'
+import usePlanAccess from '../hooks/usePlanAccess'
 
 const DashboardPage = () => {
-    const { user, loading: authLoading, initialLoad } = useAuth()
+    const { user, initialLoad } = useAuth()
     const [prefLoading, setPrefLoading] = useState(true)
     const [preference, setPreference] = useState(null)
     const [lockUntil, setLockUntil] = useState(null)
@@ -24,55 +26,34 @@ const DashboardPage = () => {
     const [lockMessage, setLockMessage] = useState(null)
     const [creditTier, setCreditTier] = useState(0)
     const [showPrefModal, setShowPrefModal] = useState(false)
-    const [showByokInfo, setShowByokInfo] = useState(false)
     const [submitting, setSubmitting] = useState(false)
-    const [dashboardStats, setDashboardStats] = useState({
-        creditsAvailable: 0,
-        activeTools: 0,
-        contentGenerated: 0,
-        planType: 'free'
-    })
-    const [statsLoading, setStatsLoading] = useState(true)
+    const [showUpgradePrompt, setShowUpgradePrompt] = useState(false)
+    const [upgradeFeature, setUpgradeFeature] = useState(null)
+    const hasFetchedPreferenceRef = useRef(false)
     const navigate = useNavigate()
+    const { userPlan, hasFeatureAccess, canAddMoreAccounts } = usePlanAccess()
 
-    useEffect(() => {
-        fetchPreference()
-    }, [])
-
-    // Update dashboard stats when creditTier changes
-    useEffect(() => {
-        if (!prefLoading) {
-            fetchDashboardStats()
-        }
-    }, [creditTier, prefLoading])
-
-    const fetchDashboardStats = async () => {
-        setStatsLoading(true);
-        try {
-            // Fetch actual credits from backend
-            const res = await api.get('/credits/balance');
-            const creditsAvailable = res.data.creditsRemaining || 0;
-            setDashboardStats({
-                creditsAvailable,
-                activeTools: 2, // Twitter Genie and LinkedIn Genie are active
-                contentGenerated: 0, // Removed from UI, placeholder
-                planType: user?.planType || 'free'
-            });
-        } catch (e) {
-            setDashboardStats(prev => ({ ...prev, creditsAvailable: 0 }));
-        } finally {
-            setStatsLoading(false);
+    const handleRestrictedFeature = (featureName, action) => {
+        if (hasFeatureAccess(featureName)) {
+            action();
+        } else {
+            setUpgradeFeature(featureName);
+            setShowUpgradePrompt(true);
         }
     }
+
+    useEffect(() => {
+        if (hasFetchedPreferenceRef.current) return
+        hasFetchedPreferenceRef.current = true
+        fetchPreference()
+    }, [])
 
     const fetchPreference = async () => {
         setPrefLoading(true)
         try {
             const res = await api.get('/byok/preference')
-            console.log('[DEBUG] /byok/preference response:', res.data);
             // Always treat null/undefined as unset
             if (!res.data.api_key_preference) {
-                console.warn('[DEBUG] No api_key_preference found for user:', res.data);
                 setPreference(null)
                 setCreditTier(0)
                 setShowPrefModal(true)
@@ -87,22 +68,36 @@ const DashboardPage = () => {
                 // Always show actual available credits as the current credit tier
                 try {
                     const creditsRes = await api.get('/credits/balance');
-                    console.log('[DEBUG] /credits/balance response:', creditsRes.data);
                     setCreditTier(creditsRes.data.creditsRemaining || 0);
                 } catch (err) {
-                    console.error('[DEBUG] Error fetching credits:', err);
+                    console.error('Error fetching credits:', err?.message || err);
                     setCreditTier(0);
                 }
                 setShowPrefModal(false)
             }
         } catch (e) {
-            console.error('[DEBUG] Error fetching /byok/preference:', e);
-            setPreference(null)
-            setCreditTier(0)
-            setShowPrefModal(true)
-            setLockUntil(null)
-            setLocked(false)
-            setLockMessage(null)
+            const transientErrorCodes = ['ECONNABORTED', 'ERR_NETWORK', 'ENOTFOUND', 'ECONNRESET', 'ECONNREFUSED', 'ETIMEDOUT']
+            const isTransient =
+                transientErrorCodes.includes(e?.code) ||
+                !e?.response || // Network/transport failures without HTTP response
+                e?.response?.status >= 500
+            console.error('Error fetching /byok/preference:', e?.message || e);
+
+            if (isTransient) {
+                // Keep prior state, but don't hide required modal for first-time users.
+                if (!preference) {
+                    setShowPrefModal(true)
+                }
+                // Allow retry after remount when transient failure occurred.
+                hasFetchedPreferenceRef.current = false
+            } else {
+                setPreference(null)
+                setCreditTier(0)
+                setShowPrefModal(true)
+                setLockUntil(null)
+                setLocked(false)
+                setLockMessage(null)
+            }
         } finally {
             setPrefLoading(false)
         }
@@ -112,20 +107,15 @@ const DashboardPage = () => {
         setSubmitting(true)
         try {
             if (pref === 'platform') {
-                if (window.confirm('Are you sure you want to use Platform Keys? This choice will be locked for 3 months.')) {
-                    await api.post('/byok/preference', { preference: pref })
-                    setPreference(pref)
-                    setCreditTier(25)
-                    setShowPrefModal(false)
-                    window.location.reload(); // Force reload to reflect mode and unlock navigation
-                } else {
-                    setSubmitting(false)
-                    return;
-                }
+                const response = await api.post('/byok/preference', { preference: pref })
+                setPreference(pref)
+                setCreditTier(response?.data?.credits ?? 0)
+                setShowPrefModal(false)
+                window.location.reload() // Refresh to unlock all routes tied to selected mode
             } else if (pref === 'byok') {
                 // Just redirect to API Keys page, do not update preference yet
-                setShowPrefModal(false);
-                navigate('/api-keys');
+                setShowPrefModal(false)
+                navigate('/api-keys?mode=byok')
             }
         } finally {
             setSubmitting(false)
@@ -135,34 +125,80 @@ const DashboardPage = () => {
 
     const modules = [
         {
-            name: 'Twitter Genie',
-            description: 'AI-powered Twitter content generation',
+            name: 'Tweet Genie',
+            description: 'X/Twitter content engine',
             url: URLS.TWEET_GENIE,
-            icon: ExternalLink,
-            status: 'active'
+            status: 'active',
+            ctaLabel: 'Open Tweet Genie',
+            features: [
+                'Single posts + thread chains',
+                'Reliable flow automation and timezone support',
+                'Cross-post routing and history'
+            ]
         },
         {
             name: 'LinkedIn Genie',
-            description: 'Professional LinkedIn content creation',
+            description: 'Professional LinkedIn publishing',
             url: URLS.LINKEDIN_GENIE,
-            icon: ExternalLink,
-            status: 'active'
+            status: 'active',
+            ctaLabel: 'Open LinkedIn Genie',
+            features: [
+                'Long-form and short-form post modes',
+                'Cross-post to X/Threads',
+                'Analytics sync and performance tracking'
+            ]
+        },
+        {
+            name: 'Meta Genie',
+            description: 'Instagram, Threads, and YouTube',
+            url: URLS.SOCIAL_GENIE,
+            status: 'active',
+            ctaLabel: 'Open Meta Genie',
+            features: [
+                'Threads-first publishing workflow',
+                'Cross-post controls for X and LinkedIn',
+                'Media upload and automated publishing'
+            ]
         },
         {
             name: 'WordPress Genie',
             description: 'WordPress content automation',
             url: URLS.WORDPRESS_WRITER,
-            icon: ExternalLink,
-            status: 'coming-soon'
+            status: 'coming-soon',
+            ctaLabel: 'Coming Soon',
+            features: [
+                'AI blog drafting from strategy briefs',
+                'SEO-friendly structure templates',
+                'Direct publish pipeline'
+            ]
         }
     ]
 
     if (initialLoad || prefLoading) {
         return (
-            <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-                    <p className="text-lg text-neutral-600">Loading your dashboard...</p>
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+                <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+                    <div className="max-w-xl">
+                        <div className="h-5 w-32 animate-pulse rounded-full bg-slate-200" />
+                        <div className="mt-5 h-11 w-full animate-pulse rounded-2xl bg-slate-200" />
+                        <div className="mt-4 h-6 w-3/4 animate-pulse rounded-xl bg-slate-100" />
+                    </div>
+                    <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+                        {Array.from({ length: 4 }, (_, index) => (
+                            <div key={index} className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
+                                <div className="h-6 w-28 animate-pulse rounded-full bg-slate-200" />
+                                <div className="mt-6 h-8 w-40 animate-pulse rounded-xl bg-slate-200" />
+                                <div className="mt-4 h-4 w-full animate-pulse rounded bg-slate-100" />
+                                <div className="mt-3 h-4 w-5/6 animate-pulse rounded bg-slate-100" />
+                                <div className="mt-3 h-4 w-2/3 animate-pulse rounded bg-slate-100" />
+                                <div className="mt-8 h-11 w-full animate-pulse rounded-xl bg-blue-100" />
+                            </div>
+                        ))}
+                    </div>
+                    <div className="mt-8 flex items-center gap-3 text-sm text-slate-500">
+                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" />
+                        <span>Loading your dashboard…</span>
+                    </div>
                 </div>
             </div>
         )
@@ -174,133 +210,124 @@ const DashboardPage = () => {
                 {/* Mode Selection Modal (undismissable until choice) */}
                 {showPrefModal && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-                        <Card className="max-w-md w-full mx-4 animate-scale-in">
-                            <CardHeader className="text-center">
+                        <Card className="w-full max-w-2xl mx-4 animate-scale-in">
+                            <CardHeader>
                                 <CardTitle className="text-2xl text-primary-900">Choose Your AI Key Mode</CardTitle>
                                 <CardDescription className="text-base">
-                                    Select how you want to use AI features. You can use platform keys (25 credits/month) or bring your own (BYOK, 55 credits/month, <strong>3-month lock</strong>). This cannot be skipped.
+                                    One-time setup: pick how AI requests are billed. You can manage details later in API Keys & Preferences.
                                 </CardDescription>
                             </CardHeader>
-                            <CardContent>
-                                <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-yellow-900 text-sm text-left">
-                                    <strong>Note:</strong> Image generation is currently more reliable with BYOK (OpenAI or Gemini). Using platform keys may result in rate limits or errors for image generation. We’re working to improve this soon!
-                                </div>
-                                <div className="space-y-3">
-                                    <Button
-                                        variant="primary"
-                                        size="lg"
-                                        fullWidth
-                                        loading={submitting}
+                            <CardContent className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <button
+                                        type="button"
+                                        disabled={submitting}
                                         onClick={() => handleSetPreference('platform')}
+                                        className="text-left rounded-xl border border-primary-200 bg-primary-50 p-5 hover:border-primary-400 transition-colors disabled:opacity-60"
                                     >
-                                        Use Platform Keys
-                                    </Button>
-                                    <Button
-                                        variant="success"
-                                        size="lg"
-                                        fullWidth
-                                        loading={submitting}
+                                        <div className="flex items-center justify-between gap-2">
+                                            <h3 className="text-lg font-semibold text-primary-900">Use Platform Keys</h3>
+                                            <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-primary-600 text-white">
+                                                Recommended Start
+                                            </span>
+                                        </div>
+                                        <p className="mt-2 text-sm text-primary-800">No API key setup required.</p>
+                                        <ul className="mt-3 space-y-1 text-sm text-primary-900">
+                                            <li>15 credits (Free) / 100 credits (Pro)</li>
+                                            <li>Fastest way to begin</li>
+                                            <li>Mode gets locked for 90 days after selection</li>
+                                        </ul>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        disabled={submitting}
                                         onClick={() => handleSetPreference('byok')}
+                                        className="text-left rounded-xl border border-success-200 bg-success-50 p-5 hover:border-success-400 transition-colors disabled:opacity-60"
                                     >
-                                        Bring Your Own Key
-                                    </Button>
+                                        <h3 className="text-lg font-semibold text-success-900">Bring Your Own Key (BYOK)</h3>
+                                        <p className="mt-2 text-sm text-success-800">Use your OpenAI/Gemini/Perplexity keys.</p>
+                                        <ul className="mt-3 space-y-1 text-sm text-success-900">
+                                            <li>50 credits (Free) / 180 credits (Pro)</li>
+                                            <li>More control over provider + spend</li>
+                                            <li>90-day lock starts after your first key is added</li>
+                                        </ul>
+                                    </button>
+                                </div>
+                                <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3 text-sm text-neutral-700">
+                                    Your API keys stay in your account scope. SuiteGenie does not expose raw keys in UI responses after save.
                                 </div>
                             </CardContent>
                             <CardFooter>
-                                <p className="text-xs text-neutral-500 text-center w-full">
-                                    You can change this later, but BYOK is locked for <strong>3 months</strong> after switching.
+                                <p className="text-xs text-neutral-500 w-full">
+                                    This step is required once so we can apply the right credit tier and usage rules.
                                 </p>
                             </CardFooter>
                         </Card>
                     </div>
                 )}
-                {/* BYOK Info Modal */}
-                {showByokInfo && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-                        <Card className="max-w-lg w-full mx-4 animate-scale-in">
-                            <CardHeader>
-                                <div className="flex items-center justify-between">
-                                    <CardTitle className="text-2xl text-primary-900">How BYOK Works</CardTitle>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => setShowByokInfo(false)}
-                                        className="text-neutral-400 hover:text-neutral-700"
-                                    >
-                                        ×
-                                    </Button>
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                <ul className="list-disc pl-6 text-neutral-700 space-y-2 mb-4">
-                                    <li><strong>BYOK</strong> (Bring Your Own Key) lets you use your own API keys for OpenAI, Gemini, or Perplexity.</li>
-                                    <li>When you switch to BYOK, your account is <strong>locked for 30 days</strong> (cannot switch back to platform keys).</li>
-                                    <li>BYOK gives you <strong>55 credits/month</strong> (vs 25 for platform keys).</li>
-                                    <li>You must add at least one valid API key for each provider you want to use.</li>
-                                    <li>After 30 days, you can switch back to platform keys if you wish.</li>
-                                    <li>Active keys are used for all AI requests for that provider.</li>
-                                </ul>
-                                <div className="bg-primary-50 border border-primary-200 rounded-lg p-4 text-primary-800 text-sm">
-                                    <strong>Tip:</strong> You can manage, add, or remove your keys on the <a href="/api-keys" className="underline text-primary-700 hover:text-primary-900">API Keys page</a>. If no key is configured for a provider, you cannot use that provider's AI features.
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-                )}
+                {/* Welcome Header */}
+                <div className="mb-8 animate-fade-in">
+                    <h1 className="text-3xl font-bold text-neutral-900 mb-2">
+                        Welcome back{user?.name ? `, ${user.name}` : ''}!
+                    </h1>
+                    <p className="text-lg text-neutral-600">
+                        Here's what's happening with your AI-powered content creation.
+                    </p>
+                </div>
 
-                {/* AI Key Preference Section */}
-                <Card variant="elevated" className="mb-8 animate-fade-in">
+                {/* Product Modules */}
+                <Card variant="elevated" className="mb-8 animate-fade-in animate-stagger-1">
                     <CardHeader>
-                        <div className="flex items-center justify-between">
+                        <CardTitle className="flex items-center gap-2">
+                            <Zap className="w-5 h-5 text-primary-600" />
+                            Product Modules
+                        </CardTitle>
+                        <CardDescription>
+                            Jump directly into each module with clear feature coverage and launch CTAs.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {modules.map((module) => (
+                                <ProductModuleCard key={module.name} module={module} />
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* AI Key Preference Status */}
+                <Card variant="default" className="mb-8 animate-fade-in animate-stagger-2">
+                    <CardHeader>
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                             <div>
                                 <CardTitle className="flex items-center gap-2">
                                     <Key className="w-5 h-5 text-primary-600" />
-                                    AI Key Preference
+                                    AI Keys & Preferences
                                 </CardTitle>
                                 <CardDescription>
-                                    Select how you want to use AI features. You can use platform keys (25 credits/month) or bring your own (BYOK, 55 credits/month, <strong>3-month lock</strong>).
+                                    Preference controls are now managed in API Keys & Preferences.
                                 </CardDescription>
                             </div>
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => setShowByokInfo(true)}
+                                onClick={() => navigate('/api-keys')}
                             >
-                                What is BYOK?
+                                Manage API Keys & Preferences
                             </Button>
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                            <Button
-                                variant={preference === 'platform' ? 'primary' : 'outline'}
-                                size="lg"
-                                fullWidth
-                                loading={submitting}
-                                disabled={locked}
-                                onClick={() => handleSetPreference('platform')}
-                            >
-                                Use Platform Keys (25 credits/month)
-                            </Button>
-                            <Button
-                                variant={preference === 'byok' ? 'success' : 'outline'}
-                                size="lg"
-                                fullWidth
-                                loading={submitting}
-                                disabled={locked}
-                                onClick={() => handleSetPreference('byok')}
-                            >
-                                Bring Your Own Key (55 credits/month)
-                            </Button>
+                        <div className="flex items-center justify-between text-sm mb-3">
+                            <span className="text-neutral-600">Current mode</span>
+                            <span className={`font-semibold ${preference === 'byok' ? 'text-success-700' : 'text-primary-700'}`}>
+                                {preference === 'byok' ? 'BYOK (Your Own Keys)' : 'Platform Keys'}
+                            </span>
                         </div>
-
-                        <div className="space-y-3">
-                            <div className="flex items-center justify-between text-sm">
-                                <span className="text-neutral-600">Current mode:</span>
-                                <span className={`font-semibold ${preference === 'byok' ? 'text-success-700' : 'text-primary-700'}`}>
-                                    {preference === 'byok' ? 'BYOK (Your Own Keys)' : 'Platform Keys'}
-                                </span>
-                            </div>
+                        <div className="flex items-center justify-between text-sm">
+                            <span className="text-neutral-600">Credit tier</span>
+                            <span className="font-semibold text-neutral-900">{creditTier} credits/month</span>
                         </div>
 
                         {locked && (
@@ -309,35 +336,8 @@ const DashboardPage = () => {
                                 <span>{lockMessage}</span>
                             </div>
                         )}
-
-                        {preference === 'byok' && (
-                            <div className="mt-4 p-3 bg-success-50 border border-success-200 rounded-lg text-success-800 text-sm">
-                                <strong>BYOK is active.</strong> You're using your own API keys for AI features.<br />
-                                <span>Manage your keys on the <a href="/api-keys" className="underline text-success-700 hover:text-success-900">API Keys page</a>.</span>
-                            </div>
-                        )}
                     </CardContent>
                 </Card>
-                {/* Welcome Header */}
-                <div className="mb-8 animate-fade-in">
-                    <h1 className="text-3xl font-bold text-neutral-900 mb-2">
-                        Welcome back{user?.name ? `, ${user.name}` : ''}! 👋
-                    </h1>
-                    <p className="text-lg text-neutral-600">
-                        Here's what's happening with your AI-powered content creation.
-                    </p>
-                </div>
-
-                {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                </div>
-                {/* Stats Cards
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <StatsCard title="Total Posts" value="42" subtitle="+12% this week" icon={<CreditCard className="h-6 w-6 text-blue-600" />} />
-                <StatsCard title="Engagement Rate" value="8.2%" subtitle="+2.1% this week" icon={<Settings className="h-6 w-6 text-green-600" />} highlight />
-                <StatsCard title="Scheduled Posts" value="7" subtitle="Next: 2 hours" icon={<Settings className="h-6 w-6 text-purple-600" />} />
-                <StatsCard title="Plan Type" value={user?.planType || 'Free'} subtitle="Upgrade for more" icon={<Key className="h-6 w-6 text-yellow-500" />} />
-            </div> */}
                 {/* Quick Actions & Recent Activity */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                     <Card variant="default" className="animate-fade-in animate-stagger-1">
@@ -360,11 +360,42 @@ const DashboardPage = () => {
                                     onClick={() => navigate('/credits')}
                                 />
                                 <QuickAction
-                                    label="Manage API Keys"
-                                    description="Configure your AI providers"
+                                    label="API Keys & Preferences"
+                                    description="Manage providers and preference mode"
                                     icon={<Key className="w-5 h-5" />}
                                     color="primary"
                                     onClick={() => navigate('/api-keys')}
+                                />
+                                {userPlan?.type === 'pro' && (
+                                    <QuickAction
+                                        label="Team Collaboration"
+                                        description="Manage your team members"
+                                        icon={<Users className="w-5 h-5" />}
+                                        color="primary"
+                                        onClick={() => navigate('/team')}
+                                    />
+                                )}
+                                <QuickAction
+                                    label="Bulk Automation"
+                                    description={hasFeatureAccess('bulk_scheduling') ? "Automate multiple posts at once" : "Pro feature - Automate in bulk"}
+                                    icon={<Calendar className="w-5 h-5" />}
+                                    color={hasFeatureAccess('bulk_scheduling') ? "primary" : "secondary"}
+                                    onClick={() => handleRestrictedFeature('bulk_scheduling', () => {
+                                        // TODO: Navigate to bulk automation page
+                                        alert('Bulk automation feature coming soon!');
+                                    })}
+                                    isPro={!hasFeatureAccess('bulk_scheduling')}
+                                />
+                                <QuickAction
+                                    label="Advanced Analytics"
+                                    description={hasFeatureAccess('advanced_analytics') ? "Detailed performance insights" : "Pro feature - Deep analytics"}
+                                    icon={<BarChart3 className="w-5 h-5" />}
+                                    color={hasFeatureAccess('advanced_analytics') ? "success" : "secondary"}
+                                    onClick={() => handleRestrictedFeature('advanced_analytics', () => {
+                                        // TODO: Navigate to analytics page
+                                        alert('Advanced analytics feature coming soon!');
+                                    })}
+                                    isPro={!hasFeatureAccess('advanced_analytics')}
                                 />
                                 <QuickAction
                                     label="View Settings"
@@ -373,6 +404,15 @@ const DashboardPage = () => {
                                     color="secondary"
                                     onClick={() => navigate('/settings')}
                                 />
+                                {userPlan?.type === 'free' && (
+                                    <QuickAction
+                                        label="Upgrade to Pro Plan"
+                                        description="Complete secure checkout for ₹499/month (~$6.01)"
+                                        icon={<Crown className="w-5 h-5" />}
+                                        color="warning"
+                                        onClick={() => navigate('/plans?intent=pro')}
+                                    />
+                                )}
                             </div>
                         </CardContent>
                     </Card>
@@ -389,54 +429,28 @@ const DashboardPage = () => {
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
-                                <RecentActivity
-                                    label="AI-powered tweet generated"
-                                    source="Twitter Genie"
-                                    time="2 hours ago"
-                                    status="published"
-                                />
-                                <RecentActivity
-                                    label="Professional post created"
-                                    source="LinkedIn Genie"
-                                    time="4 hours ago"
-                                    status="scheduled"
-                                />
-                                <RecentActivity
-                                    label="Credits purchased: +50"
-                                    source="System"
-                                    time="1 day ago"
-                                    status="completed"
-                                />
-                                <RecentActivity
-                                    label="API key updated"
-                                    source="System"
-                                    time="2 days ago"
-                                    status="completed"
-                                />
+                                {/* TODO: Replace with real activity data from backend */}
+                                {Array.isArray(user?.activity) && user.activity.length > 0 ? (
+                                    user.activity.map((item, idx) => (
+                                        <RecentActivity
+                                            key={idx}
+                                            label={item.label}
+                                            source={item.source}
+                                            time={item.time}
+                                            status={item.status}
+                                        />
+                                    ))
+                                ) : (
+                                    <div className="text-center py-8 text-neutral-500">
+                                        <Calendar className="h-10 w-10 mx-auto mb-2 text-primary-200" />
+                                        <div className="font-semibold mb-1">No recent activity yet</div>
+                                        <div className="text-sm">Your latest actions and updates will appear here.</div>
+                                    </div>
+                                )}
                             </div>
                         </CardContent>
                     </Card>
                 </div>
-                {/* AI Tools */}
-                <Card variant="default" className="mb-8 animate-fade-in animate-stagger-3">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Zap className="w-5 h-5 text-primary-600" />
-                            Your AI Tools
-                        </CardTitle>
-                        <CardDescription>
-                            Access your AI-powered content creation tools
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            <AiToolCard name="Tweet Genie" status="Active" />
-                            <AiToolCard name="LinkedIn Genie" status="Active" />
-                            <AiToolCard name="WordPress Writer" status="Coming Soon" />
-                            <AiToolCard name="Custom LLM" status="Coming Soon" />
-                        </div>
-                    </CardContent>
-                </Card>
                 {/* Why Choose SuiteGenie */}
                 <Card variant="elevated" className="animate-fade-in animate-stagger-4">
                     <CardHeader>
@@ -477,50 +491,63 @@ const DashboardPage = () => {
                     </CardContent>
                 </Card>
             </div>
-        </div>
-    )
-}
-// Sidebar item component
-function SidebarItem({ label, icon, active, badge }) {
-    return (
-        <div className={`flex items-center px-3 py-2 rounded-lg cursor-pointer ${active ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-gray-700 hover:bg-gray-100'}`}>
-            {icon}
-            <span className="ml-3">{label}</span>
-            {badge && <span className="ml-2 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-medium">{badge}</span>}
-        </div>
-    )
-}
 
-// Stats card component
-function StatsCard({ title, value, subtitle, icon, trend, highlight }) {
+            {/* Upgrade Prompt Modal */}
+            <UpgradePrompt
+                isOpen={showUpgradePrompt}
+                onClose={() => setShowUpgradePrompt(false)}
+                feature={upgradeFeature}
+                title="Upgrade to Pro Plan"
+                description="Unlock powerful features to supercharge your content creation"
+            />
+        </div>
+    )
+}
+function ProductModuleCard({ module }) {
+    const isActive = module.status === 'active'
+
     return (
-        <Card
-            variant={highlight ? 'elevated' : 'default'}
-            className={`hover-lift animate-fade-in ${highlight ? 'ring-2 ring-success-200' : ''}`}
-        >
-            <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                        <p className="text-sm font-medium text-neutral-600 mb-1">{title}</p>
-                        <p className="text-3xl font-bold text-neutral-900 mb-1">{value}</p>
-                        <p className="text-xs text-neutral-500">{subtitle}</p>
+        <Card variant="interactive" className="h-full border border-neutral-200">
+            <CardContent className="p-5 h-full flex flex-col">
+                <div className="flex items-center justify-between mb-3">
+                    <div>
+                        <h3 className="text-lg font-semibold text-neutral-900">{module.name}</h3>
+                        <p className="text-sm text-neutral-600">{module.description}</p>
                     </div>
-                    <div className="ml-4 flex-shrink-0">
-                        {icon}
-                    </div>
+                    <span className={isActive ? 'badge-success' : 'badge-warning'}>
+                        {isActive ? 'Active' : 'Coming Soon'}
+                    </span>
                 </div>
-                {trend && (
-                    <div className="mt-3 pt-3 border-t border-neutral-100">
-                        <p className="text-xs text-success-600 font-medium">{trend}</p>
-                    </div>
-                )}
+
+                <ul className="space-y-2 mb-5">
+                    {module.features.map((feature) => (
+                        <li key={feature} className="text-sm text-neutral-700 flex items-start gap-2">
+                            <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary-500"></span>
+                            <span>{feature}</span>
+                        </li>
+                    ))}
+                </ul>
+
+                <div className="mt-auto">
+                    <Button
+                        variant={isActive ? 'primary' : 'outline'}
+                        size="sm"
+                        fullWidth
+                        disabled={!isActive}
+                        icon={<ExternalLink className="w-4 h-4" />}
+                        iconPosition="right"
+                        onClick={() => isActive && window.open(module.url, '_blank')}
+                    >
+                        {module.ctaLabel}
+                    </Button>
+                </div>
             </CardContent>
         </Card>
     )
 }
 
 // Quick action card
-function QuickAction({ label, description, icon, color, onClick }) {
+function QuickAction({ label, description, icon, color, onClick, isPro }) {
     const colorMap = {
         success: 'bg-success-100 text-success-700',
         primary: 'bg-primary-100 text-primary-700',
@@ -529,13 +556,21 @@ function QuickAction({ label, description, icon, color, onClick }) {
     return (
         <button
             onClick={onClick}
-            className="flex items-center w-full p-4 rounded-lg border border-neutral-200 hover:border-neutral-300 hover:shadow-sm transition-all duration-200 text-left group"
+            className={`flex items-center w-full p-4 rounded-lg border border-neutral-200 hover:border-neutral-300 hover:shadow-sm transition-all duration-200 text-left group relative ${isPro ? 'bg-gradient-to-r from-blue-50 to-purple-50' : ''}`}
         >
             <div className={`rounded-lg p-2.5 ${colorMap[color]} group-hover:scale-105 transition-transform duration-200`}>
                 {icon}
             </div>
             <div className="ml-4 flex-1">
-                <div className="font-semibold text-sm text-neutral-900">{label}</div>
+                <div className="flex items-center gap-2">
+                    <span className="font-semibold text-sm text-neutral-900">{label}</span>
+                    {isPro && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+                            <Crown className="w-3 h-3 mr-1" />
+                            Pro
+                        </span>
+                    )}
+                </div>
                 <div className="text-xs text-neutral-500">{description}</div>
             </div>
             <svg className="w-4 h-4 text-neutral-400 group-hover:text-neutral-600 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -556,61 +591,12 @@ function RecentActivity({ label, source, time, status }) {
         <div className="flex items-center justify-between p-3 rounded-lg hover:bg-neutral-50 transition-colors duration-200">
             <div className="flex-1">
                 <div className="font-medium text-sm text-neutral-900 mb-1">{label}</div>
-                <div className="text-xs text-neutral-500">{source} • {time}</div>
+                <div className="text-xs text-neutral-500">{source} - {time}</div>
             </div>
             <span className={`${statusMap[status]} ml-3 flex-shrink-0`}>
                 {status}
             </span>
         </div>
-    )
-}
-
-// AI tool card
-function AiToolCard({ name, status }) {
-    const statusMap = {
-        Active: 'badge-success',
-        'Coming Soon': 'badge-warning',
-    };
-
-    // Set launch URLs for each tool using centralized configuration
-    const launchUrl = getToolUrl(name);
-
-    return (
-        <Card variant="interactive" className="h-full">
-            <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold text-neutral-900">{name}</h3>
-                    <span className={statusMap[status]}>{status}</span>
-                </div>
-
-                <div className="flex items-center justify-center h-16 mb-4 bg-gradient-to-br from-primary-50 to-primary-100 rounded-lg">
-                    <Zap className="w-8 h-8 text-primary-600" />
-                </div>
-
-                {status === 'Active' ? (
-                    <Button
-                        variant="primary"
-                        size="sm"
-                        fullWidth
-                        icon={<ExternalLink className="w-4 h-4" />}
-                        iconPosition="right"
-                        onClick={() => window.open(launchUrl, '_blank')}
-                        title={name === 'Tweet Genie' ? 'Open Tweet Genie in a new tab' : 'Launch this tool'}
-                    >
-                        {name === 'Tweet Genie' ? 'Open Tweet Genie' : 'Launch Tool'}
-                    </Button>
-                ) : (
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        fullWidth
-                        disabled
-                    >
-                        Coming Soon
-                    </Button>
-                )}
-            </CardContent>
-        </Card>
     )
 }
 

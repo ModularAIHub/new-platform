@@ -1,0 +1,36 @@
+{
+  "id": "twitter-automation-for-agencies",
+  "title": "How agencies are managing 10 Twitter accounts with one person and 20 minutes a week",
+  "slug": "twitter-automation-for-agencies",
+  "category": "use-cases",
+  "tags": [
+    "agencies",
+    "multi-account",
+    "twitter automation"
+  ],
+  "excerpt": "TweetGenie replaces the entire agency stack: scheduling tools, analytics tools, content writers, and strategists.",
+  "content": "Current agency stack for Twitter:\n- Scheduling tool: $100-500/month\n- Analytics tool: $50-200/month  \n- Content writer: $1500/month\n- Strategist: $2000/month\n\nTweetGenie replaces all of it.\n\n## Teams Mode\nMultiple accounts, one dashboard.\n\n## RBAC\nDifferent access levels for team members.\n\n## Multi-account Strategy Generation\nBuild completely unique strategies for every client account.\n\n## Cross-posting \nAutomatically cross-post all Twitter wins to LinkedIn and Meta.\n\n## Bulk Scheduling & Approval Workflows\nClients can approve before anything posts live.\n\n[Check Agency Pricing](/pricing)",
+  "featuredImage": {
+    "url": "/images/blog/suitegenie-launch-hero.svg",
+    "alt": "Agency Automation"
+  },
+  "author": {
+    "name": "Kanishk Saraswat",
+    "avatar": "/kanishk.png",
+    "twitter": "kanishksaraswat"
+  },
+  "publishDate": "2026-03-10T10:00:00+05:30",
+  "lastModified": "2026-03-10T10:00:00+05:30",
+  "readTime": 4,
+  "status": "draft",
+  "seo": {
+    "metaTitle": "Twitter Automation for Agencies",
+    "metaDescription": "Manage 10 Twitter accounts with one person and 20 minutes a week.",
+    "keywords": [
+      "agencies",
+      "twitter automation",
+      "multi-account"
+    ],
+    "canonicalUrl": "https://suitegenie.in/blogs/use-cases/twitter-automation-for-agencies"
+  }
+}

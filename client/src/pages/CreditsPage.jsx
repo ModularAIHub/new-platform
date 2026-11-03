@@ -4,6 +4,7 @@ import api from '../utils/api'
 import Loader from '../components/Loader'
 import { loadRazorpayScript } from '../utils/payment'
 import { useAuth } from '../contexts/AuthContext'
+import toast from 'react-hot-toast'
 import { 
     Button, 
     Card, 
@@ -17,6 +18,7 @@ import {
 const CreditsPage = () => {
     const { user, loading: authLoading } = useAuth()
     const [balance, setBalance] = useState(0)
+    const [creditScope, setCreditScope] = useState('personal')
     const [transactions, setTransactions] = useState([])
     const [loading, setLoading] = useState(true)
     const [purchasing, setPurchasing] = useState(null)
@@ -42,6 +44,7 @@ const CreditsPage = () => {
             ])
 
             setBalance(balanceRes.data.creditsRemaining)
+            setCreditScope(balanceRes.data.scope || balanceRes.data.source || 'personal')
             setTransactions(historyRes.data.transactions || [])
         } catch (error) {
             console.error('Failed to fetch credit data:', error)
@@ -82,7 +85,7 @@ const CreditsPage = () => {
             // Load Razorpay script
             const isScriptLoaded = await loadRazorpayScript()
             if (!isScriptLoaded) {
-                alert('Failed to load payment gateway. Please try again.')
+                toast.error('Failed to load payment gateway. Please try again.')
                 return
             }
 
@@ -110,14 +113,14 @@ const CreditsPage = () => {
                         razorpaySignature: 'demo_signature'
                     })
 
-                    alert(`Demo Payment Successful!\n\n${verifyResponse.data.creditsAdded} credits added to your account.\n\nTotal Credits: ${verifyResponse.data.creditsRemaining}`)
+                    toast.success(`Demo payment successful. ${verifyResponse.data.creditsAdded} credits added.`)
                     
                     // Refresh data
                     await fetchData()
                     return
                 } catch (error) {
                     console.error('Demo payment verification failed:', error)
-                    alert('Demo payment verification failed. Please try again.')
+                    toast.error('Demo payment verification failed. Please try again.')
                     return
                 }
             }
@@ -125,12 +128,21 @@ const CreditsPage = () => {
             // Initialize Razorpay
 
             // Fetch the Razorpay key from the backend (expose it via an endpoint or include in orderResponse)
-            const razorpayKey = orderResponse.data.razorpayKey || process.env.REACT_APP_RAZORPAY_KEY_ID || '';
+            const razorpayKey = orderResponse.data.razorpayKey || import.meta.env.VITE_RAZORPAY_KEY_ID || '';
+            if (!razorpayKey) {
+                toast.error('Payment configuration is incomplete. Please contact support.')
+                return
+            }
+
+            if (!window.Razorpay) {
+                toast.error('Payment gateway failed to initialize. Please refresh and try again.')
+                return
+            }
             const options = {
                 key: razorpayKey,
                 amount: amount,
                 currency: currency,
-                name: 'New Platform',
+                name: 'SuiteGenie',
                 description: description,
                 order_id: orderId,
                 handler: async (response) => {
@@ -142,18 +154,26 @@ const CreditsPage = () => {
                             razorpaySignature: response.razorpay_signature
                         })
 
-                        alert(`Payment successful! ${verifyResponse.data.creditsAdded} credits added to your account.`)
+                        // Show success message with bonus credits if applicable
+                        const bonusCredits = verifyResponse.data.bonusCredits;
+                        if (bonusCredits > 0) {
+                            toast.success(`${verifyResponse.data.planName || 'Plan'} activated. ${bonusCredits} bonus credits added.`)
+                        } else if (verifyResponse.data.creditsAdded) {
+                            toast.success(`Payment successful. ${verifyResponse.data.creditsAdded} credits added.`)
+                        } else {
+                            toast.success('Payment successful! Your plan has been upgraded.')
+                        }
                         
                         // Refresh data
                         await fetchData()
                     } catch (error) {
                         console.error('Payment verification failed:', error)
-                        alert('Payment verification failed. Please contact support.')
+                        toast.error(error.response?.data?.error || 'Payment verification failed. Please contact support.')
                     }
                 },
                 prefill: {
-                    name: 'User',
-                    email: 'user@example.com'
+                    name: user?.name || 'SuiteGenie User',
+                    email: user?.email || undefined
                 },
                 theme: {
                     color: '#2563eb'
@@ -165,7 +185,7 @@ const CreditsPage = () => {
 
         } catch (error) {
             console.error('Purchase failed:', error)
-            alert('Purchase failed. Please try again.')
+            toast.error(error.response?.data?.error || 'Purchase failed. Please try again.')
         } finally {
             setPurchasing(null)
         }
@@ -186,7 +206,29 @@ const CreditsPage = () => {
             {/* Header */}
             <div className="bg-white shadow rounded-lg p-6">
                 <h1 className="text-2xl font-bold text-gray-900">Credits</h1>
-                <p className="text-gray-600 mt-2">Manage your credit balance and purchase additional credits when needed.</p>
+                <p className="text-gray-600 mt-2">
+                    {creditScope === 'agency'
+                        ? 'You are viewing the pooled agency credit balance for this workspace context.'
+                        : creditScope === 'team'
+                            ? 'You are viewing your shared team credit balance.'
+                            : 'Manage your credit balance and purchase additional credits when needed.'}
+                </p>
+            </div>
+
+            <div className="bg-white shadow rounded-lg p-6">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                        <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">Current balance</p>
+                        <p className="mt-2 text-4xl font-bold text-gray-900">{Number(balance || 0).toLocaleString()}</p>
+                    </div>
+                    <div className="rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700">
+                        {creditScope === 'agency'
+                            ? 'Agency pooled credits'
+                            : creditScope === 'team'
+                                ? 'Team shared credits'
+                                : 'Personal credits'}
+                    </div>
+                </div>
             </div>
 
             {/* Credit balance section removed as requested */}
@@ -195,18 +237,18 @@ const CreditsPage = () => {
             <div className="bg-white shadow rounded-lg p-8">
                 <h2 className="text-xl font-bold text-gray-900 text-center mb-2">Buy Credits</h2>
                 <p className="text-gray-600 text-center mb-8">No commitment. Buy when you need them.</p>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {/* 1 INR Test Pack */}
                     {/* <div className="relative bg-white border rounded-xl p-6 flex flex-col items-center shadow hover:shadow-lg transition">
                         <div className="absolute top-4 right-4 text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded">Test</div>
                         <h3 className="text-lg font-semibold mb-2">Test Pack</h3>
                         <div className="text-4xl font-bold text-primary-600 mb-1">5</div>
                         <div className="text-gray-500 mb-2">credits</div> */}
-                        {/* <div className="text-2xl font-bold mb-4">₹1</div>
+                        {/* <div className="text-2xl font-bold mb-4">&#8377;1</div>
                         <ul className="mb-6 space-y-1 text-sm text-gray-600 text-left">
-                            <li>✔ For live payment test</li>
-                            <li>✔ No commitment</li>
-                            <li>✔ Get 5 credits for ₹1</li>
+                            <li>&#10003; For live payment test</li>
+                            <li>&#10003; No commitment</li>
+                            <li>&#10003; Get 5 credits for &#8377;1</li>
                         </ul>
                         <button 
                             onClick={() => handlePurchase('1rs-test')}
@@ -224,22 +266,22 @@ const CreditsPage = () => {
                     </div> */}
                     {/* Starter Pack */}
                     <div className="relative bg-white border rounded-xl p-6 flex flex-col items-center shadow hover:shadow-lg transition">
-                        <div className="absolute top-4 right-4 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Save ₹0</div>
+                        <div className="absolute top-4 right-4 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Starter</div>
                         <h3 className="text-lg font-semibold mb-2">Starter Pack</h3>
-                        <div className="text-4xl font-bold text-primary-600 mb-1">{packages['25']?.credits || 25}</div>
+                        <div className="text-4xl font-bold text-primary-600 mb-1">{packages['100']?.credits || 100}</div>
                         <div className="text-gray-500 mb-2">credits</div>
-                        <div className="text-2xl font-bold mb-4">₹{packages['25']?.price || 45}</div>
+                        <div className="text-2xl font-bold mb-4">&#8377;{packages['100']?.price || 199}</div>
                         <ul className="mb-6 space-y-1 text-sm text-gray-600 text-left">
-                            <li>✔ Perfect for testing</li>
-                            <li>✔ No commitment</li>
-                            <li>✔ Instant delivery</li>
+                            <li>&#10003; Perfect for testing</li>
+                            <li>&#10003; No commitment</li>
+                            <li>&#10003; Instant delivery</li>
                         </ul>
                         <button 
-                            onClick={() => handlePurchase('25')}
-                            disabled={purchasing === '25'}
+                            onClick={() => handlePurchase('100')}
+                            disabled={purchasing === '100'}
                             className="w-full py-2 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold flex items-center justify-center"
                         >
-                            {purchasing === '25' ? (
+                            {purchasing === '100' ? (
                                 <Loader2 className="h-5 w-5 animate-spin" />
                             ) : (
                                 <>
@@ -250,22 +292,22 @@ const CreditsPage = () => {
                     </div>
                     {/* Creator Pack */}
                     <div className="relative bg-white border rounded-xl p-6 flex flex-col items-center shadow hover:shadow-lg transition">
-                        <div className="absolute top-4 right-4 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Save ₹15</div>
+                        <div className="absolute top-4 right-4 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Better Value</div>
                         <h3 className="text-lg font-semibold mb-2">Creator Pack</h3>
-                        <div className="text-4xl font-bold text-primary-600 mb-1">{packages['50']?.credits || 50}</div>
+                        <div className="text-4xl font-bold text-primary-600 mb-1">{packages['250']?.credits || 250}</div>
                         <div className="text-gray-500 mb-2">credits</div>
-                        <div className="text-2xl font-bold mb-4">₹{packages['50']?.price || 75}</div>
+                        <div className="text-2xl font-bold mb-4">&#8377;{packages['250']?.price || 399}</div>
                         <ul className="mb-6 space-y-1 text-sm text-gray-600 text-left">
-                            <li>✔ Most popular choice</li>
-                            <li>✔ Better value</li>
-                            <li>✔ Priority support</li>
+                            <li>&#10003; Most popular choice</li>
+                            <li>&#10003; Better value</li>
+                            <li>&#10003; Great for weekly posting</li>
                         </ul>
                         <button 
-                            onClick={() => handlePurchase('50')}
-                            disabled={purchasing === '50'}
+                            onClick={() => handlePurchase('250')}
+                            disabled={purchasing === '250'}
                             className="w-full py-2 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold flex items-center justify-center"
                         >
-                            {purchasing === '50' ? (
+                            {purchasing === '250' ? (
                                 <Loader2 className="h-5 w-5 animate-spin" />
                             ) : (
                                 <>
@@ -276,23 +318,23 @@ const CreditsPage = () => {
                     </div>
                     {/* Pro Pack */}
                     <div className="relative bg-blue-50 border-2 border-blue-600 rounded-xl p-6 flex flex-col items-center shadow-lg">
-                        <div className="absolute top-4 right-4 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Save ₹40</div>
+                        <div className="absolute top-4 right-4 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Best Value</div>
                         <div className="absolute top-4 left-4 text-xs bg-blue-600 text-white px-2 py-1 rounded">Most Popular</div>
                         <h3 className="text-lg font-semibold mb-2">Pro Pack</h3>
-                        <div className="text-4xl font-bold text-blue-700 mb-1">{packages['80']?.credits || 80}</div>
+                        <div className="text-4xl font-bold text-blue-700 mb-1">{packages['500']?.credits || 500}</div>
                         <div className="text-gray-500 mb-2">credits</div>
-                        <div className="text-2xl font-bold mb-4">₹{packages['80']?.price || 100}</div>
+                        <div className="text-2xl font-bold mb-4">&#8377;{packages['500']?.price || 699}</div>
                         <ul className="mb-6 space-y-1 text-sm text-gray-600 text-left">
-                            <li>✔ Best value</li>
-                            <li>✔ Bulk discount</li>
-                            <li>✔ Team features</li>
+                            <li>&#10003; Best value</li>
+                            <li>&#10003; Bulk discount</li>
+                            <li>&#10003; Great for high-volume generation</li>
                         </ul>
                         <button 
-                            onClick={() => handlePurchase('80')}
-                            disabled={purchasing === '80'}
+                            onClick={() => handlePurchase('500')}
+                            disabled={purchasing === '500'}
                             className="w-full py-2 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold flex items-center justify-center"
                         >
-                            {purchasing === '80' ? (
+                            {purchasing === '500' ? (
                                 <Loader2 className="h-5 w-5 animate-spin" />
                             ) : (
                                 <>
@@ -340,7 +382,7 @@ const CreditsPage = () => {
                                         {transaction.type === 'purchase' ? '+' : '-'}{transaction.creditsAmount} credits
                                     </p>
                                     {transaction.costInRupees && (
-                                        <p className="text-xs text-gray-500">₹{transaction.costInRupees}</p>
+                                        <p className="text-xs text-gray-500">&#8377;{transaction.costInRupees}</p>
                                     )}
                                 </div>
                             </div>

@@ -1,68 +1,395 @@
 import { query } from '../config/database.js';
+import { CREDIT_TIERS, getCreditsForPlan } from '../utils/creditTiers.js';
+import { invalidateAuthUserCache } from '../middleware/auth.js';
 
 // Plan configurations
 const PLAN_LIMITS = {
     free: {
-        credits: 25,
+        platformCredits: CREDIT_TIERS.free.platform,
+        byokCredits: CREDIT_TIERS.free.byok,
         profilesPerPlatform: 1,
         totalSocialAccounts: 2,
-        features: ['basic_ai_generation', 'built_in_keys'],
+        features: ['basic_ai_generation', 'built_in_keys', 'own_keys'],
         support: 'community'
     },
     pro: {
-        credits: 125, // 250 with own keys  
+        platformCredits: CREDIT_TIERS.pro.platform,
+        byokCredits: CREDIT_TIERS.pro.byok,
         profilesPerPlatform: 8,
         totalSocialAccounts: 8,
-        features: ['basic_ai_generation', 'built_in_keys', 'own_keys', 'team_collaboration', 'bulk_scheduling', 'advanced_analytics', 'priority_email_support'],
+        features: ['basic_ai_generation', 'image_generation', 'built_in_keys', 'own_keys', 'team_collaboration', 'bulk_scheduling', 'advanced_analytics', 'priority_email_support'],
         support: 'priority_email',
         teamMembers: 5 // max team size including owner
     },
+    agency: {
+        platformCredits: CREDIT_TIERS.agency.platform,
+        byokCredits: CREDIT_TIERS.agency.byok,
+        profilesPerPlatform: 8,
+        totalSocialAccounts: 8,
+        features: ['basic_ai_generation', 'image_generation', 'built_in_keys', 'own_keys', 'team_collaboration', 'bulk_scheduling', 'advanced_analytics', 'priority_support', 'workspace_management', 'approval_workflows', 'agency_credit_pooling'],
+        support: 'priority',
+        teamMembers: 6
+    },
     enterprise: {
-        credits: 500, // 750 with own keys
+        platformCredits: CREDIT_TIERS.enterprise.platform,
+        byokCredits: CREDIT_TIERS.enterprise.byok,
         profilesPerPlatform: 15,
         totalSocialAccounts: 25,
-        features: ['basic_ai_generation', 'built_in_keys', 'own_keys', 'team_collaboration', 'bulk_scheduling', 'advanced_analytics', 'priority_support', 'custom_integrations'],
+        features: ['basic_ai_generation', 'image_generation', 'built_in_keys', 'own_keys', 'team_collaboration', 'bulk_scheduling', 'advanced_analytics', 'priority_support', 'custom_integrations'],
         support: 'priority',
         teamMembers: 15
     }
 };
 
+const PUBLIC_PLAN_ORDER = ['free', 'pro', 'agency'];
+const PRO_PLAN_PRICE_RUPEES = 499;
+const AGENCY_PLAN_PRICE_RUPEES = 2499;
+const AUTOMATION_ADDON_PLANS = {
+    solo_automation: {
+        id: 'solo_automation',
+        name: 'Standalone Automation',
+        price: 799,
+        scopeType: 'user',
+        durationDays: 30
+    },
+    agency_automation: {
+        id: 'agency_automation',
+        name: 'Agency Automation',
+        price: 2999,
+        scopeType: 'agency',
+        durationDays: 30
+    }
+};
+
+const AGENCY_EXPANSION_ADDON_PLANS = {
+    agency_extra_seat: {
+        id: 'agency_extra_seat',
+        name: 'Agency Extra Seat',
+        price: 249,
+        scopeType: 'agency',
+        persistent: true,
+        incrementBy: 1
+    },
+    agency_extra_workspace: {
+        id: 'agency_extra_workspace',
+        name: 'Agency Extra Workspace',
+        price: 349,
+        scopeType: 'agency',
+        persistent: true,
+        incrementBy: 1
+    },
+    agency_white_label: {
+        id: 'agency_white_label',
+        name: 'Agency White-label',
+        price: 999,
+        scopeType: 'agency',
+        persistent: true
+    },
+    agency_reporting_export: {
+        id: 'agency_reporting_export',
+        name: 'Agency Reporting Export',
+        price: 699,
+        scopeType: 'agency',
+        persistent: true
+    },
+    agency_media_library: {
+        id: 'agency_media_library',
+        name: 'Agency Media Library',
+        price: 499,
+        scopeType: 'agency',
+        persistent: true,
+        storageGb: 25
+    }
+};
+
+function isTransientDbError(error) {
+    const code = error?.code;
+    const message = String(error?.message || '').toLowerCase();
+
+    if (['ETIMEDOUT', 'ECONNRESET', 'ECONNREFUSED', 'ENOTFOUND', 'ECONNABORTED'].includes(code)) {
+        return true;
+    }
+
+    return (
+        message.includes('timeout') ||
+        message.includes('connection terminated') ||
+        message.includes('terminated unexpectedly') ||
+        message.includes('could not connect')
+    );
+}
+
 function getRequiredPlanForFeature(featureName) {
     const featurePlanMap = {
-        own_keys: 'pro',
-        team_collaboration: 'enterprise',
-        priority_support: 'enterprise',
-        email_support: 'pro'
+        team_collaboration: 'pro',
+        priority_support: 'pro',
+        email_support: 'pro',
+        image_generation: 'pro',
+        bulk_scheduling: 'pro',
+        advanced_analytics: 'pro'
     };
     return featurePlanMap[featureName] || 'free';
+}
+
+function getPlanPrice(planType) {
+    if (planType === 'free') return 0;
+    if (planType === 'pro') return PRO_PLAN_PRICE_RUPEES;
+    if (planType === 'agency') return AGENCY_PLAN_PRICE_RUPEES;
+    return 1100;
+}
+
+function toNumber(value, fallback = 0) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function buildPlanPayload(planType) {
+    const planConfig = PLAN_LIMITS[planType] || PLAN_LIMITS.free;
+
+    return {
+        type: planType,
+        name: planType.charAt(0).toUpperCase() + planType.slice(1),
+        credits: planConfig.platformCredits,
+        platformCredits: planConfig.platformCredits,
+        byokCredits: planConfig.byokCredits,
+        bonusCredits: planConfig.byokCredits,
+        profilesPerPlatform: planConfig.profilesPerPlatform,
+        totalSocialAccounts: planConfig.totalSocialAccounts,
+        features: planConfig.features,
+        support: planConfig.support,
+        teamMembers: planConfig.teamMembers || 0,
+        price: getPlanPrice(planType)
+    };
+}
+
+async function getActiveAutomationAddons(userId) {
+    const automationAddonsExists = await query(
+        `SELECT to_regclass('public.automation_addons') IS NOT NULL AS exists`,
+        []
+    );
+    if (!automationAddonsExists.rows[0]?.exists) {
+        return [];
+    }
+
+    try {
+        const result = await query(
+            `SELECT id, package_id, scope_type, agency_id, expires_at
+             FROM automation_addons
+             WHERE owner_user_id = $1
+               AND status = 'active'
+               AND expires_at > NOW()
+             ORDER BY expires_at DESC`,
+            [userId]
+        );
+        return result.rows || [];
+    } catch (error) {
+        if (error?.code === '42P01') {
+            return [];
+        }
+        throw error;
+    }
+}
+
+async function getAgencyAddonAccess(userId) {
+    try {
+        const addonColumnsResult = await query(
+            `SELECT COUNT(*)::int AS count
+             FROM information_schema.columns
+             WHERE table_schema = 'public'
+               AND table_name = 'agency_accounts'
+               AND column_name IN (
+                 'white_label_enabled',
+                 'reporting_export_enabled',
+                 'media_library_enabled',
+                 'media_library_storage_gb'
+               )`,
+            []
+        );
+        const hasAddonColumns = Number(addonColumnsResult.rows[0]?.count || 0) === 4;
+        let result;
+        if (hasAddonColumns) {
+            result = await query(
+                `SELECT
+                    id,
+                    seat_limit,
+                    workspace_limit,
+                    white_label_enabled,
+                    reporting_export_enabled,
+                    media_library_enabled,
+                    media_library_storage_gb
+                 FROM agency_accounts
+                 WHERE owner_id = $1
+                 LIMIT 1`,
+                [userId]
+            );
+        } else {
+            result = await query(
+                `SELECT
+                    id,
+                    seat_limit,
+                    workspace_limit,
+                    false AS white_label_enabled,
+                    false AS reporting_export_enabled,
+                    false AS media_library_enabled,
+                    0 AS media_library_storage_gb
+                 FROM agency_accounts
+                 WHERE owner_id = $1
+                 LIMIT 1`,
+                [userId]
+            );
+        }
+
+        if (!result.rows.length) {
+            return {
+                active: false,
+                agencyId: null,
+                packages: [],
+                features: {
+                    whiteLabelEnabled: false,
+                    reportingExportEnabled: false,
+                    mediaLibraryEnabled: false,
+                    mediaLibraryStorageGb: 0,
+                },
+                limits: null,
+            };
+        }
+
+        const row = result.rows[0];
+        const seatLimit = toNumber(row.seat_limit, 6);
+        const workspaceLimit = toNumber(row.workspace_limit, 6);
+        const packages = [];
+        const extraSeats = Math.max(0, seatLimit - 6);
+        const extraWorkspaces = Math.max(0, workspaceLimit - 6);
+
+        if (extraSeats > 0) {
+            packages.push({
+                packageId: 'agency_extra_seat',
+                quantity: extraSeats,
+                persistent: true,
+            });
+        }
+
+        if (extraWorkspaces > 0) {
+            packages.push({
+                packageId: 'agency_extra_workspace',
+                quantity: extraWorkspaces,
+                persistent: true,
+            });
+        }
+
+        if (row.white_label_enabled) {
+            packages.push({ packageId: 'agency_white_label', persistent: true });
+        }
+
+        if (row.reporting_export_enabled) {
+            packages.push({ packageId: 'agency_reporting_export', persistent: true });
+        }
+
+        if (row.media_library_enabled) {
+            packages.push({
+                packageId: 'agency_media_library',
+                persistent: true,
+                storageGb: toNumber(row.media_library_storage_gb, 25),
+            });
+        }
+
+        return {
+            active: packages.length > 0,
+            agencyId: row.id,
+            packages,
+            features: {
+                whiteLabelEnabled: Boolean(row.white_label_enabled),
+                reportingExportEnabled: Boolean(row.reporting_export_enabled),
+                mediaLibraryEnabled: Boolean(row.media_library_enabled),
+                mediaLibraryStorageGb: toNumber(row.media_library_storage_gb, 0),
+            },
+            limits: {
+                seatLimit,
+                workspaceLimit,
+            },
+        };
+    } catch (error) {
+        if (error?.code === '42P01' || error?.code === '42703') {
+            return {
+                active: false,
+                agencyId: null,
+                packages: [],
+                features: {
+                    whiteLabelEnabled: false,
+                    reportingExportEnabled: false,
+                    mediaLibraryEnabled: false,
+                    mediaLibraryStorageGb: 0,
+                },
+                limits: null,
+            };
+        }
+        throw error;
+    }
 }
 
 class PlansController {
     static async getLimits(req, res) {
         try {
-            const result = await query('SELECT plan_type, credits_remaining FROM users WHERE id = $1', [req.user.id]);
+            const result = await query(
+                'SELECT plan_type, credits_remaining, current_team_id, api_key_preference FROM users WHERE id = $1',
+                [req.user.id]
+            );
             if (result.rows.length === 0) {
                 return res.status(404).json({ error: 'User not found', code: 'USER_NOT_FOUND' });
             }
 
             const user = result.rows[0];
-            const planConfig = PLAN_LIMITS[user.plan_type] || PLAN_LIMITS.free;
-
-            const apiKeysResult = await query('SELECT COUNT(*) as key_count FROM user_api_keys WHERE user_id = $1 AND is_active = true', [req.user.id]);
-            const hasOwnKeys = parseInt(apiKeysResult.rows[0].key_count) > 0;
-            let effectiveCredits = planConfig.credits;
-            if (hasOwnKeys && user.plan_type !== 'free') {
-                if (user.plan_type === 'pro') effectiveCredits = 250;
-                else if (user.plan_type === 'enterprise') effectiveCredits = 750;
+            // Default to 'free' if plan_type is null
+            const userPlanType = PLAN_LIMITS[user.plan_type] ? user.plan_type : 'free';
+            
+            // Check if user is part of a paid team
+            let teamPlanType = null;
+            if (user.current_team_id) {
+                const teamResult = await query('SELECT plan_type FROM teams WHERE id = $1', [user.current_team_id]);
+                if (teamResult.rows.length > 0) {
+                    teamPlanType = teamResult.rows[0].plan_type;
+                }
             }
+            
+            // Use the higher plan type (individual vs team)
+            const effectivePlanType = teamPlanType && (teamPlanType === 'pro' || teamPlanType === 'agency' || teamPlanType === 'enterprise') 
+                ? teamPlanType 
+                : userPlanType;
+            
+            const planConfig = PLAN_LIMITS[effectivePlanType] || PLAN_LIMITS.free;
+
+            const [apiKeysResult, activeAddons, agencyAddonAccess] = await Promise.all([
+                query('SELECT COUNT(*) as key_count FROM user_api_keys WHERE user_id = $1 AND is_active = true', [req.user.id]),
+                getActiveAutomationAddons(req.user.id),
+                getAgencyAddonAccess(req.user.id)
+            ]);
+            const hasOwnKeys = parseInt(apiKeysResult.rows[0].key_count) > 0;
+            const effectiveCredits = getCreditsForPlan(effectivePlanType, user.api_key_preference, { defaultToPlatform: false });
+            const automationAccess = {
+                active: activeAddons.length > 0,
+                packages: activeAddons.map((addon) => ({
+                    id: addon.id,
+                    packageId: addon.package_id,
+                    scopeType: addon.scope_type,
+                    agencyId: addon.agency_id,
+                    expiresAt: addon.expires_at
+                }))
+            };
 
             res.json({
                 currentPlan: {
-                    type: user.plan_type,
-                    name: user.plan_type.charAt(0).toUpperCase() + user.plan_type.slice(1),
-                    creditsRemaining: user.credits_remaining,
+                    type: effectivePlanType,
+                    name: effectivePlanType.charAt(0).toUpperCase() + effectivePlanType.slice(1),
+                    creditsRemaining: toNumber(user.credits_remaining, 0),
                     effectiveCredits,
-                    hasOwnKeys
+                    platformCredits: planConfig.platformCredits,
+                    byokCredits: planConfig.byokCredits,
+                    hasOwnKeys,
+                    apiKeyPreference: user.api_key_preference || null,
+                    individualPlan: userPlanType,
+                    teamPlan: teamPlanType,
+                    hasTeamAccess: teamPlanType && (teamPlanType === 'pro' || teamPlanType === 'agency' || teamPlanType === 'enterprise'),
+                    automationAccess,
+                    agencyAddonAccess
                 },
                 limits: {
                     profilesPerPlatform: planConfig.profilesPerPlatform,
@@ -71,55 +398,144 @@ class PlansController {
                 },
                 features: planConfig.features,
                 support: planConfig.support,
-                availablePlans: Object.keys(PLAN_LIMITS).map((planType) => ({
-                    type: planType,
-                    name: planType.charAt(0).toUpperCase() + planType.slice(1),
-                    credits: PLAN_LIMITS[planType].credits,
-                    bonusCredits: planType === 'pro' ? 250 : planType === 'enterprise' ? 750 : 25,
-                    profilesPerPlatform: PLAN_LIMITS[planType].profilesPerPlatform,
-                    totalSocialAccounts: PLAN_LIMITS[planType].totalSocialAccounts,
-                    features: PLAN_LIMITS[planType].features,
-                    support: PLAN_LIMITS[planType].support,
-                    teamMembers: PLAN_LIMITS[planType].teamMembers || 0,
-                    price: planType === 'free' ? 0 : planType === 'pro' ? 499 : 1100
-                }))
+                availablePlans: PUBLIC_PLAN_ORDER.map((planType) => buildPlanPayload(planType)),
+                availableAutomationAddons: Object.values(AUTOMATION_ADDON_PLANS),
+                availableAgencyAddons: Object.values(AGENCY_EXPANSION_ADDON_PLANS)
             });
         } catch (error) {
-            console.error('Get plan limits error:', error);
+            if (isTransientDbError(error)) {
+                console.warn('Transient DB error in getLimits, returning degraded response:', error?.message || error);
+                const rawFallbackPlanType = req.user?.plan_type || req.user?.planType || 'free';
+                const fallbackPlanType = PLAN_LIMITS[rawFallbackPlanType] ? rawFallbackPlanType : 'free';
+                const planConfig = PLAN_LIMITS[fallbackPlanType] || PLAN_LIMITS.free;
+                const fallbackPreference = req.user?.api_key_preference || req.user?.apiKeyPreference || null;
+
+                return res.json({
+                    currentPlan: {
+                        type: fallbackPlanType,
+                        name: fallbackPlanType.charAt(0).toUpperCase() + fallbackPlanType.slice(1),
+                        creditsRemaining: toNumber(req.user?.credits_remaining || req.user?.creditsRemaining, 0),
+                        effectiveCredits: getCreditsForPlan(fallbackPlanType, fallbackPreference, { defaultToPlatform: false }),
+                        platformCredits: planConfig.platformCredits,
+                        byokCredits: planConfig.byokCredits,
+                        hasOwnKeys: false,
+                        apiKeyPreference: fallbackPreference,
+                        individualPlan: fallbackPlanType,
+                        teamPlan: null,
+                        hasTeamAccess: false,
+                        automationAccess: {
+                            active: false,
+                            packages: []
+                        },
+                        agencyAddonAccess: {
+                            active: false,
+                            agencyId: null,
+                            packages: [],
+                            features: {
+                                whiteLabelEnabled: false,
+                                reportingExportEnabled: false,
+                                mediaLibraryEnabled: false,
+                                mediaLibraryStorageGb: 0
+                            },
+                            limits: null
+                        },
+                        degraded: true
+                    },
+                    limits: {
+                        profilesPerPlatform: planConfig.profilesPerPlatform,
+                        totalSocialAccounts: planConfig.totalSocialAccounts,
+                        teamMembers: planConfig.teamMembers || 0
+                    },
+                    features: planConfig.features,
+                    support: planConfig.support,
+                    availablePlans: PUBLIC_PLAN_ORDER.map((planType) => buildPlanPayload(planType)),
+                    availableAutomationAddons: Object.values(AUTOMATION_ADDON_PLANS),
+                    availableAgencyAddons: Object.values(AGENCY_EXPANSION_ADDON_PLANS)
+                });
+            }
+
+            console.error('Get plan limits error:', error?.message || error);
             res.status(500).json({ error: 'Failed to get plan limits', code: 'PLAN_LIMITS_ERROR' });
         }
     }
 
     static async upgradePlan(req, res) {
         try {
-            const { planType } = req.body;
-            const currentResult = await query('SELECT plan_type, credits_remaining FROM users WHERE id = $1', [req.user.id]);
+            const { planType, isTrial } = req.body;
+            if (!PLAN_LIMITS[planType]) {
+                return res.status(400).json({ error: 'Invalid plan type', code: 'INVALID_PLAN_TYPE' });
+            }
+            if (planType !== 'pro') {
+                return res.status(400).json({
+                    error: 'Use dedicated checkout endpoints for this plan type.',
+                    code: 'PLAN_UPGRADE_ENDPOINT_NOT_SUPPORTED'
+                });
+            }
+            if (!isTrial) {
+                return res.status(402).json({
+                    error: 'Direct upgrades are disabled. Please complete payment to upgrade your plan.',
+                    code: 'PAYMENT_REQUIRED'
+                });
+            }
+
+            const currentResult = await query(
+                'SELECT plan_type, credits_remaining, trial_ends_at, api_key_preference FROM users WHERE id = $1',
+                [req.user.id]
+            );
             if (currentResult.rows.length === 0) {
                 return res.status(404).json({ error: 'User not found', code: 'USER_NOT_FOUND' });
             }
-            const currentPlan = currentResult.rows[0].plan_type;
-            const currentCredits = Number(currentResult.rows[0].credits_remaining);
-            if (currentPlan === 'enterprise') {
+            const currentPlan = currentResult.rows[0].plan_type || 'free';
+            const currentCredits = toNumber(currentResult.rows[0].credits_remaining, 0);
+            const currentPreference = currentResult.rows[0].api_key_preference || null;
+            const existingTrialEndsAt = currentResult.rows[0].trial_ends_at;
+            
+            // Don't allow upgrade if already on enterprise
+            if (currentPlan === 'enterprise' && planType === 'enterprise') {
                 return res.status(400).json({ error: 'Already on highest plan', code: 'ALREADY_HIGHEST_PLAN' });
             }
-            if (currentPlan === 'pro' && planType === 'pro') {
+            
+            // For Pro trial signups, allow even if null plan
+            if (currentPlan === 'pro' && planType === 'pro' && !isTrial) {
                 return res.status(400).json({ error: 'Already on Pro plan', code: 'ALREADY_PRO_PLAN' });
             }
+            
             const newPlanConfig = PLAN_LIMITS[planType];
-            let bonusCredits = 0;
-            if (planType === 'pro') bonusCredits = 125;
-            else if (planType === 'enterprise') bonusCredits = 500;
-            const newCredits = currentCredits + bonusCredits;
-            await query('UPDATE users SET plan_type = $1, credits_remaining = $2, updated_at = NOW() WHERE id = $3', [planType, newCredits, req.user.id]);
+            const targetCredits = getCreditsForPlan(planType, currentPreference, { defaultToPlatform: false });
+            const newCredits = currentPreference ? Math.max(currentCredits, targetCredits) : currentCredits;
+            const bonusCredits = Math.max(0, newCredits - currentCredits);
+            
+            // Set trial end date if this is a trial upgrade
+            let trialEndsAt = existingTrialEndsAt;
+            if (isTrial && planType === 'pro' && !existingTrialEndsAt) {
+                const trialEnd = new Date();
+                trialEnd.setDate(trialEnd.getDate() + 14); // 14 days from now
+                trialEndsAt = trialEnd;
+            }
+            
+            // Update user with trial info
+            if (trialEndsAt) {
+                await query('UPDATE users SET plan_type = $1, credits_remaining = $2, trial_ends_at = $3, updated_at = NOW() WHERE id = $4', 
+                    [planType, newCredits, trialEndsAt, req.user.id]);
+            } else {
+                await query('UPDATE users SET plan_type = $1, credits_remaining = $2, updated_at = NOW() WHERE id = $3', 
+                    [planType, newCredits, req.user.id]);
+            }
+            invalidateAuthUserCache(req.user.id);
+            
             res.json({
-                message: 'Plan upgraded successfully',
+                message: isTrial ? 'Pro trial activated successfully' : 'Plan upgraded successfully',
                 newPlan: {
                     type: planType,
                     name: planType.charAt(0).toUpperCase() + planType.slice(1),
                     creditsRemaining: newCredits,
                     bonusCredits,
+                    platformCredits: newPlanConfig.platformCredits,
+                    byokCredits: newPlanConfig.byokCredits,
                     features: newPlanConfig.features,
-                    support: newPlanConfig.support
+                    support: newPlanConfig.support,
+                    isTrial: isTrial || false,
+                    trialEndsAt: trialEndsAt
                 }
             });
         } catch (error) {
@@ -132,21 +548,23 @@ class PlansController {
         try {
             const result = await query('SELECT plan_type FROM users WHERE id = $1', [req.user.id]);
             const currentPlan = result.rows.length > 0 ? result.rows[0].plan_type : 'free';
-            const comparison = Object.keys(PLAN_LIMITS).map((planType) => {
+            const comparison = PUBLIC_PLAN_ORDER.map((planType) => {
                 const plan = PLAN_LIMITS[planType];
                 return {
                     type: planType,
                     name: planType.charAt(0).toUpperCase() + planType.slice(1),
-                    price: planType === 'free' ? 0 : planType === 'pro' ? 499 : 1100,
-                    credits: plan.credits,
-                    bonusCredits: planType === 'pro' ? 250 : planType === 'enterprise' ? 750 : 25,
+                    price: getPlanPrice(planType),
+                    credits: plan.platformCredits,
+                    platformCredits: plan.platformCredits,
+                    byokCredits: plan.byokCredits,
+                    bonusCredits: plan.byokCredits,
                     profilesPerPlatform: plan.profilesPerPlatform,
                     totalSocialAccounts: plan.totalSocialAccounts,
                     features: plan.features,
                     support: plan.support,
                     teamMembers: plan.teamMembers || 0,
                     isCurrentPlan: planType === currentPlan,
-                    canUpgrade: planType !== currentPlan && planType !== 'free'
+                    canUpgrade: planType !== currentPlan && planType !== 'free' && planType !== 'agency'
                 };
             });
             res.json({ currentPlan, comparison });
@@ -163,7 +581,7 @@ class PlansController {
             if (result.rows.length === 0) {
                 return res.status(404).json({ error: 'User not found', code: 'USER_NOT_FOUND' });
             }
-            const planType = result.rows[0].plan_type;
+            const planType = PLAN_LIMITS[result.rows[0].plan_type] ? result.rows[0].plan_type : 'free';
             const planConfig = PLAN_LIMITS[planType] || PLAN_LIMITS.free;
             const hasAccess = planConfig.features.includes(featureName);
             res.json({ feature: featureName, hasAccess, planType, requiredPlan: hasAccess ? planType : getRequiredPlanForFeature(featureName) });

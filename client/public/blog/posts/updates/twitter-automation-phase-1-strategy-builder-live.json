@@ -1,0 +1,35 @@
+{
+  "id": "twitter-automation-phase-1-strategy-builder-live",
+  "title": "Phase 1 is live — TweetGenie now analyses your Twitter and builds your strategy automatically",
+  "slug": "twitter-automation-phase-1-strategy-builder-live",
+  "category": "updates",
+  "tags": [
+    "update",
+    "phase 1",
+    "strategy builder"
+  ],
+  "excerpt": "What the new Strategy Builder does, how to use it, and what happens if you have no tweet history.",
+  "content": "## What the old Strategy Builder looked like\nManual, generic, and time-consuming.\n\n## What the new one does\nAnalyses your account, pre-fills everything. It reads your actual tweet history and pulls your top-performing formats and topics.\n\n## Step by step how to use it\n1. Login to TweetGenie\n2. Click 'Strategy Builder'\n3. Let the system analyse your account (takes about 30 seconds)\n4. Review and save\n\n## What happens if you have no tweet history\nUse the reference accounts feature to paste handles of people whose strategy you want to emulate.\n\n[Try it now — free for Pro users](/dashboard)",
+  "featuredImage": {
+    "url": "/images/blog/suitegenie-launch-hero.svg",
+    "alt": "Phase 1 Strategy Builder Live"
+  },
+  "author": {
+    "name": "Kanishk Saraswat",
+    "avatar": "/kanishk.png",
+    "twitter": "kanishksaraswat"
+  },
+  "publishDate": "2026-03-15T10:00:00+05:30",
+  "lastModified": "2026-03-15T10:00:00+05:30",
+  "readTime": 3,
+  "status": "draft",
+  "seo": {
+    "metaTitle": "Phase 1 is Live: Twitter Strategy Automation",
+    "metaDescription": "TweetGenie now analyses your Twitter and builds your strategy automatically.",
+    "keywords": [
+      "strategy builder",
+      "twitter automation"
+    ],
+    "canonicalUrl": "https://suitegenie.in/blogs/updates/twitter-automation-phase-1-strategy-builder-live"
+  }
+}
