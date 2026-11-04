@@ -213,6 +213,22 @@ api.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
+        // A token can become stale after a deployment, cookie rotation, or a
+        // second browser tab obtains a new CSRF secret. Refresh it once and
+        // replay the original request.
+        const isCsrfError = error.response?.status === 403 &&
+            error.response?.data?.error === 'Invalid CSRF token';
+        if (isCsrfError && !originalRequest._csrfRetry) {
+            originalRequest._csrfRetry = true;
+            csrfToken = null;
+            const freshToken = await fetchCsrfToken();
+            if (freshToken) {
+                originalRequest.headers = originalRequest.headers || {};
+                originalRequest.headers['X-CSRF-Token'] = freshToken;
+                return api(originalRequest);
+            }
+        }
+
         // Only attempt token refresh for 401 errors on protected routes
         // Exclude auth endpoints and already retried requests
         if (error.response?.status === 401 && 

@@ -326,7 +326,6 @@ app.use(sanitizeParams);
 // Dynamic CSRF cookie domain logic (matches auth cookies)
 
 const isProduction = process.env.NODE_ENV === 'production';
-const configuredCookieDomain = String(process.env.COOKIE_DOMAIN || '').trim();
 const isLocalhost = (
     process.env.DOMAIN === 'localhost' ||
     process.env.CLIENT_URL?.includes('localhost') ||
@@ -338,9 +337,9 @@ let csrfCookieOptions = {
     sameSite: isProduction ? 'none' : 'lax',
     path: '/'
 };
-// Only set domain in production and not localhost
-if (isProduction && configuredCookieDomain && !isLocalhost) {
-    csrfCookieOptions.domain = configuredCookieDomain;
+// Keep the CSRF secret host-scoped. The API may be hosted on a different
+// domain (for example, a Vercel deployment) than the browser client.
+if (isProduction && !isLocalhost) {
     csrfCookieOptions.secure = true;
 }
 
@@ -385,11 +384,10 @@ app.use((req, res, next) => {
     }
     return csrfProtection(req, res, (err) => {
         if (err && err.code === 'EBADCSRFTOKEN') {
-            // CSRF token is invalid - clear it and send a new one
-            securityLog('[CSRF] Invalid CSRF token detected, clearing cookie and generating new token');
+            // The client must fetch a new token before retrying the request.
+            securityLog('[CSRF] Invalid CSRF token detected');
             res.clearCookie('_csrf', csrfCookieOptions);
-            // Try again with fresh CSRF
-            return csrfProtection(req, res, next);
+            return next(err);
         }
         if (err) {
             return next(err);
@@ -400,6 +398,7 @@ app.use((req, res, next) => {
 
 // CSRF token endpoint for frontend to fetch token
 app.get('/api/csrf-token', (req, res) => {
+    res.set('Cache-Control', 'no-store');
     res.json({ csrfToken: req.csrfToken() });
 });
 
@@ -518,4 +517,3 @@ app.listen(PORT, async () => {
 app.use(Honeybadger.errorHandler);
 
 export default app;
-
