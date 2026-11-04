@@ -190,9 +190,10 @@ const setAuthCookies = (res, accessToken, refreshToken) => {
     const isProduction = process.env.NODE_ENV === 'production';
     const cookieDomain = String(process.env.COOKIE_DOMAIN || '').trim();
     const clientUrl = String(process.env.CLIENT_URL || '');
+    const isVercelDeployment = process.env.VERCEL === '1';
     const isLocalhost = clientUrl.includes('localhost') || clientUrl.includes('127.0.0.1') || cookieDomain === 'localhost';
     const useCrossSiteCookie = isProduction && !isLocalhost;
-    const domain = useCrossSiteCookie && cookieDomain ? cookieDomain : undefined;
+    const domain = useCrossSiteCookie && cookieDomain && !isVercelDeployment ? cookieDomain : undefined;
     const sessionCookieMaxAgeMs = getSessionCookieMaxAgeMs();
 
     const cookieOptions = {

@@ -326,6 +326,8 @@ app.use(sanitizeParams);
 // Dynamic CSRF cookie domain logic (matches auth cookies)
 
 const isProduction = process.env.NODE_ENV === 'production';
+const configuredCookieDomain = String(process.env.COOKIE_DOMAIN || '').trim();
+const isVercelDeployment = process.env.VERCEL === '1';
 const isLocalhost = (
     process.env.DOMAIN === 'localhost' ||
     process.env.CLIENT_URL?.includes('localhost') ||
@@ -340,6 +342,9 @@ let csrfCookieOptions = {
 // Keep the CSRF secret host-scoped. The API may be hosted on a different
 // domain (for example, a Vercel deployment) than the browser client.
 if (isProduction && !isLocalhost) {
+    if (configuredCookieDomain && !isVercelDeployment) {
+        csrfCookieOptions.domain = configuredCookieDomain;
+    }
     csrfCookieOptions.secure = true;
 }
 

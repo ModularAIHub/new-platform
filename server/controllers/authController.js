@@ -104,6 +104,7 @@ class AuthController {
         // Environment-based cookie configuration
         const isProduction = process.env.NODE_ENV === 'production';
         const cookieDomain = String(process.env.COOKIE_DOMAIN || '').trim();
+        const isVercelDeployment = process.env.VERCEL === '1';
         const isLocalhost = process.env.DOMAIN === 'localhost' || process.env.CLIENT_URL?.includes('localhost');
         const useCrossSiteCookie = isProduction && !isLocalhost;
         const sessionCookieMaxAgeMs = getSessionCookieMaxAgeMs();
@@ -117,7 +118,7 @@ class AuthController {
         };
 
         // Only set domain in production
-        if (isProduction && cookieDomain && !isLocalhost) {
+        if (isProduction && cookieDomain && !isVercelDeployment && !isLocalhost) {
             cookieOptions.domain = cookieDomain;
         }
 
@@ -135,6 +136,7 @@ class AuthController {
     static clearAuthCookies(res) {
         const isProduction = process.env.NODE_ENV === 'production';
         const isLocalhost = process.env.DOMAIN === 'localhost' || process.env.CLIENT_URL?.includes('localhost');
+        const isVercelDeployment = process.env.VERCEL === '1';
         const useCrossSiteCookie = isProduction && !isLocalhost;
         
         const clearOptions = {
@@ -146,7 +148,7 @@ class AuthController {
 
         // Only set domain in production
         const cookieDomain = String(process.env.COOKIE_DOMAIN || '').trim();
-        if (isProduction && cookieDomain && !isLocalhost) {
+        if (isProduction && cookieDomain && !isVercelDeployment && !isLocalhost) {
             clearOptions.domain = cookieDomain;
         }
 
