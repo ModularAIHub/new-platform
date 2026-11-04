@@ -326,6 +326,7 @@ app.use(sanitizeParams);
 // Dynamic CSRF cookie domain logic (matches auth cookies)
 
 const isProduction = process.env.NODE_ENV === 'production';
+const configuredCookieDomain = String(process.env.COOKIE_DOMAIN || '').trim();
 const isLocalhost = (
     process.env.DOMAIN === 'localhost' ||
     process.env.CLIENT_URL?.includes('localhost') ||
@@ -338,8 +339,8 @@ let csrfCookieOptions = {
     path: '/'
 };
 // Only set domain in production and not localhost
-if (isProduction && process.env.DOMAIN && !isLocalhost) {
-    csrfCookieOptions.domain = '.' + process.env.DOMAIN;
+if (isProduction && configuredCookieDomain && !isLocalhost) {
+    csrfCookieOptions.domain = configuredCookieDomain;
     csrfCookieOptions.secure = true;
 }
 
@@ -517,5 +518,4 @@ app.listen(PORT, async () => {
 app.use(Honeybadger.errorHandler);
 
 export default app;
-
 
