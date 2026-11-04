@@ -214,6 +214,7 @@ const envAllowedOrigins = (process.env.ALLOWED_ORIGINS || '')
 
 const allowedOrigins = [
     'https://api.suitegenie.in',
+    'https://suitegenie.vercel.app',
     'https://apilinkedin.suitegenie.in',
     'https://tweetapi.suitegenie.in',
     'https://metaapi.suitegenie.in',
