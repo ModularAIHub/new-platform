@@ -10,17 +10,17 @@ function getRequiredSetting(name) {
 
 export function createResendProvider() {
     const resend = new Resend(getRequiredSetting('RESEND_API_KEY'));
-    const from = getRequiredSetting('RESEND_FROM_EMAIL');
+    const defaultFrom = getRequiredSetting('RESEND_FROM_EMAIL');
 
     return {
-        async sendMail({ to, subject, html, text }) {
+        async sendMail({ to, subject, html, text, from }) {
             if (!to || !subject || (!html && !text)) {
                 throw new Error('Email requires to, subject, and html or text content');
             }
 
             try {
                 const { data, error } = await resend.emails.send({
-                    from,
+                    from: from || defaultFrom,
                     to,
                     subject,
                     html,

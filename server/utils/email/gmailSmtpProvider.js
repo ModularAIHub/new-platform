@@ -21,7 +21,7 @@ export function createGmailSmtpProvider() {
     const port = getSmtpPort();
     const user = getRequiredSetting('SMTP_USER');
     const password = getRequiredSetting('SMTP_PASS');
-    const from = process.env.SMTP_FROM || `SuiteGenie <${user}>`;
+    const defaultFrom = process.env.SMTP_FROM || `SuiteGenie <${user}>`;
     const secure = process.env.SMTP_SECURE
         ? process.env.SMTP_SECURE.toLowerCase() === 'true'
         : port === 465;
@@ -34,14 +34,14 @@ export function createGmailSmtpProvider() {
     });
 
     return {
-        async sendMail({ to, subject, html, text }) {
+        async sendMail({ to, subject, html, text, from }) {
             if (!to || !subject || (!html && !text)) {
                 throw new Error('Email requires to, subject, and html or text content');
             }
 
             try {
                 const info = await transporter.sendMail({
-                    from,
+                    from: from || defaultFrom,
                     to,
                     subject,
                     html,

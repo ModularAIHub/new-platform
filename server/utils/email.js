@@ -1,45 +1,24 @@
-import { Resend } from 'resend';
+import { createGmailSmtpProvider } from './email/gmailSmtpProvider.js';
+import { createResendProvider } from './email/resendProvider.js';
 
-const EMAIL_DEBUG = process.env.EMAIL_DEBUG === 'true';
-const emailEnabled = !!process.env.RESEND_API_KEY;
+let emailProvider;
 
-if (!emailEnabled) {
-  console.warn('[EMAIL] RESEND_API_KEY not set - email sending disabled');
-}
+function getEmailProvider() {
+    if (!emailProvider) {
+        const provider = (process.env.EMAIL_PROVIDER || 'smtp').trim().toLowerCase();
 
-const resend = emailEnabled ? new Resend(process.env.RESEND_API_KEY) : null;
-
-const emailDebug = (...args) => {
-  if (EMAIL_DEBUG) {
-    console.log(...args);
-  }
-};
-
-export async function sendMail({ to, subject, html, text, from }) {
-  if (!emailEnabled) {
-    console.warn('[EMAIL] Skipping email send - email not configured');
-    return null;
-  }
-
-  emailDebug('Sending email', { to, subject });
-
-  try {
-    const { data, error } = await resend.emails.send({
-      from: from || 'suitegenie <noreply@suitegenie.in>',
-      to,
-      subject,
-      html,
-      text,
-    });
-
-    if (error) {
-      throw error;
+        if (provider === 'smtp') {
+            emailProvider = createGmailSmtpProvider();
+        } else if (provider === 'resend') {
+            emailProvider = createResendProvider();
+        } else {
+            throw new Error(`Unsupported EMAIL_PROVIDER: ${provider}. Use "smtp" or "resend".`);
+        }
     }
 
-    emailDebug('Email sent successfully', { messageId: data?.id });
-    return data;
-  } catch (error) {
-    console.error('Email send failed:', error?.message || error);
-    throw error;
-  }
+    return emailProvider;
+}
+
+export function sendMail(message) {
+    return getEmailProvider().sendMail(message);
 }
