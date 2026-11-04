@@ -3,7 +3,7 @@
 
 export const URLS = {
   // API URLs
-  API_BASE: import.meta.env.VITE_API_URL || 'https://backendsuitegenie.vercel.app/api',
+  API_BASE: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
   
   // Tool URLs
   TWEET_GENIE: 'https://tweet.suitegenie.in',
