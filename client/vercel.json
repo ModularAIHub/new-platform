@@ -6,7 +6,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://api.suitegenie.in/api/$1"
+      "destination": "https://backendsuitegenie.vercel.app/api/$1"
     },
     {
       "source": "/(.*)",

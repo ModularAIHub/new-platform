@@ -38,7 +38,7 @@ const getBaseURL = (platform) => {
         return 'http://localhost:3004/api';
     } else {
         // New Platform backend
-        return import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '/api' : 'https://api.suitegenie.in/api');
+        return import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '/api' : 'https://backendsuitegenie.vercel.app/api');
     }
 };
 
