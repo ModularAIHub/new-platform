@@ -110,7 +110,7 @@ export default function About() {
     {
       name: "Kanishk",
       role: "One for all",
-      bio: "SuiteGenie is a one-man show. I handles all development, marketing, product vision, and every aspect required for a startup. From building the platform, designing features, managing deployments, to outreach and growth. If you use SuiteGenie, you’re supporting a true indie founder.",
+      bio: "SuiteGenie is a one-man show. I handle all development, marketing, product vision, and every aspect required for a startup. From building the platform, designing features, managing deployments, to outreach and growth. If you use SuiteGenie, you’re supporting a true indie founder.",
       imageUrl: "/kanishk.png",
       linkedinUrl: "https://www.linkedin.com/in/kanishk-saraswat"
     },
