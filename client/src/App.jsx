@@ -1,6 +1,7 @@
 import { AuthProvider } from './contexts/AuthContext';
 import { useLocation } from 'react-router-dom';
 import Navbar from './components/navbar';
+import DemoNotice from './components/DemoNotice';
 import AppRoutes from './routes/AppRoutes';
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
     <AuthProvider>
       {!isAgencyWorkspaceRoute && !isAgencyPublicApprovalRoute && !isAppShellRoute && <Navbar />}
       <AppRoutes />
+      <DemoNotice />
     </AuthProvider>
   );
 }
